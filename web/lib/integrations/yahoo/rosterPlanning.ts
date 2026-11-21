@@ -166,6 +166,17 @@ export function yahooPlanningPlayers(payload: unknown): Row[] {
   return rows;
 }
 
+/** Position classes (G, D, F) as identity evidence. Slots and statuses (Util, BN, IR, NA) are not evidence. */
+const POSITION_CLASS: Record<string, string> = { G: "G", D: "D", C: "F", LW: "F", RW: "F", L: "F", R: "F", W: "F", F: "F" };
+function positionClasses(values: ReadonlyArray<string>): Set<string> {
+  return new Set(values.flatMap(value => String(value).split(",")).map(value => POSITION_CLASS[value.trim().toUpperCase()]).filter((value): value is string => Boolean(value)));
+}
+/** Yahoo's own positions for a player row: its eligible positions, else its display or primary position. */
+function yahooPositionClasses(row: Row): Set<string> {
+  const eligible = positionClasses(eligibility(row.eligible_positions));
+  return eligible.size ? eligible : positionClasses([text(row.display_position) ?? "", text(row.primary_position) ?? ""]);
+}
+
 function eligibility(node: unknown): string[] {
   if (!node || typeof node !== "object") return [];
   const row = node as Row;
@@ -496,9 +507,18 @@ export async function loadYahooPlanningSnapshot(args: {
     identities = legacyYahooIdentities(mapping, gameContext.gameKey, data.players);
   }
   const byId = new Map(data.players.map(player => [player.id, player]));
+  // Captured before the roster loop replaces catalog positions with Yahoo's.
+  const canonicalClasses = new Map(data.players.map(player => [player.id, positionClasses(player.eligiblePositions)]));
+  const conflictingKeys = new Set<string>();
   const resolve = (row: Row) => {
-    const id = identities.get(String(row.player_key ?? ""));
-    return id === undefined ? undefined : byId.get(id);
+    const key = String(row.player_key ?? ""), id = identities.get(key);
+    const player = id === undefined ? undefined : byId.get(id);
+    if (!player) return undefined;
+    // A verified row that puts a Yahoo D on a canonical forward (or a goalie on a skater) is a crossed identity, never a
+    // reason to pick another player: refuse it. Only known, disjoint G/D/F classes count; missing evidence never does.
+    const yahoo = yahooPositionClasses(row), canonical = canonicalClasses.get(player.id) ?? new Set<string>();
+    if (yahoo.size && canonical.size && ![...yahoo].some(value => canonical.has(value))) { conflictingKeys.add(key); return undefined; }
+    return player;
   };
   const roster: RosterEntry[] = [];
   const positions = new Map<string, string>();
@@ -510,7 +530,13 @@ export async function loadYahooPlanningSnapshot(args: {
   }
   for (const row of ownRows) {
     const player = resolve(row);
-    if (!player) { limitations.push(`Roster player ${text(yahooFields(row.name).full) ?? row.player_key} has no unique canonical identity; review required.`); continue; }
+    if (!player) {
+      const name = text(yahooFields(row.name).full) ?? row.player_key;
+      limitations.push(conflictingKeys.has(String(row.player_key ?? ""))
+        ? `Roster player ${name}'s Yahoo position conflicts with the mapped canonical player's; identity conflict, review required.`
+        : `Roster player ${name} has no unique canonical identity; review required.`);
+      continue;
+    }
     unavailableIds.add(player.id);
     const selected = text(yahooFields(row.selected_position).position) ?? "BN";
     positions.set(player.id, selected);
@@ -738,6 +764,8 @@ export async function loadYahooPlanningSnapshot(args: {
       availability: { source: `Yahoo league ownership (${pagesChecked} pages)`, asOf: availabilityAsOf, seasonId: query.seasonId, completeness: availabilityComplete ? "complete" : "partial", limitations: availabilityComplete ? [] : ["Only individually verified availability may be actionable."] },
     },
   };
+  // Counted after every resolution site, the opponent roster included.
+  if (conflictingKeys.size) discoverySummary.push(`Yahoo identity conflicts refused: ${conflictingKeys.size} mapped key${conflictingKeys.size === 1 ? "" : "s"} whose Yahoo position class (G, D or F) contradicts the canonical player's; review the mapping.`);
   return { snapshot, capabilities: { roster: fresh && ownRows.length === roster.length && roster.length > 0, availability: availabilityComplete, rules: false, matchup: opponent !== null, acquisitions: periods.length > 0, limitations, diagnostics: discoverySummary },
     ...(refreshError ? { code: refreshError.code, retryAfterSeconds } : {}), ...(diet ? { yahooDiet: true as const } : {}) };
 }

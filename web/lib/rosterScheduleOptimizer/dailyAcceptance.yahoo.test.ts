@@ -9,9 +9,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlanningData, PlanningPlayer, PlanningSnapshot, PlanningWorkspace, PlanStep } from "./planningTypes";
 
 const mocks = vi.hoisted(() => ({ settings: vi.fn(), planningData: vi.fn(), draftResource: vi.fn(), boardResource: vi.fn(), planningResource: vi.fn() }));
+const yahooGame = vi.hoisted(() => ({ gameKey: "453" }));
 vi.mock("lib/rosterScheduleData/planning", async original => ({ ...await original<typeof import("../rosterScheduleData/planning")>(), loadPlanningData: mocks.planningData }));
 vi.mock("lib/integrations/yahoo/gameContext", async original => ({ ...await original<typeof import("../integrations/yahoo/gameContext")>(),
-  resolveYahooGameContext: async () => ({ gameKey: "453", targetSeasonId: 20262027 }), assertYahooLeagueGameContext: () => undefined }));
+  resolveYahooGameContext: async () => ({ gameKey: yahooGame.gameKey, targetSeasonId: 20262027 }), assertYahooLeagueGameContext: () => undefined }));
 vi.mock("lib/integrations/yahoo/liveDraft", async original => ({ ...await original<typeof import("../integrations/yahoo/liveDraft")>(), parseYahooBoardSettings: mocks.settings }));
 vi.mock("lib/integrations/yahoo/providerClient", async original => ({ ...await original<typeof import("../integrations/yahoo/providerClient")>(),
   fetchYahooDraftResource: mocks.draftResource, fetchYahooBoardResource: mocks.boardResource, fetchYahooPlanningResource: mocks.planningResource }));
@@ -81,16 +82,18 @@ function freshWorld(): World {
       playerRow(900, { ownership: { ownership_type: "freeagents" } })]],
   };
 }
-function database(mapping = CATALOG.map(row => ({ nhl_player_id: row.nhl, yahoo_player_id: `453.p.${row.nhl}` }))) {
+function database(mapping = CATALOG.map(row => ({ nhl_player_id: row.nhl, yahoo_player_id: `453.p.${row.nhl}` })), verified: Row[] = []) {
   const tables: Record<string, Row | Row[]> = {
     external_teams: { id: "team-a", user_id: "owner-a", provider: "yahoo", external_league_id: "league-a", connected_account_id: "account-a",
       external_team_key: TEAM_KEY, team_metadata: { is_owned: true } },
     external_leagues: { id: "league-a", user_id: "owner-a", provider: "yahoo", connected_account_id: "account-a", external_league_key: LEAGUE_KEY },
     yahoo_nhl_player_map_read: mapping,
+    fhfh_player_external_identities: verified,
   };
   return { from(table: string) {
     const filters: Row = {}; let inFilter: [string, unknown[]] | null = null;
-    const rows = () => { const value = tables[table]; return Array.isArray(value) ? value.filter(row => !inFilter || inFilter[1].includes(row[inFilter[0]])) : value; };
+    const rows = () => { const value = tables[table]; return Array.isArray(value) ? value.filter(row => (!inFilter || inFilter[1].includes(row[inFilter[0]]))
+      && (table !== "fhfh_player_external_identities" || Object.entries(filters).every(([key, expected]) => row[key] === expected))) : value; };
     const query = { select: () => query, order: () => query, eq: (key: string, value: unknown) => { filters[key] = value; return query; },
       in: (key: string, values: unknown[]) => { inFilter = [key, values]; return query; },
       limit: async () => ({ data: rows(), error: null }),
@@ -128,7 +131,7 @@ function installProvider() {
     throw new Error("Synthetic optional read unavailable");
   });
 }
-const load = (mapping?: Parameters<typeof database>[0]) => loadYahooPlanningSnapshot({ db: database(mapping), userId: world.userId, teamId: "team-a",
+const load = (mapping?: Parameters<typeof database>[0], verified?: Row[]) => loadYahooPlanningSnapshot({ db: database(mapping, verified), userId: world.userId, teamId: "team-a",
   startDate: TODAY, endDate: world.endDate, now: NOW });
 const player = (snapshot: PlanningSnapshot, id: string) => snapshot.players.find(row => row.id === id)!;
 const intent = (steps: PlanStep[] = [], extra = {}) => ({ ...defaultIntent(), revision: 1, goalieWindow: "any" as const, steps, ...extra });
@@ -140,6 +143,7 @@ const withTiming = (snapshot: PlanningSnapshot) => supplementProviderRules(snaps
 let network: { mock: { calls: unknown[][] } };
 beforeEach(() => {
   world = freshWorld();
+  yahooGame.gameKey = "453";
   for (const mock of Object.values(mocks)) mock.mockReset();
   installProvider();
   network = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Unexpected network request in offline Yahoo acceptance"));
@@ -490,5 +494,122 @@ describe("RSO daily beta: connected Yahoo acceptance packet", () => {
       expect(reconcileIntent(second, intent(steps), first)).toMatchObject({ issues: [], suggestedSteps: null });
       expect(planRoster(second, intent(steps), { maxSteps: 0 }).selected.steps).toEqual(steps);
     });
+  });
+});
+
+// Same-name players, keyed exactly as production stores them on 2026-11-21 (read-only check, game 477 = 2026-27).
+// Only a verified, season-scoped Yahoo key may name a player; no name or name+team fallback exists or is wanted.
+describe("(h) season-scoped Yahoo identity: same-name VAN Petterssons and the Aho pair", () => {
+  const SEASON = { context_key: "yahoo:game:477:season:2026", season_id: 20262027 };
+  const NAMESAKES = [
+    { id: "9780", nhl: 8480012, name: "Elias Pettersson", team: "VAN", positions: ["C"], key: "477.p.7520" },
+    { id: "10377", nhl: 8483678, name: "Elias Pettersson", team: "VAN", positions: ["D"], key: "477.p.32762" },
+    { id: "9327", nhl: 8478427, name: "Sebastian Aho", team: "CAR", positions: ["C"], key: "477.p.6777" },
+    // Canonical 8589 (NHL 8480222) is inactive, so the planning catalog never carries him.
+    { id: "8589", nhl: 8480222, name: "Sebastian Aho", team: "PIT", positions: ["D"], key: "477.p.7654", inactive: true },
+  ];
+  const by = (id: string) => NAMESAKES.find(row => row.id === id)!;
+  const yahooRow = (id: string, fields: Row, positions = by(id).positions) => ({ player: [{ player_key: by(id).key }, { name: { full: by(id).name } }, { editorial_team_abbr: by(id).team },
+    { eligible_positions: positions.map(position => ({ position })) }, ...Object.entries(fields).map(([key, value]) => ({ [key]: value }))] });
+  const ownedRow = (id: string, selected: string, positions?: string[], fields: Row = {}) =>
+    yahooRow(id, { selected_position: { position: selected }, is_editable: "1", is_undroppable: "0", ...fields }, positions);
+  type Link = { key: string; id: string; season?: { context_key: string; season_id: number } };
+  const PATHS = [["legacy map view", false], ["verified identities (RSO_YAHOO_DIET=1)", true]] as const;
+  const run = (diet: boolean, links: Link[]) => {
+    if (diet) vi.stubEnv("RSO_YAHOO_DIET", "1");
+    return load(links.map(link => ({ nhl_player_id: by(link.id).nhl, yahoo_player_id: link.key })),
+      links.map(link => ({ provider: "yahoo", verification_status: "verified", ...(link.season ?? SEASON), external_player_id: link.key, fhfh_player_id: Number(link.id) })));
+  };
+  const rosterIds = (snapshot: PlanningSnapshot) => snapshot.roster.map(entry => entry.playerId).sort();
+  const omitted = (name: string) => `Roster player ${name} has no unique canonical identity; review required.`;
+  const conflict = (name: string) => `Roster player ${name}'s Yahoo position conflicts with the mapped canonical player's; identity conflict, review required.`;
+  const ahoC: Link = { key: "477.p.6777", id: "9327" };
+  beforeEach(() => {
+    yahooGame.gameKey = "477";
+    world.ownRows = [yahooRow("10377", { selected_position: { position: "D" }, is_editable: "1", is_undroppable: "0" }),
+      yahooRow("9327", { selected_position: { position: "C" }, is_editable: "1", is_undroppable: "0" })];
+    world.leagueTeams = [{ team: [{ team_key: "477.l.1.t.2" }, { roster: { players: collection([yahooRow("9780", {})]) } }] }];
+    world.pages = [[]];
+    mocks.planningData.mockImplementation(async () => ({ players: [...catalogPlayers(), ...NAMESAKES.filter(row => !row.inactive).map(row => ({
+      id: row.id, nhlId: row.nhl, nhlTeamId: teamId(row.team), rosterRevision: `roster-${row.id}`, name: row.name, teamAbbreviation: row.team,
+      eligiblePositions: row.positions, eligibilityVerified: false, playerClass: "skater" as const, availability: "unknown" as const, ownership: null,
+      canDrop: null, holdValue: null, reserveEligibility: [] }))], games: games(), forecasts: [], matchupWeeks: structuredClone(world.weeks),
+      evidence: { schedule: { source: "Synthetic complete schedule", asOf: NOW.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } } }));
+  });
+  afterEach(() => { vi.unstubAllEnvs(); });
+
+  it.each(PATHS)("%s: today's missing D crosswalk omits him and never lands on the center", async (_path, diet) => {
+    const { snapshot, capabilities } = await run(diet, [ahoC]);
+    expect(rosterIds(snapshot)).toEqual(["9327"]);
+    expect(capabilities.limitations).toContain(omitted("Elias Pettersson"));
+    expect(snapshot.rules.unsupported).toContain("Resolve missing roster identities before accepting a complete plan.");
+  });
+  it.each(PATHS)("%s: the proposed rows put the defenseman on the roster and in a D slot, the center elsewhere", async (_path, diet) => {
+    const { snapshot, capabilities } = await run(diet, [{ key: "477.p.32762", id: "10377" }, { key: "477.p.7520", id: "9780" }, ahoC]);
+    expect(rosterIds(snapshot)).toEqual(["10377", "9327"]);
+    expect(capabilities.limitations.join(" ")).not.toContain("no unique canonical identity");
+    expect(player(snapshot, "10377")).toMatchObject({ nhlId: 8483678, providerId: "477.p.32762", eligiblePositions: ["D"] });
+    expect(player(snapshot, "9327")).toMatchObject({ nhlId: 8478427, providerId: "477.p.6777", eligiblePositions: ["C"] });
+    // The center's own key resolves to him on team 2's roster: owned elsewhere, not on this roster.
+    expect(player(snapshot, "9780")).toMatchObject({ nhlId: 8480012, availability: "rostered" });
+    const lineup = planRoster(withTiming(snapshot), intent()).selected.assignments;
+    expect(lineup.filter(row => row.playerId === "10377").map(row => `${row.date}:${row.slotId?.split("#")[0]}`)).toEqual([`${TODAY}:D`]);
+    expect(lineup.some(row => row.playerId === "9780")).toBe(false);
+  });
+  it.each(PATHS)("%s: a key verified to both Petterssons resolves to neither", async (_path, diet) => {
+    const { snapshot, capabilities } = await run(diet, [{ key: "477.p.32762", id: "10377" }, { key: "477.p.32762", id: "9780" }, ahoC]);
+    expect(rosterIds(snapshot)).toEqual(["9327"]);
+    expect(capabilities.limitations).toContain(omitted("Elias Pettersson"));
+  });
+  it.each(PATHS)("%s: last season's key (465) never names this season's player", async (_path, diet) => {
+    const { snapshot, capabilities } = await run(diet, [{ key: "465.p.32762", id: "10377", season: { context_key: "yahoo:game:465:season:2025", season_id: 20252026 } }, ahoC]);
+    expect(rosterIds(snapshot)).toEqual(["9327"]);
+    expect(capabilities.limitations).toContain(omitted("Elias Pettersson"));
+  });
+  it.each(PATHS)("%s: Aho D, mapped but outside the planning catalog, is omitted and never becomes Aho C", async (_path, diet) => {
+    world.ownRows.push(yahooRow("8589", { selected_position: { position: "BN" }, is_editable: "1", is_undroppable: "0" }));
+    const { snapshot, capabilities } = await run(diet, [{ key: "477.p.32762", id: "10377" }, { key: "477.p.7654", id: "8589" }, ahoC]);
+    expect(rosterIds(snapshot)).toEqual(["10377", "9327"]);
+    expect(snapshot.roster.filter(entry => entry.playerId === "9327")).toEqual([{ playerId: "9327", position: "active" }]);
+    expect(capabilities.limitations).toContain(omitted("Sebastian Aho"));
+  });
+  // Position guard (TJ, 2026-11-21): a verified row whose Yahoo G/D/F class is disjoint from the canonical player's is refused.
+  it.each(PATHS)("%s: a crossed row (D key verified to the center) is refused, never rostered or lined up", async (_path, diet) => {
+    const { snapshot, capabilities } = await run(diet, [{ key: "477.p.32762", id: "9780" }, ahoC]);
+    expect(rosterIds(snapshot)).toEqual(["9327"]);
+    expect(capabilities.limitations).toContain(conflict("Elias Pettersson"));
+    expect(capabilities.limitations).not.toContain(omitted("Elias Pettersson"));
+    expect(planRoster(withTiming(snapshot), intent()).selected.assignments.some(row => row.playerId === "9780")).toBe(false);
+  });
+  it.each(PATHS)("%s: Aho D's key crossed onto Aho C is refused; Aho C's own unmapped key stays unmapped", async (_path, diet) => {
+    world.ownRows = [ownedRow("9327", "C"), ownedRow("8589", "BN")];
+    const { snapshot, capabilities } = await run(diet, [{ key: "477.p.7654", id: "9327" }]);
+    expect(rosterIds(snapshot)).toEqual([]);
+    expect(capabilities.limitations).toEqual(expect.arrayContaining([omitted("Sebastian Aho"), conflict("Sebastian Aho")]));
+  });
+  it.each(PATHS)("%s: a Yahoo goalie mapped to a skater is refused", async (_path, diet) => {
+    world.ownRows = [ownedRow("10377", "G", ["G"]), ownedRow("9327", "C")];
+    const { snapshot, capabilities } = await run(diet, [{ key: "477.p.32762", id: "10377" }, ahoC]);
+    expect(rosterIds(snapshot)).toEqual(["9327"]);
+    expect(capabilities.limitations).toContain(conflict("Elias Pettersson"));
+  });
+  it.each(PATHS)("%s: genuine multi-position overlap and forward-to-forward rows still resolve", async (_path, diet) => {
+    world.ownRows = [ownedRow("10377", "D", ["D", "LW"]), ownedRow("9327", "LW", ["LW", "RW"])];
+    const { snapshot, capabilities } = await run(diet, [{ key: "477.p.32762", id: "10377" }, ahoC]);
+    expect(rosterIds(snapshot)).toEqual(["10377", "9327"]);
+    expect(capabilities.limitations.join(" ")).not.toMatch(/canonical identity|identity conflict/);
+  });
+  it.each(PATHS)("%s: missing or slot-only Yahoo positions are not a contradiction; the lineup slot is never evidence", async (_path, diet) => {
+    // Pettersson D's row carries only Util/BN/IR slots (no position) and sits in a C slot; the verified row still names him.
+    world.ownRows = [ownedRow("10377", "C", ["Util", "BN", "IR"]), ownedRow("9327", "C", [])];
+    const { snapshot, capabilities } = await run(diet, [{ key: "477.p.32762", id: "10377" }, ahoC]);
+    expect(rosterIds(snapshot)).toEqual(["10377", "9327"]);
+    expect(capabilities.limitations.join(" ")).not.toMatch(/canonical identity|identity conflict/);
+  });
+  it.each(PATHS)("%s: Yahoo's display position is evidence when eligible positions are absent", async (_path, diet) => {
+    world.ownRows = [ownedRow("10377", "D", [], { display_position: "D" }), ownedRow("9327", "C")];
+    const crossed = await run(diet, [{ key: "477.p.32762", id: "9780" }, ahoC]);
+    expect(rosterIds(crossed.snapshot)).toEqual(["9327"]);
+    expect(crossed.capabilities.limitations).toContain(conflict("Elias Pettersson"));
   });
 });

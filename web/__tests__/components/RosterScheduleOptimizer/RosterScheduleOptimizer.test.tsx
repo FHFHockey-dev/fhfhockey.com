@@ -169,6 +169,242 @@ describe("active provider refresh scheduling", () => {
   const advance = (ms = 0) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
   const returned = async () => { fireEvent(document, new Event("visibilitychange")); await advance(); };
 
+  describe("lineup goal in a persisted Yahoo points league", () => {
+    const goalButtons = () => {
+      const goal = screen.getByRole("group", { name: "Lineup goal" });
+      return { starts: within(goal).getByRole("button", { name: "Most starts" }) as HTMLButtonElement,
+        points: within(goal).getByRole("button", { name: "Best projected points" }) as HTMLButtonElement };
+    };
+    const storedObjective = () => JSON.parse(window.localStorage.getItem(activeKey())!).intent.objective;
+    const realPlanner = async (dropForecasts = false) => {
+      const { scenario, fixturePolicy } = await import("lib/rosterScheduleOptimizer/objectiveSwitchScenario.fixture");
+      const rsoPolicy = await import("lib/player-forecasts/rsoUsePolicy");
+      vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixturePolicy);
+      planningState.evaluate = (snapshot, intent) => {
+        const week = scenario();
+        return planRoster({ ...week, id: snapshot.id, forecasts: dropForecasts ? [] : week.forecasts }, intent, { maxSteps: 0 });
+      };
+    };
+    it("switches points -> starts -> points, and back to points after a reload", async () => {
+      await realPlanner();
+      const view = setup(undefined, true, false, () => data, false, null, true);
+      await advance();
+      expect(goalButtons().points.getAttribute("aria-pressed")).toBe("true");
+      fireEvent.click(goalButtons().starts);
+      await advance();
+      expect(storedObjective()).toBe("agp");
+      expect(goalButtons().starts.getAttribute("aria-pressed")).toBe("true");
+      expect(goalButtons().points.disabled).toBe(false);
+      view.unmount();
+      render(<RosterScheduleOptimizer />); // reload: the league comes back saved on Most starts
+      await advance();
+      expect(goalButtons().starts.getAttribute("aria-pressed")).toBe("true");
+      expect(goalButtons().points.disabled).toBe(false);
+      fireEvent.click(goalButtons().points);
+      await advance();
+      expect(storedObjective()).toBe("outcome");
+      expect(goalButtons().points.getAttribute("aria-pressed")).toBe("true");
+    });
+    it("re-plans Most starts -> Best projected points -> Most starts from the projections, not just the pressed button", async () => {
+      await realPlanner();
+      const seen: Array<PlanIntent["objective"]> = [];
+      const evaluate = planningState.evaluate!;
+      planningState.evaluate = (snapshot, intent) => { seen.push(intent.objective); return evaluate(snapshot, intent); };
+      const view = setup(undefined, true, false, () => data, false, null, true);
+      await advance();
+      const compare = () => screen.getByLabelText("Lineup comparison");
+      const selected = () => compare().querySelector("p[data-selected='true']")!.textContent;
+      const matchup = () => screen.getByRole("region", { name: "Matchup" }).textContent ?? "";
+      const expectPlan = (objective: "agp" | "outcome") => {
+        expect(seen.at(-1)).toBe(objective);
+        // Both rows are priced from the fixture's projections; the selected row follows the goal.
+        expect(compare().textContent).toContain("Most starts 4 GP · -3 pts");
+        expect(compare().textContent).toContain("Best projected points 2 GP · 3 pts");
+        expect(selected()).toBe(objective === "agp" ? "Most starts 4 GP · -3 pts" : "Best projected points 2 GP · 3 pts");
+        expect(matchup()).toContain(objective === "agp" ? "Selected plan4 active · -3 projected" : "Selected plan2 active · 3 projected");
+        expect(document.body.textContent).not.toContain("Lineup by schedule capacity");
+      };
+      for (const objective of ["agp", "outcome", "agp"] as const) {
+        fireEvent.click(objective === "agp" ? goalButtons().starts : goalButtons().points);
+        await advance();
+        expect(storedObjective()).toBe(objective);
+        expectPlan(objective);
+      }
+      view.unmount();
+      render(<RosterScheduleOptimizer />); // reload: saved on Most starts, then the same round trip
+      await advance();
+      expectPlan("agp");
+      for (const objective of ["outcome", "agp"] as const) {
+        fireEvent.click(objective === "agp" ? goalButtons().starts : goalButtons().points);
+        await advance();
+        expectPlan(objective);
+      }
+    });
+    it("keeps the switch working for an account-saved league across a reload and a Refresh provider", async () => {
+      await realPlanner();
+      const view = setup(undefined, true, true, () => data, true, null, true);
+      await advance();
+      fireEvent.click(goalButtons().starts);
+      await advance();
+      expect(storedObjective()).toBe("agp");
+      view.unmount();
+      render(<RosterScheduleOptimizer />); // reload with the account copy present
+      await advance();
+      expect(goalButtons().starts.getAttribute("aria-pressed")).toBe("true");
+      expect(goalButtons().points.disabled).toBe(false);
+      const reads = view.reads();
+      fireEvent.click(screen.getByRole("button", { name: "Refresh provider" }));
+      await advance();
+      expect(view.reads()).toBe(reads + 1);
+      expect(storedObjective()).toBe("agp"); // a provider refresh keeps the saved goal
+      expect(goalButtons().starts.getAttribute("aria-pressed")).toBe("true");
+      expect(goalButtons().points.disabled).toBe(false);
+      fireEvent.click(goalButtons().points);
+      await advance();
+      expect(storedObjective()).toBe("outcome");
+      expect(goalButtons().points.getAttribute("aria-pressed")).toBe("true");
+      fireEvent.click(screen.getByRole("button", { name: "Refresh provider" }));
+      await advance();
+      expect(storedObjective()).toBe("outcome");
+      expect(goalButtons().points.getAttribute("aria-pressed")).toBe("true");
+    });
+    it("holds a viewed account save on its saved Most starts with the reason, and switches once the manager continues manually", async () => {
+      await realPlanner();
+      const view = setup(undefined, true, true, () => data, true, null, true);
+      await advance();
+      view.workspace.intent = { ...view.workspace.intent, objective: "agp" }; // the account copy holds Most starts
+      view.unmount();
+      render(<RosterScheduleOptimizer />);
+      await advance();
+      // A reload keeps the local goal; the account copy never replaces it silently.
+      expect(goalButtons().points.getAttribute("aria-pressed")).toBe("true");
+      fireEvent.click(screen.getByRole("button", { name: "View account save" }));
+      await advance();
+      const reason = "Saved inputs are read-only. Continue manually to change the lineup goal.";
+      expect(goalButtons().starts.getAttribute("aria-pressed")).toBe("true");
+      for (const button of Object.values(goalButtons())) {
+        expect(button.disabled).toBe(true);
+        expect(document.getElementById(button.getAttribute("aria-describedby")!)?.textContent).toBe(reason);
+      }
+      fireEvent.click(screen.getByRole("button", { name: "Continue manually" }));
+      await advance();
+      expect([goalButtons().starts.disabled, goalButtons().points.disabled]).toEqual([false, false]);
+      fireEvent.click(goalButtons().points);
+      await advance();
+      expect(storedObjective()).toBe("outcome");
+      cleanup();
+      render(<RosterScheduleOptimizer />);
+      await advance();
+      expect(goalButtons().points.getAttribute("aria-pressed")).toBe("true");
+    });
+    const lockAccess = (state: "access read fails" | "access read is pending" | "sync is not granted") => {
+      const base = vi.mocked(fetch).getMockImplementation()!;
+      vi.mocked(fetch).mockImplementation((url, init) => !String(url).endsWith("/access") ? base(url, init)
+        : state === "access read fails" ? Promise.reject(new TypeError("Failed to fetch"))
+          : state === "access read is pending" ? new Promise(() => undefined)
+            : Promise.resolve({ ok: true, json: async () => ({ data: { eligible: false, capabilities: [] } }) } as Response));
+      return () => vi.mocked(fetch).mockImplementation(base);
+    };
+    const sideEffects = () => ({ provider: vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith("/provider")).length,
+      workspaceWrites: vi.mocked(fetch).mock.calls.filter(([url, init]) => String(url).endsWith("/workspace") && (init as RequestInit | undefined)?.method === "PUT").length,
+      yahooReads: vi.mocked(yahooPlanningReadBroker).mock.calls.length });
+    it.each(["access read fails", "access read is pending", "sync is not granted"] as const)(
+      "when the %s, a league saved on Most starts still switches its goal locally, with no Yahoo read, and keeps everything else read-only", async state => {
+      await realPlanner();
+      const view = setup(undefined, true, false, () => data, false, null, true);
+      await advance();
+      fireEvent.click(goalButtons().starts);
+      await advance();
+      expect(storedObjective()).toBe("agp");
+      view.unmount();
+      const restore = lockAccess(state);
+      render(<RosterScheduleOptimizer />);
+      await advance();
+      const before = sideEffects();
+      expect(goalButtons().starts.getAttribute("aria-pressed")).toBe("true");
+      expect([goalButtons().starts.disabled, goalButtons().points.disabled]).toEqual([false, false]);
+      expect(goalButtons().points.hasAttribute("aria-describedby")).toBe(false);
+      for (const objective of ["outcome", "agp", "outcome"] as const) {
+        fireEvent.click(objective === "outcome" ? goalButtons().points : goalButtons().starts);
+        await advance();
+        expect(storedObjective()).toBe(objective);
+        expect((objective === "outcome" ? goalButtons().points : goalButtons().starts).getAttribute("aria-pressed")).toBe("true");
+      }
+      expect(sideEffects()).toEqual(before); // no provider refresh, Yahoo planning read or account write
+      expect((screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement).disabled).toBe(true);
+      expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(true);
+      cleanup();
+      render(<RosterScheduleOptimizer />); // reload, access still locked
+      await advance();
+      expect(goalButtons().points.getAttribute("aria-pressed")).toBe("true");
+      cleanup();
+      restore(); // provider access recovers
+      render(<RosterScheduleOptimizer />);
+      await advance();
+      expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(false);
+      expect(goalButtons().points.getAttribute("aria-pressed")).toBe("true");
+      fireEvent.click(goalButtons().starts);
+      await advance();
+      expect(storedObjective()).toBe("agp");
+      fireEvent.click(goalButtons().points);
+      await advance();
+      expect(storedObjective()).toBe("outcome");
+    });
+    it("an access-granted reload makes the same planning reads as before the goal unlock", async () => {
+      await realPlanner();
+      const view = setup(undefined, true, false, () => data, false, null, true);
+      await advance();
+      view.unmount();
+      const fetches = vi.mocked(fetch).mock.calls.length, brokers = vi.mocked(yahooPlanningReadBroker).mock.calls.length;
+      render(<RosterScheduleOptimizer />);
+      await advance();
+      // Baseline from HEAD 3ee9e7dea: two shared /data reads and two private Yahoo planning reads per reload.
+      expect(vi.mocked(fetch).mock.calls.slice(fetches).filter(([url]) => String(url).includes("/data?")).length).toBe(2);
+      expect(vi.mocked(yahooPlanningReadBroker).mock.calls.length - brokers).toBe(2);
+    });
+    it("with access locked and no usable projections, Most starts stays available and points stays blocked with the projection reason", async () => {
+      await realPlanner(true);
+      const view = setup(undefined, true, false, () => data, false, null, true);
+      await advance();
+      view.unmount();
+      lockAccess("sync is not granted");
+      render(<RosterScheduleOptimizer />);
+      await advance();
+      const { starts, points } = goalButtons();
+      expect([starts.disabled, points.disabled]).toEqual([false, true]);
+      expect(document.getElementById(points.getAttribute("aria-describedby")!)?.textContent).toBe("Needs usable projections for at least part of your lineup");
+    });
+    it("says when Best projected points was chosen but the plan shown is the Most starts schedule fallback", async () => {
+      await realPlanner();
+      const view = setup(undefined, true, false, () => data, false, null, true);
+      await advance();
+      fireEvent.click(goalButtons().points); // already the shown goal; makes the request explicit
+      fireEvent.click(goalButtons().starts); await advance();
+      fireEvent.click(goalButtons().points); await advance();
+      expect(storedObjective()).toBe("outcome");
+      expect(screen.queryByText(/This is a Most starts schedule plan/)).toBeNull();
+      view.unmount();
+      await realPlanner(true); // the retained inputs lose every usable projection
+      render(<RosterScheduleOptimizer />);
+      await advance();
+      expect(storedObjective()).toBe("outcome");
+      expect(goalButtons().starts.getAttribute("aria-pressed")).toBe("true");
+      expect(screen.getByText(/^You chose Best projected points\. This is a Most starts schedule plan/).textContent).toContain("missing projections are not counted as zero");
+      expect(within(screen.getByLabelText("Lineup comparison")).getByText(/Best projected points/).textContent).not.toMatch(/\d+(\.\d+)? pts/);
+    });
+    it("keeps Best projected points blocked, with the projection reason, when nothing in the lineup is priced", async () => {
+      await realPlanner(true);
+      setup(undefined, true, false, () => data, false, null, true);
+      await advance();
+      const { starts, points } = goalButtons();
+      expect(starts.getAttribute("aria-pressed")).toBe("true");
+      expect([starts.disabled, points.disabled]).toEqual([false, true]);
+      expect(starts.hasAttribute("aria-describedby")).toBe(false);
+      expect(points.title).toBe("Needs usable projections for at least part of your lineup");
+      expect(document.getElementById(points.getAttribute("aria-describedby")!)?.textContent).toBe(points.title);
+    });
+  });
+
   it("moves the plan-from slider within the read week without any Yahoo read; a new end date still refreshes", async () => {
     const evaluated: PlanningSnapshot[] = [];
     planningState.evaluate = (snapshot, intent) => { evaluated.push(snapshot); return planRoster(snapshot, intent); };

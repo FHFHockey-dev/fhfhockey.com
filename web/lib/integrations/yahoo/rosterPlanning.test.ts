@@ -231,10 +231,11 @@ describe("Yahoo snapshot evidence", () => {
       expect(result.snapshot.evidence.availability?.completeness).toBe("partial");
       expect(starts).toEqual(stopsAfterFirstPage ? [0] : [0, 25, 50, 75]);
       const candidate = result.snapshot.players.find(player => player.id === "canonical-2")!;
-      const unresolved = ["unmapped", "ambiguous", "foreign-game"].includes(mode);
+      // class-mismatch: the verified key names a canonical C while Yahoo lists a G, so the identity is refused (TJ, 2026-11-21).
+      const unresolved = ["unmapped", "ambiguous", "foreign-game", "class-mismatch"].includes(mode);
       expect(candidate.eligibilityVerified).toBe(!unresolved && mode !== "availability-only");
       expect(candidate.availability).toBe(unresolved || ["repeated-next-page", "eligibility-only"].includes(mode) ? "unknown" : "free_agent");
-      expect(candidate.eligiblePositions).toEqual(unresolved || mode === "availability-only" ? ["C"] : mode === "class-mismatch" ? ["G"] : ["LW"]);
+      expect(candidate.eligiblePositions).toEqual(unresolved || mode === "availability-only" ? ["C"] : ["LW"]);
       expect(result.snapshot.players.find(player => player.id === "canonical-3")).toMatchObject({ eligibilityVerified: true, eligiblePositions: ["LW"], availability: "free_agent" });
       expect(result.snapshot.players.find(player => player.id === "canonical-4")).toMatchObject({ eligibilityVerified: false, availability: "unknown" });
       expect(result.snapshot.roster).toEqual([{ playerId: "canonical-1", position: "active" }]);
@@ -247,14 +248,16 @@ describe("Yahoo snapshot evidence", () => {
       expect(result.snapshot.rules.periods).toEqual([]);
       const repeated = mode === "repeated-next-page";
       const matches = unresolved ? 1 : 2;
-      const both = unresolved || repeated || ["eligibility-only", "availability-only", "class-mismatch"].includes(mode) ? 1 : 2;
+      const both = unresolved || repeated || ["eligibility-only", "availability-only"].includes(mode) ? 1 : 2;
       const eligibilityOnly = repeated || mode === "eligibility-only" ? 1 : 0;
-      const availabilityOnly = ["availability-only", "class-mismatch"].includes(mode) ? 1 : 0;
+      const availabilityOnly = mode === "availability-only" ? 1 : 0;
       const stop = stopsAfterFirstPage ? "time budget" : repeated ? "end of list with repeated identities"
         : mode === "failed-next-page" ? "request failure" : mode === "stale-next-page" ? "unverified freshness" : "league scope mismatch";
       expect(result.capabilities.diagnostics).toContain(`Yahoo availability read: ${starts.length} pages attempted, ${mode === "failed-next-page" ? 1 : starts.length} returned, ${repeated ? 2 : 1} accepted; ${repeated ? 26 : 25} accepted rows, 25 unique, ${repeated ? 1 : 0} repeats. ${elapsed} ms elapsed; 8000 ms budget checked between page batches. Stopped: ${stop}.`);
       expect(result.capabilities.diagnostics).toContain(`Yahoo availability matches: ${matches} unique catalog matches, ${25 - matches} unmatched; 0 rostered/excluded, ${matches} candidate matches.`);
       expect(result.capabilities.diagnostics).toContain(`Yahoo provider catalog before search: 3 candidates; ${both} both known, ${eligibilityOnly} eligibility only, ${availabilityOnly} availability only, ${3 - both - eligibilityOnly - availabilityOnly} neither known. Eligibility means usable verified positions; availability means free agent or waivers. Discovery partial; unseen players remain unknown.`);
+      expect((result.capabilities.diagnostics ?? []).some(line => line.startsWith("Yahoo identity conflicts refused: 1 mapped key "))).toBe(mode === "class-mismatch");
+      if (mode === "class-mismatch") expect(metrics.diagnostics.find(row => row.playerId === "canonical-2")?.reasons).toContain("League availability is not verified for acquisition.");
       expect(JSON.stringify(result.snapshot)).not.toContain("Yahoo availability read:");
       expect(result.capabilities.limitations.some(item => /^Yahoo (availability read|availability matches|provider catalog)/.test(item))).toBe(false);
       expect(mocks.planningResource).toHaveBeenCalledTimes(3 + starts.length);
