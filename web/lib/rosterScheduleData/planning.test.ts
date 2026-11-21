@@ -338,7 +338,14 @@ describe("public RSO data boundary", () => {
         const redeployed = await rsoRead(identity, "issued-4", SHA_2);
         expect(redeployed.modelVersion).toBe(SHA_2);
         expect(forecastAllows(redeployed, "HITS", "totals")).toBe(true);
-        const roundTrip = decodePlanningDataTransport(JSON.parse(JSON.stringify(encodePlanningDataTransport(lastRead!))));
+        // Through the real route: its response encoding and the client's decode keep the producer identity.
+        const load = vi.spyOn(planningModule, "loadPlanningData").mockResolvedValue(lastRead!);
+        const res: any = { statusCode: 200, body: undefined, setHeader: vi.fn(),
+          status(code: number) { this.statusCode = code; return this; }, json(body: unknown) { this.body = body; return this; } };
+        await planningHandler({ method: "GET", query: { seasonId: "20262027", startDate: "2026-10-10", endDate: "2026-10-10" } } as any, res);
+        load.mockRestore();
+        expect(res.statusCode).toBe(200);
+        const roundTrip = decodePlanningDataTransport(JSON.parse(JSON.stringify(res.body.data)));
         expect(roundTrip.forecasts).toEqual(lastRead!.forecasts);
         expect(roundTrip.forecasts[0].producerCodeVersion).toBe(CLOSURE);
         // The client re-resolves the decoded snapshot through the contributions with the same catalog, at read time.

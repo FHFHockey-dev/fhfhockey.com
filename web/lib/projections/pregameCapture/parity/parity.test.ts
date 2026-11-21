@@ -327,6 +327,30 @@ describe.skipIf(RECORD)("snapshot decisionAsOf", () => {
   });
 });
 
+describe.skipIf(RECORD)("snapshot model identity (TJ D3, codeVersion amended 2026-11-21)", () => {
+  const BUILD_CONSTANT = "__FORGE_PRODUCER_CLOSURE_SHA256__", CLOSURE = "c1".repeat(32);
+  afterEach(() => { delete (globalThis as Record<string, unknown>)[BUILD_CONSTANT]; });
+  const identityOf = async () => {
+    savedSnapshots.length = 0;
+    await runWriterScenario(SCENARIOS[0]);
+    expect(savedSnapshots).toHaveLength(1);
+    return savedSnapshots[0] as { codeVersion: string; modelEnvironment: Record<string, string | null>;
+      inputProvenance: { modelIdentity: Record<string, unknown> } };
+  };
+  it("keys the identity to the build's producer closure and keeps the release pin in codeVersion", async () => {
+    (globalThis as Record<string, unknown>)[BUILD_CONSTANT] = CLOSURE;
+    const snapshot = await identityOf();
+    const configurationHash = projectionInputHash(snapshot.modelEnvironment);
+    expect(snapshot.codeVersion).toBe(CODE_VERSION);
+    expect(snapshot.inputProvenance.modelIdentity).toEqual({ version: "forge-model-identity-v2", artifact: "no_fitted_artifact",
+      codeVersion: CLOSURE, configurationHash, artifactHash: projectionInputHash({ codeVersion: CLOSURE, configurationHash }) });
+  });
+  it("binds no code or artifact when unbuilt code has no closure", async () => {
+    const snapshot = await identityOf();
+    expect(snapshot.inputProvenance.modelIdentity).toMatchObject({ version: "forge-model-identity-v2", codeVersion: null, artifactHash: null });
+  });
+});
+
 describe.skipIf(RECORD)("season bootstrap decision", () => {
   it("is the writer's rule, and matches each scenario's writer run", async () => {
     const { forgeSeasonBootstrapApplies } = await import("lib/projections/run-forge-projections");
