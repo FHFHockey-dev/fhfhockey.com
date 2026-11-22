@@ -1,0 +1,150 @@
+diff --git a/web/__tests__/pages/api/v1/start-chart.test.ts b/web/__tests__/pages/api/v1/start-chart.test.ts
+index 710c9ebdf..c1777180b 100644
+--- a/web/__tests__/pages/api/v1/start-chart.test.ts
++++ b/web/__tests__/pages/api/v1/start-chart.test.ts
+@@ -1873,8 +1873,8 @@ describe("/api/v1/start-chart", () => {
+     };
+     const selectedIntent: PlanIntent = { revision: 3, steps: [], protectedPlayerIds: [], excludedPlayerIds: [],
+       goalieCoverage: "accept_risk", goalieWindow: "any", goalieSplit: "mon_thu", alternativeCount: 5 };
+-    // Valid issued values are not RSO permission; keep production review-before-use closed.
+-    expect(rsoPolicy.RSO_USE_POLICY.reviews).toHaveLength(0);
++    // Valid issued values are not RSO permission; production review-before-use stays closed (every review pending).
++    expect(rsoPolicy.RSO_USE_POLICY.reviews.every(row => row.binding.codeVersion.startsWith(rsoPolicy.RSO_REVIEW_PENDING))).toBe(true);
+     const unreviewed = evaluatePlan(data, selectedIntent, "outcome");
+     expect(unreviewed.comparisonEligible).toBe(false);
+     expect(unreviewed.projectedValue).toBeNull();
+@@ -1908,7 +1908,7 @@ describe("/api/v1/start-chart", () => {
+       const revoked = evaluatePlan(data, selectedIntent, "outcome");
+       expect(revoked.comparisonEligible).toBe(false);
+       expect(revoked.projectedValue).toBeNull();
+-      expect(rsoPolicy.RSO_USE_POLICY.reviews).toHaveLength(0);
++      expect(rsoPolicy.RSO_USE_POLICY.reviews.every(row => row.binding.codeVersion.startsWith(rsoPolicy.RSO_REVIEW_PENDING))).toBe(true);
+     } finally { review.mockRestore(); }
+   });
+ 
+diff --git a/web/lib/player-forecasts/rsoUsePolicy.test.ts b/web/lib/player-forecasts/rsoUsePolicy.test.ts
+index dd55e1072..49ddcbfb4 100644
+--- a/web/lib/player-forecasts/rsoUsePolicy.test.ts
++++ b/web/lib/player-forecasts/rsoUsePolicy.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, expect, it } from "vitest";
+-import { deniedRsoUses, ISSUED_PARTICIPATION_METHOD, issuedParticipationLineage, resolveRsoTargetUse, restrictRsoForecast, RSO_USE_POLICY, type RsoTargetUseBinding, type RsoUsePolicy } from "./rsoUsePolicy";
++import { deniedRsoUses, ISSUED_PARTICIPATION_METHOD, issuedParticipationLineage, resolveRsoTargetUse, restrictRsoForecast, RSO_REVIEW_PENDING, RSO_REVIEWED_SKATER_TARGETS, RSO_USE_POLICY, type RsoTargetUseBinding, type RsoUsePolicy } from "./rsoUsePolicy";
+ import type { GameForecast } from "../rosterScheduleOptimizer/planningTypes";
+ 
+ const now = "2026-10-22T12:00:00Z";
+@@ -31,10 +31,35 @@ describe("RSO target/use reviews", () => {
+     const changed = { ...binding, [key]: key === "horizonGames" ? 2 : key.endsWith("Hash") ? "c".repeat(64) : "different" };
+     expect(resolveRsoTargetUse(changed, now, policy).allowedUses).toEqual(deniedRsoUses());
+   });
+-  it("keeps the production catalog empty, so a binding with valid identity hashes is still denied", () => {
+-    expect(RSO_USE_POLICY.reviews).toEqual([]);
++  it("keeps the production catalog closed to bindings it does not name, so valid identity hashes are still denied", () => {
+     expect(resolveRsoTargetUse(binding, now, RSO_USE_POLICY)).toEqual({ policyRevision: RSO_USE_POLICY.revision, reviewId: null, allowedUses: deniedRsoUses() });
+   });
++  it("drafts one totals/comparison review per scored skater target, inert while its evidence is pending", () => {
++    expect(RSO_USE_POLICY.reviews.map(review => review.binding.targetKey)).toEqual([...RSO_REVIEWED_SKATER_TARGETS]);
++    for (const review of RSO_USE_POLICY.reviews) {
++      expect(review.allowedUses).toEqual({ assignment: false, totals: true, comparison: true, conditionalTieBreak: false });
++      expect(review.binding).toMatchObject({ component: "forge-detailed-skater", horizonGames: 1, conditioning: "conditional_playing",
++        participationLineage: `${ISSUED_PARTICIPATION_METHOD}:skater` });
++      const filled = [review.binding.codeVersion, review.binding.configurationHash, review.binding.artifactHash, review.reviewedAt,
++        review.inputCutoffFrom, review.inputCutoffUntil, review.expiresAt, review.prospectiveEvidenceRef, review.ownerApprovalRef]
++        .map(value => !String(value).startsWith(RSO_REVIEW_PENDING));
++      // All or nothing: a half-filled entry (real identity, a pending ref) must never reach a release.
++      expect(new Set(filled).size).toBe(1);
++      if (!filled[0]) {
++        // The best-shaped row for this scope (real hashes, an issued revision) still finds no review.
++        const shaped = { ...binding, ...review.binding, codeVersion: "f".repeat(40), configurationHash: "a".repeat(64), artifactHash: "b".repeat(64),
++          participationLineage: issuedParticipationLineage("skater", "rev-1") };
++        expect(resolveRsoTargetUse(shaped, now, RSO_USE_POLICY).allowedUses).toEqual(deniedRsoUses());
++      } else {
++        // Release gate for a filled entry: exact identity, real evidence, and an expiry at most 30 days after review (TJ D5).
++        expect(review.binding.codeVersion).toMatch(/^[0-9a-f]{40}$/);
++        expect(review.binding.configurationHash).toMatch(/^[a-f0-9]{64}$/);
++        expect(review.binding.artifactHash).toMatch(/^[a-f0-9]{64}$/);
++        expect(Date.parse(review.expiresAt) - Date.parse(review.reviewedAt)).toBeLessThanOrEqual(30 * 86400000);
++        expect(Date.parse(review.inputCutoffUntil)).toBeLessThanOrEqual(Date.parse(review.expiresAt));
++      }
++    }
++  });
+   it.each([["prospectiveEvidenceRef", ""], ["prospectiveEvidenceRef", "   "], ["prospectiveEvidenceRef", undefined],
+     ["ownerApprovalRef", ""], ["ownerApprovalRef", "   "], ["ownerApprovalRef", undefined]] as const)
+   ("counts a review only with both evidence references (%s = %j)", (field, value) => {
+diff --git a/web/lib/player-forecasts/rsoUsePolicy.ts b/web/lib/player-forecasts/rsoUsePolicy.ts
+index 0c5357247..18d964132 100644
+--- a/web/lib/player-forecasts/rsoUsePolicy.ts
++++ b/web/lib/player-forecasts/rsoUsePolicy.ts
+@@ -40,12 +40,39 @@ export type RsoTargetUseDecision = {
+   allowedUses: ContributionAllowedUses;
+ };
+ 
++/** DRAFT for TJ, not approved (2026-11-21, tasks/artifacts/rso-review-scope-2026-11-21/PROPOSAL.md). One exact Detailed
++ * skater scope, as planning.ts mints it, for RSO totals and comparison only (TJ D2; assignment stays denied). Every
++ * PENDING value comes from the prospective evidence (TJ D4/D5) and keeps the entry inert: a real row carries a 40-hex
++ * codeVersion, so no binding can equal a PENDING one. */
++export const RSO_REVIEW_PENDING = "PENDING-UNAPPROVED";
++const DETAILED_SKATER_SCOPE = {
++  component: "forge-detailed-skater", modelMode: "baseline",
++  codeVersion: `${RSO_REVIEW_PENDING}:qualified-deploy-sha`,
++  configurationHash: `${RSO_REVIEW_PENDING}:configuration-hash`, artifactHash: `${RSO_REVIEW_PENDING}:artifact-hash`,
++  horizonGames: 1, conditioning: "conditional_playing",
++  // Pending the participation lane's method id (Chef relays it); the stable method, never one issuance.
++  // (ISSUED_PARTICIPATION_METHOD is declared below this catalog, so the literal is spelled out; the test pins it.)
++  participationLineage: "forge-issued-participation-v1:skater",
++} as const;
++/** One review per scored skater target: league points need `totals` on every weighted target (gameForecastPoints). */
++export const RSO_REVIEWED_SKATER_TARGETS = ["GOALS", "ASSISTS", "PP_POINTS", "SHOTS_ON_GOAL", "HITS", "BLOCKED_SHOTS"] as const;
++
+ /** TJ selected review-before-use, not a target approval. Add only independently
+  * reviewed exact scopes here; serialized forecasts cannot add to this catalog. */
+ export const RSO_USE_POLICY: RsoUsePolicy = Object.freeze({
+   version: RSO_USE_POLICY_VERSION,
+-  revision: "rso-review-before-use-2026-10-22-v1",
+-  reviews: Object.freeze([]),
++  revision: "rso-review-before-use-2026-11-21-draft",
++  reviews: Object.freeze(RSO_REVIEWED_SKATER_TARGETS.map(targetKey => Object.freeze({
++    id: `forge-detailed-skater-${targetKey}-h1-draft`,
++    binding: { ...DETAILED_SKATER_SCOPE, targetKey },
++    reviewedAt: `${RSO_REVIEW_PENDING}:owner-approval-time`,
++    inputCutoffFrom: `${RSO_REVIEW_PENDING}:first-qualified-cutoff`,
++    inputCutoffUntil: `${RSO_REVIEW_PENDING}:at-most-30-days-after-review`,
++    expiresAt: `${RSO_REVIEW_PENDING}:at-most-30-days-after-review`,
++    allowedUses: { assignment: false, totals: true, comparison: true, conditionalTieBreak: false },
++    prospectiveEvidenceRef: `${RSO_REVIEW_PENDING}:scope-sha256+final-checker-report-sha256`,
++    ownerApprovalRef: `${RSO_REVIEW_PENDING}:tj-approval`,
++  }))),
+   revokedReviewIds: Object.freeze([]),
+ });
+ export const currentRsoUsePolicy = (): RsoUsePolicy => RSO_USE_POLICY;
+diff --git a/web/lib/projections/verifiedForgeReleases.test.ts b/web/lib/projections/verifiedForgeReleases.test.ts
+index 4737e2859..8180c4ebf 100644
+--- a/web/lib/projections/verifiedForgeReleases.test.ts
++++ b/web/lib/projections/verifiedForgeReleases.test.ts
+@@ -73,6 +73,7 @@ describe("verified FORGE releases", () => {
+       ["d633c57257cfd34e78e2ed4680bbdb86ccc363374dddf0f6eb48db833c921be4", "cf0cb680ec1e381c3edc4a2d4059534b93c0b2cc"],
+       ["cdf87b73d436f83841e0af9d70fa1bd58df13236e2a1abdb74495eb912a43540", "7a13f65c071889f9bff650f10cb61f672ecd6ec7"],
+       ["0446100e09f468bc061dbc7049ddc1fddec54237a617d7e63ca4835a66b48223", "e2f8c6bc9fb79894ee61df70bf7377166559f467"],
++      ["a59138ce737822e3ae6c16a18e642edb401ad9e3e299b09b7ee87225e58cbc44", "a9dec915b43b7ccc3243839e8606930af6db6a2e"],
+     ]);
+   });
+ 
+diff --git a/web/lib/projections/verifiedForgeReleases.ts b/web/lib/projections/verifiedForgeReleases.ts
+index dc9855396..cb0adaadf 100644
+--- a/web/lib/projections/verifiedForgeReleases.ts
++++ b/web/lib/projections/verifiedForgeReleases.ts
+@@ -213,6 +213,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
+     verifierVersion: "forge-release-sha-verifier-v1",
+     note: "November 21 daily NST off-day verification. The verifier found no excluded projection inputs in the 243-module producer closure.",
+   },
++  {
++    closureSha256: "a59138ce737822e3ae6c16a18e642edb401ad9e3e299b09b7ee87225e58cbc44",
++    commit: "a9dec915b43b7ccc3243839e8606930af6db6a2e",
++    receipt: "tasks/artifacts/rso-review-scope-2026-11-21/a9dec915b43b7ccc3243839e8606930af6db6a2e.json",
++    receiptSha256: "6540a35b9cc4bf9cfed134b0060a38e42564b9c37a90c8d0cd8adc7cc710ef14",
++    verifierVersion: "forge-release-sha-verifier-v1",
++    note: "DRAFT (scratch commit, not released): inert RSO review catalog for Detailed skater totals/comparison. The verifier found no excluded projection inputs in the 243-module producer closure. Not forecast-quality or native-use approval.",
++  },
+ ];
+ 
+ const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;

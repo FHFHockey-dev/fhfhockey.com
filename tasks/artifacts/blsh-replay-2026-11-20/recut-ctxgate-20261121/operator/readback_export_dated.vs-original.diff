@@ -1,0 +1,30 @@
+--- /private/tmp/blsh-recut-ctxgate/overlay/tasks/artifacts/blsh-replay-2026-11-20/hosted/readback_export.py	2026-11-20 12:41:08
++++ /Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-replay-2026-11-20/recut-ctxgate-20261121/operator/readback_export_dated.py	2026-11-21 11:50:50
+@@ -1,12 +1,17 @@
+ """Turn blsh_replay.export_v1('2026-11-19') output (one JSON document, read-only) into the export directories the held readers
+ take, then the operator runs the v6 readback.ts over them (stage 1, stage 2 and the request-context reader).
++Recut R' copy of readback_export.py (2026-11-21): the one difference is RUN_DATE, the real UTC day the hosted replay ran (the same
++run_date given to arm-replay-get-dated.sql). It is written to context-pins.json as replayCaptureDay, the request-context reader's
++independent pin for a replay captured later than the slate's day + 1.
+ Usage: psql -X -A -t -c "select blsh_replay.export_v1('2026-11-19')" > export.json
+-       python3 -I readback_export.py export.json OUT_DIR DEPLOYMENT_ID GIT_SHA
++       python3 -I readback_export_dated.py export.json OUT_DIR DEPLOYMENT_ID GIT_SHA RUN_DATE
+ Writes OUT_DIR/{native,context}/{run.json,objects.json,objects/<path>} and OUT_DIR/{pins.json,context-pins.json}."""
+-import base64, json, sys
++import base64, json, re, sys
+ from pathlib import Path
+ data, out = json.loads(Path(sys.argv[1]).read_text()), Path(sys.argv[2])
+-deployment, sha = sys.argv[3], sys.argv[4]
++deployment, sha, run_date = sys.argv[3], sys.argv[4], sys.argv[5]
++if not re.fullmatch(r"2026-11-2[0-6]", run_date):
++    raise SystemExit("RUN_DATE must be the replay's real UTC day, 2026-11-20..2026-11-26")
+ for part in ("native", "context"):
+     block = data.get(part)
+     if not block: continue
+@@ -23,5 +28,5 @@
+ if data.get("context"):
+     c = data["context"]["run"]
+     (out / "context-pins.json").write_text(json.dumps({"sourceDate": native["source_date"], "nativeRunId": native["run_id"], "nativeManifestSHA256": native["manifest_sha256"],
+-        "runId": c["run_id"], "manifestSHA256": c["manifest_sha256"], "deploymentId": deployment, "gitCommitSha": sha}) + "\n")
++        "runId": c["run_id"], "manifestSHA256": c["manifest_sha256"], "deploymentId": deployment, "gitCommitSha": sha, "replayCaptureDay": run_date}) + "\n")
+ print(json.dumps({"native": native["run_id"], "context": (data.get("context") or {}).get("run", {}).get("run_id")}))

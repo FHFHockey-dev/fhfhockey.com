@@ -1,0 +1,112 @@
+{
+  "state": "packet_complete_pending_review",
+  "retained": [
+    "individual",
+    "onIce"
+  ],
+  "operationCount": 5,
+  "lifecycleMode": "disabled",
+  "independentlyAccepted": false,
+  "advancedAdmission": false,
+  "score": null,
+  "sourceDate": "2026-11-19",
+  "runId": "7e5c6c41-7170-48fa-8040-07b4c449e96f",
+  "files": [
+    {
+      "file": "STARTED.json",
+      "bytes": 453,
+      "sha256": "138f987ea5743a7263369b50ad420efaba4d12871015c807836c826521852fb8"
+    },
+    {
+      "file": "PLAN.json",
+      "bytes": 2115,
+      "sha256": "609aaeced12d8a8fd1c6bcb1664354d15e22a840f05282ed885fd00615523c10"
+    },
+    {
+      "file": "RUNTIME.json",
+      "bytes": 2289,
+      "sha256": "137700ccdb6981ca1a86eda97cd440cee2744dcbcc19f1abe98c6c8f11dc5674"
+    },
+    {
+      "file": "operation-1-STARTED.json",
+      "bytes": 155,
+      "sha256": "bf2e1df467907004ce9465c8b1feb29e0e349368302fb5a92d1f5f379e965823"
+    },
+    {
+      "file": "operation-1-SETTLED.json",
+      "bytes": 1314,
+      "sha256": "959265817970e876b403077467011bf78b1d0c8e06e82e24b861dc0793842b30"
+    },
+    {
+      "file": "schedule.raw.json",
+      "bytes": 102472,
+      "sha256": "4097ee82069bbaeee807b79829da60906d6b10e00f0a55237a98e9a74b17a146"
+    },
+    {
+      "file": "schedule.TRANSPORT-OBSERVATION.json",
+      "bytes": 2187,
+      "sha256": "76db777f954194be6caf505a2aad9886d003c906e371585ce91cdf99e474423c"
+    },
+    {
+      "file": "operation-2-STARTED.json",
+      "bytes": 194,
+      "sha256": "cae967028cbf02e78204d55fe23faa51fbfb2f40cfec49e49318595f1eb79df0"
+    },
+    {
+      "file": "operation-2-SETTLED.json",
+      "bytes": 1233,
+      "sha256": "f8d9672c373766530e4c693c17d10a0b1a0145a6969976b5d8131d27657c2672"
+    },
+    {
+      "file": "operation-3-STARTED.json",
+      "bytes": 342,
+      "sha256": "901b8cea27b73aaf68a8d0b581bf90b01a7726adba7121dfda3ae23e6a82972b"
+    },
+    {
+      "file": "operation-3-SETTLED.json",
+      "bytes": 1327,
+      "sha256": "da009cc464629ae703d6b962c11cd483e90e536175d704c445ac386cbf4339a1"
+    },
+    {
+      "file": "individual.parser-input.html",
+      "bytes": 6941,
+      "sha256": "6b56920095aef1485715e5ff9130136410a87ba23c36f23e7dcb260bf6d61ada"
+    },
+    {
+      "file": "individual.TRANSPORT-OBSERVATION.json",
+      "bytes": 2205,
+      "sha256": "a05a6675c17b8affdaabd853d4193bb767991abeb9eeb3637a6c7d0e95c05220"
+    },
+    {
+      "file": "operation-4-STARTED.json",
+      "bytes": 189,
+      "sha256": "4834a210120a5fd68b6067a89eb8d21ea6671c57e86bf0325c2c4e902df2dae0"
+    },
+    {
+      "file": "operation-4-SETTLED.json",
+      "bytes": 1228,
+      "sha256": "431c0c9833cda0dee10ecbc968c9975b02536b5b614503aa193befc073335d54"
+    },
+    {
+      "file": "operation-5-STARTED.json",
+      "bytes": 336,
+      "sha256": "68222cf81c4ae34ffab6dcf17819fd3664874fc079d5725980752b39cb3ee3e7"
+    },
+    {
+      "file": "operation-5-SETTLED.json",
+      "bytes": 1322,
+      "sha256": "f772fe5738223fabd35bade817c7733695554ab833ca8760d387d1632042a110"
+    },
+    {
+      "file": "onIce.parser-input.html",
+      "bytes": 6789,
+      "sha256": "caca24b5c69ef7d843e507c8a5cb93f5acd3e821da00916d04df438ec229d832"
+    },
+    {
+      "file": "onIce.TRANSPORT-OBSERVATION.json",
+      "bytes": 2194,
+      "sha256": "59f203e1fee10f97e86b57d26df25b82d221aef60adc4ecde5aab2e5d8c5dba9"
+    }
+  ],
+  "completedAtUTC": "2026-11-21T21:01:27.491Z"
+}

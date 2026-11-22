@@ -1,0 +1,65 @@
+{
+  "statusCode": 207,
+  "termination": {
+    "state": "stopped_on_blocking_failure",
+    "resumeRequired": false,
+    "nextStartDate": null,
+    "runKey": "daily_incremental:2026-11-21",
+    "nextStageId": "upstream_skater_sources",
+    "reason": "attempts_exhausted",
+    "stagesRun": 0
+  },
+  "stages": [
+    {
+      "id": "core_entity_freshness",
+      "status": "success",
+      "reason": "Completed by an earlier invocation of this run."
+    },
+    {
+      "id": "upstream_skater_sources",
+      "status": "failed",
+      "reason": "Failed 2 time(s) in earlier invocations of this run; not retried."
+    },
+    {
+      "id": "contextual_builders",
+      "status": "skipped",
+      "reason": "Skipped because an earlier blocking stage failed."
+    },
+    {
+      "id": "rolling_player_recompute",
+      "status": "skipped",
+      "reason": "Skipped because an earlier blocking stage failed."
+    },
+    {
+      "id": "projection_input_ingest",
+      "status": "skipped",
+      "reason": "Skipped because an earlier blocking stage failed."
+    },
+    {
+      "id": "projection_relationship_build",
+      "status": "skipped",
+      "reason": "Skipped because an earlier blocking stage failed."
+    },
+    {
+      "id": "projection_derived_build",
+      "status": "skipped",
+      "reason": "Skipped because an earlier blocking stage failed."
+    },
+    {
+      "id": "projection_execution",
+      "status": "skipped",
+      "reason": "Skipped because an earlier blocking stage failed."
+    },
+    {
+      "id": "downstream_projection_consumers",
+      "status": "skipped",
+      "reason": "Skipped because an earlier blocking stage failed."
+    },
+    {
+      "id": "monitoring",
+      "status": "skipped",
+      "reason": "Skipped because an earlier blocking stage failed."
+    }
+  ],
+  "nstCalls": 0
+}

@@ -1,0 +1,278 @@
+{
+    "receipt": {
+        "claim": "f55203dc-232f-4d78-9986-c2b85665a40e",
+        "gameId": 2026020359,
+        "reason": "readers_recorded",
+        "armedAt": "2026-11-21T15:17:33.356703+00:00",
+        "custody": "qualified",
+        "outcome": "succeeded",
+        "readers": {
+            "daily": {
+                "points": 3.8120000000000003,
+                "reason": null,
+                "playerId": "9320",
+                "legalSlot": "C#1",
+                "revisionId": "forge-daily-bridge-v1:f55203dc-232f-4d78-9986-c2b85665a40e",
+                "selectedRun": "f55203dc-232f-4d78-9986-c2b85665a40e"
+            },
+            "detailed": {
+                "points": null,
+                "reason": "missing_participation",
+                "playerId": "9320",
+                "legalSlot": null,
+                "revisionId": "365d0704-fc92-46a6-9269-7b0a5fc7b146",
+                "selectedRun": "f55203dc-232f-4d78-9986-c2b85665a40e",
+                "gameExclusions": [
+                    "identity_conflict"
+                ]
+            },
+            "contextId": "synthetic-single-center-points-v1",
+            "evaluatedAt": "2026-11-21T17:25:03.960Z",
+            "playerNhlId": 8478402
+        },
+        "release": "f47905d28718f6910d7acfa1471517c0235775de",
+        "verdict": {
+            "keyId": "469bc6093b6ffc11",
+            "reason": null,
+            "accepted": true,
+            "deadline": "2026-11-21T17:00:00+00:00",
+            "verifiedAt": "2026-11-21T16:30:05.053000Z",
+            "signatureChecked": false
+        },
+        "witness": "qualified",
+        "requests": [
+            {
+                "jobid": 421,
+                "stage": "capture",
+                "game_id": 2026020359,
+                "fired_at": "2026-11-21T16:20:00.487817+00:00",
+                "request_id": 4080
+            },
+            {
+                "jobid": 422,
+                "stage": "publish",
+                "game_id": 2026020359,
+                "fired_at": "2026-11-21T17:25:00.414585+00:00",
+                "request_id": 4137
+            }
+        ],
+        "stoppedAt": null,
+        "approvedBy": "TJ (Claude Chef operator)",
+        "revisionId": "365d0704-fc92-46a6-9269-7b0a5fc7b146",
+        "stopReason": null,
+        "terminalAt": "2026-11-21T17:25:05.231792+00:00",
+        "playerNhlId": 8478402,
+        "tokenSha256": "23926d8dd20dca4d80343812fa619c1c13e93fccf8541e99a581a4f7a41f5fb9",
+        "packetSha256": "9b5131dda897ca9c2d1407185c471d9bf198ac3424c7fe2e941c8ad933f36253",
+        "captureBeganAt": "2026-11-21T16:20:01.917485+00:00",
+        "publishBeganAt": "2026-11-21T17:25:01.694487+00:00",
+        "scheduledStart": "2026-11-21T18:00:00+00:00",
+        "canonicalSha256": "5663cb928c7910e2b1f39f85a93533e6c9c7169b6512ba23584d695ed7f868ba",
+        "captureFinishedAt": "2026-11-21T16:20:16.931231+00:00",
+        "committedRevision": "365d0704-fc92-46a6-9269-7b0a5fc7b146",
+        "publishFinishedAt": "2026-11-21T17:25:05.230091+00:00"
+    },
+    "cronRuns": [
+        {
+            "end": null,
+            "jobid": 421,
+            "start": "2026-11-21T16:20:00.385181+00:00",
+            "status": "failed",
+            "message": "job canceled"
+        },
+        {
+            "end": "2026-11-21T17:25:00.440236+00:00",
+            "jobid": 422,
+            "start": "2026-11-21T17:25:00.308162+00:00",
+            "status": "succeeded",
+            "message": "1 row"
+        }
+    ],
+    "job408Active": false,
+    "httpResponses": [
+        {
+            "body": {
+                "sha": "f47905d28718f6910d7acfa1471517c0235775de",
+                "gameId": 2026020359,
+                "status": "captured",
+                "claimId": "f55203dc-232f-4d78-9986-c2b85665a40e",
+                "receipt": {
+                    "claim": "f55203dc-232f-4d78-9986-c2b85665a40e",
+                    "gameId": 2026020359,
+                    "reason": null,
+                    "armedAt": "2026-11-21T15:17:33.356703+00:00",
+                    "custody": "qualified",
+                    "outcome": null,
+                    "readers": null,
+                    "release": "f47905d28718f6910d7acfa1471517c0235775de",
+                    "verdict": {
+                        "keyId": null,
+                        "reason": "signed_verdict_missing",
+                        "accepted": false,
+                        "deadline": "2026-11-21T17:00:00+00:00",
+                        "verifiedAt": null,
+                        "signatureChecked": false
+                    },
+                    "witness": "qualified",
+                    "requests": [
+                        {
+                            "jobid": 421,
+                            "stage": "capture",
+                            "game_id": 2026020359,
+                            "fired_at": "2026-11-21T16:20:00.487817+00:00",
+                            "request_id": 4080
+                        }
+                    ],
+                    "stoppedAt": null,
+                    "approvedBy": "TJ (Claude Chef operator)",
+                    "revisionId": null,
+                    "stopReason": null,
+                    "terminalAt": null,
+                    "playerNhlId": 8478402,
+                    "tokenSha256": "23926d8dd20dca4d80343812fa619c1c13e93fccf8541e99a581a4f7a41f5fb9",
+                    "packetSha256": "9b5131dda897ca9c2d1407185c471d9bf198ac3424c7fe2e941c8ad933f36253",
+                    "captureBeganAt": "2026-11-21T16:20:01.917485+00:00",
+                    "publishBeganAt": null,
+                    "scheduledStart": "2026-11-21T18:00:00+00:00",
+                    "canonicalSha256": "5663cb928c7910e2b1f39f85a93533e6c9c7169b6512ba23584d695ed7f868ba",
+                    "captureFinishedAt": "2026-11-21T16:20:16.931231+00:00",
+                    "committedRevision": null,
+                    "publishFinishedAt": null
+                },
+                "elapsedMs": 15030
+            },
+            "error": null,
+            "stage": "capture",
+            "created": "2026-11-21T16:20:00.70648+00:00",
+            "timedOut": false,
+            "requestId": 4080,
+            "statusCode": 200
+        },
+        {
+            "body": {
+                "sha": "f47905d28718f6910d7acfa1471517c0235775de",
+                "gameId": 2026020359,
+                "reason": "readers_recorded",
+                "stages": {
+                    "publishMs": 2207,
+                    "readersMs": 1227
+                },
+                "status": "succeeded",
+                "claimId": "f55203dc-232f-4d78-9986-c2b85665a40e",
+                "readers": {
+                    "daily": {
+                        "points": 3.8120000000000003,
+                        "reason": null,
+                        "playerId": "9320",
+                        "legalSlot": "C#1",
+                        "revisionId": "forge-daily-bridge-v1:f55203dc-232f-4d78-9986-c2b85665a40e",
+                        "selectedRun": "f55203dc-232f-4d78-9986-c2b85665a40e"
+                    },
+                    "detailed": {
+                        "points": null,
+                        "reason": "missing_participation",
+                        "playerId": "9320",
+                        "legalSlot": null,
+                        "revisionId": "365d0704-fc92-46a6-9269-7b0a5fc7b146",
+                        "selectedRun": "f55203dc-232f-4d78-9986-c2b85665a40e",
+                        "gameExclusions": [
+                            "identity_conflict"
+                        ]
+                    },
+                    "contextId": "synthetic-single-center-points-v1",
+                    "evaluatedAt": "2026-11-21T17:25:03.960Z",
+                    "playerNhlId": 8478402
+                },
+                "receipt": {
+                    "claim": "f55203dc-232f-4d78-9986-c2b85665a40e",
+                    "gameId": 2026020359,
+                    "reason": "readers_recorded",
+                    "armedAt": "2026-11-21T15:17:33.356703+00:00",
+                    "custody": "qualified",
+                    "outcome": "succeeded",
+                    "readers": {
+                        "daily": {
+                            "points": 3.8120000000000003,
+                            "reason": null,
+                            "playerId": "9320",
+                            "legalSlot": "C#1",
+                            "revisionId": "forge-daily-bridge-v1:f55203dc-232f-4d78-9986-c2b85665a40e",
+                            "selectedRun": "f55203dc-232f-4d78-9986-c2b85665a40e"
+                        },
+                        "detailed": {
+                            "points": null,
+                            "reason": "missing_participation",
+                            "playerId": "9320",
+                            "legalSlot": null,
+                            "revisionId": "365d0704-fc92-46a6-9269-7b0a5fc7b146",
+                            "selectedRun": "f55203dc-232f-4d78-9986-c2b85665a40e",
+                            "gameExclusions": [
+                                "identity_conflict"
+                            ]
+                        },
+                        "contextId": "synthetic-single-center-points-v1",
+                        "evaluatedAt": "2026-11-21T17:25:03.960Z",
+                        "playerNhlId": 8478402
+                    },
+                    "release": "f47905d28718f6910d7acfa1471517c0235775de",
+                    "verdict": {
+                        "keyId": "469bc6093b6ffc11",
+                        "reason": null,
+                        "accepted": true,
+                        "deadline": "2026-11-21T17:00:00+00:00",
+                        "verifiedAt": "2026-11-21T16:30:05.053000Z",
+                        "signatureChecked": false
+                    },
+                    "witness": "qualified",
+                    "requests": [
+                        {
+                            "jobid": 421,
+                            "stage": "capture",
+                            "game_id": 2026020359,
+                            "fired_at": "2026-11-21T16:20:00.487817+00:00",
+                            "request_id": 4080
+                        },
+                        {
+                            "jobid": 422,
+                            "stage": "publish",
+                            "game_id": 2026020359,
+                            "fired_at": "2026-11-21T17:25:00.414585+00:00",
+                            "request_id": 4137
+                        }
+                    ],
+                    "stoppedAt": null,
+                    "approvedBy": "TJ (Claude Chef operator)",
+                    "revisionId": "365d0704-fc92-46a6-9269-7b0a5fc7b146",
+                    "stopReason": null,
+                    "terminalAt": "2026-11-21T17:25:05.231792+00:00",
+                    "playerNhlId": 8478402,
+                    "tokenSha256": "23926d8dd20dca4d80343812fa619c1c13e93fccf8541e99a581a4f7a41f5fb9",
+                    "packetSha256": "9b5131dda897ca9c2d1407185c471d9bf198ac3424c7fe2e941c8ad933f36253",
+                    "captureBeganAt": "2026-11-21T16:20:01.917485+00:00",
+                    "publishBeganAt": "2026-11-21T17:25:01.694487+00:00",
+                    "scheduledStart": "2026-11-21T18:00:00+00:00",
+                    "canonicalSha256": "5663cb928c7910e2b1f39f85a93533e6c9c7169b6512ba23584d695ed7f868ba",
+                    "captureFinishedAt": "2026-11-21T16:20:16.931231+00:00",
+                    "committedRevision": "365d0704-fc92-46a6-9269-7b0a5fc7b146",
+                    "publishFinishedAt": "2026-11-21T17:25:05.230091+00:00"
+                },
+                "elapsedMs": 3596,
+                "revisionId": "365d0704-fc92-46a6-9269-7b0a5fc7b146",
+                "signedVerdict": {
+                    "ok": true,
+                    "reason": null,
+                    "deadline": "2026-11-21T17:00:00.000000Z",
+                    "verifiedAt": "2026-11-21T16:30:05.053000Z",
+                    "officialStart": "2026-11-21T18:00:00.000000Z"
+                }
+            },
+            "error": null,
+            "stage": "publish",
+            "created": "2026-11-21T17:25:01.106902+00:00",
+            "timedOut": false,
+            "requestId": 4137,
+            "statusCode": 200
+        }
+    ],
+    "remainingLiveJobs": 0
+}

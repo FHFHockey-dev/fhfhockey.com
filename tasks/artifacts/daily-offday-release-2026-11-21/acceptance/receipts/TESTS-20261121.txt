@@ -1,0 +1,24 @@
+2026-11-21T23:22:57Z
+Python 3.13.5
+test_ambiguous_two_scheduled_runs (test_summarize.OtherRejections.test_ambiguous_two_scheduled_runs) ... ok
+test_daily_rso_rows_from_another_run (test_summarize.OtherRejections.test_daily_rso_rows_from_another_run) ... ok
+test_failed_stage (test_summarize.OtherRejections.test_failed_stage) ... ok
+test_missing_db_receipt (test_summarize.OtherRejections.test_missing_db_receipt) ... ok
+test_offday_any_nonzero_request_in_window (test_summarize.OtherRejections.test_offday_any_nonzero_request_in_window) ... ok
+test_offday_expected_but_source_had_games (test_summarize.OtherRejections.test_offday_expected_but_source_had_games) ... ok
+test_offday_nst_row_outside_window_or_unverified (test_summarize.OtherRejections.test_offday_nst_row_outside_window_or_unverified) ... ok
+test_offday_source_schedule_missing (test_summarize.OtherRejections.test_offday_source_schedule_missing) ... ok
+test_reader_http_error (test_summarize.OtherRejections.test_reader_http_error) ... ok
+test_run_outside_scheduled_window (test_summarize.OtherRejections.test_run_outside_scheduled_window) ... ok
+test_schedule_count_null_or_mismatched (test_summarize.OtherRejections.test_schedule_count_null_or_mismatched) ... ok
+test_start_chart_selects_other_run (test_summarize.OtherRejections.test_start_chart_selects_other_run) ... ok
+test_writer_missing_one_game (test_summarize.OtherRejections.test_writer_missing_one_game) ... ok
+test_main_writes_acceptance_from_files (test_summarize.PositiveControls.test_main_writes_acceptance_from_files) ... ok
+test_scheduled_nonempty_control_passes (test_summarize.PositiveControls.test_scheduled_nonempty_control_passes) ... ok
+test_scheduled_offday_passes (test_summarize.PositiveControls.test_scheduled_offday_passes) ... ok
+test_fp1_run_date_missing_from_schedule (test_summarize.ReproducedFalsePasses.test_fp1_run_date_missing_from_schedule) ... ok
+test_fp2_partial_stage_evidence (test_summarize.ReproducedFalsePasses.test_fp2_partial_stage_evidence) ... ok
+test_fp3_selected_games_recovery_instead_of_scheduled_run (test_summarize.ReproducedFalsePasses.test_fp3_selected_games_recovery_instead_of_scheduled_run) ... ok
+test_fp4_offday_null_request_evidence (test_summarize.ReproducedFalsePasses.test_fp4_offday_null_request_evidence) ... ok
+Ran 20 tests in 0.697s
+OK

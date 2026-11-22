@@ -1,0 +1,23 @@
+
+ RUN  v3.2.7 /private/tmp/blsh-signer-proof/y/web
+
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > managed signer: full timed hand-off against Y's unchanged verifier > 12:05 native receipt -> 12:35 signer -> 12:36 request-context POST -> 12:41 signer -> 12:42 Vault -> 12:45 official 4930ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > refusals (each: no KMS signature issued, ledger unchanged unless stated) > covers slate, deployment, receipt, window, conflict, duplicate, arbitrary input and stop switches 578ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > refusals (each: no KMS signature issued, ledger unchanged unless stated) > residual risk: a holder of the Vault bearer can get a signature over self-consistent forged native IDs; Y's verifier refuses it before any claim, but the slot is burned 205ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > refusals (each: no KMS signature issued, ledger unchanged unless stated) > duplicates and concurrency: two simultaneous requests yield exactly one signature; a later repeat is refused 176ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > refusals (each: no KMS signature issued, ledger unchanged unless stated) > official-specific refusals: context missing, slate mismatch, third party unavailable, already claimed, order 305ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > refusals (each: no KMS signature issued, ledger unchanged unless stated) > KMS policy refuses the verifying app's identity, wrong message type and out-of-window time even with valid bytes 1ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > refusals (each: no KMS signature issued, ledger unchanged unless stated) > late paths fail closed with no dispatch: signer down at 12:35; request-context still running at 12:41; cancel switch 1202ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > Option V1b: Supabase-hosted signer, two Ed25519 keys in a postgres-owned private table (Vault refuted), no added cost > Vault is not usable for the keys (service_role reads it by default; postgres cannot revoke supabase_admin's grant); the private table is 429ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > Option V1b: Supabase-hosted signer, two Ed25519 keys in a postgres-owned private table (Vault refuted), no added cost > full timed hand-off: 12:35 Edge signer (pulls evidence, Vault key) -> 12:36 RC POST -> 12:41 -> 12:42 Vault grant -> 12:45 official 5083ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > Option V1b: Supabase-hosted signer, two Ed25519 keys in a postgres-owned private table (Vault refuted), no added cost > refuses missing, mismatched, expired and duplicate requests; stop switches; key swap detected 837ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > Option V1b: Supabase-hosted signer, two Ed25519 keys in a postgres-owned private table (Vault refuted), no added cost > authenticates before any database work; /selfcheck proves runtime privileges without signing; execute_sql escalation and its fix (E1); R1 runs read-only 437ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > E2 boundary: what every credential the Vercel runtime holds can do after E2 (production grants per R1/R1b, emulated) > full hand-off, then replay, wrong slate, expiry and stop switch at Y's handlers; app credentials cannot read keys, change policy or mint 5590ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > E2 boundary: what every credential the Vercel runtime holds can do after E2 (production grants per R1/R1b, emulated) > E2 rotation: the old owner password stops new logins at once; sessions already open survive until pg_terminate_backend 307ms
+ ✓ lib/blsh/nativeCaptureV6/managedSigner.proof.test.ts > E2 boundary: what every credential the Vercel runtime holds can do after E2 (production grants per R1/R1b, emulated) > R2 reach: cron and pg_net give service_role no path to the bearer, keys, ledger, mandate or the BLSH jobs (pg_cron 1.4 semantics) 1236ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  18:53:11
+   Duration  23.10s (transform 132ms, setup 3ms, collect 229ms, tests 22.66s, environment 0ms, prepare 33ms)
+

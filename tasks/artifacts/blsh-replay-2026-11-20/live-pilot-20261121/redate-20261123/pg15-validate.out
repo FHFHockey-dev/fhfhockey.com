@@ -1,0 +1,70 @@
+PASS migration 20261116000000_blsh_native_capture_v6.sql sha256 matches release pin
+PASS migration 20261116000100_blsh_request_context_v1.sql sha256 matches release pin
+PASS migration 20261118131414_blsh_request_context_custody.sql sha256 matches release pin
+PASS migration 20261118155445_blsh_official_pilot.sql sha256 matches release pin
+PASS migration 20261120143000_blsh_official_pilot_redate_20261121.sql sha256 matches release pin
+PASS migration 20261121210000_blsh_official_pilot_redate_20261122.sql sha256 matches release pin
+PASS INSTALL.sql sha256 matches its pin
+PASS ARM.sql sha256 matches its pin
+PASS DISARM-ROLLBACK.sql sha256 matches its pin
+PASS SCHEDULE-ONCE.sql sha256 matches its pin
+PASS CANCEL-OFFICIAL-ONCE.sql sha256 matches its pin
+PASS PRECHECK-READONLY.sql sha256 matches its pin
+PASS SWITCH-OFF.sql sha256 matches its pin
+PASS INSTALL.sql names no job ID 404-408 in code
+PASS ARM.sql names no job ID 404-408 in code
+PASS DISARM-ROLLBACK.sql names no job ID 404-408 in code
+PASS SCHEDULE-ONCE.sql names no job ID 404-408 in code
+PASS CANCEL-OFFICIAL-ONCE.sql names no job ID 404-408 in code
+PASS PRECHECK-READONLY.sql names no job ID 404-408 in code
+PASS SWITCH-OFF.sql names no job ID 404-408 in code
+PASS four real BLSH migrations plus both forward re-date migrations applied on PostgreSQL 15
+PASS migration 153 switch function matches INSTALL's guard hash
+PASS baseline: raw switch off, no permit, jobs 404-408 seeded, zero pilot jobs
+PASS INSTALL (exact bytes): permit row, trigger, function; switch still off
+PASS INSTALL rerun fails closed (installed window function no longer matches 153) and leaves state identical
+PASS ARM (exact bytes): raw on, effective off outside the window
+PASS ARM rerun fails closed and leaves state identical
+PASS DISARM (exact bytes) returns to baseline: switch off, original function, permit removed
+PASS DISARM rerun fails closed (nothing to drop) and leaves baseline intact
+PASS cycle is repeatable: INSTALL accepts the restored function, DISARM returns to baseline
+PASS [seq] shifted claim at 12:05:30 inside the permit
+PASS SCHEDULE-ONCE (shifted) registers one job above 408 with the exact name and schedule
+PASS dispatch row records the returned job ID
+PASS SCHEDULE-ONCE rerun fails closed and leaves state identical
+PASS FINDING: DISARM alone leaves the one-time official job active (it never touches cron.job)
+PASS DISARM + CANCEL leaves zero active BLSH pilot jobs; native claim and dispatch row retained
+PASS CANCEL rerun is a no-op and leaves state identical
+PASS jobs 404-408 byte-identical after the whole sequence
+PASS only job 409 was ever added and it is gone
+PASS [fired] shifted claim at 12:05:30 inside the permit
+PASS firing queues exactly one GET and unschedules itself
+PASS after a fired dispatch, DISARM + CANCEL leave zero pilot jobs and 404-408 intact
+PASS CANCEL with no dispatch table succeeds as a no-op
+PASS CANCEL refuses an unrecorded same-name job (human decision) and leaves it
+PASS FINDING: DISARM without an installed permit fails and leaves the raw switch ON
+PASS SWITCH-OFF clears raw and effective switch without DDL or cron access
+PASS SWITCH-OFF rerun is a no-op
+PASS chained migrations: source-date check now 2026-11-22
+PASS chained migrations: claim function replaced again (PostgreSQL 15 definition sha256 recorded) 03a29fd4ecff446f593cd561a5f6fc0ee4a47b6548e804f6be951c8915311855
+PASS chained migrations: execute grant on the claim function kept: service_role plus the owner only
+PASS second re-date rerun fails closed (definition already re-dated)
+PASS first re-date replayed on top fails closed and changes nothing
+PASS read-only PRECHECK on the released schema says apply_20261120143000_first
+PASS second re-date refuses on the released schema (chain order enforced) and changes nothing
+PASS read-only PRECHECK after 20261120143000 only says ready_to_apply
+PASS read-only PRECHECK after both says already_redated with the new definition hash
+PASS second re-date refuses when any official run exists (and changes nothing)
+PASS read-only PRECHECK refuses (stop_official_runs_exist) once any official run exists
+PASS official claim refuses the retired slates 2026-11-20 and 2026-11-21 and the wrong slate 2026-11-23
+PASS native: retired window (capture 2026-11-22 12:05:30, slate 2026-11-21) refused (ERROR:  BLSH capture is disabled)
+PASS native: retired slate 2026-11-21 inside the new window refused (ERROR:  pilot_claim_outside_permit)
+PASS native: wrong slate 2026-11-23 inside the new window refused (ERROR:  pilot_claim_outside_permit)
+PASS native: new slate one millisecond before the window refused (ERROR:  BLSH capture is disabled)
+PASS native: new slate at the 12:07:00 window end refused (ERROR:  BLSH capture is disabled)
+PASS native: new window accepts slate 2026-11-22 at 12:05:00.000 exactly
+PASS re-dated INSTALL refuses at or after 2026-11-23 12:05:00
+PASS [early] shifted claim at 12:05:30 inside the permit
+PASS re-dated SCHEDULE-ONCE refuses in the retired 2026-11-22 window
+PASS chained claim function names only the 2026-11-23 12:45/12:46 slot and slate 2026-11-22
+ALL 69 CHECKS PASSED

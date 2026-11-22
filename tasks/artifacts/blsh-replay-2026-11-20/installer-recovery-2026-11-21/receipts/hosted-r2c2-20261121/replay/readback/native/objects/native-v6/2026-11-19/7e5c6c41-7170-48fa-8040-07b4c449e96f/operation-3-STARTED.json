@@ -1,0 +1,6 @@
+{
+  "operation": "nst:individual",
+  "url": "https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&sit=all&score=all&stdoi=std&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL",
+  "method": "GET",
+  "startedAtUTC": "2026-11-21T21:01:05.025Z"
+}

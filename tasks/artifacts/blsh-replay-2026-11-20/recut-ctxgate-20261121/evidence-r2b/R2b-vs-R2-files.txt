@@ -1,0 +1,5 @@
+tasks/artifacts/forge-daily-offday-2026-11-21/e2f8c6bc9fb79894ee61df70bf7377166559f467.json
+web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts
+web/lib/projections/verifiedForgeReleases.test.ts
+web/lib/projections/verifiedForgeReleases.ts
+web/pages/api/v1/db/update-nst-gamelog.ts

@@ -1,0 +1,49 @@
+{
+  "postgres": "PostgreSQL 15.19 (Homebrew) on aarch64-apple-darwin27.0.0, compiled by Apple clang version 21.0.0 (clang-2100.3.34.2), 64-bit",
+  "dbClockAtStart": "2026-11-21T18:09:51.434841+00:00",
+  "armedAt": "2026-11-21T18:09:51.579283+00:00",
+  "rawSwitch": false,
+  "effectiveSwitchBeforeWindow": false,
+  "applied": [
+    {
+      "name": "PROPOSED-admission-install.sql",
+      "gitBlob": "f46828d06a4a6c34e904546c8be312c1f20e7cbb"
+    },
+    {
+      "name": "20261101161622 rename + nst_admit_attempt_v1 wrapper (verbatim excerpt)",
+      "gitBlob": "3ca01b48790433fb5474798d14918d1e1774082e"
+    },
+    {
+      "name": "20261109015836_nst_admission_post_burst_gap.sql",
+      "gitBlob": "6f53c83cc929a1f8b4cefe821801a42b822e333c"
+    },
+    {
+      "name": "20261116000000_blsh_native_capture_v6.sql",
+      "gitBlob": "0b833cc03d0fd2b74fa92f89d3c6c67ceac758c2"
+    },
+    {
+      "name": "20261116000100_blsh_request_context_v1.sql",
+      "gitBlob": "be17af9b6b597401950595b34404807d6d810218"
+    },
+    {
+      "name": "20261118131414_blsh_request_context_custody.sql",
+      "gitBlob": "daa74d13ddd744c276486e89d2264796b1b75a3a"
+    },
+    {
+      "name": "20261118155445_blsh_official_pilot.sql",
+      "gitBlob": "eee1f32bb208e6b63d8d48e4c7ea0834a24f9a87"
+    },
+    {
+      "name": "context-seed-2026-11-20.sql (synthetic)",
+      "gitBlob": "e85dfebf8467dceacb2c4e3589cf29fcd538ac9f"
+    },
+    {
+      "name": "pilot-control/INSTALL.sql (sandbox copy /private/tmp/blsh-recut-ctxgate/run-3/noop-pilot)",
+      "gitBlob": "ab290eb4c1f6e10ef89c4d95c1ede4471c4cad69"
+    },
+    {
+      "name": "pilot-control/ARM.sql (sandbox copy /private/tmp/blsh-recut-ctxgate/run-3/noop-pilot)",
+      "gitBlob": "ab290eb4c1f6e10ef89c4d95c1ede4471c4cad69"
+    }
+  ]
+}

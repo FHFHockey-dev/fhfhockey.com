@@ -1,0 +1,286 @@
+
+ RUN  v3.2.7 /private/tmp/blsh-pilot-redate/gate/web
+
+ ✓ lib/blsh/nativeCaptureV6/sink.test.ts (3 tests) 97ms
+ ✓ scripts/blsh/nativeProcessCapturePreparation.test.ts (27 tests) 171ms
+ ✓ lib/blsh/nativeCaptureV6/requestContextHandler.test.ts (32 tests) 92ms
+ ✓ lib/blsh/nativeCaptureV6/handler.test.ts (10 tests) 21ms
+ ✓ lib/blsh/nativeCaptureV6/runtimeReceipt.test.ts (3 tests) 320ms
+   ✓ v6 runtime receipt > has the exact key set, presence-only environment and deployment facts  317ms
+ ❯ scripts/blsh/nativeProcessCaptureBootstrap.test.ts (35 tests | 19 failed) 453ms
+   × one-shot native capture bootstrap, entirely offline > defaults to check-only with no credential access, adapter call or output creation 39ms
+     → bootstrap_wrong_checkout
+   × one-shot native capture bootstrap, entirely offline > invokes exactly one synthetic adapter and runner with fresh fixed scope and reviewed pins 13ms
+     → bootstrap_wrong_checkout
+   ✓ one-shot native capture bootstrap, entirely offline > rejects malformed CLI "--run" before adapter access 14ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects malformed CLI "--run" before adapter access 12ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects malformed CLI "--force" before adapter access 11ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects scope/evidence mismatch {"bootstrapSHA256":"0000000000000000000000000000000000000000000000000000000000000000"} without adapter construction 12ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects scope/evidence mismatch {"lifecycleMode":"enabled"} without adapter construction 21ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects scope/evidence mismatch {"maximumHTTPAttempts":8} without adapter construction 16ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects scope/evidence mismatch {"outputDirectory":"/tmp/alternate"} without adapter construction 10ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects scope/evidence mismatch {"supabaseOrigin":"https://example.invalid"} without adapter construction 7ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects scope/evidence mismatch {"slotStartUTC":"2026-11-18T14:05:00.000Z"} without adapter construction 12ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects scope/evidence mismatch {"approvedBy":"fixture-no-human"} without adapter construction 9ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects scope/evidence mismatch {"approvedAtUTC":"2026-11-18T14:05:00.000Z"} without adapter construction 10ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects scope/evidence mismatch {"coordinationReceipt":""} without adapter construction 9ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects scope/evidence mismatch {"force":true} without adapter construction 14ms
+   × one-shot native capture bootstrap, entirely offline > rejects outside the one start window: 2026-11-17T14:04:59.999Z 12ms
+     → expected [Function] to throw error including 'bootstrap_outside_approved_slot' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects outside the one start window: 2026-11-17T14:06:00.000Z 9ms
+     → expected [Function] to throw error including 'bootstrap_outside_approved_slot' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects outside the one start window: 2026-11-19T00:00:00.000Z 12ms
+     → expected [Function] to throw error including 'bootstrap_outside_approved_slot' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects configured environment mismatch NEXT_PUBLIC_SUPABASE_URL=undefined 8ms
+     → expected [Function] to throw error including 'bootstrap_configured_environment_mism…' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects configured environment mismatch NST_JOB_LIFECYCLE_ENABLED=true 10ms
+     → expected [Function] to throw error including 'bootstrap_configured_environment_mism…' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects configured environment mismatch NST_JOB_LIFECYCLE_ENABLED=false 34ms
+     → expected [Function] to throw error including 'bootstrap_configured_environment_mism…' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects configured environment mismatch NST_JOB_LIFECYCLE_ENABLED= 13ms
+     → expected [Function] to throw error including 'bootstrap_configured_environment_mism…' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > refuses an undici dispatcher registered before its imports, without adapter construction 12ms
+     → expected [Function] to throw error including 'bootstrap_global_dispatcher_preinstal…' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects runtime overrides during check without importing the adapter 6ms
+     → expected [Function] to throw error including 'bootstrap_runtime_override' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects source drift instead of refreshing expected pins 3ms
+     → expected [Function] to throw error including 'bootstrap_source_pin_mismatch' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects a JS shadow of pinned source scripts/blsh/nativeProcessCaptureRunner before any adapter call 3ms
+     → expected [Function] to throw error including 'bootstrap_source_resolution_mismatch' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects a JS shadow of pinned source scripts/blsh/nativeProcessCaptureAdapter before any adapter call 3ms
+     → expected [Function] to throw error including 'bootstrap_source_resolution_mismatch' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects a JS shadow of pinned source scripts/blsh/nativeProcessCapturePreparation before any adapter call 9ms
+     → expected [Function] to throw error including 'bootstrap_source_resolution_mismatch' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects a JS shadow of pinned source lib/nst/client before any adapter call 44ms
+     → expected [Function] to throw error including 'bootstrap_source_resolution_mismatch' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rejects an existing output before adapter construction 10ms
+     → expected [Function] to throw error including 'bootstrap_output_exists' but got 'bootstrap_wrong_checkout'
+   ✓ one-shot native capture bootstrap, entirely offline > rejects public authorization files 9ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects symlink authorization files 26ms
+   ✓ one-shot native capture bootstrap, entirely offline > rejects oversize authorization files 8ms
+   × one-shot native capture bootstrap, entirely offline > sanitizes runner failure and never retries it 10ms
+     → expected [Function] to throw error including 'bootstrap_capture_failed_preserve_pac…' but got 'bootstrap_wrong_checkout'
+   × one-shot native capture bootstrap, entirely offline > rechecks the start window after adapter construction before runner dispatch 6ms
+     → expected [Function] to throw error including 'bootstrap_capture_failed_preserve_pac…' but got 'bootstrap_wrong_checkout'
+ ✓ lib/blsh/nativeCaptureV6/tlsObservation.test.ts (16 tests) 87ms
+ ✓ lib/cron/manualCronAudit.test.ts (3 tests) 15ms
+ ✓ lib/blsh/nativeCaptureV6/officialPilotStore.test.ts (5 tests) 29ms
+ ✓ lib/blsh/nativeCaptureV6/requestContext.test.ts (3 tests) 15ms
+ ✓ lib/blsh/nativeCaptureV6/writer.test.ts (3 tests) 9ms
+ ✓ lib/blsh/nativeCaptureV6/sourceDate.test.ts (5 tests) 14ms
+ ↓ scripts/blsh/baselineEvaluation.test.ts (1 test | 1 skipped)
+ ↓ scripts/blsh/currentDryRun.test.ts (1 test | 1 skipped)
+ ✓ lib/blsh/replay/hostedReplay.test.ts (10 tests) 6ms
+ ↓ scripts/blsh/forecastDevRun.test.ts (1 test | 1 skipped)
+ ✓ scripts/blsh/readRequestContextV6.test.ts (42 tests) 1566ms
+   ✓ request context export readback > rejects duplicate or invalid UTF-8 in DB-CONTEXT.json even if all hashes match  314ms
+ ✓ lib/cron/nstCoordination.test.ts (6 tests) 23ms
+ ✓ lib/blsh/nativeCaptureV6/requestContextStore.test.ts (16 tests) 1772ms
+ ✓ lib/cron/combinedCronInventory.test.ts (42 tests) 78ms
+ ✓ lib/cron/reportSource.test.ts (26 tests) 144ms
+ ✓ lib/cron/withCronJobAudit.test.ts (61 tests) 73ms
+ ✓ lib/cron/cronInventory.test.ts (6 tests) 22ms
+ ✓ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts (56 tests) 154ms
+ ✓ lib/cron/xPollerHealth.test.ts (11 tests) 19ms
+ ✓ lib/cron/transactionalGameStatsPersistence.test.ts (15 tests) 40ms
+ ✓ lib/cron/benchmarkRunner.test.ts (9 tests) 20ms
+stderr | lib/cron/nhlOffSeason.test.ts > withNhlOffSeasonSkip > runs the handler when the window is 'unknown'
+[nhl-off-season] season window unavailable; running job { reason: [32m'lookup failed'[39m }
+
+stderr | lib/cron/nhlOffSeason.test.ts > withNhlOffSeasonSkip > marks the response as seasonal game data on skip, ignore and run paths alone
+[nhl-off-season] season window unavailable; running job { reason: [32m'lookup failed'[39m }
+
+ ✓ lib/cron/nhlOffSeason.test.ts (11 tests) 22ms
+ ✓ lib/cron/forgeServingHealth.test.ts (15 tests) 18ms
+ ✓ lib/cron/forgeServingHealth.server.test.ts (4 tests) 13ms
+ ✓ lib/blsh/nativeCaptureV6/routeRehearsal.test.ts (4 tests) 3199ms
+   ✓ v6 offline rehearsal through the real route module > happy path, then the 12:20 backup trigger: one capture, manifest last, audit after the handler, writer isolated  1467ms
+   ✓ v6 offline rehearsal through the real route module > no_slate, admission denial, warm-instance TLS resumption and kill switch off  690ms
+   ✓ v6 offline rehearsal through the real route module > an observer self-test refusal (gate 5.5) is a 503 before the claim: no row, no network, and the backup trigger still captures D  527ms
+   ✓ v6 offline rehearsal through the real route module > a run killed mid-capture (close unacknowledged) leaves the row claimed with its intents for the watchdog  515ms
+ ✓ scripts/blsh/readNativeV6Ledger.test.ts (36 tests) 3290ms
+   ✓ native v6 offline ledger > reads a local export with independent pins and hands the hashed original bytes to the next stage  1831ms
+ ✓ lib/cron/reportMetrics.test.ts (10 tests) 3ms
+ ✓ lib/cron/gameStatsCompleteness.test.ts (11 tests) 5ms
+ ✓ lib/cron/wgoGoaliePersistence.test.ts (12 tests) 7ms
+ ✓ lib/cron/skaterGameStatsPersistence.test.ts (9 tests) 6ms
+ ✓ lib/cron/nstBurstPlans.test.ts (18 tests) 4ms
+ ✓ __tests__/lib/cron/wgoIngestion.test.ts (6 tests) 5ms
+ ✓ lib/blsh/nativeCaptureV6/officialPilotHandler.test.ts (8 tests) 3895ms
+   ✓ one approved hosted official GET > binds exact private custody and signature to original boxscore bytes and per-game TLS v2 receipt, serially  2192ms
+   ✓ one approved hosted official GET > issues no provider GET after an unacknowledged durable journal  961ms
+   ✓ one approved hosted official GET > reports a refused repeat and uncertain claim or terminal writes without dispatching  413ms
+ ✓ lib/cron/scheduledHttpUrl.test.ts (10 tests) 2ms
+ ✓ lib/cron/nstTeamStatsOutcome.test.ts (7 tests) 3ms
+ ✓ lib/cron/statsStatusAdvancement.test.ts (5 tests) 3ms
+ ✓ lib/cron/sqlRpcExecution.test.ts (3 tests) 3ms
+ ✓ lib/cron/nonRealizedGameStats.test.ts (6 tests) 3ms
+ ✓ lib/cron/nstRateLimitPolicy.test.ts (7 tests) 3ms
+ ✓ lib/cron/wgoDateOutcome.test.ts (3 tests) 3ms
+ ✓ lib/cron/statsUpdateSafety.test.ts (2 tests) 2ms
+ ✓ lib/cron/tweetReviewBacklog.test.ts (4 tests) 2ms
+ ✓ lib/cron/reportSectionReaders.test.ts (4 tests) 3ms
+ ✓ lib/cron/sqlTiming.test.ts (2 tests) 1ms
+ ✓ lib/cron/timingContract.test.ts (3 tests) 2ms
+ ✓ lib/cron/cronReportFlags.test.ts (2 tests) 2ms
+ ✓ lib/cron/benchmarkObservationMetadata.test.ts (4 tests) 4ms
+ ✓ lib/cron/normalizeDependencyError.test.ts (3 tests) 2ms
+ ✓ lib/cron/benchmarkExecutionPolicy.test.ts (4 tests) 3ms
+ ✓ scripts/blsh/retainedWindowTrade.test.tsx (7 tests) 1396ms
+   ✓ builds and rereads an immutable arm-C export through the trade adapter under isolated reviews  1047ms
+ ✓ lib/cron/cronReportTiming.test.ts (3 tests) 2ms
+ ✓ lib/cron/nstClassification.test.ts (3 tests) 1ms
+ ✓ lib/cron/benchmarkNotes.test.ts (3 tests) 2ms
+ ✓ lib/blsh/nativeCaptureV6/core.test.ts (14 tests) 4995ms
+   ✓ v6 core + adapter through the canonical NST client (mocked transports) > captures D with exactly five ordered operations, 22 s NST spacing and manifest-last storage  1426ms
+   ✓ v6 core + adapter through the canonical NST client (mocked transports) > keeps remote writes out of the permit window: STARTED in Storage before the schedule GET, intent before each admission, nothing between admission and NST  440ms
+   ✓ v6 core + adapter through the canonical NST client (mocked transports) > an NST transport failure stops with no retry and no credential in any object  301ms
+   ✓ v6 core + adapter through the canonical NST client (mocked transports) > ignores another invocation's requests during admission and NST (M1, Fluid): same origin, path and method, before and after ours  505ms
+   ✓ v6 core + adapter through the canonical NST client (mocked transports) > the pre-schedule checkpoint has its own 20 s budget: 4 s writes now complete the run (V-R2), 6 s writes fail with nothing sent (L2)  440ms
+ ✓ lib/cron/standingsDateRange.test.ts (3 tests) 2ms
+ ✓ scripts/blsh/nativeProcessCaptureAdapter.test.ts (46 tests) 11466ms
+   ✓ actual native capture adapter through mocked transports > runs the canonical modules in disabled mode with exact operation and source receipts  995ms
+   ✓ actual native capture adapter through mocked transports > runs the canonical modules in enabled mode with exact operation and source receipts  756ms
+   ✓ actual native capture adapter through mocked transports > stops on schedule failure without retry and preserves settled work  311ms
+   ✓ actual native capture adapter through mocked transports > stops on begin failure without retry and preserves settled work  365ms
+   ✓ actual native capture adapter through mocked transports > stops on admission:individual failure without retry and preserves settled work  696ms
+   ✓ actual native capture adapter through mocked transports > stops on nst:individual failure without retry and preserves settled work  456ms
+   ✓ actual native capture adapter through mocked transports > stops on admission:onIce failure without retry and preserves settled work  493ms
+   ✓ actual native capture adapter through mocked transports > stops on nst:onIce failure without retry and preserves settled work  476ms
+   ✓ actual native capture adapter through mocked transports > stops on finish failure without retry and preserves settled work  444ms
+   ✓ actual native capture adapter through mocked transports > rejects a response over its retained byte limit: finish  360ms
+   ✓ actual native capture adapter through mocked transports > rejects an unacknowledged lifecycle finish and attempts exactly one hold  346ms
+   ✓ actual native capture adapter through mocked transports > does not retry an uncertain hold after an uncertain finish  357ms
+   ✓ actual native capture adapter through mocked transports > binds keepalive onIce operations to the individual operations on the same hosts  307ms
+ ✓ scripts/blsh/nativeProcessCaptureRunner.test.ts (120 tests) 19212ms
+   ✓ independent review durability and elapsed-time regressions > syncs parent and operation directory entries before every dispatch (finish fails: false)  676ms
+   ✓ independent review durability and elapsed-time regressions > syncs parent and operation directory entries before every dispatch (finish fails: true)  634ms
+   ✓ independent review durability and elapsed-time regressions > refuses schedule when its journal directory fsync fails  312ms
+   ✓ independent review durability and elapsed-time regressions > refuses begin when its journal directory fsync fails  341ms
+   ✓ independent review durability and elapsed-time regressions > refuses admission:individual when its journal directory fsync fails  485ms
+   ✓ independent review durability and elapsed-time regressions > refuses nst:individual when its journal directory fsync fails  571ms
+   ✓ independent review durability and elapsed-time regressions > refuses admission:onIce when its journal directory fsync fails  538ms
+   ✓ independent review durability and elapsed-time regressions > refuses nst:onIce when its journal directory fsync fails  550ms
+   ✓ independent review durability and elapsed-time regressions > refuses finish when its journal directory fsync fails  576ms
+   ✓ independent review durability and elapsed-time regressions > refuses hold when its journal directory fsync fails  457ms
+   ✓ independent review durability and elapsed-time regressions > removes only its newly linked completion marker after final publication elapsed failure  305ms
+   ✓ independent review durability and elapsed-time regressions > removes only its newly linked completion marker after final publication fsync failure  320ms
+   ✓ durable native capture runner with blocked real transports > retains exact bytes/clocks, pins, private modes and enabled lifecycle accounting  313ms
+   ✓ durable native capture runner with blocked real transports > enforces the whole-directory byte budget including source snapshots  323ms
+ ✓ scripts/blsh/prepareV6Observation.test.ts (52 tests) 28328ms
+   ✓ one-skater v6 held observation export > derives a fixture frame from the two-game capture and refuses fixture evidence in the default frame/proposal modes  791ms
+   ✓ one-skater v6 held observation export > re-reads the writer packet, retains original bytes and checks source cells while withholding witnesses  1700ms
+   ✓ one-skater v6 held observation export > includes the exact last native retrieval and preserves the later independent review time  488ms
+   ✓ signed hosted official export through the actual frame and held reader > reaches a held observation from the real signed route and copies both original metadata buffers and every hosted object  540ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > defaults to check-only with no credential access, adapter call or output creation
+Error: bootstrap_wrong_checkout
+ ❯ need scripts/blsh/nativeProcessCaptureBootstrap.ts:36:74
+     34|   ["memory-cache", "node_modules/memory-cache/index.js", "080bbdd424b6…
+     35| ] as const;
+     36| const need = (value: unknown, code: string): void => { if (!value) thr…
+       |                                                                          ^
+     37| const sha = (bytes: Buffer) => createHash("sha256").update(new Uint8Ar…
+     38| const fileHash = (path: string) => {
+ ❯ checkLocalPrerequisites scripts/blsh/nativeProcessCaptureBootstrap.ts:45:3
+ ❯ nativeProcessCaptureBootstrap scripts/blsh/nativeProcessCaptureBootstrap.ts:113:35
+ ❯ scripts/blsh/nativeProcessCaptureBootstrap.test.ts:91:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > invokes exactly one synthetic adapter and runner with fresh fixed scope and reviewed pins
+Error: bootstrap_wrong_checkout
+ ❯ need scripts/blsh/nativeProcessCaptureBootstrap.ts:36:74
+     34|   ["memory-cache", "node_modules/memory-cache/index.js", "080bbdd424b6…
+     35| ] as const;
+     36| const need = (value: unknown, code: string): void => { if (!value) thr…
+       |                                                                          ^
+     37| const sha = (bytes: Buffer) => createHash("sha256").update(new Uint8Ar…
+     38| const fileHash = (path: string) => {
+ ❯ checkLocalPrerequisites scripts/blsh/nativeProcessCaptureBootstrap.ts:45:3
+ ❯ nativeProcessCaptureBootstrap scripts/blsh/nativeProcessCaptureBootstrap.ts:115:21
+ ❯ scripts/blsh/nativeProcessCaptureBootstrap.test.ts:99:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects outside the one start window: 2026-11-17T14:04:59.999Z
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects outside the one start window: 2026-11-17T14:06:00.000Z
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects outside the one start window: 2026-11-19T00:00:00.000Z
+AssertionError: expected [Function] to throw error including 'bootstrap_outside_approved_slot' but got 'bootstrap_wrong_checkout'
+
+Expected: [32m"bootstrap_[7moutside_approved_slo[27mt"[39m
+Received: [31m"bootstrap_[7mwrong_checkou[27mt"[39m
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/19]⎯
+
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects configured environment mismatch NEXT_PUBLIC_SUPABASE_URL=undefined
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects configured environment mismatch NST_JOB_LIFECYCLE_ENABLED=true
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects configured environment mismatch NST_JOB_LIFECYCLE_ENABLED=false
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects configured environment mismatch NST_JOB_LIFECYCLE_ENABLED=
+AssertionError: expected [Function] to throw error including 'bootstrap_configured_environment_mism…' but got 'bootstrap_wrong_checkout'
+
+Expected: [32m"bootstrap_[7mconfigured_environment_mismatch[27m"[39m
+Received: [31m"bootstrap_[7mwrong_checkout[27m"[39m
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/19]⎯
+
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > refuses an undici dispatcher registered before its imports, without adapter construction
+AssertionError: expected [Function] to throw error including 'bootstrap_global_dispatcher_preinstal…' but got 'bootstrap_wrong_checkout'
+
+Expected: [32m"bootstrap_[7mglobal_dispatcher_preinstalled[27m"[39m
+Received: [31m"bootstrap_[7mwrong_checkout[27m"[39m
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/19]⎯
+
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects runtime overrides during check without importing the adapter
+AssertionError: expected [Function] to throw error including 'bootstrap_runtime_override' but got 'bootstrap_wrong_checkout'
+
+Expected: [32m"bootstrap_[7mruntime_override[27m"[39m
+Received: [31m"bootstrap_[7mwrong_checkout[27m"[39m
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/19]⎯
+
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects source drift instead of refreshing expected pins
+AssertionError: expected [Function] to throw error including 'bootstrap_source_pin_mismatch' but got 'bootstrap_wrong_checkout'
+
+Expected: [32m"bootstrap_[7msource_pin_mismatch[27m"[39m
+Received: [31m"bootstrap_[7mwrong_checkout[27m"[39m
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/19]⎯
+
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects a JS shadow of pinned source scripts/blsh/nativeProcessCaptureRunner before any adapter call
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects a JS shadow of pinned source scripts/blsh/nativeProcessCaptureAdapter before any adapter call
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects a JS shadow of pinned source scripts/blsh/nativeProcessCapturePreparation before any adapter call
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects a JS shadow of pinned source lib/nst/client before any adapter call
+AssertionError: expected [Function] to throw error including 'bootstrap_source_resolution_mismatch' but got 'bootstrap_wrong_checkout'
+
+Expected: [32m"bootstrap_[7msource_resolution_mismatch[27m"[39m
+Received: [31m"bootstrap_[7mwrong_checkout[27m"[39m
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/19]⎯
+
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rejects an existing output before adapter construction
+AssertionError: expected [Function] to throw error including 'bootstrap_output_exists' but got 'bootstrap_wrong_checkout'
+
+Expected: [32m"bootstrap_[7moutput_exists[27m"[39m
+Received: [31m"bootstrap_[7mwrong_checkout[27m"[39m
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/19]⎯
+
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > sanitizes runner failure and never retries it
+ FAIL  scripts/blsh/nativeProcessCaptureBootstrap.test.ts > one-shot native capture bootstrap, entirely offline > rechecks the start window after adapter construction before runner dispatch
+AssertionError: expected [Function] to throw error including 'bootstrap_capture_failed_preserve_pac…' but got 'bootstrap_wrong_checkout'
+
+Expected: [32m"bootstrap_[7mcapture_failed_preserve_packet_no_retry[27m"[39m
+Received: [31m"bootstrap_[7mwrong_checkout[27m"[39m
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/19]⎯
+
+
+ Test Files  1 failed | 60 passed | 3 skipped (64)
+      Tests  19 failed | 890 passed | 3 skipped (912)
+   Start at  14:12:12
+   Duration  29.18s (transform 3.26s, setup 556ms, collect 15.25s, tests 81.15s, environment 12.27s, prepare 4.00s)
+

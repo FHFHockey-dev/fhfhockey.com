@@ -1,0 +1,1 @@
+{"verdict": "ambiguous_state", "reason": "neither clean nor the exact reference install", "roles": 1, "schemas": 0, "memberships": 0, "sameOutside": true, "differingParts": ["columns", "constraints", "content", "functions", "indexes", "memberships", "policies", "relations", "roles", "schemas", "triggers"]}

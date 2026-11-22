@@ -1,0 +1,6 @@
+{
+  "operation": "schedule",
+  "url": "https://api-web.nhle.com/v1/schedule/2026-11-19",
+  "method": "GET",
+  "startedAtUTC": "2026-11-21T21:01:04.227Z"
+}

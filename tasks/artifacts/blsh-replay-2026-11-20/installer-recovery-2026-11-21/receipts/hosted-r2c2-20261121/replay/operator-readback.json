@@ -1,0 +1,69 @@
+{
+  "stage1": {
+    "ok": false,
+    "error": "capture_ingress_window_unconfirmed"
+  },
+  "context": {
+    "ok": true,
+    "receipt": {
+      "sourceDate": "2026-11-19",
+      "nativeRunId": "7e5c6c41-7170-48fa-8040-07b4c449e96f",
+      "nativeManifestSHA256": "cbb73f16776f8a00937db9d754d17ac7eb9925c879d75b0aa1d947bc6692439f",
+      "runId": "2eb4f8c1-936a-4272-9544-487e4aea9426",
+      "manifestSHA256": "a286d8cb3ce25620c83d840996747828732eb6f19899ff07a19c91cc9b0caae8",
+      "deploymentId": "dpl_DebFbbRByWvcVCdBTJc7FewDhu5w",
+      "gitCommitSha": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+      "dateFrom": "2026-10-22",
+      "eventThroughDate": "2026-11-19",
+      "snapshotUTC": "2026-11-21T21:03:01.063995+00:00",
+      "statementUTC": "2026-11-21T21:03:01.066754+00:00",
+      "status": "request_context_readback_pending_review",
+      "state": "packet_complete_pending_review",
+      "asOfUTC": "2026-11-21T21:03:01.099Z",
+      "claimedAtUTC": "2026-11-21T21:03:01.025045+00:00",
+      "closedAtUTC": "2026-11-21T21:03:01.659034+00:00",
+      "nativeRetrievedAtUTC": {
+        "individual": "2026-11-21T21:01:05.027Z",
+        "onIce": "2026-11-21T21:01:27.082Z"
+      },
+      "independentlyAccepted": false,
+      "advancedAdmission": false,
+      "score": null,
+      "replayCaptureDay": "2026-11-21"
+    },
+    "files": {
+      "DB-CONTEXT.json": {
+        "bytes": 13627,
+        "sha256": "65d5ffd2feb48b5680872e7f1204db42f19884ba8cd535f19ab748193096bbed"
+      },
+      "RAW-wgo.json": {
+        "bytes": 22217,
+        "sha256": "d3a0e7339f5a1a2e0554d0fe733c86f31232de674df5c1175af6eee1d1d7bcb9"
+      },
+      "RAW-individual.json": {
+        "bytes": 4508,
+        "sha256": "fa3b45e032cfc0a0894a38f05ac16a7d3b66e4280689e7efde4cca0803719c07"
+      },
+      "RAW-onIce.json": {
+        "bytes": 4169,
+        "sha256": "2afe335f354bb49483c3f07c0a446d1b80b7774a1db56d0227dde35209a627ef"
+      },
+      "RAW-calendar.json": {
+        "bytes": 1646,
+        "sha256": "076ff0d374094361f31c620864770bc92c19c3b022f92ffcd62fcff87f962d0e"
+      },
+      "CURRENT-REQUEST.json": {
+        "bytes": 33038,
+        "sha256": "98a564305b48229d417deec69cf63242c78ba1e371062c5bcde43120f103fca6"
+      },
+      "RESULT.json": {
+        "bytes": 1548,
+        "sha256": "d44e43f564035080fd3ed620ad09a947694f8547a74c5f06f84da4de0f1995c2"
+      },
+      "MANIFEST.json": {
+        "bytes": 1096,
+        "sha256": "a286d8cb3ce25620c83d840996747828732eb6f19899ff07a19c91cc9b0caae8"
+      }
+    }
+  }
+}

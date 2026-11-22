@@ -1,0 +1,179 @@
+{
+  "candidate": "5c51ad0d9b8f7dd004c380bb1f48a6716f4f2981",
+  "baseline": "f47905d28718f6910d7acfa1471517c0235775de",
+  "schema": "tweet_pattern_review_items",
+  "fixture": "Synthetic inputs through the exact caller and standalone PostgREST, loopback only",
+  "postgres": "15.1 (Ubuntu 15.1-1.pgdg20.04+1)",
+  "postgrest": "12.0.2",
+  "sdk": "2.89.0",
+  "node": "v22.23.4",
+  "files": {
+    "web/pages/api/v1/db/tweet-pattern-review.ts": "40643ddedea20fa746db4997b8df5d0e4cb2deb7424656b5cae75f9bf7b506e1",
+    "supabase/migrations/20261121190000_sync_tweet_review_sources_keep_delivery_time.sql": "963955d3331df80b44bdc018e151696732a092376d272bf93c611d9941a56893"
+  },
+  "cases": [
+    {
+      "scenario": "identical",
+      "key": "cccmiddleton:1000001",
+      "accepted": 400,
+      "timestamps_advanced": 400,
+      "rpc_batch_sizes": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "reviewer_blocked_rpc": true,
+      "reviewer_updated_at": "2026-11-21 17:57:02.660318+00",
+      "delivery_updated_at": "2026-11-21 17:57:02.680627+00",
+      "advancement_us": "20309",
+      "review_state": {
+        "review_status": "reviewed",
+        "reviewed_category": "lineup",
+        "reviewed_subcategory": "correction",
+        "review_assignments": [
+          {
+            "notes": "human assignment"
+          }
+        ],
+        "selected_highlights": [
+          "human highlight"
+        ],
+        "notes": "Reviewer B committed",
+        "reviewed_at": "2026-11-21T17:57:02.660Z",
+        "answerKey": {
+          "notes": "human verdict",
+          "verdict": "corrected"
+        },
+        "sentinel": "concurrent"
+      },
+      "original_identity_and_creation_preserved": true,
+      "source_text": "synthetic source 1",
+      "retained_interpretation": {
+        "state": "sample"
+      },
+      "roster_evidence_present": true,
+      "requests": {
+        "GET /lines_ccc": 1,
+        "GET /line_source_snapshots": 1,
+        "GET /lines_ccc_ifttt_events": 1,
+        "GET /line_source_ifttt_events": 1,
+        "POST /rpc/sync_tweet_review_sources_v1": 4
+      }
+    },
+    {
+      "scenario": "correction",
+      "key": "cccmiddleton:1000001",
+      "accepted": 400,
+      "timestamps_advanced": 400,
+      "rpc_batch_sizes": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "reviewer_blocked_rpc": true,
+      "reviewer_updated_at": "2026-11-21 17:57:02.736446+00",
+      "delivery_updated_at": "2026-11-21 17:57:02.756102+00",
+      "advancement_us": "19656",
+      "review_state": {
+        "review_status": "reviewed",
+        "reviewed_category": "lineup",
+        "reviewed_subcategory": "correction",
+        "review_assignments": [
+          {
+            "notes": "human assignment"
+          }
+        ],
+        "selected_highlights": [
+          "human highlight"
+        ],
+        "notes": "Reviewer B committed",
+        "reviewed_at": "2026-11-21T17:57:02.736Z",
+        "answerKey": {
+          "notes": "human verdict",
+          "verdict": "corrected"
+        },
+        "sentinel": "concurrent"
+      },
+      "original_identity_and_creation_preserved": true,
+      "source_text": "corrected source text",
+      "retained_interpretation": {
+        "state": "corrected"
+      },
+      "roster_evidence_present": false,
+      "requests": {
+        "GET /lines_ccc": 1,
+        "GET /line_source_snapshots": 1,
+        "GET /lines_ccc_ifttt_events": 1,
+        "GET /line_source_ifttt_events": 1,
+        "POST /rpc/sync_tweet_review_sources_v1": 4
+      }
+    },
+    {
+      "scenario": "identical_ahead_of_clock",
+      "key": "cccmiddleton:1000001",
+      "accepted": 400,
+      "timestamps_advanced": 400,
+      "rpc_batch_sizes": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "reviewer_blocked_rpc": true,
+      "reviewer_updated_at": "2026-11-21 18:02:02.804841+00",
+      "delivery_updated_at": "2026-11-21 18:02:02.805841+00",
+      "advancement_us": "1000",
+      "review_state": {
+        "review_status": "reviewed",
+        "reviewed_category": "lineup",
+        "reviewed_subcategory": "correction",
+        "review_assignments": [
+          {
+            "notes": "human assignment"
+          }
+        ],
+        "selected_highlights": [
+          "human highlight"
+        ],
+        "notes": "Reviewer B committed",
+        "reviewed_at": "2026-11-21T17:57:02.804Z",
+        "answerKey": {
+          "notes": "human verdict",
+          "verdict": "corrected"
+        },
+        "sentinel": "concurrent"
+      },
+      "original_identity_and_creation_preserved": true,
+      "source_text": "synthetic source 1",
+      "retained_interpretation": {
+        "state": "sample"
+      },
+      "roster_evidence_present": true,
+      "requests": {
+        "GET /lines_ccc": 1,
+        "GET /line_source_snapshots": 1,
+        "GET /lines_ccc_ifttt_events": 1,
+        "GET /line_source_ifttt_events": 1,
+        "POST /rpc/sync_tweet_review_sources_v1": 4
+      }
+    }
+  ],
+  "privileges": {
+    "anon": false,
+    "authenticated": false,
+    "service_role": true,
+    "security_definer": false,
+    "public_execute": false
+  },
+  "execute_denials": {
+    "anon": "42501",
+    "authenticated": "42501"
+  },
+  "rollback": {
+    "previous_caller_with_rpc": true,
+    "previous_caller_after_drop": true,
+    "concurrent_reviewer": false
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "version": "fhfh.blsh.native-capture-runtime.v6-vercel",
+  "startedAtUTC": "2026-11-21T21:01:03.027Z",
+  "node": {
+    "version": "v22.23.5",
+    "execPath": "/var/lang/bin/node",
+    "execPathSHA256": "58d96351a385434370205b66dd79cd3cb7da4a1ddf61a87c57ef3367f454b3cd",
+    "execPathUnavailable": null,
+    "execArgv": [
+      "--expose-gc",
+      "--max-http-header-size",
+      "81920",
+      "--no-experimental-detect-module",
+      "--no-experimental-require-module",
+      "--max-semi-space-size=34",
+      "--max-old-space-size=1844",
+      "-r",
+      "/opt/rust/bytecode.js",
+      "-r",
+      "/opt/rust/next-data.js",
+      "--max-http-header-size=131072",
+      "--disable-warning=DEP0040"
+    ]
+  },
+  "tls": {
+    "rootCertificatesSHA256": "5aab51f94c9a1ad6b5185229b65ca308fcae0e6fdb31bdf6f34278e099fb024c",
+    "rootCertificateCount": 116,
+    "defaultCACertificatesSHA256": "5aab51f94c9a1ad6b5185229b65ca308fcae0e6fdb31bdf6f34278e099fb024c",
+    "defaultCACertificateCount": 116
+  },
+  "environmentPresence": {
+    "NODE_EXTRA_CA_CERTS": false,
+    "NODE_TLS_REJECT_UNAUTHORIZED": false,
+    "NODE_OPTIONS": false,
+    "NODE_USE_SYSTEM_CA": false,
+    "NODE_USE_ENV_PROXY": false,
+    "SSL_CERT_FILE": false,
+    "SSL_CERT_DIR": false,
+    "HTTPS_PROXY": false,
+    "HTTP_PROXY": false,
+    "ALL_PROXY": false,
+    "NO_PROXY": false,
+    "https_proxy": false,
+    "http_proxy": false,
+    "all_proxy": false,
+    "no_proxy": false
+  },
+  "supabaseOrigin": "https://fyhftlxokyjtpndbkfse.supabase.co",
+  "lifecycleMode": "disabled",
+  "adapterEnvironmentPresence": {
+    "NST_KEY": true,
+    "SUPABASE_SERVICE_ROLE_KEY": true,
+    "NEXT_PUBLIC_SUPABASE_URL": true,
+    "NST_JOB_LIFECYCLE_ENABLED": false
+  },
+  "deployment": {
+    "provider": "vercel",
+    "deploymentId": "dpl_DebFbbRByWvcVCdBTJc7FewDhu5w",
+    "env": "production",
+    "region": "iad1",
+    "gitCommitSha": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+    "gitCommitRef": "master",
+    "routeBundleSHA256": null,
+    "routeBundleUnavailable": "path_unknown"
+  },
+  "instance": {
+    "coldStart": true,
+    "invocationOrdinal": 1,
+    "processUptimeMs": 265343
+  },
+  "globalDispatcher": {
+    "present": true,
+    "constructorName": "Agent",
+    "sameAsRunnerLoad": true
+  },
+  "valuesRecorded": false
+}

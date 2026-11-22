@@ -1,0 +1,7 @@
+psql:install.sql:1232: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+psql:install.sql:1232: error: connection to server was lost

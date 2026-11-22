@@ -1,0 +1,13 @@
+HTTP/2 200 
+age: 0
+cache-control: private, no-store
+content-type: application/json; charset=utf-8
+date: Sun, 22 Nov 2026 14:16:15 GMT
+etag: "s9hos21i4eikgl"
+server: Vercel
+strict-transport-security: max-age=63072000
+x-matched-path: /api/v1/roster-schedule-optimizer/data
+x-vercel-cache: MISS
+x-vercel-id: sfo1::iad1::l8kr4-1795356971572-b43778b2eb21
+content-length: 866340
+

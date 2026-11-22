@@ -1,0 +1,44 @@
+{
+  "operation": "nst:individual",
+  "completedAtUTC": "2026-11-21T21:01:05.027Z",
+  "permit": null,
+  "transport": {
+    "httpStatus": 200,
+    "finalUrlMatchesRequested": true,
+    "redirected": false,
+    "decodedBytes": 6941
+  },
+  "tls": {
+    "channel": "undici:client:sendHeaders",
+    "authorized": false,
+    "authorizationError": "replay-fixture: no network connection was made",
+    "servername": "data.naturalstattrick.com",
+    "alpnProtocol": "replay-fixture",
+    "protocol": "replay-fixture",
+    "cipher": {
+      "name": "replay-fixture",
+      "standardName": null,
+      "version": null
+    },
+    "sessionReused": false,
+    "connectionReused": false,
+    "connectionSequence": 3,
+    "resumedFromOperation": null,
+    "connectionFromOperation": null,
+    "peerCertificate": {
+      "fingerprint256": "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00",
+      "valid_from": "replay-fixture",
+      "valid_to": "replay-fixture",
+      "subjectCN": "replay-fixture",
+      "issuerCNChain": [
+        "replay-fixture"
+      ]
+    },
+    "defaultCACertificatesSHA256": "5aab51f94c9a1ad6b5185229b65ca308fcae0e6fdb31bdf6f34278e099fb024c",
+    "globalDispatcher": {
+      "present": true,
+      "constructorName": "Agent",
+      "identityUnchanged": true
+    }
+  }
+}

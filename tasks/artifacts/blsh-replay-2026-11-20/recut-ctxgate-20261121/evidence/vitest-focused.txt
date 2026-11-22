@@ -1,0 +1,25 @@
+ ✓ lib/blsh/nativeCaptureV6/sink.test.ts (3 tests) 86ms
+ ✓ lib/blsh/nativeCaptureV6/officialPilotStore.test.ts (5 tests) 9ms
+ ✓ lib/blsh/nativeCaptureV6/handler.test.ts (10 tests) 20ms
+ ✓ lib/blsh/nativeCaptureV6/runtimeReceipt.test.ts (3 tests) 164ms
+ ✓ lib/blsh/nativeCaptureV6/sourceDate.test.ts (5 tests) 4ms
+ ✓ lib/blsh/nativeCaptureV6/requestContextHandler.test.ts (32 tests) 76ms
+ ✓ lib/blsh/replay/hostedReplay.test.ts (10 tests) 6ms
+ ✓ scripts/blsh/readRequestContextV6.test.ts (42 tests) 572ms
+ ✓ lib/blsh/nativeCaptureV6/requestContextStore.test.ts (16 tests) 695ms
+ ✓ scripts/blsh/readNativeV6Ledger.test.ts (36 tests) 1150ms
+   ✓ native v6 offline ledger > reads a local export with independent pins and hands the hashed original bytes to the next stage  615ms
+ ✓ lib/blsh/nativeCaptureV6/routeRehearsal.test.ts (4 tests) 1305ms
+   ✓ v6 offline rehearsal through the real route module > happy path, then the 12:20 backup trigger: one capture, manifest last, audit after the handler, writer isolated  516ms
+   ✓ v6 offline rehearsal through the real route module > no_slate, admission denial, warm-instance TLS resumption and kill switch off  360ms
+ ✓ lib/blsh/nativeCaptureV6/core.test.ts (14 tests) 1804ms
+   ✓ v6 core + adapter through the canonical NST client (mocked transports) > captures D with exactly five ordered operations, 22 s NST spacing and manifest-last storage  527ms
+ ✓ lib/blsh/nativeCaptureV6/officialPilotHandler.test.ts (8 tests) 2367ms
+   ✓ one approved hosted official GET > binds exact private custody and signature to original boxscore bytes and per-game TLS v2 receipt, serially  1491ms
+   ✓ one approved hosted official GET > issues no provider GET after an unacknowledged durable journal  335ms
+
+ Test Files  16 passed (16)
+      Tests  210 passed (210)
+   Start at  11:48:42
+   Duration  2.85s (transform 1.09s, setup 161ms, collect 3.16s, tests 8.35s, environment 1ms, prepare 979ms)
+

@@ -1,0 +1,1 @@
+{"cleanupVerified": true, "checks": {"sandbox_gone": true, "no_lingering": true, "outside_fp_step0": true, "token_removed": true, "exposure_restored": true, "no_replay_jobs": true, "capture_off": true, "jobs_404_407_unchanged": true}}

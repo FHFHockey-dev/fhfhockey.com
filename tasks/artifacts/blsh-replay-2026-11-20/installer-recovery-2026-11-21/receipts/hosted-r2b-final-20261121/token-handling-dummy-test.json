@@ -1,0 +1,8 @@
+{"test": "dummy-token argv/env exposure check (local stub, 127.0.0.1)", "at": "2026-11-21T19:29:10Z",
+ "scripts": {"probes-stdin.sh": "9c69902749814605cbf93082c86d1853f5d82ed9969ca5494e32100b762a02d4", "tj-step3-token-and-probes.sh": "ad1ff496811571f8f5f4100fbecf2bbdb630b2840fa7a495bd54cefa82404fe9"},
+ "requests": 11, "requestsWithDummyBearer": 6, "anonRequestsWithoutAuth": 5,
+ "psArgvAndEnvSnapshotLines": 95657, "dummyInArgvSnapshots": 72, "dummyInEnvSnapshots": 72,
+ "curlArgvShows": "-H @/dev/fd/63 (pipe), never the token",
+ "positiveControlOldArgvMethodSnapshotsWithDummy": 17,
+ "mintCheck": "test secret -> HS256 signature verifies; claims exactly role=blsh_replay_api, iat, exp=iat+23h",
+ "note": "raw ps dumps deleted (process environments can hold unrelated secrets)"}

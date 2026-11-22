@@ -1,0 +1,15 @@
+BEGIN
+SET
+SET
+SET
+SET
+DO
+CREATE TABLE
+REVOKE
+CREATE FUNCTION
+REVOKE
+425
+426
+COMMIT
+426|blsh-replay-context-20261119|3 21 21 11 *|t|select blsh_replay.replay_get_fire('blsh-replay-context-20261119', '/api/v1/db/blsh-replay-context')
+425|blsh-replay-native-20261119|1 21 21 11 *|t|select blsh_replay.replay_get_fire('blsh-replay-native-20261119', '/api/v1/db/blsh-replay-native')

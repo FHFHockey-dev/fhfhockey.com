@@ -1,0 +1,20 @@
+   ▲ Next.js 15.5.22
+   - Local:        http://127.0.0.1:3197
+   - Network:      http://127.0.0.1:3197
+   - Experiments (use with caution):
+     ✓ externalDir
+
+ ✓ Starting...
+ ✓ Ready in 670ms
+ ○ Compiling /api/v1/db/blsh-replay-native ...
+ ✓ Compiled /api/v1/db/blsh-replay-native in 1292ms (313 modules)
+ GET /api/v1/db/blsh-replay-native 200 in 23850ms
+ ✓ Compiled /api/v1/db/blsh-replay-context in 59ms (315 modules)
+ GET /api/v1/db/blsh-replay-context 200 in 197ms
+ GET /api/v1/db/blsh-replay-native 200 in 35ms
+ GET /api/v1/db/blsh-replay-context 200 in 39ms
+ ✓ Compiled /api/v1/db/blsh-request-context in 39ms (317 modules)
+ POST /api/v1/db/blsh-request-context 200 in 54ms
+ GET /api/v1/db/blsh-replay-native 200 in 22397ms
+ GET /api/v1/db/blsh-replay-context 200 in 107ms
+[?25h

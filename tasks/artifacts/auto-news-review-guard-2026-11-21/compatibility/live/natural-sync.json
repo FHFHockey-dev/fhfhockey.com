@@ -1,0 +1,120 @@
+{
+  "run": {
+    "run_time": "2026-11-21 20:30:58.156652+00:00",
+    "status": "success",
+    "timing": {
+      "timer": "00:46",
+      "source": "audit",
+      "endedAt": "2026-11-21T20:30:58.134Z",
+      "startedAt": "2026-11-21T20:30:11.340Z",
+      "durationMs": 46794
+    },
+    "reviewSync": {
+      "syncedCount": 1076,
+      "preferredSourceCount": 1076
+    }
+  },
+  "common_keys": {
+    "baseline_rows": 1064,
+    "after_selection": 1076,
+    "overlap": 1061,
+    "strictly_advanced": 1061,
+    "same_source_content": 1044,
+    "same_review_and_answer": 1061,
+    "same_creation": 1061,
+    "matched_rpc_calls_after": 11,
+    "matched_rpc_entry_before": null
+  },
+  "cases": [
+    {
+      "id": "019c5daa-7d9c-4558-a017-d9a938dcc821",
+      "key": "validated-events:2124224188647108716",
+      "case": "identical",
+      "before": "2026-11-21 20:00:11.177000+00:00",
+      "after": "2026-11-21 20:30:16.133061+00:00",
+      "creation_time": "2026-11-21 20:00:17.826234+00:00",
+      "source_digest_before": "22facd61c9661b69a6d6a56f73746651",
+      "source_digest_after": "22facd61c9661b69a6d6a56f73746651",
+      "review_digest_before_and_after": "3a107c9b95273148fac53554e05495c0",
+      "answer_digest_before_and_after": "b2f1a4a4f2ef254af6be776168da6e6d",
+      "review_status": "pending",
+      "observed": {
+        "source_table": "line_source_snapshots",
+        "source_row_key": "8a7b06e9a18a424f1658f818df7e7c9b3814c2ced8ef3474dfa485dadd9c3857:24:2026-11-19.1:goalie",
+        "team_abbreviation": "ANA",
+        "parser_classification": "goalie_start",
+        "game_id": "2026020370",
+        "source_version": "2026-11-19.1",
+        "highlights": 2,
+        "assignments": 2,
+        "has_notes": false,
+        "has_answer_key": false
+      },
+      "changed_fields": [],
+      "changed_metadata": []
+    },
+    {
+      "id": "86418101-f846-490d-8b9c-4f2817c164ff",
+      "key": "dfofantasy:2124231331798487058",
+      "case": "higher-priority source correction",
+      "before": "2026-11-21 20:00:16.907000+00:00",
+      "after": "2026-11-21 20:30:15.964843+00:00",
+      "creation_time": "2026-11-21 20:00:19.046568+00:00",
+      "source_digest_before": "9034d468f03cee9caa84016bd5a5d4b2",
+      "source_digest_after": "94ced990e89d0a7ecb836d43ac4da66b",
+      "review_digest_before_and_after": "062d8242fdb472849df3a34530684f8d",
+      "answer_digest_before_and_after": "b2f1a4a4f2ef254af6be776168da6e6d",
+      "review_status": "pending",
+      "observed": {
+        "source_table": "line_source_snapshots",
+        "source_row_key": "dfofantasy:2026-11-21:20:2026020360:2124231331798487058:2124231205713514563:goalie_start:accepted",
+        "team_abbreviation": "CGY",
+        "parser_classification": "goalie_start",
+        "game_id": "2026020360",
+        "source_version": "2026-11-19.1",
+        "highlights": 0,
+        "assignments": 0,
+        "has_notes": false,
+        "has_answer_key": false
+      },
+      "changed_fields": [
+        "team_id",
+        "tweet_url",
+        "source_url",
+        "author_name",
+        "quoted_text",
+        "review_text",
+        "keyword_hits",
+        "source_label",
+        "source_table",
+        "enriched_text",
+        "snapshot_date",
+        "source_handle",
+        "source_row_key",
+        "quoted_tweet_id",
+        "quoted_tweet_url",
+        "source_created_at",
+        "team_abbreviation",
+        "parser_filter_status",
+        "parser_classification"
+      ],
+      "changed_metadata": [
+        "intakeRosterEvidence",
+        "originalPrimaryTextSource",
+        "preferredQuotedAttribution",
+        "primaryTextSource",
+        "quotedAuthorHandle",
+        "quotedAuthorName",
+        "quotedTweetId",
+        "quotedTweetUrl",
+        "retainedGameId",
+        "retainedInterpretation",
+        "sourceRowStatus",
+        "tweetPostedLabel",
+        "wrapperAuthorHandle",
+        "wrapperAuthorName"
+      ]
+    }
+  ],
+  "control_limits": "No populated note, completed human verdict or answerKey in the 1049 pre-run rows with exact input keys. Race protection was tested in the disposable harness. DFO changed source interpretation and enriched text, not wrapper wording."
+}

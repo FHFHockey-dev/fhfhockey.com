@@ -1,0 +1,139 @@
+--- /private/tmp/blsh-recut-ctxgate/overlay/tasks/artifacts/blsh-replay-2026-11-20/hosted/local_proof.sh	2026-11-20 12:41:08
++++ /Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-replay-2026-11-20/recut-ctxgate-20261121/operator/local_proof_r2.sh	2026-11-21 11:50:50
+@@ -1,12 +1,19 @@
+ #!/usr/bin/env bash
+-# Local proof of the hosted BLSH replay route before any production change (disposable; loopback only).
+-# Usage: bash local_proof.sh ENVELOPE.tar.gz EMPTY_RUN_DIR   (POSTGREST_BIN must point at PostgREST 16.6)
++# Recut R' copy of local_proof.sh (2026-11-21). Differences from the original, nothing else:
++#   * it must run on a real UTC day OTHER than 2026-11-20 (2026-11-21..2026-11-26), proving R''s replay-only context date gate;
++#   * it arms with hosted-r2/arm-replay-get-dated.sql and arm-replay-get-repeat-dated.sql (run_date = today, schedules computed
++#     from now) and first proves on this disposable Postgres that they refuse bad dates and schedules, and that the pinned
++#     originals refuse today; the operator readback uses hosted-r2/readback_export_dated.py (replayCaptureDay = today);
++#   * the decoy live context key keeps its private half (in RUN, 0600) so a correctly signed live grant can be sent to the LIVE
++#     context route, which must still refuse it as outside_approved_date with no writes;
++#   * after the unchanged 24-check proof.json, negatives.json gates those controls plus the receipt's unapproved/mismatched grants.
++# Usage: bash local_proof_r2.sh ENVELOPE.tar.gz EMPTY_RUN_DIR   (POSTGREST_BIN must point at PostgREST 16.6)
+ # Stand-in for the live project: Supabase-like roles, the real BLSH migrations in public with the live switch OFF, plus the
+ # sandbox from install.sql (generated from the Drive envelope). PostgREST exposes public + blsh_replay_api, as the proposed
+ # Exposed-schemas change would. The isolated Next server (sandbox-exec: loopback only) has a canary service-role key and NST
+ # key, a decoy live context public key, and the sandbox token. Then:
+ #   GET 1 (expect a complete replay), GET 2 (expect nothing new), the denial matrix, isolation-check.sql, and a byte
+-#   comparison of every schema outside the sandbox before and after. Must run on 2026-11-20 UTC (the slate's day + 1).
++#   comparison of every schema outside the sandbox before and after.
+ set -euo pipefail
+ umask 077
+ export LC_ALL=C LANG=C
+@@ -20,7 +27,10 @@
+ mkdir -p -- "$2"; RUN=$(cd -- "$2" && pwd -P)
+ [[ -z $(ls -A -- "$RUN") ]] || fail "run dir not empty"
+ case "$RUN/" in "$ROOT"/*) fail "run dir must be outside the checkout";; esac
+-[[ $(date -u +%F) == 2026-11-20 ]] || fail "the request-context stage needs the real UTC day to be 2026-11-20"
++RUN_DATE=$(date -u +%F)
++[[ $RUN_DATE > 2026-11-20 && $RUN_DATE < 2026-11-27 ]] || fail "R' proof runs on a real UTC day other than the slate's day + 1 (2026-11-21..2026-11-26)"
++[[ $(date -u +%H%M) < 2320 ]] || fail "too close to 00:00Z: both stages, the repeat and the rerun must stay on one real UTC day"
++OPS="$ROOT/tasks/artifacts/blsh-replay-2026-11-20/hosted-r2"
+ POSTGREST_BIN=${POSTGREST_BIN:?set POSTGREST_BIN}
+ PSQL=${PSQL_BIN:-/opt/homebrew/opt/libpq/bin/psql}
+ PGDUMP=${PG_DUMP_BIN:-/opt/homebrew/opt/postgresql@15/bin/pg_dump}
+@@ -132,7 +142,7 @@
+ : > "$RUN/front-hits.jsonl"
+ 
+ echo "== isolated Next dev (loopback-only egress, canary credentials, decoy live context key, sandbox token)"
+-DECOY_PUB=$("$NODE" -e 'const {generateKeyPairSync}=require("crypto");process.stdout.write(generateKeyPairSync("ed25519").publicKey.export({type:"spki",format:"pem"}).toString().trim())')
++DECOY_PUB=$("$NODE" -e 'const {generateKeyPairSync}=require("crypto");const k=generateKeyPairSync("ed25519");require("fs").writeFileSync(process.argv[1],k.privateKey.export({type:"pkcs8",format:"pem"}),{mode:0o600,flag:"wx"});process.stdout.write(k.publicKey.export({type:"spki",format:"pem"}).toString().trim())' "$RUN/decoy-live-context.key")
+ SERVICE_CANARY="service-role-canary-$(openssl rand -hex 8)"; NST_CANARY="nst-key-canary-$(openssl rand -hex 8)"
+ PROFILE='(version 1)(allow default)(deny network-outbound)(allow network-outbound (remote ip "localhost:*"))(allow network-outbound (remote unix-socket))'
+ mkdir -p "$RUN/envfiles" "$RUN/tmp"
+@@ -171,12 +181,37 @@
+   "$PSQL" -X -A -t -q -h 127.0.0.1 -p $PG_PORT -U postgres -d postgres -f "$HOSTED/readback-replay-get.sql" > "$RUN/readback-$1.json"
+   python3 -I -c 'import json,sys; d=json.load(open(sys.argv[1])); print(json.dumps({"requests":[{k:r[k] for k in ("jobName","statusCode")} for r in d["requests"]],"sandbox":d["sandbox"],"jobs":len(d["jobs"]),"otherCronJobs":d["otherCronJobs"]}))' "$RUN/readback-$1.json"
+ }
+-ARM() { "$PSQL" -X -q -h 127.0.0.1 -p $PG_PORT -U postgres -d postgres -v schedule_native='57 23 20 11 *' -v schedule_context='59 23 20 11 *' -f "$HOSTED/$1"; }
++sched() { python3 -I -c 'import datetime as d,sys; t=d.datetime.now(d.timezone.utc)+d.timedelta(minutes=int(sys.argv[1])); print(f"{t.minute} {t.hour} {t.day} {t.month} *")' "$1"; }
++ARMV() { local file=$1; shift; "$PSQL" -X -q -h 127.0.0.1 -p $PG_PORT -U postgres -d postgres "$@" -f "$file"; }
++ARM() { ARMV "$OPS/${1%.sql}-dated.sql" -v run_date="$RUN_DATE" -v schedule_native="$(sched 5)" -v schedule_context="$(sched 8)"; }
++JOBS() { SQL "select count(*) from cron.job where jobname like 'blsh-replay-%'"; }
++refuse() {  # refuse LABEL EXPECTED_ERROR FILE psql-vars...: the arm must fail with that error and leave no job or table behind
++  local label=$1 want=$2 out state; shift 2
++  state=$(SQL "select (select count(*) from cron.job)::text || ':' || coalesce(to_regclass('blsh_replay.replay_get_requests')::text, '-') || ':' || (select count(*) from net.requests)::text")
++  if out=$(ARMV "$@" 2>&1); then fail "sql refusal $label: accepted"; fi
++  [[ $out == *"$want"* && $(JOBS) == 0 && $(SQL "select (select count(*) from cron.job)::text || ':' || coalesce(to_regclass('blsh_replay.replay_get_requests')::text, '-') || ':' || (select count(*) from net.requests)::text") == "$state" ]] || fail "sql refusal $label: $out"
++  printf '{"case":"%s","refused":"%s"}\n' "$label" "$want" | tee -a "$RUN/sql-refusals.jsonl"
++}
+ echo "baseline counts: $(counts)"
++echo "== dated arm SQL on this disposable Postgres: refusals first (each rolls back), and the pinned originals refuse today"
++TODAY_D=$(date -u +%-d); TODAY_M=$(date -u +%-m); TOMORROW=$(date -u -v+1d +%F); YESTERDAY=$(date -u -v-1d +%F)
++refuse original-arm-pinned-to-20261120 replay_get_preflight_failed "$HOSTED/arm-replay-get.sql" -v schedule_native="$(sched 5)" -v schedule_context="$(sched 8)"
++refuse run-date-yesterday replay_get_run_date_invalid "$OPS/arm-replay-get-dated.sql" -v run_date="$YESTERDAY" -v schedule_native="$(sched 5)" -v schedule_context="$(sched 8)"
++refuse run-date-tomorrow replay_get_run_date_invalid "$OPS/arm-replay-get-dated.sql" -v run_date="$TOMORROW" -v schedule_native="$(sched 5)" -v schedule_context="$(sched 8)"
++refuse run-date-slate-day-plus-one replay_get_run_date_invalid "$OPS/arm-replay-get-dated.sql" -v run_date=2026-11-20 -v schedule_native="$(sched 5)" -v schedule_context="$(sched 8)"
++refuse run-date-impossible replay_get_run_date_invalid "$OPS/arm-replay-get-dated.sql" -v run_date=2026-11-31 -v schedule_native="$(sched 5)" -v schedule_context="$(sched 8)"
++refuse run-date-malformed replay_get_run_date_invalid "$OPS/arm-replay-get-dated.sql" -v run_date="$RUN_DATE'; drop table x; --" -v schedule_native="$(sched 5)" -v schedule_context="$(sched 8)"
++refuse schedule-other-day replay_get_schedule_invalid "$OPS/arm-replay-get-dated.sql" -v run_date="$RUN_DATE" -v schedule_native="$(sched 5 | awk '{print $1, $2, $3+1, $4, $5}')" -v schedule_context="$(sched 8)"
++refuse schedule-past replay_get_schedule_invalid "$OPS/arm-replay-get-dated.sql" -v run_date="$RUN_DATE" -v schedule_native="$(sched -10)" -v schedule_context="$(sched 8)"
++refuse schedule-context-too-soon replay_get_schedule_invalid "$OPS/arm-replay-get-dated.sql" -v run_date="$RUN_DATE" -v schedule_native="$(sched 5)" -v schedule_context="$(sched 6)"
++refuse schedule-context-after-2350 replay_get_schedule_invalid "$OPS/arm-replay-get-dated.sql" -v run_date="$RUN_DATE" -v schedule_native="$(sched 5)" -v schedule_context="55 23 $TODAY_D $TODAY_M *"
++refuse schedule-wildcard replay_get_schedule_invalid "$OPS/arm-replay-get-dated.sql" -v run_date="$RUN_DATE" -v schedule_native='*/5 * * * *' -v schedule_context="$(sched 8)"
++refuse repeat-before-first-arm replay_repeat_preflight_failed "$OPS/arm-replay-get-repeat-dated.sql" -v run_date="$RUN_DATE" -v schedule_native="$(sched 5)" -v schedule_context="$(sched 8)"
+ echo "== arm the one-shot job, fire it (twice: the second must be already_fired), dispatch its pg_net GET, read back"
+ ARM arm-replay-get.sql > "$RUN/arm.out"
+ fire native-1 blsh-replay-native-20261119; fire context-1 blsh-replay-context-20261119; readback get-1
+ echo "== the repeat (the same GET again): arm-replay-get-repeat.sql"
++refuse original-repeat-pinned-to-20261120 replay_repeat_preflight_failed "$HOSTED/arm-replay-get-repeat.sql" -v schedule_native="$(sched 5)" -v schedule_context="$(sched 8)"
+ ARM arm-replay-get-repeat.sql > "$RUN/arm-repeat.out"
+ fire native-2 blsh-replay-native-20261119-repeat; fire context-2 blsh-replay-context-20261119-repeat; readback get-2
+ if ARM arm-replay-get.sql > /dev/null 2>&1; then fail "arm preflight accepted a sandbox that already ran"; fi
+@@ -199,7 +234,7 @@
+ 
+ echo "== operator readback: read-only export of the sandbox packets, then stage 1 + stage 2 + context reader (offline)"
+ SQL "select blsh_replay.export_v1('2026-11-19')" > "$RUN/export.json"
+-python3 -I "$HOSTED/readback_export.py" "$RUN/export.json" "$RUN/readback" "$DEPLOYMENT_ID" "$SHA"
++python3 -I "$OPS/readback_export_dated.py" "$RUN/export.json" "$RUN/readback" "$DEPLOYMENT_ID" "$SHA" "$RUN_DATE"
+ ( cd "$WEB" && "$NODE" node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"Node16","moduleResolution":"Node16"}' "$V6/readback.ts" \
+     "$RUN/readback/native" "$RUN/readback/pins.json" "$RUN/readback/context" "$RUN/readback/context-pins.json" ) > "$RUN/operator-readback.json"
+ ( cd "$WEB" && "$NODE" "$HOSTED/tls_rule_check.mjs" "$RUN/readback/native" ) > "$RUN/tls-rule-check.json"; cat "$RUN/tls-rule-check.json"
+@@ -256,6 +291,44 @@
+ PY
+ python3 -I -c 'import json,sys; assert json.load(open(sys.argv[1]))["verdict"]=="ok"' "$RUN/proof.json" || fail "proof checks"
+ 
++echo "== negative controls on a real UTC day other than 2026-11-20 (live route, replay grants, SQL fuses)"
++NATIVE_RUN=$(SQL "select run_id from blsh_replay.blsh_capture_runs"); NATIVE_MANIFEST=$(SQL "select manifest_sha256 from blsh_replay.blsh_capture_runs")
++"$NODE" -e 'const {createPrivateKey,sign}=require("crypto");const fs=require("fs");const [key,d,run,man,dep,sha]=process.argv.slice(1);
++const a={sourceDate:d,nativeRunId:run,nativeManifestSHA256:man,deploymentId:dep,gitCommitSha:sha};
++const bytes=new TextEncoder().encode(JSON.stringify(["fhfh.blsh.request-context-approval.v1",a.sourceDate,a.nativeRunId,a.nativeManifestSHA256,a.deploymentId,a.gitCommitSha]));
++process.stdout.write(JSON.stringify({approval:a,signature:sign(null,bytes,createPrivateKey(fs.readFileSync(key))).toString("base64")}))' \
++  "$RUN/decoy-live-context.key" 2026-11-19 "$NATIVE_RUN" "$NATIVE_MANIFEST" "$DEPLOYMENT_ID" "$SHA" > "$RUN/live-grant.json"
++LIVE_BEFORE=$(counts); LIVE_HITS_BEFORE=$(wc -l < "$RUN/front-hits.jsonl")
++LIVE_CODE=$(curl -sS -o "$RUN/response-live-context.json" -w '%{http_code}' --max-time 60 -X POST -H "Authorization: Bearer $CRON_SECRET" \
++  -H 'Content-Type: application/json' --data-binary @"$RUN/live-grant.json" "http://127.0.0.1:$NEXT_PORT/api/v1/db/blsh-request-context")
++LIVE_AFTER=$(counts); LIVE_HITS_AFTER=$(wc -l < "$RUN/front-hits.jsonl")
++python3 -I - "$RUN" "$LIVE_CODE" "$LIVE_BEFORE" "$LIVE_AFTER" "$LIVE_HITS_BEFORE" "$LIVE_HITS_AFTER" "$RUN_DATE" <<'PY2' | tee "$RUN/negatives.json"
++import json, sys, pathlib
++run, code, before, after, hits_before, hits_after, run_date = pathlib.Path(sys.argv[1]), int(sys.argv[2]), json.loads(sys.argv[3]), json.loads(sys.argv[4]), int(sys.argv[5]), int(sys.argv[6]), sys.argv[7]
++live = json.loads((run / "response-live-context.json").read_text())
++c1 = json.loads((run / "response-context-1.json").read_text())["receipt"]
++op = json.loads((run / "operator-readback.json").read_text())
++refusals = [json.loads(l) for l in (run / "sql-refusals.jsonl").read_text().splitlines()]
++checks = {
++  "real_utc_day_is_not_20261120": run_date != "2026-11-20",
++  "live_route_signed_grant_outside_approved_date": code == 200 and live == {"state": "skipped", "reason": "outside_approved_date"},
++  "live_route_no_writes_no_io": before == after and hits_before == hits_after,
++  "replay_unapproved_key_refused": c1["context"]["unapprovedGrant"] == {"http": 403, "body": {"state": "refused", "reason": "approval_invalid"}},
++  "replay_mismatched_date_refused": c1["context"]["mismatchedDateGrant"] == {"http": 200, "body": {"state": "skipped", "reason": "outside_approved_date"}},
++  "replay_tampered_refused": c1["context"]["tamperedGrant"] == {"http": 403, "body": {"state": "refused", "reason": "approval_invalid"}},
++  "replay_receipt_logical_day": c1["logicalIngressDay"] == "2026-11-20",
++  "replay_reader_pinned_to_real_day": c1["readers"]["context"]["receipt"].get("replayCaptureDay") == run_date
++    and op["context"]["receipt"].get("replayCaptureDay") == run_date,
++  "native_and_context_on_real_day": c1["readers"]["context"]["receipt"]["claimedAtUTC"].startswith(run_date)
++    and c1["readers"]["context"]["receipt"]["nativeRetrievedAtUTC"]["individual"].startswith(run_date),
++  "stage1_reader_rejects_replay": op["stage1"] == {"ok": False, "error": "capture_ingress_window_unconfirmed"},
++  "sql_refusals_all_13": len(refusals) == 13,
++}
++print(json.dumps({"verdict": "ok" if all(checks.values()) else "FAIL", "checks": checks, "runDate": run_date, "liveRoute": {"http": code, "body": live},
++  "countsBefore": before, "countsAfter": after, "sqlRefusals": refusals}, indent=1))
++PY2
++python3 -I -c 'import json,sys; assert json.load(open(sys.argv[1]))["verdict"]=="ok"' "$RUN/negatives.json" || fail "negative controls"
++
+ echo "== rerun path (a failed hosted run): disarm, unexpose, reset, reinstall, isolation, re-expose, arm, fire again"
+ "$PSQL" -X -q -h 127.0.0.1 -p $PG_PORT -U postgres -d postgres -f "$HOSTED/disarm-replay-get.sql" > "$RUN/disarm.out"
+ postgrest_with "public"

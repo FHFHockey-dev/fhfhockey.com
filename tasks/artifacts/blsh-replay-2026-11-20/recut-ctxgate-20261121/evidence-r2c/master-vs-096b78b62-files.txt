@@ -1,0 +1,8 @@
+supabase/migrations/20261121184000_yahoo_players_with_trend_history.sql
+supabase/migrations/20261121190000_sync_tweet_review_sources_keep_delivery_time.sql
+web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts
+web/components/NewsFeed/NewsCard.test.tsx
+web/lib/homepageNewsCompatibility.test.tsx
+web/lib/newsReviewBoundary.test.ts
+web/pages/api/v1/db/tweet-pattern-review.ts
+web/pages/api/v1/transactions/ownership-trends.ts

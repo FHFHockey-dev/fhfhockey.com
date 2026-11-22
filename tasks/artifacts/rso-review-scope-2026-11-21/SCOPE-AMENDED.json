@@ -1,0 +1,292 @@
+{
+  "version": "forge-qual-scope-v2",
+  "status": "amended_awaiting_identity",
+  "supersedes": {
+    "version": "forge-qual-scope-v1",
+    "protocolHash": "49ae034acc864a291393dc27e86cc745697ca83e18cc2f9666508f07db46a4ef"
+  },
+  "identity": {
+    "targets": [
+      "GOALS",
+      "ASSISTS",
+      "PP_POINTS",
+      "SHOTS_ON_GOAL",
+      "HITS",
+      "BLOCKED_SHOTS"
+    ],
+    "component": "forge-detailed-skater",
+    "modelMode": "PENDING: payload.modelMode of the first qualifying revision (expected baseline)",
+    "modelIdentityVersion": "forge-model-identity-v2 (identity fix 6ca16d025, TJ-accepted design); v1 and pre-fix rows are denied",
+    "codeVersion": "PENDING: the 64-hex verified producer closure hash in inputProvenance.modelIdentity.codeVersion (v2), carried on rows as GameForecast.producerCodeVersion; never payload.codeVersion",
+    "codeVersionMeaning": "wherever the protocol (decisions line, resetRule) says codeVersion, it means modelIdentity v2's 64-hex producer closure hash, not payload.codeVersion",
+    "releasePin": "payload.codeVersion stays the deploy SHA (the DB-enforced release pin); it is recorded per readback, not part of the bound identity, and a change of it alone does not reset this scope",
+    "configurationHash": "PENDING: inputProvenance.modelIdentity.configurationHash (v2) of the first qualifying revision",
+    "artifactHash": "PENDING: sha256({codeVersion, configurationHash}) with codeVersion = the 64-hex closure from modelIdentity v2 (D3 as amended)",
+    "horizon": 1,
+    "conditioning": "rso_participation_overlay",
+    "participationLineage": "forge-rso-participation-overlay-v1:skater (method); every row must carry it with @<revisionId> issuance, or it is denied",
+    "servedValueSurfaceSha256": "PENDING: per the reset rule, at the pin",
+    "pinRule": "pinned once from the first qualifying revision's payload and the deployed served-value surface, before that slate's first readback; the protocol and its hash do not change"
+  },
+  "bootstrapSignOff": "TJ pop-up 2026-11-21, unchanged",
+  "protocolHash": "2acaff686c4953f60d17a17cfe0c59af76beb043e82a9a384b3a2824fb871469",
+  "protocol": {
+    "decisions": "TJ direct pop-ups 2026-10-26 (D1-D5, FORGE-QUAL/TJ-DECISIONS-RECORDED.md) as amended by TJ pop-up 2026-11-21 relayed by Chef: Option B (every scored skater target, extends D2), identity fix (stable closure-hash codeVersion), D4 amended for overlay participation and per-target thresholds; part B rulings B1-B8 (relative dMSE, RSO-only claim, per-target minimums, bounded final look, every admitted game, per-start T-30 readbacks, served-value surface reset, F/D fallback), TJ pop-up 2026-11-21, recorded in rso-review-scope-2026-11-21/SCOPE-AMENDMENT.md",
+    "claim": {
+      "rso": {
+        "consumer": "Detailed RSO (rosterScheduleData/planning.ts, consumer rso, overlay applied)",
+        "uses": [
+          "totals",
+          "comparison"
+        ],
+        "deniedUses": [
+          "assignment",
+          "conditionalTieBreak"
+        ]
+      },
+      "startChart": "not claimed; Start Chart has no use gate and does not apply the RSO overlay",
+      "perTarget": "each target is its own claim and its own RsoTargetUseReview; league points show only when every weighted target passes"
+    },
+    "sealed": {
+      "from": "2026-10-23",
+      "to": "2026-10-30",
+      "rule": "no issued-row, readback or outcome reads for these dates; never used to choose target, threshold or method"
+    },
+    "population": {
+      "source": "forge_game_revisions selected by read_forge_game_revisions, horizon_games = 1, admitted by Detailed RSO with the RSO participation overlay",
+      "games": "every scheduled game of the slate with an admitted Detailed revision carrying the pinned identity (no canary restriction)",
+      "rows": "every skater row RSO serves at the readback, i.e. rows whose binding carries participationLineage forge-rso-participation-overlay-v1:skater@<revisionId> and conditioning rso_participation_overlay; unconditional, so a skater who does not dress settles at actual 0",
+      "excluded": "rows withheld at the readback (stale_source, incomplete_refresh, missing_target) are counted and reported, never scored",
+      "firstSlate": "first slate after the identity-fix release whose revisions carry this scope's pinned identity, and after this scope's hash is recorded",
+      "milestone": {
+        "minSlates": 14,
+        "perTarget": "each target's minSettledRows",
+        "finalLook": "first slate >= 14 at which every target still running has reached minSettledRows; a target not there by slate 28 ends inconclusive"
+      }
+    },
+    "readback": {
+      "timing": "one RSO read per distinct scheduled start time of the slate, at that start's T-30 min (after each game's own T-60 capture acknowledgement and publication, deadline.ts ACK_LEAD_MINUTES); that value is the evaluated prediction for the games starting then",
+      "coverage": "each read requests the whole skater pool of the games it covers, so every issued skater row can be admitted and read back",
+      "approval": "each slate's read plan (routes, start-time groups, count) needs TJ's approval before it runs",
+      "consumers": [
+        "rso"
+      ],
+      "integrity": "the RSO readback equals the overlay recomputed from the frozen revision line and the readback's recorded participation sources, to tolerance",
+      "tolerance": 0.0001
+    },
+    "settlement": {
+      "source": "forge_player_game_strength",
+      "readAt": "D+1 12:00 America/New_York",
+      "actual": "per target, see targets.*.actual; penalty-shot goals/shots (goals_ps, shots_ps) are excluded, as the model does not project them, and reported descriptively",
+      "rules": [
+        "recordedAt after puck drop and after issue",
+        "a later repair is settlement version 2, never an overwrite"
+      ]
+    },
+    "baselines": [
+      {
+        "id": "season_rate",
+        "definition": "player's season-to-date per-game rate of the target at the revision cutoffAt, times the same overlay indicator the row was served with (1 for _playing, 0 for _out); fewer than 5 games played: the season-to-date per-game rate of his position group (F or D)",
+        "role": "non-inferiority comparator; shares participation with FORGE so the comparison isolates the rate model"
+      },
+      {
+        "id": "previous_release",
+        "definition": "previous verified producer closure's revisions for the same games, where they exist",
+        "role": "descriptive only"
+      }
+    ],
+    "metrics": {
+      "bias": "mean(predicted - actual) / mean(actual), per target",
+      "calibrationSlope": "OLS slope of actual on predicted, per target",
+      "deltaMseRel": "(MSE(FORGE) - MSE(season_rate)) / MSE(season_rate), 95% bootstrap interval clustered by player and game, per target",
+      "mae": "MAE(FORGE), MAE(season_rate), descriptive only",
+      "integrity": "share of served rows whose readback matches the recomputed overlay value; identity_mismatch and readback_unissued counts"
+    },
+    "thresholds": {
+      "perTarget": "targets.*",
+      "integrityShare": 1,
+      "identityMismatchMax": 0,
+      "readbackUnissuedMax": 0
+    },
+    "looks": [
+      {
+        "afterSlate": 7,
+        "purpose": "stop for harm only, per target",
+        "stopIf": [
+          "absBias > targets.*.lookOneHarm.absBiasAbove",
+          "deltaMseRel lower 95% bound > 0",
+          "any integrity failure (stops every target)"
+        ],
+        "neverDeclaresSuccess": true
+      },
+      {
+        "afterSlate": "milestone.finalLook",
+        "purpose": "final decision, per target",
+        "passIf": "every threshold of that target, plus integrity"
+      }
+    ],
+    "resetRule": "ends this scope: any change of the producer closure hash (codeVersion), configurationHash or artifactHash; any change of the participation method id; or any change of the served-value surface outside the closure (sha256 of web/lib/projections/consumerRevisionAdmission.ts, rsoParticipationOverlay.ts and rsoParticipationNotes.ts, recorded per readback). A deploy whose closure and surface hashes are unchanged is the same identity and does not reset. A new scope is declared before its first slate.",
+    "noTuning": "no method, threshold or population change between looks; failed literal gates are reported beside any owner exception",
+    "targets": {
+      "GOALS": {
+        "actual": "goals_es + goals_pp + goals_pk (null if any term is null)",
+        "absBiasMax": 0.12,
+        "calibrationSlope": [
+          0.75,
+          1.25
+        ],
+        "deltaMseRelUpper95Max": 0.03,
+        "minSettledRows": 3700,
+        "lookOneHarm": {
+          "absBiasAbove": 0.36,
+          "deltaMseRelLower95Above": 0
+        },
+        "designPrior": {
+          "meanPerRow": 0.13,
+          "dispersion": 1.1,
+          "note": "design assumption for minSettledRows only (relative SE of bias <= absBiasMax/2.5); not read from data"
+        }
+      },
+      "ASSISTS": {
+        "actual": "assists_es + assists_pp + assists_pk (null if any term is null)",
+        "absBiasMax": 0.1,
+        "calibrationSlope": [
+          0.8,
+          1.2
+        ],
+        "deltaMseRelUpper95Max": 0.03,
+        "minSettledRows": 3300,
+        "lookOneHarm": {
+          "absBiasAbove": 0.3,
+          "deltaMseRelLower95Above": 0
+        },
+        "designPrior": {
+          "meanPerRow": 0.21,
+          "dispersion": 1.1,
+          "note": "design assumption for minSettledRows only (relative SE of bias <= absBiasMax/2.5); not read from data"
+        }
+      },
+      "PP_POINTS": {
+        "actual": "goals_pp + assists_pp (null if any term is null)",
+        "absBiasMax": 0.18,
+        "calibrationSlope": [
+          0.75,
+          1.25
+        ],
+        "deltaMseRelUpper95Max": 0.03,
+        "minSettledRows": 3300,
+        "lookOneHarm": {
+          "absBiasAbove": 0.54,
+          "deltaMseRelLower95Above": 0
+        },
+        "designPrior": {
+          "meanPerRow": 0.065,
+          "dispersion": 1.1,
+          "note": "design assumption for minSettledRows only (relative SE of bias <= absBiasMax/2.5); not read from data"
+        }
+      },
+      "SHOTS_ON_GOAL": {
+        "actual": "shots_es + shots_pp + shots_pk (null if any term is null)",
+        "absBiasMax": 0.05,
+        "calibrationSlope": [
+          0.85,
+          1.15
+        ],
+        "deltaMseRelUpper95Max": 0.03,
+        "minSettledRows": 2100,
+        "lookOneHarm": {
+          "absBiasAbove": 0.15,
+          "deltaMseRelLower95Above": 0
+        },
+        "designPrior": {
+          "meanPerRow": 1.6,
+          "dispersion": 1.3,
+          "note": "design assumption for minSettledRows only (relative SE of bias <= absBiasMax/2.5); not read from data"
+        }
+      },
+      "HITS": {
+        "actual": "hits (null if any term is null)",
+        "absBiasMax": 0.075,
+        "calibrationSlope": [
+          0.85,
+          1.15
+        ],
+        "deltaMseRelUpper95Max": 0.03,
+        "minSettledRows": 1600,
+        "lookOneHarm": {
+          "absBiasAbove": 0.225,
+          "deltaMseRelLower95Above": 0
+        },
+        "designPrior": {
+          "meanPerRow": 1.3,
+          "dispersion": 1.8,
+          "note": "design assumption for minSettledRows only (relative SE of bias <= absBiasMax/2.5); not read from data"
+        }
+      },
+      "BLOCKED_SHOTS": {
+        "actual": "blocks (null if any term is null)",
+        "absBiasMax": 0.075,
+        "calibrationSlope": [
+          0.85,
+          1.15
+        ],
+        "deltaMseRelUpper95Max": 0.03,
+        "minSettledRows": 1900,
+        "lookOneHarm": {
+          "absBiasAbove": 0.225,
+          "deltaMseRelLower95Above": 0
+        },
+        "designPrior": {
+          "meanPerRow": 0.85,
+          "dispersion": 1.4,
+          "note": "design assumption for minSettledRows only (relative SE of bias <= absBiasMax/2.5); not read from data"
+        }
+      }
+    },
+    "participation": {
+      "method": "forge-rso-participation-overlay-v1 (RSO_PARTICIPATION_OVERLAY_METHOD, consumerRevisionAdmission.ts at 47a1a2628)",
+      "bases": [
+        "confirmed_playing",
+        "confirmed_out",
+        "assumed_playing",
+        "assumed_out"
+      ],
+      "issuedValue": "stats[target] = the revision's frozen 'if he plays' line (conditionalStats) x 1 when the basis ends in _playing, x 0 otherwise, as the overlay computes it at the readback from the frozen revision and the read-time participation sources",
+      "record": "per row: basis, conflict flag, line-role flag, the overlay's last changes [time, source id], and whether the player dressed (forge_player_game_strength row with toi > 0)",
+      "report": "bias and dMSE stratified by basis, and the basis-vs-dressed confusion table; descriptive, not gates"
+    },
+    "bootstrap": {
+      "version": "forge-qual-bootstrap-v1",
+      "appliesTo": "metrics.deltaMseRel per target and look (gate and harm stop); bias and slope intervals from the same draws are descriptive",
+      "replicates": 10000,
+      "seed": {
+        "derivation": "baseSeed = first 16 hex chars of sha256(utf8('forge-qual-bootstrap-v1:' + the pre-bootstrap protocolHash)), read as an unsigned 64-bit integer; the pre-bootstrap protocolHash was fixed before any qualifying data existed",
+        "preBootstrapProtocolHash": "dc9c87b78e56d67965353f8f11a55a8a60e659a1f8eff489dca29bbff4cf1a68",
+        "baseSeedHex": "7f8b18a3b1d413c5",
+        "streams": "each (target, look) uses its own seed: first 16 hex chars of sha256(utf8('forge-qual-bootstrap-v1:' + baseSeedHex + ':' + targetKey + ':' + lookId)), lookId 'look1' or 'final', so results do not depend on target order"
+      },
+      "rng": {
+        "algorithm": "xoshiro256** (Blackman and Vigna 2018), state initialised by four successive splitmix64 outputs from the stream seed",
+        "uniformIndex": "index in [0, n): draw x = next u64; reject while x >= 2^64 - (2^64 mod n); return x mod n"
+      },
+      "clustering": {
+        "scheme": "two-way crossed pigeonhole bootstrap over game x player (Owen 2007)",
+        "why": "errors share game effects (pace, opponent, score state) and player effects (the rate model's per-player error); resampling either alone understates the interval",
+        "clusters": "the distinct gameIds and distinct NHL playerIds among that target's scored rows at that look, each sorted ascending numerically",
+        "perReplicate": "draw G game indices then P player indices with replacement (G, P = cluster counts), in that order; a row's weight = (times its game drawn) x (times its player drawn); rows of weight 0 drop out",
+        "statistic": "deltaMseRel = (sum w*(pred_FORGE - actual)^2 - sum w*(pred_baseline - actual)^2) / sum w*(pred_baseline - actual)^2"
+      },
+      "interval": {
+        "method": "percentile, two-sided 95%",
+        "quantiles": [
+          0.025,
+          0.975
+        ],
+        "quantileRule": "on the finite replicate values sorted ascending (m of them), the q-quantile is linear interpolation at position h = (m - 1) * q (Hyndman-Fan type 7)",
+        "nonFinite": "a replicate whose baseline sum is 0 is non-finite, excluded and counted; more than 1% non-finite makes that target inconclusive at that look"
+      },
+      "pointEstimate": "the unweighted full-sample statistic, not the bootstrap mean",
+      "precision": "IEEE-754 double arithmetic, sums in row order sorted by (gameId, playerId) ascending"
+    }
+  }
+}

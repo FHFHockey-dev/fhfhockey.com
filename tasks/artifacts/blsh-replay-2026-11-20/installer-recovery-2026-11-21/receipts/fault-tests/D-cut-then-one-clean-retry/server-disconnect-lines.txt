@@ -1,0 +1,9 @@
+   1 LOG:  could not receive data from client: Connection reset by peer
+   1 LOG:  disconnection: session time: 0:00:00.006 user=postgres database=postgres host=127.0.0.1 port=58828
+   1 LOG:  disconnection: session time: 0:00:00.014 user=postgres database=postgres host=127.0.0.1 port=58827
+   1 LOG:  disconnection: session time: 0:00:00.018 user=postgres database=postgres host=127.0.0.1 port=58832
+   1 LOG:  disconnection: session time: 0:00:00.024 user=postgres database=postgres host=127.0.0.1 port=58829
+   1 LOG:  disconnection: session time: 0:00:00.029 user=postgres database=postgres host=127.0.0.1 port=58835
+   1 LOG:  disconnection: session time: 0:00:00.066 user=postgres database=postgres host=127.0.0.1 port=58831
+   1 LOG:  disconnection: session time: 0:00:00.071 user=postgres database=postgres host=127.0.0.1 port=58834
+   1 LOG:  unexpected EOF on client connection with an open transaction

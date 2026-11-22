@@ -1,0 +1,10 @@
+{
+ "attempt_app": "blsh-install-292085b9-a1",
+ "installBackend": "53492 2026-11-21 11:17:42.810026-06",
+ "psql_exit": 2,
+ "startedAt": "2026-11-21T17:17:42.796Z",
+ "endedAt": "2026-11-21T17:17:42.899Z",
+ "connectionLost": true,
+ "failedAtLine": 1232,
+ "psqlStderrTail": "INSTALL_BACKEND 53492 2026-11-21 11:17:42.810026-06\npsql:/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-replay-2026-11-20/installer-recovery-2026-11-21/artifact/install.sql:1232: server closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\npsql:/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-replay-2026-11-20/installer-recovery-2026-11-21/artifact/install.sql:1232: error: connection to server was lost\n"
+}

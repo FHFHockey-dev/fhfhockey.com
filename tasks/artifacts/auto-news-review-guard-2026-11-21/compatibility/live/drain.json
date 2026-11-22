@@ -1,0 +1,31 @@
+{
+  "control": {
+    "start": "2026-11-21T19:59:58Z",
+    "end": "2026-11-21T20:02:00Z",
+    "requests_checked": 29,
+    "all_pages": true,
+    "relevant": [
+      {
+        "requestId": "96vkd-1795291211142-1761c94fc4ab",
+        "timestamp": "2026-11-21T20:00:11.142Z",
+        "requestPath": "/api/v1/db/auto-news-feed-items",
+        "requestMethod": "GET",
+        "statusCode": 200,
+        "deploymentId": "dpl_2psc7uGM4UhXgEFHwmhrVx8GA3G1"
+      }
+    ]
+  },
+  "drain": {
+    "start": "2026-11-21T20:11:30Z",
+    "end": "2026-11-21T20:20:09.161891+00:00",
+    "requests_checked": 50,
+    "all_pages": true,
+    "relevant": []
+  },
+  "manual_hold_utc": "2026-11-21T20:15:30Z",
+  "max_old_duration_seconds": 240,
+  "active_queue_statements": 0,
+  "pg_cron_sources": 0,
+  "next_vercel_cron": "2026-11-21T20:30Z",
+  "last_auto_terminal": "2026-11-21T20:01:21.669Z"
+}

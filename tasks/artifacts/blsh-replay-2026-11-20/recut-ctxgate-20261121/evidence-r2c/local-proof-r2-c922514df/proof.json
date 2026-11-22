@@ -1,0 +1,189 @@
+{
+ "verdict": "ok",
+ "checks": {
+  "all_four_gets_http_200": true,
+  "cron_fired_once_each": true,
+  "routes_report_sha": true,
+  "native_complete": true,
+  "context_tampered_403": true,
+  "live_route_rejects_test_grant": true,
+  "context_complete": true,
+  "context_reader_ok": true,
+  "receipts_written_once": true,
+  "repeat_native_already_claimed": true,
+  "repeat_context_already_claimed": true,
+  "repeat_counts_unchanged": true,
+  "readback_four_requests_200": true,
+  "other_cron_jobs_untouched": true,
+  "readback_labels_partial": true,
+  "only_supabase_outbound": true,
+  "no_nhl_or_nst_at_network": true,
+  "no_live_rows": true,
+  "outside_sandbox_bytes_identical": true,
+  "denials": true,
+  "within_production_limits": true,
+  "operator_stage1_rejects_replay_outside_window": true,
+  "stage2_tls_rule_rejects_replay_fixture": true,
+  "operator_context_reader_ok": true
+ },
+ "timingsMs": {
+  "native": {
+   "fixtureVerified": 32,
+   "native": 22546,
+   "total": 22556
+  },
+  "context": {
+   "context": 87,
+   "readers": 100,
+   "total": 103
+  }
+ },
+ "repeatTimingsMs": {
+  "native": {
+   "fixtureVerified": 6,
+   "native": 17,
+   "total": 31
+  },
+  "context": {
+   "context": 23,
+   "readers": 33,
+   "total": 36
+  }
+ },
+ "denials": {
+  "token-public-claim-rpc": 403,
+  "token-public-enabled-rpc": 403,
+  "token-read-public-runs": 403,
+  "token-write-public-runs": 403,
+  "token-write-public-games": 403,
+  "token-private-profile": 406,
+  "token-sandbox-fixture-positive": 200,
+  "anon-sandbox-fixture": 401,
+  "nobody-sandbox-fixture": 401
+ },
+ "frontHitsByHost": {
+  "fyhftlxokyjtpndbkfse.supabase.co": 87
+ },
+ "operatorStage1": {
+  "ok": false,
+  "error": "capture_ingress_window_unconfirmed"
+ },
+ "stage2TlsRule": {
+  "stage2TlsRule": "rejected",
+  "reason": "tls_peer_unauthorized",
+  "marks": [
+   [
+    "replay-fixture",
+    false,
+    "replay-fixture: no network connection was made"
+   ],
+   [
+    "replay-fixture",
+    false,
+    "replay-fixture: no network connection was made"
+   ],
+   [
+    "replay-fixture",
+    false,
+    "replay-fixture: no network connection was made"
+   ],
+   [
+    "replay-fixture",
+    false,
+    "replay-fixture: no network connection was made"
+   ],
+   [
+    "replay-fixture",
+    false,
+    "replay-fixture: no network connection was made"
+   ]
+  ]
+ },
+ "contextReader": true,
+ "outsideSandboxDump": {
+  "before": "9d3ff8e3baa1e28cf769412d36e791d7ceb6dd31cadf0daa9b85ebb094cce98d",
+  "after": "9d3ff8e3baa1e28cf769412d36e791d7ceb6dd31cadf0daa9b85ebb094cce98d"
+ },
+ "counts": [
+  {
+   "label": "native-1",
+   "job": "blsh-replay-native-20261119",
+   "requestId": 1,
+   "fired": "fired 1",
+   "second": "already_fired",
+   "http": 200,
+   "wallSeconds": 24.28,
+   "counts": {
+    "nativeRuns": 1,
+    "nativeObjects": 20,
+    "contextRuns": 0,
+    "contextObjects": 0,
+    "storage": 20,
+    "receipts": 1,
+    "liveRuns": 0,
+    "liveContextRuns": 0,
+    "liveStorage": 0
+   }
+  },
+  {
+   "label": "context-1",
+   "job": "blsh-replay-context-20261119",
+   "requestId": 2,
+   "fired": "fired 2",
+   "second": "already_fired",
+   "http": 200,
+   "wallSeconds": 0.26,
+   "counts": {
+    "nativeRuns": 1,
+    "nativeObjects": 20,
+    "contextRuns": 1,
+    "contextObjects": 8,
+    "storage": 28,
+    "receipts": 2,
+    "liveRuns": 0,
+    "liveContextRuns": 0,
+    "liveStorage": 0
+   }
+  },
+  {
+   "label": "native-2",
+   "job": "blsh-replay-native-20261119-repeat",
+   "requestId": 3,
+   "fired": "fired 3",
+   "second": "already_fired",
+   "http": 200,
+   "wallSeconds": 0.09,
+   "counts": {
+    "nativeRuns": 1,
+    "nativeObjects": 20,
+    "contextRuns": 1,
+    "contextObjects": 8,
+    "storage": 28,
+    "receipts": 2,
+    "liveRuns": 0,
+    "liveContextRuns": 0,
+    "liveStorage": 0
+   }
+  },
+  {
+   "label": "context-2",
+   "job": "blsh-replay-context-20261119-repeat",
+   "requestId": 4,
+   "fired": "fired 4",
+   "second": "already_fired",
+   "http": 200,
+   "wallSeconds": 0.09,
+   "counts": {
+    "nativeRuns": 1,
+    "nativeObjects": 20,
+    "contextRuns": 1,
+    "contextObjects": 8,
+    "storage": 28,
+    "receipts": 2,
+    "liveRuns": 0,
+    "liveContextRuns": 0,
+    "liveStorage": 0
+   }
+  }
+ ]
+}

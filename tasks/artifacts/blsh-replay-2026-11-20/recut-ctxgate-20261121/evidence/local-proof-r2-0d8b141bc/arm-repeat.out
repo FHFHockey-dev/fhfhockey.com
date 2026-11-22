@@ -1,0 +1,16 @@
+ schedule 
+----------
+        4
+(1 row)
+
+ schedule 
+----------
+        5
+(1 row)
+
+ jobid |               jobname               |   schedule    | active |                                                   command                                                   
+-------+-------------------------------------+---------------+--------+-------------------------------------------------------------------------------------------------------------
+     5 | blsh-replay-context-20261119-repeat | 57 17 21 11 * | t      | select blsh_replay.replay_get_fire('blsh-replay-context-20261119-repeat', '/api/v1/db/blsh-replay-context')
+     4 | blsh-replay-native-20261119-repeat  | 54 17 21 11 * | t      | select blsh_replay.replay_get_fire('blsh-replay-native-20261119-repeat', '/api/v1/db/blsh-replay-native')
+(2 rows)
+

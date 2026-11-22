@@ -1,0 +1,346 @@
+{
+  "statusCode": 200,
+  "success": true,
+  "termination": {
+    "state": "completed",
+    "resumeRequired": false,
+    "nextStartDate": null,
+    "runKey": "daily_incremental:2026-11-21",
+    "nextStageId": null,
+    "stagesRun": 10
+  },
+  "dateWindow": {
+    "startDate": "2026-11-21",
+    "endDate": "2026-11-21",
+    "date": "2026-11-21",
+    "rollingStartDate": "2026-11-20",
+    "rollingEndDate": "2026-11-20",
+    "sourceStartDate": "2026-11-20",
+    "sourceEndDate": "2026-11-20"
+  },
+  "stages": [
+    {
+      "id": "core_entity_freshness",
+      "status": "success",
+      "steps": [
+        {
+          "id": "update-games",
+          "status": "success",
+          "query": {},
+          "reason": null
+        },
+        {
+          "id": "update-teams",
+          "status": "success",
+          "query": {},
+          "reason": null
+        },
+        {
+          "id": "update-players",
+          "status": "success",
+          "query": {},
+          "reason": null
+        }
+      ]
+    },
+    {
+      "id": "upstream_skater_sources",
+      "status": "success",
+      "steps": [
+        {
+          "id": "update-nst-gamelog",
+          "status": "skipped",
+          "query": {
+            "runMode": "incremental",
+            "startDate": "2026-11-20",
+            "endDate": "2026-11-20",
+            "deadlineAt": "1795255691000"
+          },
+          "reason": "NST reported no completed games for the date."
+        },
+        {
+          "id": "update-wgo-skaters",
+          "status": "success",
+          "query": {
+            "action": "all",
+            "startDate": "2026-11-20"
+          },
+          "reason": null
+        },
+        {
+          "id": "update-wgo-totals",
+          "status": "success",
+          "query": {
+            "season": "current"
+          },
+          "reason": null
+        }
+      ]
+    },
+    {
+      "id": "contextual_builders",
+      "status": "success",
+      "steps": [
+        {
+          "id": "update-line-combinations",
+          "status": "success",
+          "query": {
+            "count": "10"
+          },
+          "reason": null
+        },
+        {
+          "id": "update-power-play-combinations-batch",
+          "status": "skipped",
+          "query": {},
+          "reason": "No games found in the selected date range."
+        }
+      ]
+    },
+    {
+      "id": "rolling_player_recompute",
+      "status": "success",
+      "steps": [
+        {
+          "id": "update-rolling-player-averages",
+          "status": "success",
+          "query": {
+            "startDate": "2026-11-20",
+            "endDate": "2026-11-20",
+            "fastMode": "true",
+            "executionProfile": "daily_incremental",
+            "bypassFreshnessBlockers": "true",
+            "maxPlayers": "16",
+            "maxRuntimeMs": "180000",
+            "deadlineAt": "1795255751000"
+          },
+          "reason": null
+        }
+      ]
+    },
+    {
+      "id": "projection_input_ingest",
+      "status": "success",
+      "steps": [
+        {
+          "id": "ingest-projection-inputs",
+          "status": "success",
+          "query": {
+            "maxDurationMs": "203000"
+          },
+          "reason": null
+        }
+      ]
+    },
+    {
+      "id": "projection_relationship_build",
+      "status": "success",
+      "steps": [
+        {
+          "id": "build-projection-relationships",
+          "status": "success",
+          "query": {
+            "gameId": "all"
+          },
+          "reason": null
+        }
+      ]
+    },
+    {
+      "id": "projection_derived_build",
+      "status": "success",
+      "steps": [
+        {
+          "id": "build-projection-derived-v2",
+          "status": "success",
+          "query": {},
+          "reason": null
+        }
+      ]
+    },
+    {
+      "id": "projection_execution",
+      "status": "success",
+      "steps": [
+        {
+          "id": "update-goalie-projections-v2",
+          "status": "success",
+          "query": {
+            "limit": "7",
+            "endDate": "2026-11-22"
+          },
+          "reason": null
+        },
+        {
+          "id": "run-projection-v2",
+          "status": "success",
+          "query": {
+            "date": "2026-11-21",
+            "maxDurationMs": "180000"
+          },
+          "reason": null
+        },
+        {
+          "id": "run-projection-v2",
+          "status": "success",
+          "query": {
+            "date": "2026-11-22",
+            "maxDurationMs": "180000"
+          },
+          "reason": null
+        }
+      ]
+    },
+    {
+      "id": "downstream_projection_consumers",
+      "status": "skipped",
+      "steps": [
+        {
+          "id": "run-projection-accuracy",
+          "status": "skipped",
+          "query": {},
+          "reason": "Accuracy refresh disabled by request."
+        }
+      ]
+    },
+    {
+      "id": "monitoring",
+      "status": "skipped",
+      "steps": [
+        {
+          "id": "cron-report",
+          "status": "skipped",
+          "query": {},
+          "reason": "Monitoring remains a separate reporting surface and is not invoked recursively by the coordinator."
+        }
+      ]
+    }
+  ],
+  "pipelineState": [
+    {
+      "op": "core_entity_freshness",
+      "status": "complete",
+      "last_error": null
+    },
+    {
+      "op": "upstream_skater_sources",
+      "status": "complete",
+      "last_error": null
+    },
+    {
+      "op": "contextual_builders",
+      "status": "complete",
+      "last_error": null
+    },
+    {
+      "op": "rolling_player_recompute",
+      "status": "complete",
+      "last_error": null
+    },
+    {
+      "op": "projection_input_ingest",
+      "status": "complete",
+      "last_error": null
+    },
+    {
+      "op": "projection_relationship_build",
+      "status": "complete",
+      "last_error": null
+    },
+    {
+      "op": "projection_derived_build",
+      "status": "complete",
+      "last_error": null
+    },
+    {
+      "op": "projection_execution",
+      "status": "complete",
+      "last_error": null
+    },
+    {
+      "op": "projection_execution:goalie",
+      "status": "complete",
+      "last_error": null
+    },
+    {
+      "op": "downstream_projection_consumers",
+      "status": "complete",
+      "last_error": null
+    },
+    {
+      "op": "monitoring",
+      "status": "complete",
+      "last_error": null
+    }
+  ],
+  "childCalls": {
+    "nst": [
+      {
+        "runMode": "incremental",
+        "startDate": "2026-11-20",
+        "endDate": "2026-11-20",
+        "deadlineAt": "1795255691000"
+      }
+    ],
+    "wgoSkaters": [
+      {
+        "action": "all",
+        "startDate": "2026-11-20"
+      }
+    ],
+    "wgoTotals": [
+      {
+        "season": "current"
+      }
+    ],
+    "lineCombinations": [
+      {
+        "count": "10"
+      }
+    ],
+    "powerPlay": [],
+    "rolling": [
+      {
+        "startDate": "2026-11-20",
+        "endDate": "2026-11-20",
+        "fastMode": "true",
+        "executionProfile": "daily_incremental",
+        "bypassFreshnessBlockers": "true",
+        "maxPlayers": "16",
+        "maxRuntimeMs": "180000",
+        "deadlineAt": "1795255751000"
+      }
+    ],
+    "ingest": [
+      {
+        "maxDurationMs": "203000"
+      }
+    ],
+    "relationships": [
+      {
+        "gameId": "all"
+      }
+    ],
+    "derived": [
+      {}
+    ],
+    "goalie": [
+      {
+        "limit": "7",
+        "endDate": "2026-11-22"
+      }
+    ],
+    "projection": [
+      {
+        "date": "2026-11-21",
+        "maxDurationMs": "180000"
+      },
+      {
+        "date": "2026-11-22",
+        "maxDurationMs": "180000"
+      }
+    ]
+  },
+  "lineContextReads": 0,
+  "ppContextReads": 0
+}

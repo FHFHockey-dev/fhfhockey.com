@@ -1,0 +1,13 @@
+{
+  "version": "fhfh.blsh.native-capture-run.v6",
+  "startedAtUTC": "2026-11-21T21:01:03.027Z",
+  "supabaseOrigin": "https://fyhftlxokyjtpndbkfse.supabase.co",
+  "lifecycleMode": "disabled",
+  "sourceDate": "2026-11-19",
+  "runId": "7e5c6c41-7170-48fa-8040-07b4c449e96f",
+  "deploymentBinding": {
+    "deploymentId": "dpl_DebFbbRByWvcVCdBTJc7FewDhu5w",
+    "gitCommitSha": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+    "routeBundleSHA256": null
+  }
+}

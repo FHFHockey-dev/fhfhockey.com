@@ -1,0 +1,16 @@
+{
+  "start": "2026-11-21T20:29:55Z",
+  "end": "2026-11-21T20:31:18.258746+00:00",
+  "requests_checked": 25,
+  "all_pages": true,
+  "relevant": [
+    {
+      "requestId": "cw28c-1795293011292-4cea943eef03",
+      "timestamp": "2026-11-21T20:30:11.292Z",
+      "requestPath": "/api/v1/db/auto-news-feed-items",
+      "requestMethod": "GET",
+      "statusCode": 200,
+      "deploymentId": "dpl_7zstWTyQLKT3ff66vSoxmw1TKGBB"
+    }
+  ]
+}

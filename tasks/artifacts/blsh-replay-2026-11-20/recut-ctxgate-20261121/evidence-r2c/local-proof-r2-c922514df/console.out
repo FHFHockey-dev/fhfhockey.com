@@ -1,0 +1,466 @@
+== generate the sandbox SQL from the envelope (refused unless sha256 f2525c71...)
+{"install": "/private/tmp/blsh-recut-ctxgate/run-4/sql/install.sql", "bytes": 376877, "sha256": "766aec3bfbc3b766c113a5f25e64b35d9fbebf54083c2ef49c54cef84f24519b", "migrations": {"20261116000000_blsh_native_capture_v6.sql": "0b833cc03d0fd2b74fa92f89d3c6c67ceac758c2", "20261116000100_blsh_request_context_v1.sql": "be17af9b6b597401950595b34404807d6d810218", "20261118131414_blsh_request_context_custody.sql": "daa74d13ddd744c276486e89d2264796b1b75a3a"}}
+== production stand-in: PG15, Supabase-like roles, the real BLSH migrations in public (live switch stays off)
+== cron, pg_net and Vault stand-ins (as FORGE's check_sandbox.py), with one unrelated WGO job
+outside-sandbox dump before install: 9d3ff8e3baa1e28cf769412d36e791d7ceb6dd31cadf0daa9b85ebb094cce98d
+== install the sandbox (one transaction), then the isolation check
+{"apiRole": {"rolname": "blsh_replay_api", "rolsuper": false, "rolinherit": false, "rolcanlogin": false, "rolcreatedb": false, "rolbypassrls": false, "rolcreaterole": false, "rolreplication": false}, "verdict": "ok", "apiSurface": {"definers": 16, "functions": 16, "relations": 0}, "apiRoleMemberOf": [], "otherRolesOnSandbox": [], "privateSchemaAccess": [], "writableLiveRelations": [], "executableLiveBlshRpcs": [], "directTableGrantsOutsideApi": [], "directRoutineGrantsOutsideApi": []}
+outside-sandbox dump after install: 9d3ff8e3baa1e28cf769412d36e791d7ceb6dd31cadf0daa9b85ebb094cce98d
+== PostgREST 16.6 (db-schemas public,blsh_replay_api)
+exposed schemas: public,blsh_replay_api
+== loopback TLS front: Supabase host -> PostgREST; NHL/NST hosts logged and refused (empty fixture dir)
+== isolated Next dev (loopback-only egress, canary credentials, decoy live context key, sandbox token)
+baseline counts: {"nativeRuns" : 0, "nativeObjects" : 0, "contextRuns" : 0, "contextObjects" : 0, "storage" : 0, "receipts" : 0, "liveRuns" : 0, "liveContextRuns" : 0, "liveStorage" : 0}
+== dated arm SQL on this disposable Postgres: refusals first (each rolls back), and the pinned originals refuse today
+{"case":"original-arm-pinned-to-20261120","refused":"replay_get_preflight_failed"}
+{"case":"run-date-yesterday","refused":"replay_get_run_date_invalid"}
+{"case":"run-date-tomorrow","refused":"replay_get_run_date_invalid"}
+{"case":"run-date-slate-day-plus-one","refused":"replay_get_run_date_invalid"}
+{"case":"run-date-impossible","refused":"replay_get_run_date_invalid"}
+{"case":"run-date-malformed","refused":"replay_get_run_date_invalid"}
+{"case":"schedule-other-day","refused":"replay_get_schedule_invalid"}
+{"case":"schedule-past","refused":"replay_get_schedule_invalid"}
+{"case":"schedule-context-too-soon","refused":"replay_get_schedule_invalid"}
+{"case":"schedule-context-after-2350","refused":"replay_get_schedule_invalid"}
+{"case":"schedule-wildcard","refused":"replay_get_schedule_invalid"}
+{"case":"repeat-before-first-arm","refused":"replay_repeat_preflight_failed"}
+== arm the one-shot job, fire it (twice: the second must be already_fired), dispatch its pg_net GET, read back
+{"label":"native-1","job":"blsh-replay-native-20261119","requestId":1,"fired":"fired 1","second":"already_fired","http":200,"wallSeconds":24.28,"counts":{"nativeRuns" : 1, "nativeObjects" : 20, "contextRuns" : 0, "contextObjects" : 0, "storage" : 20, "receipts" : 1, "liveRuns" : 0, "liveContextRuns" : 0, "liveStorage" : 0}}
+{"label":"context-1","job":"blsh-replay-context-20261119","requestId":2,"fired":"fired 2","second":"already_fired","http":200,"wallSeconds":0.26,"counts":{"nativeRuns" : 1, "nativeObjects" : 20, "contextRuns" : 1, "contextObjects" : 8, "storage" : 28, "receipts" : 2, "liveRuns" : 0, "liveContextRuns" : 0, "liveStorage" : 0}}
+{"requests": [{"jobName": "blsh-replay-native-20261119", "statusCode": 200}, {"jobName": "blsh-replay-context-20261119", "statusCode": 200}], "sandbox": {"storage": 28, "receipts": 2, "nativeRuns": 1, "contextRuns": 1, "nativeObjects": 20, "contextObjects": 8}, "jobs": 0, "otherCronJobs": 1}
+== the repeat (the same GET again): arm-replay-get-repeat.sql
+{"case":"original-repeat-pinned-to-20261120","refused":"replay_repeat_preflight_failed"}
+{"label":"native-2","job":"blsh-replay-native-20261119-repeat","requestId":3,"fired":"fired 3","second":"already_fired","http":200,"wallSeconds":0.09,"counts":{"nativeRuns" : 1, "nativeObjects" : 20, "contextRuns" : 1, "contextObjects" : 8, "storage" : 28, "receipts" : 2, "liveRuns" : 0, "liveContextRuns" : 0, "liveStorage" : 0}}
+{"label":"context-2","job":"blsh-replay-context-20261119-repeat","requestId":4,"fired":"fired 4","second":"already_fired","http":200,"wallSeconds":0.09,"counts":{"nativeRuns" : 1, "nativeObjects" : 20, "contextRuns" : 1, "contextObjects" : 8, "storage" : 28, "receipts" : 2, "liveRuns" : 0, "liveContextRuns" : 0, "liveStorage" : 0}}
+{"requests": [{"jobName": "blsh-replay-native-20261119", "statusCode": 200}, {"jobName": "blsh-replay-context-20261119", "statusCode": 200}, {"jobName": "blsh-replay-native-20261119-repeat", "statusCode": 200}, {"jobName": "blsh-replay-context-20261119-repeat", "statusCode": 200}], "sandbox": {"storage": 28, "receipts": 2, "nativeRuns": 1, "contextRuns": 1, "nativeObjects": 20, "contextObjects": 8}, "jobs": 0, "otherCronJobs": 1}
+arm preflight refuses a second first-arm (expected)
+== denial matrix (sandbox token, anon, no token)
+{"probe":"token-public-claim-rpc","http":403}
+{"probe":"token-public-enabled-rpc","http":403}
+{"probe":"token-read-public-runs","http":403}
+{"probe":"token-write-public-runs","http":403}
+{"probe":"token-write-public-games","http":403}
+{"probe":"token-private-profile","http":406}
+{"probe":"token-sandbox-fixture-positive","http":200}
+{"probe":"anon-sandbox-fixture","http":401}
+{"probe":"nobody-sandbox-fixture","http":401}
+outside-sandbox dump after: 9d3ff8e3baa1e28cf769412d36e791d7ceb6dd31cadf0daa9b85ebb094cce98d
+== operator readback: read-only export of the sandbox packets, then stage 1 + stage 2 + context reader (offline)
+{"native": "74279a81-4e9c-475b-bba7-4eec2746abd0", "context": "3433c29f-8114-4aa7-9f53-eda0452caeba"}
+{"stage2TlsRule":"rejected","reason":"tls_peer_unauthorized","marks":[["replay-fixture",false,"replay-fixture: no network connection was made"],["replay-fixture",false,"replay-fixture: no network connection was made"],["replay-fixture",false,"replay-fixture: no network connection was made"],["replay-fixture",false,"replay-fixture: no network connection was made"],["replay-fixture",false,"replay-fixture: no network connection was made"]]}
+{
+ "verdict": "ok",
+ "checks": {
+  "all_four_gets_http_200": true,
+  "cron_fired_once_each": true,
+  "routes_report_sha": true,
+  "native_complete": true,
+  "context_tampered_403": true,
+  "live_route_rejects_test_grant": true,
+  "context_complete": true,
+  "context_reader_ok": true,
+  "receipts_written_once": true,
+  "repeat_native_already_claimed": true,
+  "repeat_context_already_claimed": true,
+  "repeat_counts_unchanged": true,
+  "readback_four_requests_200": true,
+  "other_cron_jobs_untouched": true,
+  "readback_labels_partial": true,
+  "only_supabase_outbound": true,
+  "no_nhl_or_nst_at_network": true,
+  "no_live_rows": true,
+  "outside_sandbox_bytes_identical": true,
+  "denials": true,
+  "within_production_limits": true,
+  "operator_stage1_rejects_replay_outside_window": true,
+  "stage2_tls_rule_rejects_replay_fixture": true,
+  "operator_context_reader_ok": true
+ },
+ "timingsMs": {
+  "native": {
+   "fixtureVerified": 32,
+   "native": 22546,
+   "total": 22556
+  },
+  "context": {
+   "context": 87,
+   "readers": 100,
+   "total": 103
+  }
+ },
+ "repeatTimingsMs": {
+  "native": {
+   "fixtureVerified": 6,
+   "native": 17,
+   "total": 31
+  },
+  "context": {
+   "context": 23,
+   "readers": 33,
+   "total": 36
+  }
+ },
+ "denials": {
+  "token-public-claim-rpc": 403,
+  "token-public-enabled-rpc": 403,
+  "token-read-public-runs": 403,
+  "token-write-public-runs": 403,
+  "token-write-public-games": 403,
+  "token-private-profile": 406,
+  "token-sandbox-fixture-positive": 200,
+  "anon-sandbox-fixture": 401,
+  "nobody-sandbox-fixture": 401
+ },
+ "frontHitsByHost": {
+  "fyhftlxokyjtpndbkfse.supabase.co": 87
+ },
+ "operatorStage1": {
+  "ok": false,
+  "error": "capture_ingress_window_unconfirmed"
+ },
+ "stage2TlsRule": {
+  "stage2TlsRule": "rejected",
+  "reason": "tls_peer_unauthorized",
+  "marks": [
+   [
+    "replay-fixture",
+    false,
+    "replay-fixture: no network connection was made"
+   ],
+   [
+    "replay-fixture",
+    false,
+    "replay-fixture: no network connection was made"
+   ],
+   [
+    "replay-fixture",
+    false,
+    "replay-fixture: no network connection was made"
+   ],
+   [
+    "replay-fixture",
+    false,
+    "replay-fixture: no network connection was made"
+   ],
+   [
+    "replay-fixture",
+    false,
+    "replay-fixture: no network connection was made"
+   ]
+  ]
+ },
+ "contextReader": true,
+ "outsideSandboxDump": {
+  "before": "9d3ff8e3baa1e28cf769412d36e791d7ceb6dd31cadf0daa9b85ebb094cce98d",
+  "after": "9d3ff8e3baa1e28cf769412d36e791d7ceb6dd31cadf0daa9b85ebb094cce98d"
+ },
+ "counts": [
+  {
+   "label": "native-1",
+   "job": "blsh-replay-native-20261119",
+   "requestId": 1,
+   "fired": "fired 1",
+   "second": "already_fired",
+   "http": 200,
+   "wallSeconds": 24.28,
+   "counts": {
+    "nativeRuns": 1,
+    "nativeObjects": 20,
+    "contextRuns": 0,
+    "contextObjects": 0,
+    "storage": 20,
+    "receipts": 1,
+    "liveRuns": 0,
+    "liveContextRuns": 0,
+    "liveStorage": 0
+   }
+  },
+  {
+   "label": "context-1",
+   "job": "blsh-replay-context-20261119",
+   "requestId": 2,
+   "fired": "fired 2",
+   "second": "already_fired",
+   "http": 200,
+   "wallSeconds": 0.26,
+   "counts": {
+    "nativeRuns": 1,
+    "nativeObjects": 20,
+    "contextRuns": 1,
+    "contextObjects": 8,
+    "storage": 28,
+    "receipts": 2,
+    "liveRuns": 0,
+    "liveContextRuns": 0,
+    "liveStorage": 0
+   }
+  },
+  {
+   "label": "native-2",
+   "job": "blsh-replay-native-20261119-repeat",
+   "requestId": 3,
+   "fired": "fired 3",
+   "second": "already_fired",
+   "http": 200,
+   "wallSeconds": 0.09,
+   "counts": {
+    "nativeRuns": 1,
+    "nativeObjects": 20,
+    "contextRuns": 1,
+    "contextObjects": 8,
+    "storage": 28,
+    "receipts": 2,
+    "liveRuns": 0,
+    "liveContextRuns": 0,
+    "liveStorage": 0
+   }
+  },
+  {
+   "label": "context-2",
+   "job": "blsh-replay-context-20261119-repeat",
+   "requestId": 4,
+   "fired": "fired 4",
+   "second": "already_fired",
+   "http": 200,
+   "wallSeconds": 0.09,
+   "counts": {
+    "nativeRuns": 1,
+    "nativeObjects": 20,
+    "contextRuns": 1,
+    "contextObjects": 8,
+    "storage": 28,
+    "receipts": 2,
+    "liveRuns": 0,
+    "liveContextRuns": 0,
+    "liveStorage": 0
+   }
+  }
+ ]
+}
+== negative controls on a real UTC day other than 2026-11-20 (live route, replay grants, SQL fuses)
+{
+ "verdict": "ok",
+ "checks": {
+  "real_utc_day_is_not_20261120": true,
+  "live_route_signed_grant_outside_approved_date": true,
+  "live_route_no_writes_no_io": true,
+  "replay_unapproved_key_refused": true,
+  "replay_mismatched_date_refused": true,
+  "replay_tampered_refused": true,
+  "replay_receipt_logical_day": true,
+  "replay_reader_pinned_to_real_day": true,
+  "native_and_context_on_real_day": true,
+  "stage1_reader_rejects_replay": true,
+  "sql_refusals_all_13": true
+ },
+ "runDate": "2026-11-21",
+ "liveRoute": {
+  "http": 200,
+  "body": {
+   "state": "skipped",
+   "reason": "outside_approved_date"
+  }
+ },
+ "countsBefore": {
+  "nativeRuns": 1,
+  "nativeObjects": 20,
+  "contextRuns": 1,
+  "contextObjects": 8,
+  "storage": 28,
+  "receipts": 2,
+  "liveRuns": 0,
+  "liveContextRuns": 0,
+  "liveStorage": 0
+ },
+ "countsAfter": {
+  "nativeRuns": 1,
+  "nativeObjects": 20,
+  "contextRuns": 1,
+  "contextObjects": 8,
+  "storage": 28,
+  "receipts": 2,
+  "liveRuns": 0,
+  "liveContextRuns": 0,
+  "liveStorage": 0
+ },
+ "sqlRefusals": [
+  {
+   "case": "original-arm-pinned-to-20261120",
+   "refused": "replay_get_preflight_failed"
+  },
+  {
+   "case": "run-date-yesterday",
+   "refused": "replay_get_run_date_invalid"
+  },
+  {
+   "case": "run-date-tomorrow",
+   "refused": "replay_get_run_date_invalid"
+  },
+  {
+   "case": "run-date-slate-day-plus-one",
+   "refused": "replay_get_run_date_invalid"
+  },
+  {
+   "case": "run-date-impossible",
+   "refused": "replay_get_run_date_invalid"
+  },
+  {
+   "case": "run-date-malformed",
+   "refused": "replay_get_run_date_invalid"
+  },
+  {
+   "case": "schedule-other-day",
+   "refused": "replay_get_schedule_invalid"
+  },
+  {
+   "case": "schedule-past",
+   "refused": "replay_get_schedule_invalid"
+  },
+  {
+   "case": "schedule-context-too-soon",
+   "refused": "replay_get_schedule_invalid"
+  },
+  {
+   "case": "schedule-context-after-2350",
+   "refused": "replay_get_schedule_invalid"
+  },
+  {
+   "case": "schedule-wildcard",
+   "refused": "replay_get_schedule_invalid"
+  },
+  {
+   "case": "repeat-before-first-arm",
+   "refused": "replay_repeat_preflight_failed"
+  },
+  {
+   "case": "original-repeat-pinned-to-20261120",
+   "refused": "replay_repeat_preflight_failed"
+  }
+ ]
+}
+== rerun path (a failed hosted run): disarm, unexpose, reset, reinstall, isolation, re-expose, arm, fire again
+exposed schemas: public
+psql:/private/tmp/blsh-recut-ctxgate/run-4/sql/reset.sql:5: NOTICE:  drop cascades to 16 other objects
+DETAIL:  drop cascades to function blsh_replay_api.blsh_capture_enabled_v1()
+drop cascades to function blsh_replay_api.blsh_capture_claim_v1(text,date,jsonb)
+drop cascades to function blsh_replay_api.blsh_capture_intent_v1(uuid,text,text[])
+drop cascades to function blsh_replay_api.blsh_capture_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay_api.blsh_capture_close_v1(uuid,text,text,text)
+drop cascades to function blsh_replay_api.blsh_context_source_v1(date,uuid,text)
+drop cascades to function blsh_replay_api.blsh_context_claim_v1(date,uuid,text)
+drop cascades to function blsh_replay_api.blsh_context_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay_api.blsh_context_close_v1(uuid,text,text,text,text)
+drop cascades to function blsh_replay_api.blsh_request_context_v1(date,date)
+drop cascades to function blsh_replay_api.blsh_replay_storage_put_v1(text,text,text,text)
+drop cascades to function blsh_replay_api.blsh_replay_storage_get_v1(text,text)
+drop cascades to function blsh_replay_api.blsh_replay_fixture_v1()
+drop cascades to function blsh_replay_api.blsh_replay_export_v1(date)
+drop cascades to function blsh_replay_api.blsh_replay_receipt_put_v1(text,jsonb)
+drop cascades to function blsh_replay_api.blsh_replay_receipt_get_v1(text)
+psql:/private/tmp/blsh-recut-ctxgate/run-4/sql/reset.sql:6: NOTICE:  drop cascades to 38 other objects
+DETAIL:  drop cascades to table blsh_replay.storage_buckets
+drop cascades to table blsh_replay.storage_objects
+drop cascades to table blsh_replay.blsh_capture_control
+drop cascades to table blsh_replay.blsh_capture_runs
+drop cascades to table blsh_replay.blsh_capture_objects
+drop cascades to function blsh_replay.blsh_capture_guard_v1()
+drop cascades to function blsh_replay.blsh_capture_enabled_v1()
+drop cascades to function blsh_replay.blsh_capture_claim_v1(text,date,jsonb)
+drop cascades to function blsh_replay.blsh_capture_intent_v1(uuid,text,text[])
+drop cascades to function blsh_replay.blsh_capture_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay.blsh_capture_close_v1(uuid,text,text,text)
+drop cascades to function blsh_replay.blsh_capture_watchdog_v1()
+drop cascades to function blsh_replay.blsh_capture_watchdog_assert_v1(date)
+drop cascades to function blsh_replay.blsh_capture_keep_v1(uuid)
+drop cascades to function blsh_replay.blsh_capture_retention_v1(date)
+drop cascades to function blsh_replay.blsh_capture_mark_pruned_v1(uuid)
+drop cascades to function blsh_replay.blsh_request_context_v1(date,date)
+drop cascades to table blsh_replay.blsh_context_runs
+drop cascades to table blsh_replay.blsh_context_objects
+drop cascades to function blsh_replay.blsh_context_guard_v1()
+drop cascades to function blsh_replay.blsh_context_source_v1(date,uuid,text)
+drop cascades to function blsh_replay.blsh_context_claim_v1(date,uuid,text)
+drop cascades to function blsh_replay.blsh_context_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay.blsh_context_close_v1(uuid,text,text,text,text)
+drop cascades to table blsh_replay.games
+drop cascades to table blsh_replay.wgo_skater_stats
+drop cascades to table blsh_replay.nst_gamelog_as_counts
+drop cascades to table blsh_replay.nst_gamelog_as_counts_oi
+drop cascades to table blsh_replay.fixture_files
+drop cascades to table blsh_replay.receipts
+drop cascades to function blsh_replay.storage_put_v1(text,text,text,text)
+drop cascades to function blsh_replay.storage_get_v1(text,text)
+drop cascades to function blsh_replay.fixture_v1()
+drop cascades to function blsh_replay.export_v1(date)
+drop cascades to function blsh_replay.receipt_put_v1(text,jsonb)
+drop cascades to function blsh_replay.receipt_get_v1(text)
+drop cascades to table blsh_replay.replay_get_requests
+drop cascades to function blsh_replay.replay_get_fire(text,text)
+exposed schemas: public,blsh_replay_api
+{"label":"native-rerun","job":"blsh-replay-native-20261119","requestId":5,"fired":"fired 5","second":"already_fired","http":200,"wallSeconds":22.52,"counts":{"nativeRuns" : 1, "nativeObjects" : 20, "contextRuns" : 0, "contextObjects" : 0, "storage" : 20, "receipts" : 1, "liveRuns" : 0, "liveContextRuns" : 0, "liveStorage" : 0}}
+{"label":"context-rerun","job":"blsh-replay-context-20261119","requestId":6,"fired":"fired 6","second":"already_fired","http":200,"wallSeconds":0.19,"counts":{"nativeRuns" : 1, "nativeObjects" : 20, "contextRuns" : 1, "contextObjects" : 8, "storage" : 28, "receipts" : 2, "liveRuns" : 0, "liveContextRuns" : 0, "liveStorage" : 0}}
+{"requests": [{"jobName": "blsh-replay-native-20261119", "statusCode": 200}, {"jobName": "blsh-replay-context-20261119", "statusCode": 200}], "sandbox": {"storage": 28, "receipts": 2, "nativeRuns": 1, "contextRuns": 1, "nativeObjects": 20, "contextObjects": 8}, "jobs": 0, "otherCronJobs": 1}
+{"rerun": "complete", "nativeRunId": "cf9d21eb-95ec-4441-8bcd-55bac4cb378c", "nativeMs": 22425, "contextMs": 115}
+== retire: disarm, unexpose, reset
+exposed schemas: public
+psql:/private/tmp/blsh-recut-ctxgate/run-4/sql/reset.sql:5: NOTICE:  drop cascades to 16 other objects
+DETAIL:  drop cascades to function blsh_replay_api.blsh_capture_enabled_v1()
+drop cascades to function blsh_replay_api.blsh_capture_claim_v1(text,date,jsonb)
+drop cascades to function blsh_replay_api.blsh_capture_intent_v1(uuid,text,text[])
+drop cascades to function blsh_replay_api.blsh_capture_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay_api.blsh_capture_close_v1(uuid,text,text,text)
+drop cascades to function blsh_replay_api.blsh_context_source_v1(date,uuid,text)
+drop cascades to function blsh_replay_api.blsh_context_claim_v1(date,uuid,text)
+drop cascades to function blsh_replay_api.blsh_context_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay_api.blsh_context_close_v1(uuid,text,text,text,text)
+drop cascades to function blsh_replay_api.blsh_request_context_v1(date,date)
+drop cascades to function blsh_replay_api.blsh_replay_storage_put_v1(text,text,text,text)
+drop cascades to function blsh_replay_api.blsh_replay_storage_get_v1(text,text)
+drop cascades to function blsh_replay_api.blsh_replay_fixture_v1()
+drop cascades to function blsh_replay_api.blsh_replay_export_v1(date)
+drop cascades to function blsh_replay_api.blsh_replay_receipt_put_v1(text,jsonb)
+drop cascades to function blsh_replay_api.blsh_replay_receipt_get_v1(text)
+psql:/private/tmp/blsh-recut-ctxgate/run-4/sql/reset.sql:6: NOTICE:  drop cascades to 38 other objects
+DETAIL:  drop cascades to table blsh_replay.storage_buckets
+drop cascades to table blsh_replay.storage_objects
+drop cascades to table blsh_replay.blsh_capture_control
+drop cascades to table blsh_replay.blsh_capture_runs
+drop cascades to table blsh_replay.blsh_capture_objects
+drop cascades to function blsh_replay.blsh_capture_guard_v1()
+drop cascades to function blsh_replay.blsh_capture_enabled_v1()
+drop cascades to function blsh_replay.blsh_capture_claim_v1(text,date,jsonb)
+drop cascades to function blsh_replay.blsh_capture_intent_v1(uuid,text,text[])
+drop cascades to function blsh_replay.blsh_capture_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay.blsh_capture_close_v1(uuid,text,text,text)
+drop cascades to function blsh_replay.blsh_capture_watchdog_v1()
+drop cascades to function blsh_replay.blsh_capture_watchdog_assert_v1(date)
+drop cascades to function blsh_replay.blsh_capture_keep_v1(uuid)
+drop cascades to function blsh_replay.blsh_capture_retention_v1(date)
+drop cascades to function blsh_replay.blsh_capture_mark_pruned_v1(uuid)
+drop cascades to function blsh_replay.blsh_request_context_v1(date,date)
+drop cascades to table blsh_replay.blsh_context_runs
+drop cascades to table blsh_replay.blsh_context_objects
+drop cascades to function blsh_replay.blsh_context_guard_v1()
+drop cascades to function blsh_replay.blsh_context_source_v1(date,uuid,text)
+drop cascades to function blsh_replay.blsh_context_claim_v1(date,uuid,text)
+drop cascades to function blsh_replay.blsh_context_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay.blsh_context_close_v1(uuid,text,text,text,text)
+drop cascades to table blsh_replay.games
+drop cascades to table blsh_replay.wgo_skater_stats
+drop cascades to table blsh_replay.nst_gamelog_as_counts
+drop cascades to table blsh_replay.nst_gamelog_as_counts_oi
+drop cascades to table blsh_replay.fixture_files
+drop cascades to table blsh_replay.receipts
+drop cascades to function blsh_replay.storage_put_v1(text,text,text,text)
+drop cascades to function blsh_replay.storage_get_v1(text,text)
+drop cascades to function blsh_replay.fixture_v1()
+drop cascades to function blsh_replay.export_v1(date)
+drop cascades to function blsh_replay.receipt_put_v1(text,jsonb)
+drop cascades to function blsh_replay.receipt_get_v1(text)
+drop cascades to table blsh_replay.replay_get_requests
+drop cascades to function blsh_replay.replay_get_fire(text,text)
+final reset: no sandbox schemas or roles; roles, memberships and outside-sandbox bytes equal the pre-install state
+== PASS (local hosted-replay proof)
+proofC/tasks/artifacts/blsh-replay-2026-11-20/hosted/local_proof_r2.sh: line 45: 34362 Terminated: 15          "$NODE" "$V6/fixtures.mjs" "$RUN/front.json" > "$RUN/front.log" 2>&1
+cleanup done (exit 0)
+exit 0

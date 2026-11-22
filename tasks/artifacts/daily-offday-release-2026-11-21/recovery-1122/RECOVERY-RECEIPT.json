@@ -1,0 +1,90 @@
+{
+ "batch": "Nov 22 scoped recovery (TJ pop-up 2026-11-22 ~14:10Z)",
+ "notNaturalRunAcceptance": true,
+ "scheduledRun": {
+  "scope": "daily_incremental:2026-11-22",
+  "status": "failed",
+  "firstFailingStage": "upstream_skater_sources",
+  "step": "update-wgo-skaters",
+  "code": "stage_handoff_unconfirmed",
+  "abandonedAt": "2026-11-22T10:09:15.769Z",
+  "childCompletedAuditAt": "2026-11-22T10:25:01Z",
+  "wgoRows20261121": 504,
+  "nst": "20/20 persisted, missing [] verifiedOffDates []",
+  "productionAcceptance": "422 at 11:15:08Z (job 429)"
+ },
+ "preflight": {
+  "at": "2026-11-22T14:14:05Z",
+  "games": "0373-0377 FUT, >=196 min",
+  "runs1122": null,
+  "runningRuns": 0,
+  "liveOpen": 0,
+  "writers": null
+ },
+ "call": {
+  "start": "2026-11-22T14:14:19Z",
+  "end": "2026-11-22T14:15:21Z",
+  "http": 200,
+  "runId": "a294e2f3-eae3-4d8d-a418-0f680896bc9c",
+  "preflight": "PASS (no bypass)"
+ },
+ "db": {
+  "runs": [
+   {
+    "run": "a294e2f3-eae3-4d8d-a418-0f680896bc9c",
+    "status": "succeeded",
+    "created": "2026-11-22T14:14:38.457617+00:00",
+    "sha": "480bd5d710ce316e4cf5570eb32784e764910b7f",
+    "scope": {
+     "mode": "selected_games",
+     "requested_game_ids": [
+      2026020373,
+      2026020374,
+      2026020375,
+      2026020376,
+      2026020377
+     ]
+    }
+   }
+  ],
+  "rows": {
+   "2026020373": 36,
+   "2026020374": 36,
+   "2026020375": 36,
+   "2026020376": 36,
+   "2026020377": 35
+  },
+  "teams": 10,
+  "goalies": 10,
+  "pipeline": [
+   "core_entity_freshness=complete",
+   "upstream_skater_sources=failed"
+  ]
+ },
+ "startChart": {
+  "http": 200,
+  "projectionRunId": "a294e2f3-eae3-4d8d-a418-0f680896bc9c",
+  "missing": []
+ },
+ "dailyRso": {
+  "http": 200,
+  "run": "forge-daily-bridge-v1:a294e2f3-eae3-4d8d-a418-0f680896bc9c",
+  "rowsPerGame": {
+   "2026020373": 63,
+   "2026020374": 70,
+   "2026020375": 64,
+   "2026020376": 57,
+   "2026020377": 63
+  },
+  "missing": []
+ },
+ "deployedSha": "480bd5d710ce316e4cf5570eb32784e764910b7f (Codex releases after 53f1929a1; contains the acceptance route)",
+ "knownLimit": "Nov 21 games not in rolling inputs (rolling_player_recompute did not run)",
+ "sha256": {
+  "call-1.json": "f6d3b5089bcb9d0a993164339cdb216bba328929ffae544397c7dffadc0c21f3",
+  "startchart.json": "983b2ef660ef929925ef391abe63d7336a53586d8f6d4bb2281f4140412e6c4c",
+  "rso.json": "62ca9ca67633253ae4beb44dc05f444df79d9e313e505149d1fd106b1112a925",
+  "after-db.json": "6f8b367b1d38bad690bbb06c83461ebb6f732a987b5ba65cdc32307c02106aaa",
+  "schedule-pre.json": "ded8f157cd0bcb19f39ee1a7a33586415ef70940b9518d6cc876cf5ead8b1fb2"
+ }
+}

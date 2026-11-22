@@ -1,0 +1,5 @@
+Merge the BLSH pilot re-date (16f5c4603) onto master 523ba0108
+
+Clean merge, no conflicts: the two sides change disjoint files (merge base 0d8b141bc).
+Brings the slate-2026-11-22 / capture-2026-11-23 official step, forward migration 20261121210000
+(after master's 20261121205959), the redate-20261123 operator SQL and the restored L7 NST registry.

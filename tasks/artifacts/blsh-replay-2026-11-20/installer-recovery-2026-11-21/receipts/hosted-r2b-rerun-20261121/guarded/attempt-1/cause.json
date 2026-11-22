@@ -1,0 +1,10 @@
+{
+ "attempt_app": "blsh-install-41be9c24-a1",
+ "installBackend": "660578 2026-11-21 19:16:43.245915+00",
+ "psql_exit": 0,
+ "startedAt": "2026-11-21T19:16:44.870Z",
+ "endedAt": "2026-11-21T19:17:14.101Z",
+ "connectionLost": false,
+ "failedAtLine": null,
+ "psqlStderrTail": "INSTALL_BACKEND 660578 2026-11-21 19:16:43.245915+00\n"
+}

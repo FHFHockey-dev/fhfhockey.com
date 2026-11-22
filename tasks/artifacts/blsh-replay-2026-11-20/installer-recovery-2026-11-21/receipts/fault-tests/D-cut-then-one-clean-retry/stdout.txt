@@ -1,0 +1,1 @@
+{"verdict":"committed_verified","attempts":2,"note":"if psql_exit was non-zero the trailing notify pgrst was not sent; exposing the schema reloads PostgREST"}

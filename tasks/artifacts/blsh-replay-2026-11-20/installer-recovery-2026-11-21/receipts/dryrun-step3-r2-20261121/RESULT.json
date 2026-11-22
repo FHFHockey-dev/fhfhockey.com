@@ -1,0 +1,11 @@
+{
+ "checks": {
+  "A-denial-probe-fails": true,
+  "B-pgsodium-fails-never-unexposed": true,
+  "C-all-pass": true,
+  "D-vercel-add-fails": true,
+  "E-token-present-then-fail": true,
+  "E-token-removed-via-vercel-env-rm": true
+ },
+ "allPass": true
+}

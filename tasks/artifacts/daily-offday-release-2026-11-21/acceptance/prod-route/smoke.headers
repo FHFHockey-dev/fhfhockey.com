@@ -1,0 +1,12 @@
+HTTP/2 422 
+cache-control: public, max-age=0, must-revalidate
+content-type: application/json; charset=utf-8
+date: Sun, 22 Nov 2026 02:26:34 GMT
+etag: "72agm9hakx1rd"
+server: Vercel
+strict-transport-security: max-age=63072000
+x-matched-path: /api/v1/db/forge-daily-acceptance
+x-vercel-cache: BYPASS
+x-vercel-id: cle1::iad1::sbdfj-1795314375113-167dd0ee513d
+content-length: 2281
+

@@ -1,0 +1,16 @@
+{
+  "request-context#2026-11-22": {
+    "state": "issued",
+    "nativeRunId": "5a1e0000-0000-4000-8000-00000000c0de",
+    "nativeManifestSHA256": "33a224fda622dc31e3c40b5900cffe5b6490446b7126a697198907d7fa4620aa",
+    "messageSHA256": "340e575bbb5a3d89b71223eaee3873bb91229938bf5bab4abb1c181fa1556e83",
+    "issuedAtUTC": "2026-11-23T12:35:00.245Z"
+  },
+  "official#2026-11-22": {
+    "state": "issued",
+    "nativeRunId": "5a1e0000-0000-4000-8000-00000000c0de",
+    "nativeManifestSHA256": "33a224fda622dc31e3c40b5900cffe5b6490446b7126a697198907d7fa4620aa",
+    "messageSHA256": "8547798fa23fa43c374c4f33c975dff05774eeb81bf76e7a54659f7502e0b306",
+    "issuedAtUTC": "2026-11-23T12:41:00.346Z"
+  }
+}

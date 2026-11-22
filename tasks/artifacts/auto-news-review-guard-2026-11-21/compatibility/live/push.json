@@ -1,0 +1,10 @@
+{
+  "base": "2236ecb7c235a5cd6426c260e6b12c56742d6e61",
+  "sha": "b37a0180d106412ede28cf7b6e5d73c89ffdae7e",
+  "remote_after": "b37a0180d106412ede28cf7b6e5d73c89ffdae7e",
+  "fast_forward": true,
+  "verified_at": "2026-11-21T20:20:46.992312+00:00",
+  "previous_ready": "dpl_DohWMv8ftJYgTmJKaVemzQY95Lsc",
+  "existing_candidate_builds": 0,
+  "other_builds_active": 0
+}

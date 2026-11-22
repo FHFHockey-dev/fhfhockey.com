@@ -1,0 +1,9 @@
+   1 LOG:  disconnection: session time: 0:00:00.006 user=postgres database=postgres host=127.0.0.1 port=58846
+   1 LOG:  disconnection: session time: 0:00:00.015 user=postgres database=postgres host=127.0.0.1 port=58845
+   1 LOG:  disconnection: session time: 0:00:00.020 user=postgres database=postgres host=127.0.0.1 port=58850
+   1 LOG:  disconnection: session time: 0:00:00.022 user=postgres database=postgres host=127.0.0.1 port=58867
+   1 LOG:  disconnection: session time: 0:00:00.022 user=postgres database=postgres host=127.0.0.1 port=58872
+   1 LOG:  disconnection: session time: 0:00:00.027 user=postgres database=postgres host=127.0.0.1 port=58847
+   1 LOG:  disconnection: session time: 0:00:00.029 user=postgres database=postgres host=127.0.0.1 port=58871
+   1 LOG:  disconnection: session time: 0:00:09.426 user=postgres database=postgres host=127.0.0.1 port=58849
+   1 LOG:  unexpected EOF on client connection with an open transaction

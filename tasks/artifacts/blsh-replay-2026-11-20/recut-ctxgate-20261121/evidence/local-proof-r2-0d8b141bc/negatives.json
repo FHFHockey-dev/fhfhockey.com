@@ -1,0 +1,100 @@
+{
+ "verdict": "ok",
+ "checks": {
+  "real_utc_day_is_not_20261120": true,
+  "live_route_signed_grant_outside_approved_date": true,
+  "live_route_no_writes_no_io": true,
+  "replay_unapproved_key_refused": true,
+  "replay_mismatched_date_refused": true,
+  "replay_tampered_refused": true,
+  "replay_receipt_logical_day": true,
+  "replay_reader_pinned_to_real_day": true,
+  "native_and_context_on_real_day": true,
+  "stage1_reader_rejects_replay": true,
+  "sql_refusals_all_13": true
+ },
+ "runDate": "2026-11-21",
+ "liveRoute": {
+  "http": 200,
+  "body": {
+   "state": "skipped",
+   "reason": "outside_approved_date"
+  }
+ },
+ "countsBefore": {
+  "nativeRuns": 1,
+  "nativeObjects": 20,
+  "contextRuns": 1,
+  "contextObjects": 8,
+  "storage": 28,
+  "receipts": 2,
+  "liveRuns": 0,
+  "liveContextRuns": 0,
+  "liveStorage": 0
+ },
+ "countsAfter": {
+  "nativeRuns": 1,
+  "nativeObjects": 20,
+  "contextRuns": 1,
+  "contextObjects": 8,
+  "storage": 28,
+  "receipts": 2,
+  "liveRuns": 0,
+  "liveContextRuns": 0,
+  "liveStorage": 0
+ },
+ "sqlRefusals": [
+  {
+   "case": "original-arm-pinned-to-20261120",
+   "refused": "replay_get_preflight_failed"
+  },
+  {
+   "case": "run-date-yesterday",
+   "refused": "replay_get_run_date_invalid"
+  },
+  {
+   "case": "run-date-tomorrow",
+   "refused": "replay_get_run_date_invalid"
+  },
+  {
+   "case": "run-date-slate-day-plus-one",
+   "refused": "replay_get_run_date_invalid"
+  },
+  {
+   "case": "run-date-impossible",
+   "refused": "replay_get_run_date_invalid"
+  },
+  {
+   "case": "run-date-malformed",
+   "refused": "replay_get_run_date_invalid"
+  },
+  {
+   "case": "schedule-other-day",
+   "refused": "replay_get_schedule_invalid"
+  },
+  {
+   "case": "schedule-past",
+   "refused": "replay_get_schedule_invalid"
+  },
+  {
+   "case": "schedule-context-too-soon",
+   "refused": "replay_get_schedule_invalid"
+  },
+  {
+   "case": "schedule-context-after-2350",
+   "refused": "replay_get_schedule_invalid"
+  },
+  {
+   "case": "schedule-wildcard",
+   "refused": "replay_get_schedule_invalid"
+  },
+  {
+   "case": "repeat-before-first-arm",
+   "refused": "replay_repeat_preflight_failed"
+  },
+  {
+   "case": "original-repeat-pinned-to-20261120",
+   "refused": "replay_repeat_preflight_failed"
+  }
+ ]
+}

@@ -3715,6 +3715,22 @@
       "follow_up_2026-11-16T18:15Z": "TJ chat to this lane: Best Fit exclusion incomplete (Out player ranked #2 at zero gain). Keep Out players searchable/inspectable, exclude them from ranked Best Fit and disable the recommended swap in points and categories; verify an Out candidate can't take a healthy ranking slot. Added paths: web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts, candidatePlanMetrics.test.ts, web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx (clean in every worktree at 18:15Z). Same commit also fixes the 'No projection' wording outside points leagues and for zero remaining games.",
       "released": "2026-11-16T18:12Z: shipped as PR #457 (candidate c9fb7d8a8 = master 9b3575f8a + the 18 files of octoberBranch 9abf48330), squash-merged to master a093e4da3; fhfhockey dpl_C4ECsYnfF37sfq48wKqbRm9cbCc8 READY 18:07:50Z (3 other projects CANCELED); 4-GET production smoke found the new strings. Release authorized by TJ pop-up ~17:50Z; Chef gate followed. octoberBranch not pushed or synced.",
       "start_utc": "2026-11-16T17:30:00Z"
+    },
+    {
+      "lane": "RSO-CUSTOMER-BUGS-1121",
+      "status": "released", "released_utc": "2026-11-21T21:27Z", "release_note": "Released to master 356f93a5d (TJ pop-up approvals: push, then sync); dpl_jctZodFpjBZBP3J9sUW6unLiYxEx READY; octoberBranch 73c6806ce carries the same 5 blobs. Pettersson SQL executed once earlier (approved); rollback block unexecuted.",
+      "scope": "Local-only carve-out for two customer bugs: (1) points league saved on Most starts can't return to Best projected points (read-only lock unexplained); (2) VAN D Elias Pettersson omitted with 'no unique canonical identity' (missing season-scoped Yahoo crosswalk). Regressions, minimal patch and proposed repair SQL (not executed).",
+      "authority": "TJ pop-up 2026-11-21 to this session after overlap check: RSO-FLAKE, RSO-YAHOO-DIET-P2 and the Codex RSO reservation are NOT released or taken over; stop on any other file or overlap. No commit, push, deploy, production SQL or Yahoo roster change.",
+      "session": "Claude Chef, RSO lane (/orchestrator), 2026-11-21",
+      "write_paths": [
+        "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+        "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+        "web/lib/integrations/yahoo/rosterPlanning.ts",
+        "web/lib/rosterScheduleOptimizer/dailyAcceptance.yahoo.test.ts",
+        "tasks/artifacts/rso-pettersson-identity-2026-11-21/REPAIR-PROPOSAL.sql",
+        "web/lib/integrations/yahoo/rosterPlanning.test.ts (added by TJ pop-up 2026-11-21: class-mismatch case only)"
+      ],
+      "start_utc": "2026-11-21"
     }
   ],
   "held_or_blocked": [],

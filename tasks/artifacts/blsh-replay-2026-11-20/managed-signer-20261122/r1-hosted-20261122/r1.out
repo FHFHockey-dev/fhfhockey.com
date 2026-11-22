@@ -1,0 +1,21 @@
+fact|owner|security_definer|service_role_can_execute
+execute_sql|postgres|t|f
+(1 row)
+fact|function|owner
+definer_dynamic_sql|csv_create_table_v1(text,jsonb)|postgres
+definer_dynamic_sql|pgsodium.mask_role(regrole,text,text)|supabase_admin
+(2 rows)
+fact|rolsuper|rolcreaterole|rolbypassrls|member_of
+service_role|f|f|t|pgsodium_keyholder
+(1 row)
+fact|table_name|privilege_type|grantor
+(0 rows)
+fact|owner|service_role_usage|default_acl_entries
+fhfh_internal|postgres|t|0
+(1 row)
+fact|extname|extversion
+extension|pg_cron|1.4-1
+extension|pg_net|0.8.0
+extension|pgsodium|3.1.8
+extension|supabase_vault|0.2.8
+(4 rows)

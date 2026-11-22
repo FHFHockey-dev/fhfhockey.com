@@ -1,0 +1,142 @@
+{
+  "receipt": "daily-offday-downstream-proof-v3",
+  "preparedAtUtc": "2026-11-21T18:06Z",
+  "rc": "096b78b622a72a8378b8f60c0c7704fc4e2fee41",
+  "base": "f47905d28718f6910d7acfa1471517c0235775de",
+  "scope": {
+    "mode": "daily_incremental",
+    "slate": "2026-11-21",
+    "sourceDate": "2026-11-20",
+    "sourceGames": 0
+  },
+  "offDayFixSufficientForOffDay": true,
+  "laterStageBlocks": {
+    "stage": null,
+    "revisedFromV2": "v2 predicted projection_derived_build FAIL; revised to pass",
+    "evidence": "real selectPendingProjectionDerivedDates on 409 prod rows (18:01Z) -> []; 0357 (relationship pending) is never queued; empty queue -> 200 success no-op (build-projection-derived-v2.ts:342-377). 10:25Z failure built the other 10 games of 11-19."
+  },
+  "chefTicket2": {
+    "q1_nov22_stage7": "does not block on 2026020357; deferred dates are response-only, not persisted; Nov 22 queue expected [2026-11-21] and builds; residual risk: any other game with pending relationship on a queued date fails that whole date",
+    "q2_narrowest_fix_not_run": [
+      "POST /api/v1/db/ingest-projection-inputs?startDate=2026-11-19&endDate=2026-11-19&resumeFromGameId=2026020357&maxGames=1",
+      "POST /api/v1/db/shift-charts?gameId=2026020357",
+      "POST /api/v1/db/build-projection-derived-v2?startDate=2026-11-19&gameId=2026020357 (or the next no-query derived call)"
+    ],
+    "cause": "manifest pins shiftcharts snapshot v1 (151701); head moved to v2 (153769) at 2026-11-21 00:25Z -> SHIFT_RELATIONSHIP_RAW_SNAPSHOT_STALE",
+    "notVerified": "that re-ingest re-pins to head v2 and changes the input fingerprint (inferred from code)"
+  },
+  "verdicts": {
+    "upstream_skater_sources.wgo": {
+      "verdict": "pass",
+      "why": "prod 11-21 07:30Z update-wgo-skaters action=all success, 11-20/11-21 expected_no_game; route unchanged; WGO runs after NST skip"
+    },
+    "contextual_builders": {
+      "verdict": "pass",
+      "why": "zero games -> line combos {count:10} (prod success every 25 min) + PP synthesized skipped; no verify reads"
+    },
+    "rolling_player_recompute": {
+      "verdict": "pass",
+      "why": "real fetchRollingPlayerAverages.main on empty 11-20 -> 0 players, stoppedReason complete; route 200 success by code; no current-code prod precedent"
+    },
+    "projection_input_ingest": {
+      "verdict": "pass",
+      "why": "prod 11-21 09:45Z same durable-backlog call: success, 2026-11-20, gamesTotal 0"
+    },
+    "projection_relationship_build": {
+      "verdict": "pass",
+      "why": "same handler 11-21 09:55Z success (10 processed, 2026020357 skipped stale raw snapshot); queue is pending relationships, not source date"
+    },
+    "projection_derived_build": {
+      "verdict": "pass",
+      "why": "revised 18:05Z: derived queue empty on prod rows (real selector), so the no-query call is a 200 no-op; 0357 is excluded while its relationship is pending; the 10:25Z failure already built the other 10 games of 11-19"
+    },
+    "projection_execution": {
+      "verdict": "unproven",
+      "why": "failed invalid_row 11-17..19; fix 64bfd0e69 in RC; 0 identity-less rolling rows across the full 1095-day lookback; other invalid_row branches not excluded; no full-slate post-fix run (only 1-game 17:25Z success)"
+    }
+  },
+  "recoveryBlocker": {
+    "finding": "daily_incremental:2026-11-21 upstream_skater_sources failed stage_failed:attempt-2 -> scheduled RC run stops attempts_exhausted, stagesRun 0, NST not called; no override parameter exists",
+    "evidence": "orchestrator/orch-recovery-rc.json"
+  },
+  "control": {
+    "verdict": "pass",
+    "why": "11-19 (12 games): identical 20-URL NST plan on both trees, 0 schedule-fallback calls; 11-21 unstarted: identical skipped, 0 calls"
+  },
+  "proofACaveat": "stages 5-8 children are default {success:true} stubs in the orchestrator test: coordinator routing only",
+  "commands": [
+    "git archive 096b78b62 web | tar -x -C <scratch>/rc ; git archive f47905d28 web | tar -x -C <scratch>/base ; ln -sfn <repo>/web/node_modules <tree>/web/node_modules",
+    "CONTROL_GAMES_JSON=<games json> CONTROL_OUT_JSON=<out> npx vitest run __tests__/pages/api/v1/db/nst-control.scratch.test.ts  (base 20/20 exit 0; rc 20/20 exit 0)",
+    "ROUTE_BODIES_JSON=route-bodies.json ORCH_OUT_JSON=<out> ORCH_RECOVERY_OUT_JSON=<out> npx vitest run __tests__/pages/api/v1/db/zero-game-orchestrator.scratch.test.ts  (rc 2/2 pass; with route-bodies-mutant.json 1 fail as intended)",
+    "ROLLING_OUT_JSON=<out> npx vitest run lib/supabase/Upserts/rolling-zero.scratch.test.ts  (rc 1/1 pass)"
+  ],
+  "dbAccess": "tasks/artifacts/forge-pregame-capture-2026-11-14/operator/pgpool.sh -At -c \"set default_transaction_read_only=on; <query>\"",
+  "queryBudgetNote": "40 read-only psql invocations, over the ~15 guideline; small SELECTs; 3 errored (truncated JSON, operator type, statement timeout) and were re-run narrower. Two entries elide repeated FILTER clauses with (...) where marked.",
+  "queries": [
+    "select column_name||':'||data_type from information_schema.columns where table_name='projection_pipeline_state' order by ordinal_position;",
+    "with d as (select generate_series('2026-10-01'::date,'2026-11-21'::date,'1 day')::date dt) select d.dt, count(g.id) from d left join games g on g.date=d.dt group by d.dt having count(g.id)<3 order by 1;",
+    "select min(date), max(date), count(*) from games where date >= '2026-09-01' and date < '2026-11-22'; select pipeline_key, min(created_at), max(created_at), count(*), count(distinct scope_key) from projection_pipeline_state group by 1;",
+    "with d as (select generate_series('2026-09-15'::date,'2026-10-01'::date,'1 day')::date dt) select d.dt, count(g.id) from d left join games g on g.date=d.dt group by d.dt having count(g.id)=0 order by 1; select table_name from information_schema.tables where table_schema='public' and table_name ilike '%cron%audit%' or table_name ilike '%job_audit%';",
+    "select column_name||':'||data_type from information_schema.columns where table_name='cron_job_audit' order by ordinal_position; select job_name, run_time::date, status, count(*) from cron_job_audit where job_name in ('run-rolling-forge-pipeline','update-nst-gamelog') and run_time::date in ('2026-09-28','2026-09-29') group by 1,2,3 order by 2,1;",
+    "select run_time, job_name, status, left(details::text, 1800) from cron_job_audit where job_name in ('run-rolling-forge-pipeline') and run_time::date in ('2026-09-28','2026-09-29') order by 1;",
+    "select run_time::date, (details->>'response')::jsonb ? 'stages', (select string_agg(k, ',') from jsonb_object_keys((details->>'response')::jsonb) k) from cron_job_audit where job_name='run-rolling-forge-pipeline' and run_time::date in ('2026-09-28','2026-09-29') order by 1;  -- ERROR invalid input syntax for type json (truncated response)",
+    "select run_time, (select string_agg(k, ',') from jsonb_object_keys(details) k), length(details->>'response') from cron_job_audit where job_name='run-rolling-forge-pipeline' and run_time::date in ('2026-09-28','2026-09-29') order by 1; select run_time::date, regexp_matches(details->>'response', '\"id\":\"([a-z_]+)\",\"label\":\"[^\"]*\",\"status\":\"([a-z_]+)\"', 'g') from cron_job_audit where job_name='run-rolling-forge-pipeline' and run_time::date in ('2026-09-28','2026-09-29') order by 1;",
+    "select to_char(run_time,'MM-DD HH24:MI:SS'), job_name, status, rows_affected, left(coalesce(details->>'error','') || ' | ' || coalesce(details->>'url',''),220) from cron_job_audit where (run_time between '2026-09-28 10:05' and '2026-09-28 10:08') or (run_time between '2026-09-29 10:05' and '2026-09-29 10:07') order by 1;",
+    "select to_char(run_time,'MM-DD HH24:MI'), left(details::text, 1500) from cron_job_audit where job_name='ingest-projection-inputs' and run_time::date in ('2026-09-28','2026-09-29') order by 1;",
+    "select column_name from information_schema.columns where table_name='forge_runs' order by ordinal_position; select scope_key, operation_key, status, cursor_game_id, last_error, to_char(updated_at,'MM-DD HH24:MI') from projection_pipeline_state where pipeline_key='rolling_forge_pipeline' and scope_key ilike '%2026-11-2%' order by scope_key, updated_at;",
+    "select scope_key, string_agg(operation_key||'='||status, ', ' order by operation_key) from projection_pipeline_state where pipeline_key='rolling_forge_pipeline' and scope_key >= 'daily_incremental:2026-11-14' group by 1 order by 1; select as_of_date, status, count(*), max(to_char(created_at,'MM-DD HH24:MI')) from forge_runs where as_of_date between '2026-11-18' and '2026-11-23' group by 1,2 order by 1,2;",
+    "select scope_key, operation_key, status, cursor_game_id, last_error, to_char(updated_at,'MM-DD HH24:MI') from projection_pipeline_state where pipeline_key='rolling_forge_pipeline' and operation_key like 'projection_execution%' and scope_key >= 'daily_incremental:2026-11-16' order by 1,2; select run_id, as_of_date, status, git_sha, to_char(created_at,'MM-DD HH24:MI'), left(notes::text,300), left(metrics::text,400) from forge_runs where as_of_date between '2026-11-17' and '2026-11-21' order by created_at;",
+    "select notes, metrics::text from forge_runs where run_id='f55203dc-232f-4d78-9986-c2b85665a40e';",
+    "select to_char(run_time,'MM-DD HH24:MI:SS'), job_name, status, left(coalesce(details->>'error',''),200), left(regexp_replace(coalesce(details->>'response',details::text),'\\s+',' ','g'),700) from cron_job_audit where (job_name in ('update-nst-gamelog','run-rolling-forge-pipeline') and run_time between '2026-11-20 10:00' and '2026-11-20 10:20') or (run_time between '2026-11-21 17:20' and '2026-11-21 17:30') order by 1;",
+    "select 'wgo_skater_stats', max(date)::text, count(*) filter (where date='2026-11-19') from wgo_skater_stats where date>='2026-11-15' union all select 'rolling_player_game_metrics', max(game_date)::text, count(*) filter (where game_date='2026-11-19') from rolling_player_game_metrics where game_date>='2026-11-15' union all select 'forge_player_game_strength', max(game_date)::text, count(*) filter (where game_date='2026-11-19') from forge_player_game_strength where game_date>='2026-11-15' union all select 'lineCombinations(11-19 games)', null, count(distinct lc.\"gameId\") from \"lineCombinations\" lc join games g on g.id=lc.\"gameId\" where g.date='2026-11-19' union all select 'pbp_games(11-19)', null, count(*) from pbp_games p join games g on g.id=p.id where g.date='2026-11-19' union all select 'games 11-19', null, count(*) from games where date='2026-11-19';",
+    "select json_agg(json_build_object('id',id,'date',date,'seasonId',\"seasonId\",'type',type,'startTime',\"startTime\") order by id) from games where date in ('2026-11-19','2026-11-21');",
+    "with t as (select distinct unnest(array[\"homeTeamId\",\"awayTeamId\"]) team_id from games where date='2026-11-21') select count(*) as teams, count(*) filter (where exists (select 1 from forge_player_game_strength s where s.team_id=t.team_id and s.game_date>='2026-11-14' and s.game_date<'2026-11-21')) as teams_with_derived_7d, count(*) filter (where (select max(g.date) from \"lineCombinations\" lc join games g on g.id=lc.\"gameId\" where lc.\"teamId\"=t.team_id and g.date<'2026-11-21') >= '2026-10-31') as teams_linecombo_within_21d from t;",
+    "select g.date, count(distinct g.id) games, count(distinct sc.game_id) games_with_shift_rows from games g left join shift_charts sc on sc.game_id=g.id where g.date between '2026-11-17' and '2026-11-19' group by 1 order by 1;",
+    "select to_char(created_at,'MM-DD HH24:MI'), as_of_date, status, left(git_sha,9), metrics->>'games', metrics->'resume'->>'scope_key', left(metrics->>'error',120) from forge_runs where created_at >= '2026-11-19 12:00' order by created_at;",
+    "set statement_timeout='60s'; select count(*) filter (where game_id is null or game_id<=0 or season is null or season<=0) as no_identity_in_365d, count(*) filter (where (game_id is null or game_id<=0) and game_date >= '2026-10-01') as no_identity_this_season, min(game_date) filter (where game_id is null or game_id<=0) , max(game_date) filter (where game_id is null or game_id<=0) from rolling_player_game_metrics where game_date > '2025-11-21' and game_date < '2026-11-21';",
+    "select to_char(run_time,'MM-DD HH24:MI'), job_name, status, rows_affected, left(coalesce(details->>'url',''),130), left(regexp_replace(coalesce(details->>'response',''),'\\s+',' ','g'),260) from cron_job_audit where run_time >= '2026-11-20 10:00' and (job_name ilike '%wgo-skater%' or job_name ilike '%line-combinations%' or job_name ilike '%rolling-player%' or job_name ilike '%goalie-projections%') order by run_time limit 30;",
+    "select to_char(run_time,'MM-DD HH24:MI:SS'), job_name, status, details->'response'->'failures', details->'response'->'skips', details->'response'->>'datesProcessed', details->'response'->>'totalUpdates' from cron_job_audit where run_time >= '2026-11-19 10:00' and job_name ilike '%wgo-skater%' and job_name not ilike '%total%' order by run_time;",
+    "select to_char(run_time,'MM-DD HH24:MI:SS'), details->>'url', details->'response'->>'success', details->'response'->>'message', (details->'response') ? 'error', details ? 'finalAudit' from cron_job_audit where run_time between '2026-11-21 07:29' and '2026-11-21 07:31' and job_name='update-all-wgo-skaters';",
+    "select to_char(run_time,'MM-DD HH24:MI'), status, rows_affected, left(details->>'url',150), left(regexp_replace(coalesce(details->>'response',''),'\\s+',' ','g'),200) from cron_job_audit where job_name ilike '%rolling-player-averages%' and run_time >= '2026-11-12' and coalesce(rows_affected,0)=0 order by run_time desc limit 8;",
+    "select to_char(run_time,'MM-DD HH24:MI'), job_name, status, rows_affected, left(coalesce(details->>'url',''),120), left(regexp_replace(coalesce(details->>'response',''),'\\s+',' ','g'),420) from cron_job_audit where run_time >= '2026-11-20 00:00' and (job_name ilike '%ingest-projection%' or job_name ilike '%shift-charts%' or job_name ilike '%projection-derived%') order by run_time;",
+    "select run_time, details->>'statusCode', details->>'error', details->'response' - 'dependencyContract' from cron_job_audit where job_name='build-projection-derived-v2' and run_time >= '2026-11-21 10:00' and run_time < '2026-11-21 10:30';  -- ERROR operator is not unique",
+    "select jsonb_typeof(details->'response'), details->>'statusCode', details->>'error', regexp_replace(details->>'response','\"dependencyContract\".*','') from cron_job_audit where job_name='build-projection-derived-v2' and run_time >= '2026-11-21 10:00' and run_time < '2026-11-21 10:30';",
+    "select to_char(run_time,'MM-DD HH24:MI'), job_name, status, rows_affected, left(regexp_replace(coalesce(details->>'response',''),'\\s+',' ','g'),300) from cron_job_audit where run_time >= '2026-11-19 00:00' and (details->>'url' ilike '%/shift-charts%' or job_name ilike '%relationship%' or job_name = 'shift-charts') order by run_time;",
+    "select m.game_id, m.input_status, left(m.input_fingerprint,12), m.input_version, m.relationship_status, left(m.relationship_input_fingerprint,12), m.relationship_version, m.relationship_algorithm_version from projection_game_materialization_status m join games g on g.id=m.game_id where g.date='2026-11-19' order by 1; select count(*) from games g where g.date='2026-11-19' and not exists (select 1 from projection_game_materialization_status m where m.game_id=g.id);",
+    "select to_char(run_time,'MM-DD HH24:MI'), substring(details->>'response' from '\"skippedGames\":\\[[^]]*\\]'), substring(details->>'response' from '\"failedGame\":[^,]*') from cron_job_audit where job_name='update-shift-charts' and run_time >= '2026-11-20 00:00'; select game_id, input_materializer_version, input_status, relationship_status, updated_at from projection_game_materialization_status where game_id=2026020357;",
+    "select substring(details->>'response' from '\"operationStatus\":\"[a-z_]*\"'), substring(details->>'response' from '\"resume\":\\{[^}]*\\}'), substring(details->>'response' from '\"termination\":\\{[^}]*\\}'), length(details->>'response') from cron_job_audit where job_name='build-projection-derived-v2' and run_time between '2026-11-21 10:20' and '2026-11-21 10:30';",
+    "set statement_timeout='90s'; select count(*) filter (where game_id is null or game_id<=0 or season is null or season<=0), min(game_date) filter (...), max(game_date) filter (...) from rolling_player_game_metrics where game_date > '2023-11-14' and game_date < '2026-11-21';  -- ERROR statement timeout",
+    "set statement_timeout='120s'; select game_date, player_id, strength_state from rolling_player_game_metrics where game_date > '2023-11-22' and game_date <= '2025-11-21' and (game_id is null or game_id<=0 or season is null or season<=0) limit 5;  -- 0 rows",
+    "select m.game_id, g.date, m.relationship_status, (m.relationship_input_fingerprint = m.input_fingerprint) rel_fp_ok, m.relationship_algorithm_version, m.derived_status, (m.derived_input_fingerprint = m.input_fingerprint) der_fp_ok, m.derived_algorithm_version, to_char(m.updated_at,'MM-DD HH24:MI') from projection_game_materialization_status m join games g on g.id=m.game_id where g.date between '2026-11-17' and '2026-11-21' and not (m.relationship_status='complete' and m.derived_status='complete' and m.derived_input_fingerprint=m.input_fingerprint and m.relationship_input_fingerprint=m.input_fingerprint) order by g.date, m.game_id; select count(*), count(*) filter (where relationship_status='complete' and relationship_input_fingerprint=input_fingerprint and not (derived_status='complete' and derived_input_fingerprint=input_fingerprint)) as queue_candidates_fp_only, min(g.date) filter (where relationship_status='complete' and relationship_input_fingerprint=input_fingerprint and not (derived_status='complete' and derived_input_fingerprint=input_fingerprint)) from projection_game_materialization_status m join games g on g.id=m.game_id where m.input_status='complete';",
+    "select substring(metrics::text from '.{0,80}projection_input_ingest.{0,300}'), ... from forge_runs where run_id='f55203dc-232f-4d78-9986-c2b85665a40e';  -- ERROR invalid regular expression",
+    "select position('projection_input_ingest' in metrics::text), position('preflight' in metrics::text), substr(metrics::text, greatest(position('preflight' in metrics::text)-20,1), 600) from forge_runs where run_id='f55203dc-232f-4d78-9986-c2b85665a40e';",
+    "set statement_timeout='60s'; select 'shift_charts', count(*), count(distinct player_id), count(*) filter (where total_es_toi is null or total_pp_toi is null or total_pk_toi is null), count(*) filter (where opponent_team_id is null or season_id is null or game_date is null or game_type is null or home_or_away is null or team_abbreviation is null or opponent_team_abbreviation is null) from shift_charts where game_id=2026020357 union all select 'nhl_api_shift_rows', count(*), count(distinct player_id), null, null from nhl_api_shift_rows where game_id=2026020357; select count(*) from (select distinct player_id from nhl_api_shift_rows where game_id=2026020357 except select distinct player_id from shift_charts where game_id=2026020357) a; select count(*) from (select distinct player_id from shift_charts where game_id=2026020357 except select distinct player_id from nhl_api_shift_rows where game_id=2026020357) b;",
+    "select pbp_raw_snapshot_version, pbp_raw_payload_id, left(pbp_raw_payload_hash,12), shift_raw_snapshot_version, shift_raw_payload_id, left(shift_raw_payload_hash,12), input_version, to_char(updated_at,'MM-DD HH24:MI') from projection_game_materialization_status where game_id=2026020357; select endpoint, snapshot_version, raw_payload_id, left(payload_hash,12), to_char(updated_at,'MM-DD HH24:MI') from nhl_api_game_payload_snapshot_heads where game_id=2026020357 order by endpoint;",
+    "select coalesce(json_agg(json_build_object('game_id',m.game_id,'input_status',m.input_status,'input_fingerprint',m.input_fingerprint,'relationship_status',m.relationship_status,'relationship_input_fingerprint',m.relationship_input_fingerprint,'relationship_algorithm_version',m.relationship_algorithm_version,'derived_status',m.derived_status,'derived_input_fingerprint',m.derived_input_fingerprint,'derived_algorithm_version',m.derived_algorithm_version,'games',json_build_object('id',g.id,'date',g.date)) order by m.game_id),'[]') from projection_game_materialization_status m join games g on g.id=m.game_id where m.input_status='complete';  -- saved as derived/derived-queue-rows-prod-snapshot.json"
+  ],
+  "notRun": [
+    "npm run typecheck",
+    "lint",
+    "full suites",
+    "any route/cron/NST call",
+    "any production write"
+  ],
+  "files": {
+    "REPORT.md": "3e3f8a73b3033d96ec3b541a45e59c61a10468c3e9580af135b785214b343c6c",
+    "control/control-f47905d28.json": "cf58272b496db70e0afbe776f1e4b36ef41ec7cd2946c7a7ee4504b743d9331d",
+    "control/control-096b78b62.json": "7a645c9e14e6468d022569a1a0888215754ef280760bcbd6ccf769f2135efc32",
+    "control/control-block.ts": "49313798c28889644b2c97816f69e9a316d4be6974ca36e72b24401522ecddd2",
+    "control/games-2026-11-19-and-21.json": "a9bb84ddd85096f94c53d464814e104e31599ab9f8b2fe0f7e2ae01ae53dc413",
+    "orchestrator/orchestrator-block.ts": "ad81ea97074bdc6a9ba07d03716309630cd40166983c26e3c140d74a03e52213",
+    "orchestrator/route-bodies.json": "f0797075241bf0b7efea23140d851ccee82c089d944deb79ee545911b7b499e6",
+    "orchestrator/route-bodies-mutant.json": "aec36a2694533d7771151cfe16bc537c7f6c52e7a0da1753251c39b38197f886",
+    "orchestrator/orch-rc.json": "d4eb50236388181a64122f560fb5a456c3600e3c0ddcf7eaac0316da804e21e1",
+    "orchestrator/orch-recovery-rc.json": "f09918bd2fa71c66ee1d0922d70ab5f5733a561685b3c1fd36fbbd77538d9435",
+    "rolling/rolling-zero.scratch.test.ts": "90881a8c6847dc9e7e250336f5e5b72cce65b8e11dec3b985d63e1433c9aa62c",
+    "rolling/rolling-zero-rc.json": "ab2fbe3da08a86b9c80f702fd4d77746f1b6f3a3c4e3fe09aad1fed0be359976",
+    "derived/derived-queue-rows-prod-snapshot.json": "e8b95a96df6368faa6a3dbb42f1c63927ee5d5ba7707a97cc4cdcff51895525c",
+    "derived/queue-out.json": "26f32449a55a571c8155f3632512a4bdf83b0c137d69621c0dbfe6f8472c3b64",
+    "derived/queue-out-if-0357-fixed.json": "663fe7ea42e522eb192257ecf82846c39f0ee6d3bc5384488c638a931b634bc5",
+    "derived/queue-prod.scratch.test.ts": "d719a5adda74879c52a07d10f93186ddb9a4741dfb69600e169b3dc13fa020e9"
+  }
+}

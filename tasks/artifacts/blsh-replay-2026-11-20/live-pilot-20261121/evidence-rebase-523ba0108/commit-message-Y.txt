@@ -1,0 +1,5 @@
+Admit the BLSH pilot merge's FORGE producer closure d6520f1c
+
+The merge b5e18f490 (pilot re-date 16f5c4603 onto master 523ba0108) changes the producer closure only through the
+restored L7 NST registry (lib/cron/nstClassification.ts, lib/cron/nstCoordination.ts). The verifier receipt for that
+commit (243 modules, 0 findings) is added with its registry entry; admission stays outside the closure.

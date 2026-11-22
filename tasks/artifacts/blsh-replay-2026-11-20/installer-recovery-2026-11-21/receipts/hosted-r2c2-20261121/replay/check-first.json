@@ -1,0 +1,49 @@
+{
+ "mode": "first",
+ "pass": true,
+ "failed": [],
+ "checks": {
+  "jobs_unscheduled": true,
+  "native_http_200": true,
+  "context_http_200": true,
+  "native_sha": true,
+  "context_sha": true,
+  "fixture_partial": true,
+  "native_finished": true,
+  "native_packet_complete": true,
+  "native_objects_20": true,
+  "native_fixtures_ok": true,
+  "native_only_supabase_outbound": true,
+  "native_receipt_written": true,
+  "context_finished": true,
+  "context_logical_day": true,
+  "context_tampered_403": true,
+  "context_unapproved_403": true,
+  "context_mismatched_date_refused": true,
+  "context_live_route_rejects": true,
+  "context_packet_complete": true,
+  "context_objects_8": true,
+  "context_reader_ok": true,
+  "context_receipt_written": true,
+  "sandbox_counts": true
+ },
+ "nativeElapsedMs": 25070,
+ "contextElapsedMs": 1088,
+ "deploymentId": "dpl_DebFbbRByWvcVCdBTJc7FewDhu5w",
+ "liveRouteWithTestGrant": {
+  "http": 200,
+  "body": {
+   "state": "skipped",
+   "reason": "disabled"
+  }
+ },
+ "sandbox": {
+  "storage": 28,
+  "receipts": 2,
+  "nativeRuns": 1,
+  "contextRuns": 1,
+  "nativeObjects": 20,
+  "contextObjects": 8
+ },
+ "otherCronJobs": 81
+}

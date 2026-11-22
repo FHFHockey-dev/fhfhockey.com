@@ -1,0 +1,58 @@
+{
+  "checked_at": "2026-11-21T20:28:22.255479+00:00",
+  "alias": {
+    "project": "fhfhockey",
+    "id": "dpl_7zstWTyQLKT3ff66vSoxmw1TKGBB",
+    "target": "production",
+    "state": "READY",
+    "sha": "b37a0180d106412ede28cf7b6e5d73c89ffdae7e",
+    "branch": "master",
+    "url": "fhfhockey-pjr2nrkom-fhfhockeydevs-projects.vercel.app"
+  },
+  "readyStateAt": null,
+  "deployments": [
+    {
+      "project": "fhfhockey",
+      "id": "dpl_7zstWTyQLKT3ff66vSoxmw1TKGBB",
+      "target": "production",
+      "state": "READY",
+      "sha": "b37a0180d106412ede28cf7b6e5d73c89ffdae7e",
+      "branch": "master",
+      "url": "fhfhockey-pjr2nrkom-fhfhockeydevs-projects.vercel.app"
+    },
+    {
+      "project": "functions-fhfhockey",
+      "id": "dpl_6LQr9reSK5Aq5nUWevWm6Zr2sjNj",
+      "target": "production",
+      "state": "CANCELED",
+      "sha": "b37a0180d106412ede28cf7b6e5d73c89ffdae7e",
+      "branch": "master",
+      "url": "functions-fhfhockey-httrfz6h7-fhfhockeydevs-projects.vercel.app"
+    },
+    {
+      "project": "cms-fhfhockey",
+      "id": "dpl_9fhkKvJegi9YYyTz8NioFeSiUbds",
+      "target": "production",
+      "state": "CANCELED",
+      "sha": "b37a0180d106412ede28cf7b6e5d73c89ffdae7e",
+      "branch": "master",
+      "url": "cms-fhfhockey-qcvpkmubl-fhfhockeydevs-projects.vercel.app"
+    },
+    {
+      "project": "fhfhockey.com",
+      "id": "dpl_BD2CgZXBDXir5Sb9DzEzct6yqgyZ",
+      "target": "production",
+      "state": "CANCELED",
+      "sha": "b37a0180d106412ede28cf7b6e5d73c89ffdae7e",
+      "branch": "master",
+      "url": "fhfhockey-d0vl7blgq-fhfhockeydevs-projects.vercel.app"
+    }
+  ],
+  "drain": {
+    "start": "2026-11-21T20:20:09Z",
+    "end": "2026-11-21T20:28:22.255479+00:00",
+    "requests_checked": 50,
+    "all_pages": true,
+    "relevant": []
+  }
+}

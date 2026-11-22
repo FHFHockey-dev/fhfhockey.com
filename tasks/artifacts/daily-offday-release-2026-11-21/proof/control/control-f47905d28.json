@@ -1,0 +1,129 @@
+{
+  "2026-11-19 pipeline query (deadlineAt)": {
+    "query": {
+      "runMode": "incremental",
+      "startDate": "2026-11-19",
+      "endDate": "2026-11-19",
+      "deadlineAt": "1795169291000"
+    },
+    "storedGames": 12,
+    "statusCode": 200,
+    "success": false,
+    "operationStatus": "blocked",
+    "nstState": "incomplete",
+    "plannedRequestCount": 20,
+    "networkAttempts": 0,
+    "missingScheduleDates": [],
+    "verifiedOffDates": "(field absent)",
+    "skippedUnstartedDates": [],
+    "continuation": {
+      "version": 1,
+      "chainId": "1c985441-8239-485c-804d-262a79ef459a",
+      "nextIndex": 0,
+      "totalUrls": 20,
+      "blocked": true
+    },
+    "nstUrls": [
+      "https://data.naturalstattrick.com/playerteams.php?sit=all&score=all&stdoi=std&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=all&score=all&stdoi=std&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=all&score=all&stdoi=oi&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=all&score=all&stdoi=oi&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=5v5&score=all&stdoi=std&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=5v5&score=all&stdoi=std&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=5v5&score=all&stdoi=oi&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=5v5&score=all&stdoi=oi&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=ev&score=all&stdoi=std&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=ev&score=all&stdoi=std&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=ev&score=all&stdoi=oi&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=ev&score=all&stdoi=oi&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pp&score=all&stdoi=std&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pp&score=all&stdoi=std&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pp&score=all&stdoi=oi&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pp&score=all&stdoi=oi&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pk&score=all&stdoi=std&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pk&score=all&stdoi=std&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pk&score=all&stdoi=oi&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pk&score=all&stdoi=oi&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410"
+    ],
+    "globalFetchCalls": [],
+    "scheduleFallbackCalls": 0
+  },
+  "2026-11-19 full plan (no deadline)": {
+    "query": {
+      "runMode": "incremental",
+      "startDate": "2026-11-19",
+      "endDate": "2026-11-19"
+    },
+    "storedGames": 12,
+    "statusCode": 200,
+    "success": false,
+    "operationStatus": "blocked",
+    "nstState": "incomplete",
+    "plannedRequestCount": 20,
+    "networkAttempts": 0,
+    "missingScheduleDates": [],
+    "verifiedOffDates": "(field absent)",
+    "skippedUnstartedDates": [],
+    "continuation": {
+      "version": 1,
+      "chainId": "7b4c9976-bab9-42dd-9790-827e6ecec6b0",
+      "nextIndex": 0,
+      "totalUrls": 20,
+      "blocked": true
+    },
+    "nstUrls": [
+      "https://data.naturalstattrick.com/playerteams.php?sit=all&score=all&stdoi=std&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=all&score=all&stdoi=std&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=all&score=all&stdoi=oi&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=all&score=all&stdoi=oi&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=5v5&score=all&stdoi=std&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=5v5&score=all&stdoi=std&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=5v5&score=all&stdoi=oi&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=5v5&score=all&stdoi=oi&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=ev&score=all&stdoi=std&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=ev&score=all&stdoi=std&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=ev&score=all&stdoi=oi&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=ev&score=all&stdoi=oi&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pp&score=all&stdoi=std&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pp&score=all&stdoi=std&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pp&score=all&stdoi=oi&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pp&score=all&stdoi=oi&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pk&score=all&stdoi=std&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pk&score=all&stdoi=std&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pk&score=all&stdoi=oi&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410",
+      "https://data.naturalstattrick.com/playerteams.php?sit=pk&score=all&stdoi=oi&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL&tgp=410"
+    ],
+    "globalFetchCalls": [],
+    "scheduleFallbackCalls": 0
+  },
+  "2026-11-21 stored slate, games not started": {
+    "query": {
+      "runMode": "incremental",
+      "startDate": "2026-11-21",
+      "endDate": "2026-11-21",
+      "deadlineAt": "1795255691000"
+    },
+    "storedGames": 14,
+    "statusCode": 200,
+    "success": true,
+    "operationStatus": "skipped_no_completed_games",
+    "nstState": "skipped_no_completed_games",
+    "plannedRequestCount": 0,
+    "networkAttempts": 0,
+    "missingScheduleDates": [],
+    "verifiedOffDates": "(field absent)",
+    "skippedUnstartedDates": [
+      "2026-11-21"
+    ],
+    "continuation": {
+      "version": 1,
+      "chainId": "1e66a28c-f038-458f-a778-be36d51f3c95",
+      "nextIndex": 0,
+      "totalUrls": 0,
+      "blocked": false
+    },
+    "nstUrls": [],
+    "globalFetchCalls": [],
+    "scheduleFallbackCalls": 0
+  }
+}

@@ -1,0 +1,65 @@
+BEGIN
+SET
+psql:/Users/tim/Library/Application Support/Claude/side-session-notes/local_23eb6989-6502-4cc8-afbc-0bc7caafa992/blsh-hosted-kit/reset.sql:5: NOTICE:  drop cascades to 16 other objects
+DETAIL:  drop cascades to function blsh_replay_api.blsh_capture_enabled_v1()
+drop cascades to function blsh_replay_api.blsh_capture_claim_v1(text,date,jsonb)
+drop cascades to function blsh_replay_api.blsh_capture_intent_v1(uuid,text,text[])
+drop cascades to function blsh_replay_api.blsh_capture_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay_api.blsh_capture_close_v1(uuid,text,text,text)
+drop cascades to function blsh_replay_api.blsh_context_source_v1(date,uuid,text)
+drop cascades to function blsh_replay_api.blsh_context_claim_v1(date,uuid,text)
+drop cascades to function blsh_replay_api.blsh_context_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay_api.blsh_context_close_v1(uuid,text,text,text,text)
+drop cascades to function blsh_replay_api.blsh_request_context_v1(date,date)
+drop cascades to function blsh_replay_api.blsh_replay_storage_put_v1(text,text,text,text)
+drop cascades to function blsh_replay_api.blsh_replay_storage_get_v1(text,text)
+drop cascades to function blsh_replay_api.blsh_replay_fixture_v1()
+drop cascades to function blsh_replay_api.blsh_replay_export_v1(date)
+drop cascades to function blsh_replay_api.blsh_replay_receipt_put_v1(text,jsonb)
+drop cascades to function blsh_replay_api.blsh_replay_receipt_get_v1(text)
+DROP SCHEMA
+psql:/Users/tim/Library/Application Support/Claude/side-session-notes/local_23eb6989-6502-4cc8-afbc-0bc7caafa992/blsh-hosted-kit/reset.sql:6: NOTICE:  drop cascades to 38 other objects
+DETAIL:  drop cascades to table blsh_replay.storage_buckets
+drop cascades to table blsh_replay.storage_objects
+drop cascades to table blsh_replay.blsh_capture_control
+drop cascades to table blsh_replay.blsh_capture_runs
+drop cascades to table blsh_replay.blsh_capture_objects
+drop cascades to function blsh_replay.blsh_capture_guard_v1()
+drop cascades to function blsh_replay.blsh_capture_enabled_v1()
+drop cascades to function blsh_replay.blsh_capture_claim_v1(text,date,jsonb)
+drop cascades to function blsh_replay.blsh_capture_intent_v1(uuid,text,text[])
+drop cascades to function blsh_replay.blsh_capture_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay.blsh_capture_close_v1(uuid,text,text,text)
+drop cascades to function blsh_replay.blsh_capture_watchdog_v1()
+drop cascades to function blsh_replay.blsh_capture_watchdog_assert_v1(date)
+drop cascades to function blsh_replay.blsh_capture_keep_v1(uuid)
+drop cascades to function blsh_replay.blsh_capture_retention_v1(date)
+drop cascades to function blsh_replay.blsh_capture_mark_pruned_v1(uuid)
+drop cascades to function blsh_replay.blsh_request_context_v1(date,date)
+drop cascades to table blsh_replay.blsh_context_runs
+drop cascades to table blsh_replay.blsh_context_objects
+drop cascades to function blsh_replay.blsh_context_guard_v1()
+drop cascades to function blsh_replay.blsh_context_source_v1(date,uuid,text)
+drop cascades to function blsh_replay.blsh_context_claim_v1(date,uuid,text)
+drop cascades to function blsh_replay.blsh_context_object_v1(uuid,integer,text,text,integer)
+drop cascades to function blsh_replay.blsh_context_close_v1(uuid,text,text,text,text)
+drop cascades to table blsh_replay.games
+drop cascades to table blsh_replay.wgo_skater_stats
+drop cascades to table blsh_replay.nst_gamelog_as_counts
+drop cascades to table blsh_replay.nst_gamelog_as_counts_oi
+drop cascades to table blsh_replay.fixture_files
+drop cascades to table blsh_replay.receipts
+drop cascades to function blsh_replay.storage_put_v1(text,text,text,text)
+drop cascades to function blsh_replay.storage_get_v1(text,text)
+drop cascades to function blsh_replay.fixture_v1()
+drop cascades to function blsh_replay.export_v1(date)
+drop cascades to function blsh_replay.receipt_put_v1(text,jsonb)
+drop cascades to function blsh_replay.receipt_get_v1(text)
+drop cascades to table blsh_replay.replay_get_requests
+drop cascades to function blsh_replay.replay_get_fire(text,text)
+DROP SCHEMA
+DO
+DROP ROLE
+DROP ROLE
+COMMIT
+NOTIFY

@@ -1,0 +1,1 @@
+{"pass": true, "checks": {"stage1_refuses_outside_window": true, "tls_rule_rejects_replay_fixture": true, "context_reader_ok": true}, "stage1": {"ok": false, "error": "capture_ingress_window_unconfirmed"}, "tls": {"stage2TlsRule": "rejected", "reason": "tls_peer_unauthorized"}, "contextReplayCaptureDay": "2026-11-21"}

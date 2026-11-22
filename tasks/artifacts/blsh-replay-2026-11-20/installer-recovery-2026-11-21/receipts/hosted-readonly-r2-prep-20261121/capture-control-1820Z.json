@@ -1,0 +1,1 @@
+{"captureControl" : [{"singleton":true,"enabled":false,"updated_at":"2026-11-16T00:36:56.533541+00:00"}], "lastBlshRuns" : [{"jobid" : 405, "status" : "succeeded", "start" : "2026-11-21T12:20:00.218349+00:00", "msg" : "1 row"}, {"jobid" : 404, "status" : "succeeded", "start" : "2026-11-21T12:05:00.238172+00:00", "msg" : "1 row"}]}

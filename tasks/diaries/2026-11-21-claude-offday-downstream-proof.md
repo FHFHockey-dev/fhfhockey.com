@@ -1,0 +1,16 @@
+# 2026-11-21 Claude — off-day downstream proof (RC 096b78b62)
+
+- Scope: prove/disprove later FORGE stages complete when daily_incremental source date has 0 games (slate 11-21, source 11-20); control: NST plan identical f47905d28 vs 096b78b62 on a nonempty date. Read-only; deadline 19:05Z.
+- Where: exports in session scratchpad (rc/, base/ via git archive). Outputs: tasks/artifacts/daily-offday-release-2026-11-21/proof/**.
+- State (17:45Z): exported both trees; read run-rolling-forge-pipeline.ts runStage/runResumablePipeline. Stage status "skipped" -> finishRollingForgeStage complete (line ~1690 else-branch).
+- Next: prod history SELECTs (off-days, projection_pipeline_state), then scratch Vitest.
+- Blockers: none.
+- 17:42Z: History: only earlier zero-game source dates this season are preseason 09-27/09-28 (old non-resumable code); projection_pipeline_state starts 10-20, so no resumable zero-game precedent. projection_execution FAILED 11-17/18/19 ("Rolling skater history read incomplete: invalid_row"); fix 64bfd0e69 is an ancestor of f47905d28 — unproven on full slate in prod. 11-19 inputs present (wgo 432, rolling 2160, derived 419, lineCombos 12/12, pbp 12/12).
+- 17:43Z: CONTROL done: 11-19 stored slate → 20 NST URLs identical base vs RC, 0 schedule fetches; 11-21 unstarted → skipped both. Receipts in proof/control/.
+- 17:50Z: Orchestrator scratch test (real runStage/runResumablePipeline, route bodies from code + prod audits) → all 8 blocking stages complete; mutant (rolling success:false) goes red. Real rolling lib main on empty DB → 0 players, stoppedReason complete. Prod: WGO 11-21 07:30Z action=all success with 11-20/11-21 expected_no_game; line-combos count=10 success every 25 min.
+- KEY: scope daily_incremental:2026-11-21 has upstream failed attempt-2 → RC scheduled run stops attempts_exhausted without calling NST (scratch test 2). Same-day recovery needs a state decision (Chef/TJ).
+- Next: write proof/REPORT.md + receipt.json, advisor, message Chef.
+- 17:55Z: Advisor review → closed ingest/relationship/derived with prod audits. NEW: stage 7 projection_derived_build predicted FAIL (not off-day): today's no-query derived call 10:25Z failed on 2026020357 manifest (relationship_status pending; relationship handler skipped it 09:55Z projection_raw_snapshot_stale). projection_execution unproven (behind stage 7). Identity-less rolling rows: 0 across full 1095-day lookback.
+- 17:56Z: REPORT.md + receipt.json (v2, 34 queries verbatim) written; sending verdicts + sha to Chef. Diary kept (task handed back to Chef, not retired).
+- 18:06Z: Chef ticket 2 (stage-7 backlog). REVISED stage 7 to PASS: derived queue = [] on 409 prod rows (real selectPendingProjectionDerivedDates); 0357 excluded while relationship pending; deferral is response-only. Nov 22 stage 7 not blocked by 0357. Cause of 0357: manifest pins shiftcharts snapshot v1, head v2 since 11-21 00:25Z → RAW_SNAPSHOT_STALE. Narrowest fix (not run): ingest startDate=endDate=2026-11-19&resumeFromGameId=2026020357&maxGames=1 → shift-charts POST gameId=2026020357 → derived startDate=2026-11-19&gameId=2026020357. Receipt v3.
+- 18:12Z: Chef ticket 3 → proof/FIX-0357.md (cause: shiftcharts head v1→v2 at 11-21 00:25Z, same 712 rows reordered, post-game gamecenter refresh; not WGO/appearance; 3-step fix plan, not run). 5 SELECTs.

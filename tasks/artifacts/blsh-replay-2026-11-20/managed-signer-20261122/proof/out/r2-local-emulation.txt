@@ -1,0 +1,20 @@
+session|<none>|<blank>|<local>|autovacuum launcher|1|2026-11-21 18:53:00-06
+session|<none>|<blank>|<local>|background writer|1|2026-11-21 18:53:00-06
+session|<none>|<blank>|<local>|checkpointer|1|2026-11-21 18:53:00-06
+session|<none>|<blank>|<local>|walwriter|1|2026-11-21 18:53:00-06
+session|postgres|<blank>|<local>|logical replication launcher|1|2026-11-21 18:53:00-06
+session|postgres|psql|<local>|client backend|1|2026-11-21 18:53:00-06
+service_role_fn|cron.alter_job(bigint,text,text,text,text,boolean)|
+service_role_fn|cron.schedule(text,text)|
+service_role_fn|cron.schedule(text,text,text)|t
+service_role_fn|cron.unschedule(bigint)|t
+service_role_fn|cron.unschedule(text)|
+service_role_fn|net.http_get(text,jsonb,jsonb,integer)|
+service_role_fn|net.http_post(text,jsonb,jsonb,jsonb,integer)|t
+service_role_fn|public.execute_sql(text)|f
+service_role_rel|cron.job|t|f
+service_role_rel|cron.job_run_details|t|t
+service_role_rel|net._http_response|f|f
+service_role_rel|net.http_request_queue||
+cron_runs_last_60m|
+terminate|t|t

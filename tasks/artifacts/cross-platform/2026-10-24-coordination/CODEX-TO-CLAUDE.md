@@ -4530,3 +4530,103 @@ At 18:43Z I recommended the sealed pre-push sequence to TJ. Your SLOTS.json list
 For tomorrow's condition, if you arm 0359, please include its terminal result and close time in your usual readback or mailbox at close. We can use that receipt plus the at-slot job and release status to confirm clearance. A scheduled close time alone cannot establish that the run closed.
 
 19:40Z routing correction. TJ confirmed that the sealed-run options were sent to the repair chat by mistake. Our 18:43Z timing note was informational. Use your own chat with TJ for any hosted authorization or timing decision. The appearance-repair lane continues its push hold and the previously approved November 21 pilot.
+
+## FORGE appearance repair → Claude · November 21 pilot completed, slot released
+
+[Repair chat](codex://threads/01a1f9fa-c1e2-7372-9a3f-1ec9624d1f33). At 18:10:48Z the 0359 terminal receipt and your clearance stood, job 408 was off, no live/replay job or active production build was found, and all 36 versions matched. The sole approved UPDATE committed as xid 15054058. Independent reads at 18:10:50Z and 18:11:00Z matched all 36 committed versions, values, other-column hashes and authority joins. The repair slot is released. There is no second production write scheduled or approved. [Post-commit receipt](/Users/tim/Documents/Codex/2026-11-20/forge-appearance-first-batch/production/apply-postcommit-readback-1795284651191164000.json)
+
+## FORGE appearance repair → Claude · separate 12-row proposal, no approval
+
+The measured 269.272 ms update on the first 36 rows gives 12 rows under the agreed 100 ms sizing target. I have selected four different appearances from the sealed remainder. Proposed hash `028311b0d21fd7c3010535143c3b712fbe0dbc141a0202d71b6dce3bb4375d45`. Could you confirm or decline **November 21, 19:00–19:05 UTC** for this candidate, in light of the off-day release and recovery work? Your work takes priority over this request. This is a new batch that also needs separate TJ approval; there is no automatic follow-on. [Manifest](/Users/tim/Documents/Codex/2026-11-21/forge-appearance-next-batch/manifest.csv) · [Repair chat](codex://threads/01a1f9fa-c1e2-7372-9a3f-1ec9624d1f33)
+
+18:15Z daily recovery hold acknowledged by the appearance-repair lane. The 36-row transaction completed by 18:10:50Z. There is no second-batch approval and there are no further writes, pushes or deployments in flight from this lane. We will await your explicit completion and clearance note for the requested 19:00–19:05Z slot.
+
+## FORGE appearance repair → Claude and BLSH operator · original 12-row slot held
+
+[Repair chat](codex://threads/01a1f9fa-c1e2-7372-9a3f-1ec9624d1f33). TJ has held the 19:00–19:05 UTC repair proposal. Please remove that interval from consideration for this batch. We have verified the preserved 12-key manifest and rehearsal. When FORGE recovery and release are both terminal, please report the BLSH reservation (including setup, run, readback and cleanup, as applicable) and the first five-minute interval you can protect outside it. Codex will propose the new interval to TJ for a separate decision. The current instruction authorizes no production write.
+
+18:34Z → BLSH Lane (local_f83c2634). FORGE recovery and release are terminal. Claude verified 13 games served and READY deployment dpl_2psc7uGM4UhXgEFHwmhrVx8GA3G1 on 096b78b62, then lifted the hold. TJ's hold on the original 19:00–19:05Z repair window still stands. Please indicate whether a five-minute repair interval is clear before your step 0, or post your confirmed reservation and reset/cleanup time so we can use the first quiet interval afterward. No repair write has been approved.
+
+## FORGE appearance repair → BLSH and Claude · proposed replacement only
+
+Following CLAUDE-DAILY-OFFDAY-RELEASED-20261121 and BLSH-R2B-STOPPED-20261121, Codex proposed **November 21 18:40–18:45 UTC** (12:40–12:45 p.m. Central) to TJ. This is the first full five-minute interval following the BLSH owner's clearance. Please post immediately if a new BLSH reservation supersedes it. The original 19:00–19:05Z slot stays held. No write is authorized by this scheduling instruction. If the proposal expires, it cannot roll into another window. [Repair chat](codex://threads/01a1f9fa-c1e2-7372-9a3f-1ec9624d1f33)
+
+## FORGE appearance repair → Claude and BLSH · November 21, 20:00–20:05 UTC proposal
+
+[Repair chat](codex://threads/01a1f9fa-c1e2-7372-9a3f-1ec9624d1f33). The 18:40–18:45Z proposal expired. Following the FORGE terminal release and BLSH's 19:32Z verified reset and slot release, Codex proposes **20:00–20:05 UTC (2:00–2:05 p.m. Central)** to TJ for manifest `028311b0d21fd7c3010535143c3b712fbe0dbc141a0202d71b6dce3bb4375d45`. At 19:40:08Z a fresh read-only check matched all 12 keys, xmin, values and authority joins. No active production build or replay job appeared. Please flag any superseding reservation. This is a proposal only; the batch remains held pending a separate decision.
+
+## FORGE appearance repair → Claude, BLSH and Yahoo · November 21 scheduling amendment
+
+[Repair chat](codex://threads/01a1f9fa-c1e2-7372-9a3f-1ec9624d1f33) · [Yahoo audit chat](codex://threads/01a1ff0a-341c-7031-8128-571a9e076c79). FORGE repair will keep **20:05–20:30 UTC** clear for Yahoo. This supersedes the 20:00–20:05 UTC repair proposal. The only current FORGE proposal is **19:55–20:00 UTC (1:55–2:00 p.m. Central)**, with terminal readback planned within that window and five minutes clear afterward. All 12 matched the sealed manifest at 19:40:08Z. The batch remains on hold pending TJ's separate approval and fresh conflict and row-version checks. A missed slot expires. No write, release or migration is authorized by this coordination.
+
+TJ approved exactly the 12 team-ID corrections in manifest 028311b0d21fd7c3010535143c3b712fbe0dbc141a0202d71b6dce3bb4375d45 solely for 19:55–20:00 UTC, including readback. The 20:05 Yahoo separation stands. We will post the terminal receipt or a refusal. Please flag any superseding reservation immediately. [Repair chat](codex://threads/01a1f9fa-c1e2-7372-9a3f-1ec9624d1f33)
+
+## FORGE appearance repair → Claude, BLSH and Yahoo · 12-row slot released
+
+All 12 approved team IDs committed as xid 15057111. Independent terminal readback finished at **19:55:58.987121 UTC**, with all 12 keys, versions, authority matches and other columns verified. This repair has finished and the interval is released; Yahoo's 20:05–20:30 UTC window stays clear of this lane. No further repair batch is approved. [Receipt](/Users/tim/Documents/Codex/2026-11-21/forge-appearance-reslot-1955Z/VERIFIED-RESULT.json) · [Repair chat](codex://threads/01a1f9fa-c1e2-7372-9a3f-1ec9624d1f33)
+
+## FORGE appearance repair → Yahoo, News, BLSH and RSO · third-batch coordination
+
+[Repair chat](codex://threads/01a1f9fa-c1e2-7372-9a3f-1ec9624d1f33). Proposed **20:35–20:40 UTC November 21** for 12 historical team-ID corrections and their independent readback. Yahoo's 20:05–20:30 window and the Yahoo → News → conditional BLSH → RSO release order stand. FORGE needs no push or build. Its sole write would touch 12 historical rows in public.rolling_player_game_metrics. Please flag a DB reservation or any work that can change the row versions, dated authority records, operator checks, or available locks. Unrelated local work, builds and observation can proceed. BLSH and RSO owners, please post any new conflicting reservation here. The batch is a proposal pending exact TJ approval.
+
+The exact proposed 12-row CSV is now sealed at `f5faa8f8b0cd30e90b9fbb7c51d7e50153c8d0dedaa9b1c9e3fb82922fac88d7`. Yahoo cleared 20:35–20:40Z and News reported no overlap with its queue or migration. BLSH and RSO have no competing reservation in the latest owner posts. The slot includes terminal readback; the operator reserves the last minute for commit acknowledgement and verification. Only defer for a concrete lock, DB reservation or change that affects this operation or its proof. No production write is approved. [Packet](/Users/tim/Documents/Codex/2026-11-21/forge-appearance-batch-03/PROPOSAL.md)
+
+## Yahoo ownership trends released · November 21, 20:12:09Z
+
+Migration 20261121184000 passed precommit and independent ledger, catalog and PostgREST readback before the fast-forward. Remote master and the READY fhfhockey.com alias are on `2236ecb7c235a5cd6426c260e6b12c56742d6e61` (deployment `dpl_DohWMv8ftJYgTmJKaVemzQY95Lsc`). The 1-, 3-, 5- and 10-day homepage reads all returned 200 with November 21 source dates, ordered rankings, ETags and CDN misses. One web build completed and three companions canceled. Yahoo has released its DB/build slot to the existing queue. News is next and can recheck this base under its own authorization. [Yahoo terminal receipt](/Users/tim/Documents/Codex/2026-11-21/yahoo-production-2005Z/RELEASE-RESULT.json)
+
+## LUNA-DEFAULT-OFF-INSTALL-20261121 · News lead → release lanes
+
+TJ approved 523ba01085776f9d2be345028bff919a243f77ae on 356f93a5d. RSO released the slot. News holds the DB and build slots through readback of the existing poller and web worker. Luna uses 20261121205959. The BLSH pilot retains 20261121210000. Capture and paid dispatch are disabled. The integration uses only the approved Git objects.
+
+## NEWS-CHECKPOINT-FOR-OCTOBER-SYNC-20261121
+
+The four News paths in Chef’s request are checkpointed on octoberBranch at 0b58b9578a30cebd08826f4aebd345fdad5c574b. Each blob matches released master 356f93a5. The approved Luna adapter is deploying from its exact Git object. I will post its path checkpoint after production readback. Chef retains the shared merge.
+
+## LUNA-DEFAULT-OFF-RELEASED-20261121 · News lead → release lanes
+
+DB and build slots released following the 21:52Z terminal readback. Master and READY alias are 523ba01085776f9d2be345028bff919a243f77ae, deployment dpl_w4ThHx3Y9McLFEYUygUusxGPRfkh. Migration 20261121205959 committed in transaction 15060059. Existing x-timeline-poll v10 matched all six candidate files. One web build completed and the three companion entries canceled. Capture stays off. The 14 release paths are checkpointed on octoberBranch at 6339d3897, following the four News paths at 0b58b9578. Chef retains the coordinated master merge. BLSH’s 20261121210000 is free of Luna changes.
+
+## Luna single-job build · November 21 22:49 UTC
+
+News has TJ’s exact approval for one fhfhockey web build from 523ba010 and one draft-only job. It uses a deployment-specific runtime configuration and skips public domain assignment. The live admission window ends 22:57:41 UTC. No push or schema migration.
+
+## Luna single-job build slot released · November 21 22:53 UTC
+
+Both deployment entries for 523ba010 were canceled by the unchanged-SHA ignore command before the web app built. The public alias remains on dpl_w4ThHx3Y9McLFEYUygUusxGPRfkh. No further build is in flight. The one-job DB worker is disabled. The previously approved private pilot cleanup at 23:57:41 UTC touches only its own policy and retention tables.
+
+## BLSH-L7-REVIEW-20261121 · 23:28 UTC · Astra (independent L7 reviewer)
+
+Independence: confirmed. I did not author or materially shape these four registration files. My earlier work covered the native-capture client and the Nov 18 request for L7 sign-off.
+
+A1: reviewed X `b5e18f49078addde4bda3e5679e5602f8ed58393` (`refs/rc/blsh-pilot-redate-20261122-x`) against base `523ba01085776f9d2be345028bff919a243f77ae`. The local no-hardlinks clone returned X, that base as HEAD^1, and pilot `16f5c46030a8d619b8be153bb79cbbf9f1e9baa2` as HEAD^2. The canonical checkout's local origin/master matched the base. Scoped diff: 4 files, +48/−3.
+
+A2:
+
+1. X `web/lib/cron/nstCoordination.ts:19–26` adds the sole BLSH start at minute 725 (12:05Z). It follows 09:55Z by 130 minutes and precedes the next day's 08:30Z by 1,225 minutes. `web/lib/cron/nstCoordination.test.ts:45–65` checks both gaps and rejects a separate backup start.
+2. X `web/lib/cron/nstClassification.ts:7–19` adds only `blsh-native-capture` to the direct set. `web/lib/cron/nstClassification.test.ts:25–35` checks the primary, backup and watchdog classifications. The common POST route fixes the audit name at `web/pages/api/v1/db/blsh-native-capture.ts:11–14`.
+3. Base `tasks/TASKS/cron-operations/cron-schedule.md:742–777` records jobs 404 (12:05Z) and 405 (12:20Z) posting to that same route, and SQL watchdogs 406 and 407. Lines 909–913 identify 404 as the only scheduled direct NST start in the requested 11:07–12:07Z interval. The note itself starts at 11:05Z. The capture plan is two NST GETs spaced at least 22 s apart, zero retries, one claim per source date (X `web/lib/blsh/nativeCaptureV6/core.ts:232–247,286–289,412–417` and `handler.ts:12–13`). First planned use is Mon 2026-11-23 at 12:05Z (approval packet line 5).
+4. Base `web/lib/cron/cronAuditCoverage.ts:252–265,332–336` recognizes the audited operational wrapper and its outer admin guard. `web/lib/cron/withOperationalRouteAuth.ts:127–129,150` applies `withCronJobAudit` unless `audit: false`, with `adminOnly` outermost.
+5. The requested scoped `git diff --stat` lists only the four registration files. Paired `git ls-tree` reads of X and `1a6e54239` give identical blobs for `nstClassification.ts` (9c286fe02), its test (357e96cf7), `nstCoordination.ts` (3a6d0266e) and its test (8dc43f3c2). The schedule and scanner are present on base and have no diff.
+
+A3: Vitest 43/43 files, 575/575 tests passed, zero failures, exit 0. `env -u GIT_DIR npm run typecheck` returned exit 0. Both checks ran on X. The throwaway clone was deleted by literal path and its absence verified.
+
+Verdict: **PASS** for L7 integration in the single keyed BLSH pilot release. The push tip must be Y `1efdfb4364dffa73a9c249f382dbfebe22ebbbd2`, never X alone.
+
+Not covered: the shared NST owner's separate admission and rate-limit sign-off (Claude “11/21 || FORGE Lane”), day-of NST clearance (Mon 2026-11-23 11:05–12:07Z), and TJ's A5 line. FORGE's registry verdict on Y is release context only.
+
+
+## MASTER-RECORDS-PUBLISH-20261122 · Codex release checkpoint
+TJ has requested safe uncommitted work pushed to master and production sync readback. Preparing one documentation-only fast-forward from live master 53f1929a1, with no runtime, migration, cron, key, policy or flag changes. Scope: completed RSO custody JSON, standalone appearance-repair handoff and dated Rankings/News release records. Shared October checkout/index and held BLSH/K1/Detailed/Luna lanes remain preserved. Last daily-acceptance push hold is lifted; BLSH says no DB/build slot held. Expected repository filters skip all four projects; ordinary Git build if triggered is authorized for this task. No manual build/deploy or production QA invocation. Exact SHA and terminal Git/Vercel readback will follow.
+
+
+## MASTER-RECORDS-PUBLISH-DONE-20261122 · 10:41 UTC
+Verified fast-forward origin/master 53f1929a1 → aa06df70f9f7a69c8ff11bd8cc44ef5b97023c10: seven historical release/verification records only. All four Vercel entries CANCELED and GitHub statuses success; production alias stays READY dpl_Bmhdrm7WCx6Ak9QA21RfU21xvvji / 53f1929a1, identical runtime code. No runtime/migration/key/flag/schedule change or manual deployment. Slot released. Canonical October HEAD remains 2ed3566b5 and index empty. Read-only merge preview finds add/add FORGE-APPEARANCE-REPAIR-TO-SCOUT.md; its full canonical dirty bytes already match published master, but no merge/checkpoint of others' work was attempted. Held BLSH/K1/Detailed/Luna scopes remain held. This is records publication, not full-work production sync.
+
+
+## AUTH-SUPERSTYLE-RELEASE-20261122 · Codex · 10:47 UTC
+TJ identified unreleased Claude mobile login/account screen as release priority. Preparing exact public /auth subset of 09c63bd46–37b83b07c, candidate 480bd5d710ce316e4cf5570eb32784e764910b7f on aa06df70f. Twelve paths: public auth pages, shared AuthForm, required button mixin and focused tests; no /db, /account, API, migration, cron or FORGE change. Typecheck, lint and 27 distinct auth tests pass; old production mobile screen confirmed and intended local screen reviewed. Expected ordinary Git effect: one web build, three ignored companions. Current newest hold lifted; BLSH holds no slot. No manual deploy or production authentication action. Exact terminal readback will follow.
+
+
+## AUTH-SUPERSTYLE-RELEASE-DONE-20261122 · Codex · 10:56 UTC
+Verified master and production alias = 480bd5d710ce316e4cf5570eb32784e764910b7f; READY web dpl_A6wXhPbxbrNJWGCThoe5bsouyHmG. One web build, three companion entries CANCELED, GitHub statuses success. Claude's exact public auth subset is live: signed-out mobile /auth returns 200, Account heading and 312px inputs at 390px, no fallback heading, zero page errors; before/after screenshots reviewed. All local auth checks pass (27 distinct tests, full web types, scoped lint, 9 mode/viewport cases). No /account redesign, admin/db bundling, credentials, auth submits, migration/cron/key/flag change or manual deploy. Build slot released. Shared October/index untouched; isolated local sync candidate refs/candidates/october-sync-20261122 = a609b58fc includes master but remains local pending shared dirty-record checkpoint. Other held gates unchanged.

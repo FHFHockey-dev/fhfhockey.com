@@ -1,0 +1,120 @@
+PG 15.19 (Homebrew): stubs + Y's six BLSH migrations (incl. both re-dates) applied
+PASS signer byte layouts equal Y's requestContextApprovalBytes and officialPilotApprovalBytes
+PASS AUTOMATE-ONCE 12:45 dispatch command is byte-identical to reviewed SCHEDULE-ONCE.sql (33b1ead0...)
+registered at 11:30 (before ARM): blsh-signer-rc-sign-20261122@35 12 23 11 *, blsh-signer-rc-post-20261122@36 12 23 11 *, blsh-signer-official-sign-20261122@41 12 23 11 *, blsh-signer-official-store-20261122@42 12 23 11 *, blsh-official-once-20261122@45 12 23 11 *
+12:05:30 native run claimed through Y's claim RPC under INSTALL/ARM (shifted); packet rows seeded
+12:36 request-context POST body as pg_net sends it (jsonb::text, 399 bytes): {"approval": {"sourceDate": "2026-11-22", "nativeRunId": "5a...
+12:36 request-context response 200 {"state":"packet_complete_pending_review","sourceDate":"2026-11-22","runId":"74dc78fa-075d-4218-bf51-1cb021e371b2","manifestSHA256":"ee74400aee5fbc9b7c362cff956e219baa51882b16ddcba28e2bfa28bc8bca37"}
+PASS Y requestContextHandler accepted the KMS-signed envelope as re-serialised by Postgres jsonb; context packet complete in PG
+steps: rc_sign=queued rc_post=queued official_sign=queued official_store=stored
+12:45 official GET -> 200 {"state":"packet_complete_pending_review","sourceDate":"2026-11-22","runId":"fdd1cbaf-1d63-4285-acde-2115c1dd063b","manifestSHA256":"780a022
+PASS Y officialPilotHandler accepted the Vault grant; real PG blsh_official_claim_v1 accepted slot, native binding, schedule hash and deployment
+PASS every pilot job self-removed; no signer response row left in net._http_response; exactly 2 KMS Sign calls; signer log has decision codes and hashes only
+PASS refused wrong slate (mandate for 2026-11-21 used on 2026-11-23): 409 outside_signing_window
+PASS refused wrong slate inside a valid window (native run carries 2026-11-21): 409 native_receipt_unverified
+PASS refused wrong slate inside a valid window (receipt source names 2026-11-21): 409 evidence_conflict
+PASS refused wrong SHA (INSTALL pin differs from mandate): 409 deployment_mismatch
+PASS refused wrong deployment (mandate names another READY deployment): 409 deployment_mismatch
+PASS refused native receipt bound to another deployment: 409 deployment_mismatch
+PASS refused missing native receipt: 409 native_receipt_missing
+PASS refused unverified receipt (storage size disagrees; Y's blsh_context_source_v1 raises): 409 native_receipt_unverified
+PASS refused unverified receipt (run not complete): 409 native_receipt_unverified
+PASS refused unverified receipt (closed after the signing window opened): 409 native_receipt_unverified
+PASS refused early request-context (12:34:59.999): 409 outside_signing_window
+PASS refused late request-context (12:38:00): 409 outside_signing_window
+PASS refused official inside the request-context window: 409 outside_signing_window
+PASS refused mandate that widens the window past the code bound: 423 mandate_invalid
+PASS refused conflicting evidence (source manifest hash differs from run row): 409 evidence_conflict
+PASS refused conflicting evidence (two native runs for one slate): 409 evidence_conflict
+PASS refused stale evidence (DB clock 5 min off): 409 evidence_stale
+PASS refused arbitrary input (extra 'message' member): 400 evidence_invalid
+PASS refused arbitrary input (unknown route /sign): 404 unknown_route
+PASS refused arbitrary input (query string): 400 unexpected_parameters
+PASS refused arbitrary input (GET): 405 method_not_allowed
+PASS refused arbitrary input (duplicate JSON member): 400 evidence_invalid
+PASS refused caller without the Vault trigger bearer: 403 trigger_bearer_required
+PASS refused KMS key whose fingerprint is not the approved one: 503 key_identity_mismatch
+PASS refused stop switch: mandate disarmed: 423 signer_disarmed
+PASS refused stop switch: KMS DisableKey: 503 kms_sign_failed
+PASS refused retry after a reserve-then-fail (crash between reserve and sign) stays refused: 409 duplicate_request
+PASS a failed or crashed signing leaves the one-shot slot reserved; nothing is re-signed
+FINDING forged-but-self-consistent evidence WITH the Vault bearer -> signer issued (signed fields: mandate slate/deployment + forged run ID and manifest hash)
+PASS Y requestContextHandler refused the forged approval (503 native_source_unverified) before any claim; 0 context runs
+PASS refused the legitimate 12:35 request after the forged one (slot burned: denial of service, not forgery): 409 duplicate_request
+PASS refused duplicate request after issuance: 409 duplicate_request
+PASS concurrent pair -> exactly one KMS signature
+PASS refused official before any request-context issuance (context missing): 409 context_incomplete
+PASS refused slate mismatch (public schedule has a sixth game): 409 slate_mismatch
+PASS refused slate not final on the public schedule: 409 slate_not_final
+PASS refused public schedule unavailable (fail closed): 503 third_party_schedule_unavailable
+PASS refused conflicting evidence (an official run already exists): 409 evidence_conflict
+PASS refused conflicting evidence (context bound to another manifest): 409 evidence_conflict
+PASS refused late official (12:44:00): 409 outside_signing_window
+PASS official issued only after all official checks pass (control)
+PASS mock KMS denied fhfhockey (verifying app) identity
+PASS mock KMS denied prehash / DIGEST mode
+PASS mock KMS denied signer role outside the key-policy time fence (12:45:00)
+PASS mock KMS surface has no export or private-key accessor: ["getPublicKey","sign","createKey","disableKey","enableKey","putKeyPolicy","calls"]
+PASS late (a) signer down: rc_sign=queued rc_post=no_response official_sign=skipped_upstream official_store=skipped_upstream; dispatch=refused; nothing queued
+PASS late (b) context still running at 12:41: rc_sign=queued rc_post=queued official_sign=queued:context_incomplete official_store=refused:context_incomplete; dispatch=refused
+PASS late (c) rc_sign fired at 12:36:00 -> expired, nothing queued
+PASS stop switch (DB): CANCEL-SIGNER-STEPS + CANCEL-OFFICIAL-ONCE leave jobs 404-408 only; rerun no-op
+PASS AUTOMATE-ONCE refuses at/after 12:05, a non-Lambda URL, and a second registration
+V1 FINDING Vault: a non-superuser project owner's REVOKE of supabase_admin's SELECT grant to service_role is a no-op (PostgreSQL grantor rule); service_role (the Vercel app's key) would keep reading Vault-held private keys
+V1 PASS keygen inside Supabase: output carries public PEMs and fingerprints only; two distinct Ed25519 keys stored in the private table
+V1 PASS second keygen refused (keys exist)
+V1 PASS AUTOMATE-ONCE-SUPABASE refuses while service_role holds any privilege on the secrets table
+V1 PASS AUTOMATE-ONCE-SUPABASE refuses while a role granted to authenticator (reachable with SUPABASE_JWT_SECRET) can read the secrets table
+V1 PASS AUTOMATE-ONCE-SUPABASE registers once no client role holds a privilege on the secrets table
+V1 PASS service_role denied: read keys or bearer, call evidence, write ledger, replace a key
+V1 PASS anon denied: read keys or bearer, call evidence, write ledger, replace a key
+V1 PASS authenticated denied: read keys or bearer, call evidence, write ledger, replace a key
+V1 RESIDUAL postgres (database owner, and every path that runs SQL as it) CAN read both private keys: asserted true, see PROPOSAL-SUPABASE section 3
+V1 PASS 12:35 trigger body is exactly {} (the signer pulls its evidence; the trigger names nothing)
+V1 PASS Y requestContextHandler accepted the envelope signed with the table-held key; context packet complete
+V1 PASS Y officialPilotHandler accepted the Vault grant; real PG official claim accepted slot, binding, schedule hash, deployment
+V1 PASS exactly 2 approvals; ledger rows issued; jobs self-removed; no response row kept; log codes and hashes only
+V1 PASS refused non-empty trigger body (arbitrary input): 400 unexpected_body
+V1 PASS refused caller without the Vault bearer (e.g. the Vercel app's service_role key): 403 trigger_bearer_required
+V1 PASS refused unknown route: 404 unknown_route
+V1 PASS refused expired: request-context at 12:38:00: 409 outside_signing_window
+V1 PASS refused early: request-context at 12:34:50 (evidence pull takes real time, so the window is judged at decision time): 409 outside_signing_window
+V1 PASS refused expired: official at 12:44:00: 409 outside_signing_window
+V1 PASS refused mismatched READY deployment: 409 deployment_mismatch
+V1 PASS refused mismatched SHA: 409 deployment_mismatch
+V1 PASS refused mismatched slate: 409 outside_signing_window
+V1 PASS refused official before request-context (order / context missing): 409 context_incomplete
+V1 PASS refused stop switch: mandate disarmed (Edge Function secret): 423 signer_disarmed
+V1 PASS refused key swapped in the table by a DB owner (fingerprint differs from TJ's mandate): 503 key_identity_mismatch
+V1 PASS refused stop switch: signing key deleted from the table: 503 kms_unavailable
+V1 PASS concurrent pair -> exactly one signature (Postgres ledger, insert ... on conflict do nothing)
+V1 PASS refused duplicate request after issuance: 409 duplicate_request
+V1 PASS refused missing native receipt: 409 native_receipt_missing
+V1 PASS stop switch (DB): CANCEL-SIGNER-STEPS + CANCEL-OFFICIAL-ONCE leave jobs 404-408 only
+V1 PASS wrong bearer refused (trigger_bearer_required) before any evidence query, key read or ledger write
+V1 PASS out of window refused (outside_signing_window) before any evidence query, key read or ledger write
+V1 PASS GET refused (method_not_allowed) before any evidence query, key read or ledger write
+V1 PASS non-empty body refused (unexpected_body) before any evidence query, key read or ledger write
+V1 PASS /selfcheck: current_user=postgres, ledger insert works (rolled back), both keys match the mandate, evidence callable; 0 signatures, 0 ledger rows
+V1 FINDING service_role (the Vercel app's key) used public.execute_sql to grant itself the secrets table and read both private keys: no Supabase-hosted key or permit is independent of the app while that grant exists
+V1 PASS E1 (revoke EXECUTE on public.execute_sql from service_role) closes that path: service_role denied execute_sql and the secrets table
+V1 PASS R1B-READONLY.sql runs read-only locally (out/r1b-local-emulation.txt)
+V1 PASS R1-READONLY.sql runs in a read-only transaction and reports the execute_sql owner and service_role grant (local emulation: out/r1-local-emulation.txt)
+E2 PASS baseline hand-off through Y's handlers with the production-like grants in place
+E2 PASS replay: the request-context envelope and the official grant re-sent -> already_claimed; official grant after the slot -> outside_official_slot; still 1 context run and 1 official run
+E2 PASS signer: one-shot (duplicate_request), official after issuance (evidence_conflict: an official run exists), expiry, wrong slate, stop switch
+E2 PASS service_role (service-role key, secret key, JWT-minted service_role): denied reading/replacing/inserting keys, rewriting evidence/step functions, signer URL, steps, ledger, cron jobs, INSTALL pin, native/context rows, execute_sql
+E2 PASS anon and authenticated (anon/publishable keys, JWT-minted tokens): denied keys, evidence, ledger, Vault
+E2 PASS the mandate lives only in the Edge Function secret: a service_role-written Vault row named BLSH_SIGNER_MANDATE changes nothing the signer reads
+E2 PASS minting: approvals signed with any key the app could hold are refused by Y's request-context and official handlers (approval_invalid)
+E2 RESIDUAL-DOS service_role can overwrite the Vault grant (Y then refuses it: approval_invalid) or pre-create it (the 12:42 step refuses): denial of service, never an accepted approval
+E2 RESIDUAL (today) the owner credential (POSTGRES_* in Vercel) reads both keys over the network
+E2 PASS after rotation a new login with the old password fails (password authentication failed)
+E2 FINDING a session opened with the old password before rotation keeps working: E2 must end pre-existing owner sessions (pg_terminate_backend), as a separate line
+E2 PASS pg_terminate_backend ends the held session; the new password works
+E2 PASS R2-READONLY.sql runs read-only locally: session counts, service_role cron/net reach, terminate capability (out/r2-local-emulation.txt)
+E2 PASS (a) service_role sees every job command (BYPASSRLS) but none embeds the bearer or the grant: the step and dispatch commands read them at run time (AUTOMATE-ONCE-SUPABASE, AUTOMATE-ONCE and SCHEDULE-ONCE texts carry no secret literal)
+E2 PASS (b) service_role: cron.unschedule of the postgres dispatch job refused; UPDATE/DELETE on cron.job denied; scheduling the same name creates a separate service_role job and leaves the postgres job byte-identical
+E2 PASS (c) jobs scheduled by service_role execute as service_role and are denied: keys, ledger, signer step, evidence, step reset
+E2 PASS (d) service_role's net.http_post reaches the Edge signer without the bearer -> 403 trigger_bearer_required, no evidence query; service_role cannot read the bearer (private table) or the pg_net queue (per R2)
+E2 PASS job_run_details tampering by service_role changes no signer step, ledger or dispatch row: observability/DoS only

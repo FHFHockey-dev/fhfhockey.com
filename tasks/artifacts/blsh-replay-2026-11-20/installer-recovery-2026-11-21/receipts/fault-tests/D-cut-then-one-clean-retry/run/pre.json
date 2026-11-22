@@ -1,0 +1,27 @@
+{
+ "at": "2026-11-21T17:17:26.931Z",
+ "functions": 0,
+ "lingeringDetail": null,
+ "lingeringInstallBackends": 0,
+ "memberships": 0,
+ "outsideFullFingerprint": "da3aa08b980815da21aa92e133c7b1ab",
+ "outsideNarrowFingerprint": "27353fc8864709dbed6772a5a451b382",
+ "parts": {
+  "columns": "d41d8cd98f00b204e9800998ecf8427e",
+  "constraints": "d41d8cd98f00b204e9800998ecf8427e",
+  "content": "d41d8cd98f00b204e9800998ecf8427e",
+  "functions": "d41d8cd98f00b204e9800998ecf8427e",
+  "indexes": "d41d8cd98f00b204e9800998ecf8427e",
+  "memberships": "d41d8cd98f00b204e9800998ecf8427e",
+  "policies": "d41d8cd98f00b204e9800998ecf8427e",
+  "relations": "d41d8cd98f00b204e9800998ecf8427e",
+  "roles": "d41d8cd98f00b204e9800998ecf8427e",
+  "schemas": "d41d8cd98f00b204e9800998ecf8427e",
+  "triggers": "d41d8cd98f00b204e9800998ecf8427e"
+ },
+ "probe": "blsh-installer-state-probe-v1",
+ "roles": 0,
+ "sandboxFingerprint": "d41d8cd98f00b204e9800998ecf8427e",
+ "schemas": 0,
+ "tables": 0
+}

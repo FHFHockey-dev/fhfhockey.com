@@ -1,0 +1,5 @@
+
+> web@0.1.0 typecheck
+> NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit
+
+typecheck exit 0

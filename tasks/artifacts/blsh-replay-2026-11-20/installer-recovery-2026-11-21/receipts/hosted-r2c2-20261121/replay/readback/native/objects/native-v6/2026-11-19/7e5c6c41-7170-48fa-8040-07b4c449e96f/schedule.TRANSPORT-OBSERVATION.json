@@ -1,0 +1,73 @@
+{
+  "status": "candidate_requires_adapter_and_source_review",
+  "operation": "schedule",
+  "file": "schedule.raw.json",
+  "sha256": "4097ee82069bbaeee807b79829da60906d6b10e00f0a55237a98e9a74b17a146",
+  "bytes": 102472,
+  "retrievedAtUTC": "2026-11-21T21:01:04.698Z",
+  "retainedAtUTC": "2026-11-21T21:01:04.709Z",
+  "httpStatus": 200,
+  "finalUrl": "https://api-web.nhle.com/v1/schedule/2026-11-19",
+  "redirected": false,
+  "TLSVerified": null,
+  "tls": {
+    "channel": "undici:client:sendHeaders",
+    "authorized": false,
+    "authorizationError": "replay-fixture: no network connection was made",
+    "servername": "api-web.nhle.com",
+    "alpnProtocol": "replay-fixture",
+    "protocol": "replay-fixture",
+    "cipher": {
+      "name": "replay-fixture",
+      "standardName": null,
+      "version": null
+    },
+    "sessionReused": false,
+    "connectionReused": false,
+    "connectionSequence": 1,
+    "resumedFromOperation": null,
+    "connectionFromOperation": null,
+    "peerCertificate": {
+      "fingerprint256": "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00",
+      "valid_from": "replay-fixture",
+      "valid_to": "replay-fixture",
+      "subjectCN": "replay-fixture",
+      "issuerCNChain": [
+        "replay-fixture"
+      ]
+    },
+    "defaultCACertificatesSHA256": "5aab51f94c9a1ad6b5185229b65ca308fcae0e6fdb31bdf6f34278e099fb024c",
+    "globalDispatcher": {
+      "present": true,
+      "constructorName": "Agent",
+      "identityUnchanged": true
+    }
+  },
+  "tlsEvidence": "pending_runtime_review",
+  "representation": "original_decoded_body",
+  "deploymentBinding": {
+    "deploymentId": "dpl_DebFbbRByWvcVCdBTJc7FewDhu5w",
+    "gitCommitSha": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+    "routeBundleSHA256": null
+  },
+  "parsedRows": null,
+  "completedGameIds": [
+    2026020347,
+    2026020348,
+    2026020349,
+    2026020350,
+    2026020351,
+    2026020352,
+    2026020353,
+    2026020354,
+    2026020355,
+    2026020356,
+    2026020357,
+    2026020358
+  ],
+  "originalPublicationUTC": null,
+  "modelDefinition": "unknown",
+  "independentlyAccepted": false,
+  "advancedAdmission": false,
+  "score": null
+}
