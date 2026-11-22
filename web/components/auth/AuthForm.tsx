@@ -11,6 +11,8 @@ import styles from "./AuthForm.module.scss";
 type AuthFormProps = {
   mode: AuthModalMode;
   onSuccess?: () => void;
+  /** Hide the "Open /auth" link when the form is already on /auth. */
+  showFallbackLink?: boolean;
 };
 
 type FormState = {
@@ -92,7 +94,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string)
   });
 }
 
-export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
+export default function AuthForm({ mode, onSuccess, showFallbackLink = true }: AuthFormProps) {
   const [formState, setFormState] = useState<FormState>({
     email: "",
     password: "",
@@ -430,11 +432,15 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
         </button>
       </form>
 
-      <div className={styles.fallbackRow}>
-        <span className={styles.fallbackLabel}>Need the full fallback page?</span>
-        <Link href={`/auth?mode=${mode}`} className={styles.fallbackLink}>
-          Open /auth
-        </Link>
+      <div className={showFallbackLink ? styles.fallbackRow : styles.resetRow}>
+        {showFallbackLink ? (
+          <>
+            <span className={styles.fallbackLabel}>Need the full fallback page?</span>
+            <Link href={`/auth?mode=${mode}`} className={styles.fallbackLink}>
+              Open /auth
+            </Link>
+          </>
+        ) : null}
         <button
           type="button"
           className={styles.resetSessionButton}

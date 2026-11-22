@@ -53,17 +53,10 @@ export default function AuthPage() {
 
   return (
     <Container className={styles.container}>
-      <PageTitle>Authentication</PageTitle>
+      <PageTitle className={styles.pageTitle}>Account</PageTitle>
       <ClientOnly>
         <section className={styles.card}>
-          <div className={styles.eyebrow}>Auth Fallback</div>
-          <h2 className={styles.title}>
-            {user ? "You are already signed in" : "Use the fallback auth page"}
-          </h2>
-          <p className={styles.body}>
-            This page stays available for direct links, recovery flows, and any
-            cases where the header modal is not the right entry point.
-          </p>
+          {user ? <h2 className={styles.title}>You are already signed in</h2> : null}
 
           {status ? (
             <div className={styles.notice}>
@@ -93,7 +86,7 @@ export default function AuthPage() {
                 </button>
                 <button
                   type="button"
-                  className={styles.signOutAction}
+                  className={styles.resetAction}
                   onClick={() => void signOut()}
                 >
                   Reset Local Auth
@@ -122,8 +115,7 @@ export default function AuthPage() {
               </div>
 
               <div className={styles.formShell}>
-                <div className={styles.formTitle}>{MODE_LABELS[mode]}</div>
-                <AuthForm mode={mode} />
+                <AuthForm mode={mode} showFallbackLink={false} />
               </div>
             </>
           )}

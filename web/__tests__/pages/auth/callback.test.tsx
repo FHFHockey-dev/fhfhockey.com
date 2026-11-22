@@ -56,7 +56,7 @@ describe("Auth callback page", () => {
   it("exchanges OAuth codes and redirects to the requested next path", async () => {
     pageState.exchangeCodeForSession.mockImplementation(async () => {
       expect(window.location.href).toBe("http://localhost:3000/auth/callback");
-      expect(document.title).toBe("Completing Authentication | FHFHockey");
+      expect(document.title).toBe("Sign in | FHFHockey");
       return { error: null };
     });
     const callbackUrl = "/auth/callback?code=oauth-code&next=%2Faccount";
@@ -81,10 +81,10 @@ describe("Auth callback page", () => {
 
     render(<AuthCallbackPage />);
 
-    expect(await screen.findByText("Authentication complete")).toBeTruthy();
+    expect(await screen.findByText("You're signed in")).toBeTruthy();
     expect(
       screen.queryByText(
-        "FHFH could not finish this authentication response. Return to sign in and try again."
+        "We couldn't finish signing you in. Sign in again."
       )
     ).toBeNull();
   });
@@ -157,7 +157,7 @@ describe("Auth callback page", () => {
 
     expect(
       await screen.findByText(
-        "The authentication provider could not complete this request. Return to sign in and try again."
+        "Your sign-in provider couldn't complete the request. Sign in again."
       )
     ).toBeTruthy();
     expect(document.body.textContent).not.toContain(providerErrorSentinel);
@@ -168,7 +168,7 @@ describe("Auth callback page", () => {
   it("routes hash-based recovery sessions to the reset-password page", async () => {
     pageState.setSession.mockImplementation(async () => {
       expect(window.location.href).toBe("http://localhost:3000/auth/callback");
-      expect(document.title).toBe("Completing Authentication | FHFHockey");
+      expect(document.title).toBe("Sign in | FHFHockey");
       expect(JSON.stringify(window.history.state)).not.toContain("access123");
       return { error: null };
     });
@@ -207,7 +207,7 @@ describe("Auth callback page", () => {
 
     expect(
       await screen.findByText(
-        "FHFH could not finish this authentication response. Return to sign in and try again."
+        "We couldn't finish signing you in. Sign in again."
       )
     ).toBeTruthy();
     expect(document.body.textContent).not.toContain("fake-access-token");

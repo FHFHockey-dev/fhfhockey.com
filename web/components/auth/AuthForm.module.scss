@@ -7,26 +7,36 @@
   gap: 16px;
 }
 
+// Buttons follow fhfh-styles §9.4: 2px ring, 12% tint, blue Train One labels.
+// Sign in / Create account is the primary variant (opaque fill, white text).
+// No gradients, glow or neon edge strips (cheat sheet: "Don't").
 .oauthButton,
 .submitButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
+  min-height: 40px;
   width: 100%;
   padding: 0 16px;
-  border-radius: 14px;
-  font-family: v.$font-family-accent;
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  border-radius: v.$radius-control;
   cursor: pointer;
   transition:
-    transform v.$transition-duration v.$transition-easing,
     border-color v.$transition-duration v.$transition-easing,
-    box-shadow v.$transition-duration v.$transition-easing,
     background-color v.$transition-duration v.$transition-easing,
     color v.$transition-duration v.$transition-easing;
+  @include v.button-tint;
+  font-size: v.$font-size-xs;
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+}
+
+// Provider buttons share the tint; kept as hooks for the TSX classNames.
+.googleButton,
+.githubButton {
+  gap: 8px;
 }
 
 .oauthButtonStack {
@@ -34,62 +44,9 @@
   gap: 10px;
 }
 
-.oauthButton {
-  position: relative;
-  overflow: hidden;
-  border: 2px solid rgba(v.$primary-color, 0.68);
-  background:
-    linear-gradient(180deg, rgba(v.$secondary-color, 0.12), rgba(v.$primary-color, 0.28)),
-    linear-gradient(145deg, rgba(v.$background-light, 0.98), rgba(v.$background-darker, 0.98));
-  color: v.$color-white;
-  box-shadow:
-    0 12px 26px rgba(0, 0, 0, 0.28),
-    0 0 26px rgba(v.$secondary-color, 0.1);
-
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 12px;
-    background: v.$secondary-color;
-    box-shadow:
-      0 0 14px rgba(v.$secondary-color, 0.9),
-      0 0 24px rgba(v.$secondary-color, 0.65);
-  }
-
-  &:hover,
-  &:focus-visible {
-    transform: translateY(-2px);
-    box-shadow:
-      0 18px 36px rgba(0, 0, 0, 0.34),
-      0 0 32px rgba(v.$secondary-color, 0.22);
-    outline: none;
-  }
-}
-
-.githubButton {
-  border-color: rgba(v.$color-white, 0.28);
-  background:
-    linear-gradient(180deg, rgba(v.$color-white, 0.09), rgba(v.$color-white, 0.025)),
-    linear-gradient(145deg, rgba(30, 34, 42, 0.98), rgba(5, 7, 10, 0.98));
-  color: v.$color-white;
-
-  &::before {
-    background: v.$color-white;
-    box-shadow:
-      0 0 14px rgba(v.$color-white, 0.55),
-      0 0 24px rgba(v.$secondary-color, 0.28);
-  }
-}
-
 .oauthButton:disabled,
 .submitButton:disabled {
   cursor: not-allowed;
-  opacity: 0.62;
-  transform: none;
-  box-shadow: none;
 }
 
 .divider {
@@ -101,15 +58,15 @@
 .dividerLine {
   flex: 1 1 auto;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(v.$secondary-color, 0.42), transparent);
+  background: v.$border-secondary; // flat hairline, no cyan gradient fade
 }
 
 .dividerLabel {
   color: v.$text-secondary;
   font-family: v.$font-family-primary;
   font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -126,23 +83,22 @@
   gap: 8px;
 }
 
+// Field captions match the admin forms: small caps at 600, light tracking, secondary ink.
 .fieldLabel {
-  color: v.$color-white;
+  color: v.$text-secondary;
   font-family: v.$font-family-primary;
   font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .input {
-  min-height: 48px;
+  min-height: 40px; // matches the 40px form buttons
   padding: 0 14px;
   border: 1px solid rgba(v.$border-secondary, 0.95);
-  border-radius: 14px;
-  background:
-    linear-gradient(180deg, rgba(v.$color-white, 0.045), rgba(v.$color-white, 0.015)),
-    rgba(v.$background-darker, 0.88);
+  border-radius: v.$radius-control;
+  background: rgba(v.$background-darker, 0.88);
   color: v.$text-primary;
   font-family: v.$font-family-primary;
   font-size: 1rem;
@@ -171,21 +127,11 @@
 
 .submitButton {
   margin-top: 6px;
-  border: 2px solid v.$primary-color;
   background: v.$primary-color-opaque;
-  color: v.$secondary-color;
-  box-shadow:
-    0 12px 26px rgba(v.$primary-color, 0.16),
-    inset 0 0 18px rgba(v.$secondary-color, 0.08);
+  color: v.$color-white;
 
-  &:hover,
-  &:focus-visible {
-    transform: translateY(-2px);
-    background: rgba(v.$primary-color, 0.54);
-    box-shadow:
-      0 16px 30px rgba(v.$primary-color, 0.2),
-      0 0 24px rgba(v.$secondary-color, 0.18);
-    outline: none;
+  &:hover:not(:disabled) {
+    background: rgba(v.$primary-color, 0.5);
   }
 }
 
@@ -194,7 +140,7 @@
 .noticeMessage,
 .successMessage {
   padding: 13px 14px;
-  border-radius: 14px;
+  border-radius: v.$radius-control;
   line-height: 1.55;
   font-family: v.$font-family-primary;
   font-size: 0.95rem;
@@ -210,19 +156,19 @@
 .errorMessage {
   border: 1px solid rgba(v.$danger-color, 0.45);
   background: rgba(v.$danger-color-dark, 0.45);
-  color: #ffd9e1;
+  color: v.$text-primary;
 }
 
 .noticeMessage {
   border: 1px solid rgba(v.$secondary-color, 0.34);
   background: rgba(v.$secondary-color, 0.11);
-  color: #d7f6ff;
+  color: v.$text-primary;
 }
 
 .successMessage {
   border: 1px solid rgba(v.$success-color, 0.3);
   background: rgba(v.$success-color, 0.1);
-  color: #d9ffef;
+  color: v.$text-primary;
 }
 
 .fallbackRow {
@@ -231,9 +177,15 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
-  border: 1px solid rgba(v.$border-secondary, 0.82);
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(v.$color-white, 0.035), rgba(v.$color-white, 0.012));
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+}
+
+// On /auth the self-link is hidden: Reset Local Auth sits on its own, no box.
+.resetRow {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .fallbackLabel {
@@ -249,44 +201,34 @@
   letter-spacing: 0.08em;
   text-decoration: none;
   text-transform: uppercase;
-  transition:
-    color v.$transition-duration v.$transition-easing,
-    text-shadow v.$transition-duration v.$transition-easing;
+  transition: color v.$transition-duration v.$transition-easing;
 
-  &:hover,
-  &:focus-visible {
+  &:hover {
     color: v.$color-white;
-    text-shadow: 0 0 14px rgba(v.$secondary-color, 0.35);
-    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
   }
 }
 
 .resetSessionButton {
-  @include v.button-style;
-  border: 1px solid rgba(v.$primary-color, 0.32);
-  background: rgba(v.$primary-color, 0.08);
-  color: v.$text-secondary;
-  padding: 6px 10px;
-  border-radius: v.$border-radius-sm;
-  font-family: v.$font-family-accent;
-  font-size: 0.7rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  transition:
-    border-color v.$transition-duration v.$transition-easing,
-    background-color v.$transition-duration v.$transition-easing,
-    color v.$transition-duration v.$transition-easing;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: v.$control-height-sm;
+  padding: 0 12px;
+  border-radius: v.$radius-control;
+  cursor: pointer;
+  @include v.button-tint;
 
-  &:hover:not(:disabled),
   &:focus-visible {
-    color: v.$color-white;
-    border-color: rgba(v.$primary-color, 0.55);
-    background: rgba(v.$primary-color, 0.16);
-    outline: none;
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
   }
 
   &:disabled {
-    opacity: 0.5;
     cursor: not-allowed;
   }
 }

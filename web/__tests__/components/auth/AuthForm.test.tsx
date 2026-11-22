@@ -185,4 +185,13 @@ describe("AuthForm", () => {
     expect(window.localStorage.getItem("unrelated-app-session")).toBe("preserve-me");
     expect(authState.signOut).toHaveBeenCalledWith({ scope: "local" });
   });
+  it("hides the redundant full-page link while retaining local session recovery", () => {
+    render(<AuthForm mode="sign-in" showFallbackLink={false} />);
+
+    expect(screen.queryByRole("link", { name: "Open /auth" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Reset Local Auth" })).toBeTruthy();
+    expect(screen.getByLabelText("Email")).toBeTruthy();
+    expect(screen.getByLabelText("Password")).toBeTruthy();
+  });
+
 });

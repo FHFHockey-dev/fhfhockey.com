@@ -57,7 +57,7 @@ async function updatePasswordWithRecoverySession(password: string) {
   const accessToken = data.session?.access_token;
   if (!accessToken) {
     throw new Error(
-      "Your recovery session is missing or expired. Request a new password reset email and try again."
+      "This reset link has expired or was already used. Request a new reset email and try again."
     );
   }
 
@@ -96,7 +96,7 @@ async function updatePasswordWithRecoverySession(password: string) {
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new Error(
-        "Password update timed out. Retry once, and if it keeps happening, request a new recovery email."
+        "Updating your password took too long. Try again, and if it keeps happening, request a new reset email."
       );
     }
 
@@ -116,7 +116,7 @@ export default function ResetPasswordPage() {
   const mountedRef = useRef(false);
   const [pageState, setPageState] = useState<PageState>("checking");
   const [message, setMessage] = useState(
-    "Checking your recovery session so you can choose a new password."
+    "Checking your reset link…"
   );
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -144,7 +144,7 @@ export default function ResetPasswordPage() {
     } catch {
       setPageState("error");
       setMessage(
-        "FHFH could not safely clear this recovery response. Request a new password reset email and try again."
+        "We couldn't open this reset link. Request a new reset email and try again."
       );
       navigateToAuthFallback((url) => replaceRoute(url));
       return () => {
@@ -175,7 +175,7 @@ export default function ResetPasswordPage() {
         if (error) {
           setPageState("error");
           setMessage(
-            "This recovery response could not be verified. Request a new password reset email and try again."
+            "We couldn't verify this reset link. Request a new reset email and try again."
           );
           return;
         }
@@ -198,7 +198,7 @@ export default function ResetPasswordPage() {
         if (error) {
           setPageState("error");
           setMessage(
-            "This recovery response could not be verified. Request a new password reset email and try again."
+            "We couldn't verify this reset link. Request a new reset email and try again."
           );
           return;
         }
@@ -221,7 +221,7 @@ export default function ResetPasswordPage() {
         if (error) {
           setPageState("error");
           setMessage(
-            "This recovery response could not be verified. Request a new password reset email and try again."
+            "We couldn't verify this reset link. Request a new reset email and try again."
           );
           return;
         }
@@ -240,7 +240,7 @@ export default function ResetPasswordPage() {
       if (error) {
         setPageState("error");
         setMessage(
-          "FHFH could not read the recovery session. Request a new password reset email and try again."
+          "We couldn't read this reset link. Request a new reset email and try again."
         );
         return;
       }
@@ -253,7 +253,7 @@ export default function ResetPasswordPage() {
 
       setPageState("error");
       setMessage(
-        "Your recovery session is missing or expired. Request a new password reset email from the auth modal."
+        "This reset link has expired or was already used. Request a new reset email and try again."
       );
     }
 
@@ -265,7 +265,7 @@ export default function ResetPasswordPage() {
 
         setPageState("error");
         setMessage(
-          "This recovery response could not be verified. Request a new password reset email and try again."
+          "We couldn't verify this reset link. Request a new reset email and try again."
         );
       });
     }
@@ -304,7 +304,7 @@ export default function ResetPasswordPage() {
 
     if (password !== confirmPassword) {
       setFormError({
-        message: "Your password confirmation does not match.",
+        message: "The two passwords don't match.",
         field: "confirmPassword"
       });
       return;
@@ -326,7 +326,7 @@ export default function ResetPasswordPage() {
 
     setPageState("success");
     setMessage(
-      "Your password has been updated successfully. You can continue into your account now."
+      "Password updated. You're signed in."
     );
     clearStoredNextPath();
     setIsSubmitting(false);
@@ -342,16 +342,16 @@ export default function ResetPasswordPage() {
         <meta name="referrer" content="no-referrer" />
       </Head>
       <Container className={styles.container}>
-        <PageTitle>Reset Password</PageTitle>
+        <PageTitle className={styles.pageTitle}>Reset Password</PageTitle>
         <ClientOnly>
           <div className={styles.card}>
-            <div className={styles.eyebrow}>Password Reset</div>
-            <h1 className={styles.title}>Choose a new password</h1>
-            <p className={styles.body}>
-              This page completes the second half of the Supabase recovery flow
-              after the email link returns to the site.
-            </p>
-
+            <h2 className={styles.title}>
+              {pageState === "error"
+                ? "Let's try that again"
+                : pageState === "success"
+                ? "Password saved"
+                : "Choose a new password"}
+            </h2>
             <div
               id="reset-password-message"
               role={pageState === "error" || formError ? "alert" : "status"}
@@ -414,13 +414,13 @@ export default function ResetPasswordPage() {
 
             <div className={styles.actions}>
               <Link
-                href={pageState === "success" ? callbackNextPath || nextPath : "/auth"}
+                href={pageState === "success" ? callbackNextPath || nextPath : "/auth?mode=forgot-password"}
                 className={styles.primaryAction}
               >
-                {pageState === "success" ? "Continue to Site" : "Open Auth"}
+                {pageState === "success" ? "Continue to site" : "Request a new reset email"}
               </Link>
               <Link href="/" className={styles.secondaryAction}>
-                Return Home
+                Return to site
               </Link>
             </div>
           </div>
