@@ -34,7 +34,12 @@ const {
   ppCombosSelectMock,
   pipelineStateRows,
   pipelineStateFrom,
-  pipelineStateRpc
+  pipelineStateRpc,
+  wgo,
+  wgoDefaults,
+  wgoFrom,
+  wgoDigestRpc,
+  digestOf
 } = vi.hoisted(() => {
   // In-memory projection_pipeline_state with the lease rules of
   // advance_projection_pipeline_state_v1 that the pipeline relies on.
@@ -115,6 +120,93 @@ const {
     return { data: [row], error: null };
   });
 
+  // What the standalone WGO jobs persisted, read by the scheduled run's
+  // readiness check. The default is a normal ready day for any source date:
+  // two final regular-season games, a clean job-9 receipt after both could
+  // have ended, and 18 skaters on each side of each game.
+  const nextDay = (date: string) => new Date(Date.parse(`${date}T00:00:00.000Z`) + 86_400_000).toISOString().slice(0, 10);
+  const previousDay = (date: string) => new Date(Date.parse(`${date}T00:00:00.000Z`) - 86_400_000).toISOString().slice(0, 10);
+  // Stand-in for public.wgo_skater_date_digest: the row count and a 32-hex hash of the date's rows.
+  const digestOf = (rows: any[]) => {
+    const text = JSON.stringify([...rows].sort((a, b) => a.player_id - b.player_id || a.game_id - b.game_id));
+    let hash = 0x811c9dc5;
+    for (let index = 0; index < text.length; index++) hash = Math.imul(hash ^ text.charCodeAt(index), 16777619) >>> 0;
+    return { rows: rows.length, md5: hash.toString(16).padStart(8, "0").repeat(4) };
+  };
+  const wgoDefaults = {
+    games: (date: string): any[] => [2025021023, 2025021024].map((id, index) => ({
+      id, date, startTime: `${date}T23:00:00.000Z`, type: 2, homeTeamId: 2 * index + 1, awayTeamId: 2 * index + 2,
+      game_state: "OFF", game_schedule_state: "OK", game_state_observed_at: `${nextDay(date)}T03:00:00.000Z`
+    })),
+    receipt: (date: string, overrides: Record<string, any> = {}, context: Record<string, any> = {}): any => {
+      const body = { message: "ok", success: true, totalUpdates: 72, datesProcessed: [date], failedDates: [], failedDatesCount: 0,
+        failures: [], skippedDates: [previousDay(date), nextDay(date)], skippedDatesCount: 2, skips: [], ...context };
+      // The shape update-wgo-skaters' own finally block writes for job 9 (action=all, no startDate),
+      // as in production's 2026-11-22T07:32:53Z row, with the digest the writer records for the date.
+      const sourceDigests = "sourceDigests" in context ? context.sourceDigests : { [date]: wgo.liveDigest(date) };
+      return { job_name: "update-all-wgo-skaters", run_time: `${nextDay(date)}T03:30:00.000Z`, status: "success", rows_affected: 72,
+        details: { method: "GET", url: "/api/v1/db/update-wgo-skaters?action=all", statusCode: 200, durationMs: 1000,
+          rowsUpserted: body.totalUpdates, failedRows: 0, error: null,
+          response: { ...body, sourceDigests, failedRows: 0, fullRefresh: false },
+          context: { message: body.message, sourceDigests, datesProcessed: body.datesProcessed, failedDates: body.failedDates,
+            failedDatesCount: body.failedDatesCount, failures: body.failures, skippedDates: body.skippedDates,
+            skippedDatesCount: body.skippedDatesCount, skips: body.skips, fullRefresh: false } },
+        ...overrides };
+    },
+    rows: (gameIds: number[], date: string, perSide = 18): any[] => gameIds.flatMap(gameId =>
+      (["H", "R"] as const).flatMap((side, sideIndex) => Array.from({ length: perSide }, (_unused, index) => ({
+        game_id: gameId, player_id: gameId * 100 + sideIndex * 50 + index, date, home_road: side }))))
+  };
+  const wgo = {
+    games: wgoDefaults.games as (date: string) => any[],
+    receipts: (date: string): any[] => [wgoDefaults.receipt(date)],
+    rows: (gameIds: number[], date: string): any[] => wgoDefaults.rows(gameIds, date),
+    lastDate: "",
+    reads: [] as string[],
+    // What public.wgo_skater_date_digest returns for the date right now.
+    liveDigest: (date: string): any => digestOf(wgo.rows(wgo.games(date).map((game: any) => game.id), date)
+      .filter((row: any) => row.date === date)),
+    digestError: null as null | { message: string }
+  };
+  const wgoDigestRpc = async (args: { p_date: string }) => {
+    wgo.reads.push("wgo_skater_date_digest");
+    return wgo.digestError ? { data: null, error: wgo.digestError } : { data: wgo.liveDigest(args.p_date), error: null };
+  };
+  const wgoFrom = (table: string) => {
+    if (table === "games") {
+      return { select: () => ({ eq: async (_column: string, date: string) => {
+        wgo.lastDate = date; wgo.reads.push("games");
+        return { data: wgo.games(date), error: null };
+      } }) };
+    }
+    if (table === "wgo_skater_stats") {
+      return { select: () => ({ in: (_column: string, gameIds: number[]) => ({ limit: async () => {
+        wgo.reads.push("wgo_skater_stats");
+        return { data: wgo.rows(gameIds, wgo.lastDate).filter(row => gameIds.includes(row.game_id)), error: null };
+      } }) }) };
+    }
+    // cron_job_audit reads, with the filters the readiness check sends.
+    const keep: Array<(row: any) => boolean> = [];
+    let since = "";
+    const query: any = {
+      eq: (column: string, value: unknown) => { keep.push(row => row[column] === value); return query; },
+      gte: (column: string, value: string) => {
+        since = new Date(Date.parse(value) - 86_400_000).toISOString().slice(0, 10);
+        keep.push(row => row[column] >= value);
+        return query;
+      },
+      lte: (column: string, value: string) => { keep.push(row => row[column] <= value); return query; },
+      order: () => query,
+      limit: async (count: number) => {
+        wgo.reads.push("cron_job_audit");
+        const rows = wgo.receipts(since).filter(row => keep.every(test => test(row)))
+          .sort((a, b) => b.run_time.localeCompare(a.run_time));
+        return { data: rows.slice(0, count), error: null };
+      }
+    };
+    return { select: () => query };
+  };
+
   const successResponder = vi.fn(async (_req: any, res: any) => {
     res.status(200).json({ success: true });
   });
@@ -174,7 +266,12 @@ const {
     ppCombosSelectMock,
     pipelineStateRows,
     pipelineStateFrom,
-    pipelineStateRpc
+    pipelineStateRpc,
+    wgo,
+    wgoDefaults,
+    wgoFrom,
+    wgoDigestRpc,
+    digestOf
   };
 });
 
@@ -190,7 +287,11 @@ vi.mock("lib/supabase/server", () => ({
   default: {
     from: vi.fn((table: string) =>
       table === "cron_job_audit"
-        ? { insert: auditInsertMock }
+        ? { insert: auditInsertMock, select: () => wgoFrom("cron_job_audit").select() }
+        : table === "wgo_skater_stats"
+          ? wgoFrom("wgo_skater_stats")
+        : table === "games"
+          ? { select: (columns?: string) => columns?.includes("game_state") ? wgoFrom("games").select() : gamesSelectMock() }
         : table === "projection_pipeline_state"
           ? pipelineStateFrom()
           : table === "lineCombinations"
@@ -199,7 +300,8 @@ vi.mock("lib/supabase/server", () => ({
               ? { select: ppCombosSelectMock }
               : { select: gamesSelectMock }
     ),
-    rpc: pipelineStateRpc
+    rpc: (name: string, args: any) =>
+      name === "wgo_skater_date_digest" ? wgoDigestRpc(args) : pipelineStateRpc(name, args)
   }
 }));
 
@@ -239,6 +341,17 @@ vi.mock("../../../../../pages/api/v1/db/run-projection-accuracy", () => ({
 import handler, { __testables, forgeProjectionDaysAhead } from "../../../../../pages/api/v1/db/run-rolling-forge-pipeline";
 import { readRollingForgeRunState, readRollingForgeStageKills, recordRollingForgeStageKill } from "lib/rollingForgePipelineRunState";
 
+function resetWgoFixture() {
+  wgo.games = wgoDefaults.games;
+  wgo.receipts = (date: string) => [wgoDefaults.receipt(date)];
+  wgo.rows = (gameIds: number[], date: string) => wgoDefaults.rows(gameIds, date);
+  wgo.lastDate = "";
+  wgo.reads = [];
+  wgo.liveDigest = (date: string) => digestOf(wgo.rows(wgo.games(date).map((game: any) => game.id), date)
+    .filter((row: any) => row.date === date));
+  wgo.digestError = null;
+}
+
 function createMockRes() {
   const res: any = {
     statusCode: 200,
@@ -272,6 +385,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     vi.useRealTimers();
     pipelineStateRows.clear();
     process.env.CRON_SECRET = "test-secret";
+    resetWgoFixture();
   });
 
   it("returns 405 for unsupported methods", async () => {
@@ -305,6 +419,10 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     expect(res.statusCode).toBe(200);
     expect(updateGamesMock).toHaveBeenCalled();
     expect(updateNstGamelogMock).toHaveBeenCalled();
+    // An explicit-date run (a repair) still produces WGO itself; only the scheduled run reads the standalone jobs.
+    expect(updateWgoSkatersMock.mock.calls[0]?.[0]?.query).toEqual({ action: "all", startDate: "2026-03-14" });
+    expect(updateWgoTotalsMock).toHaveBeenCalledTimes(1);
+    expect(res.body.wgoReadiness).toBeUndefined();
     expect(updatePowerPlayCombinationsMock).toHaveBeenCalledTimes(1);
     expect(updatePowerPlayCombinationsMock.mock.calls[0]?.[0]?.query).toMatchObject({
       startDate: "2026-03-14",
@@ -618,6 +736,21 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     });
   });
 
+  it("skips the optional WGO totals refresh late in an explicit-date run", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-19T10:05:00.000Z"));
+    updateWgoSkatersMock.mockImplementationOnce(async (_req: any, out: any) => {
+      vi.setSystemTime(Date.now() + 100_000);
+      out.status(200).json({ success: true });
+    });
+    const res = createMockRes();
+    await handler({ method: "GET", query: { mode: "daily_incremental", date: "2026-10-18", includeAccuracy: "false" }, headers: {} } as any, res);
+    const upstream = res.body.stages.find((stage: any) => stage.id === "upstream_skater_sources");
+    expect(upstream.steps.map((step: any) => [step.id, step.status])).toEqual([
+      ["update-nst-gamelog", "success"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "skipped"]]);
+    expect(updateWgoTotalsMock).not.toHaveBeenCalled();
+  });
+
   it("keeps an explicit NST window bounded and holds uncertain writes even when stopOnFailure is false", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-19T10:05:00.000Z"));
@@ -723,7 +856,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
 
     it("completes every stage in order across several invocations, continuing a partial rolling step", async () => {
       updatePlayersMock.mockImplementationOnce(slowSuccess(60_000));
-      updateWgoTotalsMock.mockImplementationOnce(slowSuccess(40_000));
+      updateNstGamelogMock.mockImplementationOnce(slowSuccess(40_000));
       updateRollingPlayerAveragesMock.mockImplementationOnce(
         async (_req: any, res: any) => {
           res.status(207).json({
@@ -808,7 +941,6 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       const order = [
         updateGamesMock,
         updateNstGamelogMock,
-        updateWgoTotalsMock,
         updateLineCombinationsMock,
         updateRollingPlayerAveragesMock,
         ingestProjectionInputsMock,
@@ -819,7 +951,9 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       ].flatMap((mock) => mock.mock.invocationCallOrder);
       expect(order).toEqual([...order].sort((a, b) => a - b));
       // The projection runs the run date and then the next day.
-      expect(order).toHaveLength(12);
+      expect(order).toHaveLength(11);
+      expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+      expect(updateWgoTotalsMock).not.toHaveBeenCalled();
       expect(runProjectionV2Mock.mock.calls.map((call: any[]) => call[0].query.date)).toEqual(["2026-10-19", "2026-10-20"]);
 
       // 4: a later scheduled call finds the run complete and does no work.
@@ -845,8 +979,10 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.dateWindow).toMatchObject({ date: "2026-10-19", sourceStartDate: "2026-10-18", sourceEndDate: "2026-10-18" });
       expect(updateNstGamelogMock.mock.calls[0]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:05:00.000Z"));
-      expect(updateWgoSkatersMock.mock.calls[0]?.[0]?.query).toEqual({ action: "all", startDate: "2026-10-18" });
-      expect(updateWgoTotalsMock.mock.calls[0]?.[0]?.query).toEqual({ season: "current" });
+      // WGO skater data and totals come from their standalone jobs, checked for the source date.
+      expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+      expect(updateWgoTotalsMock).not.toHaveBeenCalled();
+      expect(res.body.wgoReadiness).toMatchObject({ ready: true, sourceDate: "2026-10-18" });
       // Power-play combinations come from played games: yesterday's slate, not today's.
       expect(gamesGteMock).toHaveBeenCalledWith("date", "2026-10-18");
       expect(gamesLteMock).toHaveBeenCalledWith("date", "2026-10-18");
@@ -872,7 +1008,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         updateNstGamelogMock.mockReset();
       });
 
-      it("pauses on a continuation, replays its query with a fresh deadline, and runs WGO only once NST finishes", async () => {
+      it("pauses on a continuation, replays its query with a fresh deadline, and completes the stage once NST finishes", async () => {
         updateNstGamelogMock
           .mockImplementationOnce(continuation("7"))
           .mockImplementationOnce(continuation("15"));
@@ -898,20 +1034,19 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         const third = await invokeScheduled("2026-10-19T10:15:00.000Z");
         expect(updateNstGamelogMock.mock.calls[2]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:15:00.000Z", { cursor: "15" }));
         expect(updateNstGamelogMock).toHaveBeenCalledTimes(3);
-        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
-        expect(updateWgoTotalsMock).toHaveBeenCalledTimes(1);
-        expect(updateWgoSkatersMock.mock.invocationCallOrder[0]).toBeGreaterThan(updateNstGamelogMock.mock.invocationCallOrder[2]);
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+        expect(updateWgoTotalsMock).not.toHaveBeenCalled();
         expect(nstStageRow()).toMatchObject({ status: "complete" });
         expect(third.statusCode).toBe(200);
         expect(third.body.termination).toMatchObject({ state: "completed" });
         const fourth = await invokeScheduled("2026-10-19T10:20:00.000Z");
         expect(fourth.body.termination.state).toBe("completed");
         expect(updateNstGamelogMock).toHaveBeenCalledTimes(3);
-        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
         expect([...pipelineStateRows.values()].filter(row => row.operation_key.startsWith("upstream_skater_sources:kill:"))).toHaveLength(0);
       });
 
-      it("keeps a resumed source-down result explicitly degraded and allows WGO once", async () => {
+      it("keeps a resumed source-down result explicitly degraded and completes the stage once", async () => {
         updateNstGamelogMock.mockImplementationOnce(continuation("7"))
           .mockImplementationOnce(reply(503, { success: false, operationStatus: "source_down",
             nstProgress: { auditPersistence: "confirmed", sourceOutcomes: { unresolvedCount: 1 } } }));
@@ -922,46 +1057,31 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
           { stageId: "upstream_skater_sources", stepId: "update-nst-gamelog", code: "nst_source_unavailable", reason: expect.stringContaining("Backfill the date") }
         ]);
         expect(nstStageRow()).toMatchObject({ status: "complete", cursor_game_id: 7 });
-        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
         await invokeScheduled("2026-10-19T10:15:00.000Z");
         expect(updateNstGamelogMock).toHaveBeenCalledTimes(2);
-        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
       });
 
-      it("skips the optional WGO totals refresh late in an invocation so the stage still hands off", async () => {
-        // 2026-11-10..12: NST plus WGO skaters ran past 120 s, the 240 s kill landed inside
-        // update-wgo-totals and the stage stayed "running" for the rest of the morning.
-        updateWgoSkatersMock.mockImplementationOnce(slowSuccess(100_000));
-
+      it("leaves WGO skaters and season totals to their standalone jobs (pg_cron 9 and 14)", async () => {
         const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
 
         const upstream = stageStatus(res, "upstream_skater_sources");
         expect(upstream.status).toBe("success");
         expect(upstream.steps.map((step: any) => [step.id, step.status])).toEqual([
-          ["update-nst-gamelog", "success"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "skipped"],
+          ["wgo-skater-readiness", "success"], ["update-nst-gamelog", "success"],
         ]);
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
         expect(updateWgoTotalsMock).not.toHaveBeenCalled();
         expect(nstStageRow()).toMatchObject({ status: "complete" });
       });
 
-      it("still refreshes WGO totals when the invocation is early", async () => {
-        updateWgoSkatersMock.mockImplementationOnce(slowSuccess(30_000));
-
-        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
-
-        expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
-          ["update-nst-gamelog", "success"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
-        ]);
-        expect(updateWgoTotalsMock).toHaveBeenCalledTimes(1);
-      });
-
-      it("advances to WGO on the expected no-completed-games skip", async () => {
+      it("completes the stage on the expected no-completed-games skip", async () => {
         updateNstGamelogMock.mockImplementationOnce(reply(200, { success: true, operationStatus: "skipped_no_completed_games" }));
 
         const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
 
         expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
-          ["update-nst-gamelog", "skipped"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
+          ["wgo-skater-readiness", "success"], ["update-nst-gamelog", "skipped"],
         ]);
         expect(nstStageRow()).toMatchObject({ status: "complete" });
       });
@@ -994,7 +1114,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
 
         expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
-          ["update-nst-gamelog", "failed"],
+          ["wgo-skater-readiness", "success"], ["update-nst-gamelog", "failed"],
         ]);
         expect(res.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", reason: "retry_on_next_invocation" });
         expect(updateWgoSkatersMock).not.toHaveBeenCalled();
@@ -1012,7 +1132,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
 
         expect(updateNstGamelogMock.mock.calls[1]?.[0]?.query).toMatchObject({ cursor: "7" });
         expect(stageStatus(second, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
-          ["update-nst-gamelog", "failed"],
+          ["wgo-skater-readiness", "success"], ["update-nst-gamelog", "failed"],
         ]);
         expect(second.body.termination).toMatchObject({ state: "stopped_on_blocking_failure" });
         expect(updateWgoSkatersMock).not.toHaveBeenCalled();
@@ -1074,17 +1194,17 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         updateNstGamelogMock.mockReset();
       });
 
-      it("runs WGO and the later stages, and names the degraded step", async () => {
+      it("runs the later stages and names the degraded step", async () => {
         updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => { res.status(200).json(outage); });
 
         const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
 
         const upstream = stageStatus(res, "upstream_skater_sources");
         expect(upstream.steps.map((step: any) => [step.id, step.status])).toEqual([
-          ["update-nst-gamelog", "skipped"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
+          ["wgo-skater-readiness", "success"], ["update-nst-gamelog", "skipped"],
         ]);
         expect(upstream.status).toBe("success");
-        expect(upstream.steps[0]).toMatchObject({ degraded: "nst_source_unavailable",
+        expect(upstream.steps[1]).toMatchObject({ degraded: "nst_source_unavailable",
           reason: expect.stringContaining("NST source unavailable") });
         expect(res.body.failureSummary).toMatchObject({ failedStepCount: 0,
           degradedSteps: [{ stageId: "upstream_skater_sources", stepId: "update-nst-gamelog", code: "nst_source_unavailable" }] });
@@ -1101,10 +1221,10 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
 
         const upstream = stageStatus(res, "upstream_skater_sources");
         expect(upstream.steps.map((step: any) => [step.id, step.status])).toEqual([
-          ["update-nst-gamelog", "skipped"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
+          ["wgo-skater-readiness", "success"], ["update-nst-gamelog", "skipped"],
         ]);
         expect(upstream.status).toBe("success");
-        expect(upstream.steps[0]).toMatchObject({ statusCode: 503, degraded: "nst_source_unavailable" });
+        expect(upstream.steps[1]).toMatchObject({ statusCode: 503, degraded: "nst_source_unavailable" });
         expect(updateRollingPlayerAveragesMock).toHaveBeenCalled();
         expect(nstStageRow()).toMatchObject({ status: "complete" });
       });
@@ -1628,6 +1748,274 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       });
     });
 
+    describe("standalone WGO skater readiness (TJ, 2026-11-22)", () => {
+      const SOURCE = "2026-10-18";
+      const projectionRunsFor = (date: string) =>
+        runProjectionV2Mock.mock.calls.filter((call: any[]) => call[0].query.date === date).length;
+      const pipelineAuditPreviews = () => auditInsertMock.mock.calls
+        .map((call: any[]) => call[0])
+        .filter((row: any) => row?.job_name === "run-rolling-forge-pipeline")
+        .map((row: any) => String(row.details?.response ?? ""));
+      // Fire the scheduled run at 10:05, 10:10 and 10:15 and return each response.
+      const fireThree = async () => [
+        await invokeScheduled("2026-10-19T10:05:00.000Z"),
+        await invokeScheduled("2026-10-19T10:10:00.000Z"),
+        await invokeScheduled("2026-10-19T10:15:00.000Z")
+      ];
+      const expectNotReady = (res: any, kinds: string[]) => {
+        expect(res.statusCode).toBe(207);
+        expect(res.body.termination).toMatchObject({ state: "continuation_required", resumeRequired: true,
+          reason: "stage_partial", nextStageId: "upstream_skater_sources",
+          detail: expect.stringContaining("the next scheduled slot checks again. WGO was not called.") });
+        expect(res.body.failureSummary).toMatchObject({ failedStepCount: 0 });
+        expect(res.body.wgoReadiness.ready).toBe(false);
+        expect(res.body.wgoReadiness.gaps.map((gap: any) => gap.kind)).toEqual(kinds);
+        expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status]))
+          .toEqual([["wgo-skater-readiness", "partial"]]);
+        expect(nstStageRow()).toMatchObject({ status: "failed", last_error: "stage_handoff" });
+      };
+
+      it("consumes complete standalone inputs: one downstream run, zero WGO calls, receipt and cutoff recorded", async () => {
+        const [first, second, third] = await fireThree();
+
+        expect(first.body.wgoReadiness).toEqual({
+          ready: true, sourceDate: SOURCE, checkedAt: "2026-10-19T10:05:00.000Z", dataCutoff: "2026-10-19T03:30:00.000Z",
+          receipt: { jobName: "update-all-wgo-skaters", runTime: "2026-10-19T03:30:00.000Z", status: "success",
+            url: "/api/v1/db/update-wgo-skaters?action=all", rowsAffected: 72, receiptsForDate: 1,
+            sourceDigest: { rows: 72, md5: expect.stringMatching(/^[0-9a-f]{32}$/) },
+            liveDigest: { rows: 72, md5: expect.stringMatching(/^[0-9a-f]{32}$/) } },
+          requiredGames: 2, excludedGameIds: [], gapCount: 0, gaps: []
+        });
+        const readiness = stageStatus(first, "upstream_skater_sources").steps[0];
+        expect(readiness.summary.coverage).toEqual([
+          { gameId: 2025021023, homeSkaters: 18, roadSkaters: 18 }, { gameId: 2025021024, homeSkaters: 18, roadSkaters: 18 }]);
+        // The pipeline's own audit preview carries the receipt and cutoff.
+        expect(pipelineAuditPreviews()[0]).toContain('"wgoReadiness":{"ready":true');
+        expect(pipelineAuditPreviews()[0]).toContain('"dataCutoff":"2026-10-19T03:30:00.000Z"');
+        expect(third.body.termination.state).toBe("completed");
+        expect([first, second, third].some(res => res.body.termination.state === "completed")).toBe(true);
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+        expect(updateWgoTotalsMock).not.toHaveBeenCalled();
+        expect(updateNstGamelogMock).toHaveBeenCalledTimes(1);
+        expect(updateRollingPlayerAveragesMock).toHaveBeenCalledTimes(1);
+        expect(projectionRunsFor("2026-10-19")).toBe(1);
+      });
+
+      it("waits on partial inputs with exact game and team gaps, then runs once they are complete", async () => {
+        // Game 2025021024: the road team (id 4) has 10 skaters; game 2025021023 lacks its home side.
+        wgo.rows = (ids, date) => wgoDefaults.rows(ids, date).filter(row =>
+          !(row.game_id === 2025021023 && row.home_road === "H") &&
+          !(row.game_id === 2025021024 && row.home_road === "R" && row.player_id % 50 >= 10));
+
+        const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expectNotReady(first, ["side_missing", "side_partial"]);
+        expect(first.body.wgoReadiness.gaps).toEqual([
+          { kind: "side_missing", gameId: 2025021023, teamId: 1 }, { kind: "side_partial", gameId: 2025021024, teamId: 4 }]);
+        expect(first.body.termination.detail).toContain("No home skater rows for team 1 in game 2025021023.");
+        expect(pipelineAuditPreviews()[0]).toContain('{"kind":"side_partial","gameId":2025021024,"teamId":4}');
+        expect(updateNstGamelogMock).not.toHaveBeenCalled();
+        expect(updateLineCombinationsMock).not.toHaveBeenCalled();
+
+        const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+        expectNotReady(second, ["side_missing", "side_partial"]);
+
+        // The standalone job's rows arrive (a manual job-9 rerun); the next slot proceeds.
+        wgo.rows = (ids, date) => wgoDefaults.rows(ids, date);
+        const third = await invokeScheduled("2026-10-19T10:15:00.000Z");
+        expect(stageStatus(third, "upstream_skater_sources").status).toBe("success");
+        await invokeScheduled("2026-10-19T10:20:00.000Z");
+        expect(updateNstGamelogMock).toHaveBeenCalledTimes(1);
+        expect(updateRollingPlayerAveragesMock).toHaveBeenCalledTimes(1);
+        expect(projectionRunsFor("2026-10-19")).toBe(1);
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+      });
+
+      it("names a finalized game with no rows at all", async () => {
+        wgo.rows = (ids, date) => wgoDefaults.rows(ids, date).filter(row => row.game_id !== 2025021024);
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expectNotReady(res, ["game_missing"]);
+        expect(res.body.wgoReadiness.gaps).toEqual([{ kind: "game_missing", gameId: 2025021024 }]);
+      });
+
+      it("refuses stale inputs captured before every game could have ended", async () => {
+        // A 22:00 start ends no earlier than 01:00; the newest receipt ran at 00:30.
+        wgo.games = date => wgoDefaults.games(date).map(game => ({ ...game, startTime: `${date}T22:00:00.000Z` }));
+        wgo.receipts = date => [wgoDefaults.receipt(date, { run_time: "2026-10-19T00:30:00.000Z" })];
+        const [first, second] = await fireThree();
+        expectNotReady(first, ["producer_receipt_stale"]);
+        expectNotReady(second, ["producer_receipt_stale"]);
+        expect(first.body.wgoReadiness.receipt).toMatchObject({ runTime: "2026-10-19T00:30:00.000Z" });
+        expect(updateNstGamelogMock).not.toHaveBeenCalled();
+        expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+      });
+
+      it("waits for a late producer run, then runs once on the next slot", async () => {
+        // Job 9 has not recorded the date by 10:05; it finishes at 10:12.
+        wgo.receipts = date => [wgoDefaults.receipt(date, { run_time: "2026-10-19T10:12:00.000Z" })];
+        const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expectNotReady(first, ["no_producer_receipt"]);
+        expect(first.body.wgoReadiness.receipt).toBeNull();
+
+        const second = await invokeScheduled("2026-10-19T10:15:00.000Z");
+        expect(second.body.wgoReadiness).toMatchObject({ ready: true, dataCutoff: "2026-10-19T10:12:00.000Z" });
+        await invokeScheduled("2026-10-19T10:20:00.000Z");
+        await invokeScheduled("2026-10-19T10:25:00.000Z");
+        expect(updateNstGamelogMock).toHaveBeenCalledTimes(1);
+        expect(updateRollingPlayerAveragesMock).toHaveBeenCalledTimes(1);
+        expect(projectionRunsFor("2026-10-19")).toBe(1);
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+      });
+
+      it("takes the newest of duplicate producer receipts as the cutoff", async () => {
+        wgo.receipts = date => [wgoDefaults.receipt(date), wgoDefaults.receipt(date, { run_time: "2026-10-19T09:00:00.000Z" })];
+        const [first] = await fireThree();
+        expect(first.body.wgoReadiness).toMatchObject({ ready: true, dataCutoff: "2026-10-19T09:00:00.000Z",
+          receipt: { runTime: "2026-10-19T09:00:00.000Z", receiptsForDate: 2 } });
+        expect(updateRollingPlayerAveragesMock).toHaveBeenCalledTimes(1);
+        expect(projectionRunsFor("2026-10-19")).toBe(1);
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+      });
+
+      it("waits when the newest duplicate receipt for the date failed", async () => {
+        wgo.receipts = date => [wgoDefaults.receipt(date), wgoDefaults.receipt(date, { run_time: "2026-10-19T09:00:00.000Z", status: "failure" },
+          { datesProcessed: [], failedDates: [date], failedDatesCount: 1 })];
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expectNotReady(res, ["producer_receipt_failed"]);
+        expect(res.body.wgoReadiness.receipt).toMatchObject({ runTime: "2026-10-19T09:00:00.000Z", status: "failure", receiptsForDate: 2 });
+      });
+
+      it("ignores the source date's own morning run, which can only skip it", async () => {
+        wgo.receipts = date => [wgoDefaults.receipt(date, { run_time: `${date}T07:31:00.000Z` }, { datesProcessed: [], skippedDates: [date] })];
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expectNotReady(res, ["no_producer_receipt"]);
+      });
+
+      it("waits when a newer rerun skipped the date after an earlier green receipt", async () => {
+        wgo.receipts = date => {
+          const skipped = wgoDefaults.receipt(date, { run_time: "2026-10-19T09:00:00.000Z" }, { datesProcessed: [], skippedDates: [date] });
+          skipped.details.url = `/api/v1/db/update-wgo-skaters?action=all&startDate=${date}`;
+          return [wgoDefaults.receipt(date), skipped];
+        };
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expectNotReady(res, ["producer_receipt_failed"]);
+        expect(res.body.termination.detail).toContain("skipped the date");
+      });
+
+      it("waits while a game of the date is not final by its stored state, and excludes a postponed one", async () => {
+        wgo.games = date => wgoDefaults.games(date).map((game, index) => index === 0
+          ? { ...game, game_state: "LIVE" } : { ...game, game_schedule_state: "PPD", game_state: "FUT" });
+        wgo.rows = () => [];
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expectNotReady(res, ["game_not_final"]);
+        expect(res.body.wgoReadiness).toMatchObject({ excludedGameIds: [2025021024], gaps: [{ kind: "game_not_final", gameId: 2025021023 }] });
+      });
+
+      it("names rows filed under another date and a player listed twice", async () => {
+        wgo.rows = (ids, date) => {
+          const rows = wgoDefaults.rows(ids, date);
+          rows[0] = { ...rows[0], date: "2026-10-17" };
+          rows.push({ ...rows[40], game_id: 2025021024 });
+          return rows;
+        };
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expect(res.body.wgoReadiness.gaps.map((gap: any) => gap.kind)).toEqual(expect.arrayContaining(["row_date_mismatch", "duplicate_player"]));
+        expect(res.body.wgoReadiness.ready).toBe(false);
+      });
+
+      describe("row proof: the data read must match the producer run's digest", () => {
+        // 14 final games, 18 skaters a side: the 504 rows of 2026-11-21's real job-9 run.
+        const fourteenGames = (date: string) => Array.from({ length: 14 }, (_unused, index) => ({
+          ...wgoDefaults.games(date)[0], id: 2025021023 + index, homeTeamId: 2 * index + 1, awayTeamId: 2 * index + 2 }));
+        const rewriteState = { committed: 0 };
+        const rewrittenRows = (ids: number[], date: string) => wgoDefaults.rows(ids, date).map((row: any, index: number) =>
+          index < rewriteState.committed ? { ...row, rewritten: true } : row);
+
+        beforeEach(() => {
+          wgo.games = fourteenGames;
+          rewriteState.committed = 0;
+          wgo.rows = rewrittenRows;
+          // Job 9 recorded the digest of the original 504 rows.
+          wgo.receipts = date => {
+            const recorded = digestOf(wgoDefaults.rows(fourteenGames(date).map(game => game.id), date));
+            return [wgoDefaults.receipt(date, { rows_affected: 504 }, { totalUpdates: 504, sourceDigests: { [date]: recorded } })];
+          };
+        });
+
+        it("starts ready on the 504 rows job 9 recorded", async () => {
+          const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+          expect(res.body.wgoReadiness).toMatchObject({ ready: true, requiredGames: 14,
+            receipt: { sourceDigest: { rows: 504 }, liveDigest: { rows: 504 } } });
+          expect(res.body.wgoReadiness.receipt.liveDigest).toEqual(res.body.wgoReadiness.receipt.sourceDigest);
+        });
+
+        it("defers a 504-row rewrite that commits 500 and then dies unaudited, with all 504 keys still present", async () => {
+          rewriteState.committed = 500;
+          const responses = [
+            await invokeScheduled("2026-10-19T10:05:00.000Z"),
+            await invokeScheduled("2026-10-19T10:10:00.000Z"),
+            await invokeScheduled("2026-10-19T10:15:00.000Z")
+          ];
+          for (const res of responses) expectNotReady(res, ["data_changed_since_receipt"]);
+          // Coverage alone would pass: every game has 18 + 18 rows.
+          expect(stageStatus(responses[0], "upstream_skater_sources").steps[0].summary.coverage
+            .every((game: any) => game.homeSkaters === 18 && game.roadSkaters === 18)).toBe(true);
+          expect(responses[0].body.termination.detail).toContain("no longer matches the 2026-10-19T03:30:00.000Z run (recorded 504 rows");
+          expect(updateNstGamelogMock).not.toHaveBeenCalled();
+          expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
+          expect(runProjectionV2Mock).not.toHaveBeenCalled();
+          expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+        });
+
+        it("defers the same rewrite when its failure is audited", async () => {
+          rewriteState.committed = 500;
+          const original = wgo.receipts;
+          wgo.receipts = date => [...original(date), wgoDefaults.receipt(date,
+            { run_time: "2026-10-19T09:00:00.000Z", status: "failure", rows_affected: 500 },
+            { success: false, totalUpdates: 500, datesProcessed: [], failedDates: [date], failedDatesCount: 1, sourceDigests: {} })];
+          const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+          expectNotReady(res, ["producer_receipt_failed"]);
+          expect(updateNstGamelogMock).not.toHaveBeenCalled();
+        });
+
+        it("defers a receipt that recorded no digest (job-9 rows written before the digest writer)", async () => {
+          wgo.receipts = date => [wgoDefaults.receipt(date, { rows_affected: 504 }, { sourceDigests: {} })];
+          const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+          expectNotReady(res, ["producer_digest_missing"]);
+          expect(wgo.reads).not.toContain("wgo_skater_date_digest");
+        });
+
+        it("defers when the digest cannot be recomputed (the RPC is not there yet)", async () => {
+          wgo.digestError = { message: "Could not find the function public.wgo_skater_date_digest" };
+          const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+          expectNotReady(res, ["read_failed"]);
+          expect(res.body.termination.detail).toContain("Could not read the wgo_skater_stats digest for 2026-10-18");
+        });
+      });
+
+      it("off-day control: a date with no stored games needs no WGO rows, and NST still decides the off day", async () => {
+        wgo.games = () => [];
+        updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) =>
+          res.status(200).json({ success: true, operationStatus: "skipped_no_completed_games", nstProgress: { verifiedOffDates: [SOURCE] } }));
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expect(res.body.wgoReadiness).toMatchObject({ ready: true, requiredGames: 0, receipt: null, dataCutoff: null, gaps: [] });
+        expect(wgo.reads).toEqual(["games"]);
+        expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["wgo-skater-readiness", "success"], ["update-nst-gamelog", "skipped"]]);
+        expect(nstStageRow()).toMatchObject({ status: "complete" });
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+      });
+
+      it("an unverified empty schedule still blocks in NST", async () => {
+        wgo.games = () => [];
+        updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) =>
+          res.status(200).json({ success: false, message: "Incomplete NST work", nstProgress: { missingScheduleDates: [SOURCE] } }));
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expect(stageStatus(res, "upstream_skater_sources").status).toBe("failed");
+        expect(updateLineCombinationsMock).not.toHaveBeenCalled();
+      });
+    });
+
     describe("power-play context (audit M4)", () => {
       const contextual = (res: any) => stageStatus(res, "contextual_builders");
 
@@ -2059,6 +2447,7 @@ describe("NST acquisition and uncertain-persistence regressions", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-19T10:05:00.000Z"));
     pipelineStateRows.clear();
+    resetWgoFixture();
     pipelineStateRpc.mockImplementation(originalRpc);
     vi.mocked(serverClient.from).mockImplementation(originalFrom);
     process.env.CRON_SECRET = "test-secret";
@@ -2082,7 +2471,7 @@ describe("NST acquisition and uncertain-persistence regressions", () => {
     let writes = 0;
     const operation = async (_req: any, out: any) => { writes++; out.json({ success: true, rowsUpserted: 2 }); };
     if (kind.startsWith("manual")) {
-      updateWgoSkatersMock.mockImplementation(withManualCronAuditResponse(async (req, out) => {
+      updateNstGamelogMock.mockImplementation(withManualCronAuditResponse(async (req, out) => {
         await operation(req, out);
         await persistManualCronAudit({ from: () => ({ insert: () => kind === "manual-lost"
           ? Promise.reject(new Error("lost acknowledgement")) : Promise.resolve({ error: { message: "rejected" } }) }) }, {});
@@ -2092,14 +2481,14 @@ describe("NST acquisition and uncertain-persistence regressions", () => {
       if (kind === "shared-thrown") auditInsertMock.mockRejectedValueOnce(new Error("lost acknowledgement"));
       else auditInsertMock.mockResolvedValueOnce(receipt);
       // Model a child that promises a final receipt, not a best-effort audit.
-      updateWgoSkatersMock.mockImplementation(withCronJobAudit(operation, { includeFinalAuditReceipt: true }));
+      updateNstGamelogMock.mockImplementation(withCronJobAudit(operation, { includeFinalAuditReceipt: true }));
     }
     const first = await invoke();
-    const child = first.body.stages.find((stage: any) => stage.id === "upstream_skater_sources").steps.find((step: any) => step.id === "update-wgo-skaters");
+    const child = first.body.stages.find((stage: any) => stage.id === "upstream_skater_sources").steps.find((step: any) => step.id === "update-nst-gamelog");
     expect(child.summary).toMatchObject({ rowsUpserted: 2, operationOutcome: { statusCode: 200, success: true }, finalAudit: { retrySafe: false } });
     expect(first.body.termination).toMatchObject({ reason: "manual_review_required", resumeRequired: false });
     expect(stageRow()).toMatchObject({ status: "failed", last_error: "audit_persistence_unconfirmed" });
-    expect(updateWgoTotalsMock).not.toHaveBeenCalled();
+    expect(updateWgoSkatersMock).not.toHaveBeenCalled();
     vi.setSystemTime(new Date("2026-10-19T10:10:00.000Z")); const second = await invoke();
     expect(writes).toBe(1); expect(second.body.termination).toMatchObject({ reason: "manual_review_required", resumeRequired: false });
     expect(second.body.failureSummary.terminalStop.code).toBe("audit_persistence_unconfirmed");

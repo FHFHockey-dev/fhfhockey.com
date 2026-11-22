@@ -38,6 +38,12 @@ import {
   STAGE_HANDOFF_UNCONFIRMED,
   RollingForgeStageReviewRequiredError
 } from "lib/rollingForgePipelineRunState";
+import {
+  checkWgoSkaterReadiness,
+  compactWgoReadiness,
+  WGO_READINESS_STEP_ID,
+  type WgoReadiness
+} from "lib/forgeWgoReadiness";
 
 import updateGamesHandler from "./update-games";
 import updateTeamsHandler from "./update-teams";
@@ -153,6 +159,8 @@ type ResponseBody = {
   compatibilityInventory: typeof FORGE_COMPATIBILITY_INVENTORY;
   scanSummary: EndpointScanSummary;
   stages: StageResult[];
+  // Scheduled runs: the read-only check of standalone WGO skater data.
+  wgoReadiness?: ReturnType<typeof compactWgoReadiness>;
   failureSummary?: {
     failedStepCount: number;
     // stepId is null when the run stopped on a stage it did not run (terminalStop).
@@ -758,6 +766,10 @@ async function runStage(args: {
   sourceDeadlineAtMs?: number;
   // Epoch ms when this invocation started; gates the optional WGO totals refresh.
   invocationStartedAtMs?: number;
+  // The scheduled run reads WGO skater data persisted by the standalone job
+  // (pg_cron job 9) through a read-only readiness check instead of calling
+  // update-wgo-skaters, and leaves season totals to pg_cron job 14.
+  wgoFromStandaloneJob?: boolean;
   // Epoch ms: the rolling stage starts no chunk and the route claims no
   // player after this.
   rollingClaimUntilMs?: number;
@@ -845,6 +857,32 @@ async function runStage(args: {
       });
       break;
     case "upstream_skater_sources": {
+      if (args.wgoFromStandaloneJob) {
+        // Checked before NST, so a recheck never spends rate-limited NST requests.
+        const checkStartedAt = Date.now();
+        let readiness: WgoReadiness;
+        try {
+          if (!supabase) throw new Error("The Supabase server client is not configured");
+          readiness = await checkWgoSkaterReadiness({ supabase, sourceDate: args.sourceStartDate, now: new Date() });
+        } catch (error) {
+          readiness = { ready: false, sourceDate: args.sourceStartDate, checkedAt: new Date().toISOString(),
+            requiredGameIds: [], excludedGames: [], receipt: null, dataCutoff: null, coverage: [],
+            gaps: [{ kind: "read_failed", detail: (error instanceof Error ? error.message : String(error)).slice(0, 300) }] };
+        }
+        steps.push({
+          id: WGO_READINESS_STEP_ID,
+          route: "/api/v1/db/update-wgo-skaters",
+          status: readiness.ready ? "success" : "partial",
+          statusCode: readiness.ready ? 200 : 0,
+          durationMs: Date.now() - checkStartedAt,
+          summary: readiness,
+          query: { sourceDate: args.sourceStartDate },
+          reason: readiness.ready
+            ? `Read-only: standalone WGO skater rows cover ${readiness.requiredGameIds.length} final game(s) for ${args.sourceStartDate}${readiness.receipt ? ` (${readiness.receipt.jobName} at ${readiness.receipt.runTime})` : ""}; WGO was not called.`
+            : `Standalone WGO skater data for ${args.sourceStartDate} is not ready (${readiness.gaps.length} gap(s): ${readiness.gaps.slice(0, 3).map(gap => gap.detail).join(" ")}); the next scheduled slot checks again. WGO was not called.`
+        });
+        if (!readiness.ready) break;
+      }
       const nstCursor = args.nstResumeCursor ?? null;
       const nst = await invoke({
         id: "update-nst-gamelog",
@@ -895,6 +933,8 @@ async function runStage(args: {
           nst.reason = "NST reported no completed games for the date.";
         }
       }
+      // WGO skater data and season totals come from their standalone jobs.
+      if (args.wgoFromStandaloneJob) break;
       await addStep({
         id: "update-wgo-skaters",
         route: "/api/v1/db/update-wgo-skaters",
@@ -1627,7 +1667,8 @@ async function runResumablePipeline(args: {
         ? {
             nstResumeCursor: lease.cursorGameId,
             sourceDeadlineAtMs: args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS,
-            invocationStartedAtMs: args.startedAt
+            invocationStartedAtMs: args.startedAt,
+            wgoFromStandaloneJob: true
           }
         : {}),
       ...(stage.id === "contextual_builders"
@@ -1690,10 +1731,12 @@ async function runResumablePipeline(args: {
           lease: activeLease,
           cursorGameId: nextResumeFrom
         });
+        const waitingOnWgo = result.steps.find(step => step.id === WGO_READINESS_STEP_ID && step.status === "partial");
         termination = continuation(
           "stage_partial",
           stage.id,
-          advanced.cursorGameId
+          advanced.cursorGameId,
+          waitingOnWgo?.reason
         );
       } else if (result.status === "failed") {
         const attempt = failedAttempts + 1;
@@ -2014,9 +2057,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       .filter(step => step.degraded)
       .map(step => ({ stageId: stage.id, stepId: step.id, code: step.degraded!, reason: step.reason ?? null }))),
   };
+  // The scheduled run's WGO readiness (producer receipt, data cutoff, gaps),
+  // kept beside failureSummary so the bounded audit preview holds it.
+  const readinessStep = stageResults.flatMap(stage => stage.steps).find(step => step.id === WGO_READINESS_STEP_ID);
+  const wgoReadiness = readinessStep ? compactWgoReadiness(readinessStep.summary as WgoReadiness) : null;
   return res.status(success ? 200 : 207).json({
     success,
     failureSummary,
+    ...(wgoReadiness ? { wgoReadiness } : {}),
     mode,
     dateWindow: {
       startDate,
