@@ -17,6 +17,7 @@ vi.mock("lib/cors-fetch", () => ({
 import {
   fetchDataForGameType,
   processAndUpsertGameTypeData,
+  readWgoSkaterDateDigests,
   type AllSkaterStats,
 } from "../../../../../pages/api/v1/db/update-wgo-skaters";
 
@@ -545,5 +546,29 @@ describe("WGO skater generated insert contracts", () => {
       ],
       { onConflict: "player_id, date" },
     );
+  });
+});
+
+describe("readWgoSkaterDateDigests (Rankings row proof)", () => {
+  it("stores each readable digest unchanged and leaves out a date it cannot read", async () => {
+    const rpc = vi.fn(async (_name: string, args: { p_date: string }) =>
+      args.p_date === "2026-11-21" ? { data: { rows: 504, md5: "0123456789abcdef0123456789abcdef" }, error: null }
+        : args.p_date === "2026-11-22" ? { data: null, error: { message: "function does not exist" } }
+        : Promise.reject(new Error("network")));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const digests = await readWgoSkaterDateDigests({ rpc } as any, ["2026-11-21", "2026-11-22", "2026-11-23"]);
+
+    expect(digests).toEqual({ "2026-11-21": { rows: 504, md5: "0123456789abcdef0123456789abcdef" } });
+    expect(rpc.mock.calls.map(call => call[1])).toEqual([
+      { p_date: "2026-11-21" }, { p_date: "2026-11-22" }, { p_date: "2026-11-23" }]);
+    expect(rpc.mock.calls.every(call => call[0] === "wgo_skater_date_digest")).toBe(true);
+    warn.mockRestore();
+  });
+
+  it("refuses a malformed digest", async () => {
+    const rpc = vi.fn(async () => ({ data: { rows: "504", md5: "x" }, error: null }));
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    expect(await readWgoSkaterDateDigests({ rpc } as any, ["2026-11-21"])).toEqual({});
   });
 });

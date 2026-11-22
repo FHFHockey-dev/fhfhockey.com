@@ -1429,6 +1429,36 @@ async function updateAllSkatersFromMostRecentDate(
   };
 }
 
+export type WgoSkaterDateDigest = { rows: number; md5: string };
+
+/**
+ * Row proof for Rankings readiness (rankings lane, 2026-11-22): the digest of
+ * every wgo_skater_stats row of each date this run wrote without failure,
+ * read after the writes and before the audit row, and stored unchanged at
+ * details.context.sourceDigests[date]. A date whose digest cannot be read is
+ * left out (readiness then defers); the job never fails over it.
+ */
+export async function readWgoSkaterDateDigests(
+  client: { rpc: (name: "wgo_skater_date_digest", args: { p_date: string }) => PromiseLike<{ data: unknown; error: unknown }> },
+  dates: string[],
+): Promise<Record<string, WgoSkaterDateDigest>> {
+  const digests: Record<string, WgoSkaterDateDigest> = {};
+  for (const date of dates) {
+    try {
+      const { data, error } = await client.rpc("wgo_skater_date_digest", { p_date: date });
+      const digest = data as Partial<WgoSkaterDateDigest> | null;
+      if (!error && digest && typeof digest.rows === "number" && typeof digest.md5 === "string" && /^[0-9a-f]{32}$/.test(digest.md5)) {
+        digests[date] = digest as WgoSkaterDateDigest;
+      } else {
+        console.warn(`WGO skater digest unavailable for ${date}; readiness will defer.`);
+      }
+    } catch {
+      console.warn(`WGO skater digest unavailable for ${date}; readiness will defer.`);
+    }
+  }
+  return digests;
+}
+
 async function getAllSeasonsFromDB(): Promise<
   {
     seasonId: number;
@@ -2109,10 +2139,16 @@ async function handler(
         fullRefresh,
         startDate,
       });
+      const sourceDigests = await readWgoSkaterDateDigests(
+        supabase as any,
+        result.datesProcessed.filter((date: string) => !result.failedDates.includes(date)),
+      );
+      result = { ...result, sourceDigests };
       totalUpdates = result.totalUpdates;
       status = result.success ? "success" : "failure";
       details = {
         message: result.message,
+        sourceDigests,
         datesProcessed: result.datesProcessed,
         failedDates: result.failedDates,
         failedDatesCount: result.failedDatesCount,
