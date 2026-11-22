@@ -213,6 +213,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "November 21 daily NST off-day verification. The verifier found no excluded projection inputs in the 243-module producer closure.",
   },
+  {
+    closureSha256: "7ee3612e5965a7cb35b20ef6d65c68808c05c011001cdcc8b9dd15100924eccf",
+    commit: "c2c46ceae3a97aa7cbfa87acf51fbe4edf52dac9",
+    receipt: "tasks/artifacts/forge-master-registration-2026-11-22/c2c46ceae3a97aa7cbfa87acf51fbe4edf52dac9.json",
+    receiptSha256: "96eaa4ce89e553f8a919d0dd58aa3428256b93f21bad3c606e6e43085352fd21",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 22 master after October branch (#464), including the Rankings readiness writers. The verifier found no excluded projection inputs in the 243-module producer closure.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
