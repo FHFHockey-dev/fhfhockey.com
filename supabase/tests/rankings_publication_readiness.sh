@@ -2,6 +2,9 @@
 # PGBIN=/opt/homebrew/opt/postgresql@15/bin bash supabase/tests/rankings_publication_readiness.sh [--benchmark]
 set -euo pipefail
 cd "$(dirname "$0")/../.."
+# Fixtures write zone-less timestamps; production runs in UTC. A C locale lets a
+# Homebrew postmaster start on macOS.
+export TZ=UTC PGTZ=UTC LC_ALL=C LANG=C
 
 pgbin=${PGBIN:-$(pg_config --bindir)}
 scratch=$(mktemp -d /tmp/rankings-readiness-pg.XXXXXX)
@@ -60,10 +63,23 @@ print("set role fixture_owner;")
 PY
 
 psql=("$pgbin/psql" -X -q -v VERBOSITY=terse -v ON_ERROR_STOP=1 -h "$scratch" -U postgres)
-migration=supabase/migrations/20261118151903_rankings_publication_readiness.sql
+base_migration=supabase/migrations/20261118151903_rankings_publication_readiness.sql
+migration=supabase/migrations/20261122145409_rankings_readiness_standalone_wgo.sql
 fixture=supabase/tests/rankings_publication_readiness.sql
-"${psql[@]}" -f "$scratch/schema.sql" -f "$migration" -c 'reset role' -f "$fixture"
+standalone=supabase/tests/rankings_readiness_standalone_wgo.sql
+# Both migrations in production order. The original fixture now also proves the
+# in-pipeline start-date receipt still works after the standalone migration.
+"${psql[@]}" -f "$scratch/schema.sql" -f "$base_migration" -f "$migration" -c 'reset role' -f "$fixture"
 echo "Rankings source readiness fixture passed."
+# The standalone fixture reuses the original fixture's setup (everything before its first do block).
+python3 -I - "$fixture" "$standalone" > "$scratch/standalone.sql" <<'PY'
+import sys
+from pathlib import Path
+print(Path(sys.argv[1]).read_text().split("do $$", 1)[0])
+print(Path(sys.argv[2]).read_text())
+PY
+"${psql[@]}" -f "$scratch/standalone.sql"
+echo "Rankings standalone WGO receipt fixture passed."
 
 if [[ ${1:-} == --benchmark ]]; then
   # Keep the production-shaped fixture rows and add a season-sized older
