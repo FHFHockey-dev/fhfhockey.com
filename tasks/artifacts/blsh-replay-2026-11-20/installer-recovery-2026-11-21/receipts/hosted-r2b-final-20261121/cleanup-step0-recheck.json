@@ -1,0 +1,1 @@
+{"blshReplayJobs" : 0, "captureEnabled" : false, "blshJobs" : "404|5 12 * * *|t;405|20 12 * * *|t;406|50 12 * * *|t;407|52 12 * * *|t", "openXactsOlderThan1h" : 0}

@@ -2,6 +2,7 @@
 // population), F13 (derived peer pools) and F14 (one-build snapshot). Only the
 // data layer (Supabase) is faked.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { seedDailyRankingInput } from "./dailyRankingInput";
 import { failClosedFetch, type FakeDb } from "./fakeSupabase";
 
 const db = vi.hoisted(() => ({ tables: {}, calls: [] }) as FakeDb);
@@ -10,7 +11,8 @@ vi.mock("lib/supabase/server", async () => {
   return { default: createFakeSupabase(db) };
 });
 
-import { buildEntityMetricRankingRows } from "../entityMetricRankingWriter";
+import { buildEntityMetricRankingRows, defaultEntityMetricRankingMetricKeys, publishEntityMetricRankingRows } from "../entityMetricRankingWriter";
+import { buildSkaterCompositeRatingRows, publishSkaterCompositeRatingRows } from "../skaterCompositeWriter";
 import { loadSkaterCompositeSeasonSources } from "../skaterCompositeSourceCoverage";
 import {
   buildContextualRankingsSurfaces,
@@ -284,5 +286,120 @@ describe("Chef live finding 3: snapshot for an unpublished skater (F14)", () => 
     );
     expect(missing.perPlayerToiReads).toBe(0);
     expect(missing.totalReads).toBeLessThan(pageOne.totalReads);
+  });
+});
+
+describe("Daily 5v5 Rankings and composites", () => {
+  it("keeps A on both matrices until all four windows and the exact composite cohort at B complete", async () => {
+    vi.setSystemTime(new Date("2026-11-18T12:00:00Z"));
+    const request = {
+      season: SEASON, strength: "5v5", teamId: null, peerGroupType: "all_skaters",
+      minGp: 1, minToiSeconds: 300, position: "all", deployment: "all", asOfDate: "2026-11-18",
+    } as const;
+    db.tables = {
+      games: [], wgo_skater_stats: [], rolling_player_game_metrics: [], rolling_player_metric_support_payloads: [],
+      players: players([1, 2, 3, 4]), teams: [{ id: 22, abbreviation: "EDM" }, { id: 10, abbreviation: "TOR" }],
+      entity_metric_rankings: [], ranking_publications: [], skater_composite_ratings: [],
+    };
+    const build = async () => {
+      const rankings = await buildEntityMetricRankingRows({
+        ...request, windows: ["season", "last5", "last10", "last20"],
+        metricKeys: defaultEntityMetricRankingMetricKeys(request),
+      });
+      const composites = await buildSkaterCompositeRatingRows({ ...request, window: "season", limit: 1000 });
+      expect(composites.publication.blockers).toEqual([]);
+      expect(rankings.unavailableMetrics).toEqual([]);
+      expect(composites.rows.every(row => row.mcm_score != null)).toBe(true);
+      return { rankings, composites };
+    };
+    const read = async (date: string, scores: Map<number, number | null | undefined>) => {
+      // Let the unmodified matrix and publication caches expire between stages.
+      vi.setSystemTime(Date.now() + 31_000);
+      for (const team of ["", "EDM"]) {
+        const view = await matrix({ ...DEFAULT_RANKINGS_FILTERS, season: String(SEASON), team });
+        expect(view.meta).toMatchObject({ snapshotDate: date, rankingSource: "entity_metric_rankings" });
+        const expectedIds = [...scores.keys()].filter(id => !team || id % 2 === 1).sort();
+        expect(view.rows.map(row => row.entity.id).sort()).toEqual(expectedIds);
+        for (const row of view.rows) {
+          expect(row.composite).toMatchObject({ snapshotDate: date, mcmScore: scores.get(row.entity.id) });
+          expect(row.metrics.points_per_60.snapshotDate).toBe(date);
+        }
+      }
+    };
+    for (const id of [1, 2, 3]) seedDailyRankingInput(db, SEASON, id, "2026-11-14", id, 2026020200);
+    const a = await build();
+    const dateA = a.composites.snapshotDate!;
+    const scoresA = new Map(a.composites.rows.map(row => [row.player_id, row.mcm_score]));
+    expect(dateA).toBe("2026-11-14");
+    expect((await publishEntityMetricRankingRows(serverSupabase, a.rankings)).complete).toBe(true);
+    expect((await publishSkaterCompositeRatingRows(serverSupabase, a.composites)).status).toBe("complete");
+    await read(dateA, scoresA);
+
+    // A new game changes the league population and one existing player's score.
+    // The run takes place on the 18th. Both builders independently select the 16th.
+    const newGame = "2026-11-16";
+    seedDailyRankingInput(db, SEASON, 4, newGame, 5, 2026020211);
+    seedDailyRankingInput(db, SEASON, 1, newGame, 6, 2026020211);
+    const b = await build();
+    const dateB = b.composites.snapshotDate!;
+    const scoresB = new Map(b.composites.rows.map(row => [row.player_id, row.mcm_score]));
+    expect(dateB).toBe(newGame);
+    expect(new Set(b.rankings.rows.map(row => row.snapshot_date))).toEqual(new Set([newGame]));
+    expect([...scoresA]).toEqual([[1, 0], [2, 50], [3, 100]]);
+    expect([...scoresB]).toEqual([[1, 100], [2, 0], [3, 33.33], [4, 66.67]]);
+    // A failed prior attempt left one extra non-points row in B's last-20 window.
+    const extraRanking = { ...b.rankings.rows.find(row =>
+      row.window_type === "last_20" && row.metric_key === "goals_per_60")!, entity_id: 44 };
+    db.tables.entity_metric_rankings.push(extraRanking);
+    const withExtraRanking = await publishEntityMetricRankingRows(serverSupabase, b.rankings);
+    expect(withExtraRanking.complete).toBe(false);
+    expect(withExtraRanking.windows.find(window => window.windowSize === 20)?.blockers.join()).toContain("persisted");
+    await expect(publishSkaterCompositeRatingRows(serverSupabase, b.composites)).rejects.toThrow(/not a complete publication/);
+    await read(dateA, scoresA);
+    db.tables.entity_metric_rankings = db.tables.entity_metric_rankings.filter(row => row !== extraRanking);
+    expect((await publishEntityMetricRankingRows(serverSupabase, b.rankings)).complete).toBe(true);
+
+    const last20 = db.tables.ranking_publications.find(row =>
+      row.snapshot_date === dateB && row.window_type === "last_20")!;
+    last20.status = "writing";
+    await expect(publishSkaterCompositeRatingRows(serverSupabase, b.composites)).rejects.toThrow(/not a complete publication/);
+    await read(dateA, scoresA);
+    last20.status = "complete";
+
+    const wrongIds = { ...b.composites, rows: b.composites.rows.map(row =>
+      row.player_id === 4 ? { ...row, player_id: 44 } : row) };
+    await expect(publishSkaterCompositeRatingRows(serverSupabase, wrongIds)).rejects.toThrow(/player IDs/);
+    expect(db.tables.skater_composite_ratings.filter(row => row.snapshot_date === dateB)).toEqual([]);
+    await read(dateA, scoresA);
+
+    // Fail the actual data upsert after the writer has put the B marker in writing.
+    const failedClient = { from: (table: string) => table === "skater_composite_ratings" ?
+      { upsert: async () => ({ error: { message: "fixture interruption" } }) } : serverSupabase.from(table as never) };
+    await expect(publishSkaterCompositeRatingRows(failedClient as never, b.composites)).rejects.toThrow("fixture interruption");
+    await read(dateA, scoresA);
+    const extraComposite = { ...b.composites.rows[0], player_id: 44 };
+    db.tables.skater_composite_ratings.push(extraComposite);
+    const withExtraComposite = await publishSkaterCompositeRatingRows(serverSupabase, b.composites);
+    expect(withExtraComposite.status).toBe("writing");
+    expect(withExtraComposite.blockers.join()).toContain("persisted");
+    await read(dateA, scoresA);
+    db.tables.skater_composite_ratings = db.tables.skater_composite_ratings.filter(row => row !== extraComposite);
+    expect((await publishSkaterCompositeRatingRows(serverSupabase, b.composites)).status).toBe("complete");
+
+    // A complete composite alone cannot expose B while a different window is incomplete.
+    last20.status = "writing";
+    await read(dateA, scoresA);
+    last20.status = "complete";
+    Object.assign(last20, { expected_entities: 3, written_entities: 3 });
+    await read(dateA, scoresA);
+    Object.assign(last20, { expected_entities: 4, written_entities: 4 });
+    await read(dateB, scoresB);
+
+    // A same-date Rankings rewrite must be paired with composites built afterward.
+    vi.setSystemTime(new Date("2026-11-18T12:10:00Z"));
+    expect((await publishEntityMetricRankingRows(serverSupabase, b.rankings)).complete).toBe(true);
+    await read(dateA, scoresA);
+    expect((await publishSkaterCompositeRatingRows(serverSupabase, b.composites)).status).toBe("complete");
+    await read(dateB, scoresB);
   });
 });

@@ -432,13 +432,14 @@ async function buildRankedSnapshot(
   return buildRankedSnapshotFromRows(request, snapshotDate, rows, metricKeys);
 }
 
-async function buildRankedSnapshotFromRows(
-  request: ContextualRankingsRequest,
-  snapshotDate: string,
-  sourceRows: RollingPlayerGameMetricRow[],
-  metricKeys: ContextualRankingMetricKey[],
-) {
-  const rows = sourceRows.filter((row) => request.teamId == null || row.team_id === request.teamId);
+export type RankingSnapshotMetadata = {
+  playersById: Map<number, PlayerMeta>;
+  teamsById: Map<number, TeamMeta>;
+};
+
+export async function loadRankingSnapshotMetadata(
+  client: typeof supabase, rows: RollingPlayerGameMetricRow[],
+): Promise<RankingSnapshotMetadata> {
   const playerIds = rows
     .map((row) => row.player_id)
     .filter((id): id is number => typeof id === "number");
@@ -446,9 +447,21 @@ async function buildRankedSnapshotFromRows(
     .map((row) => row.team_id)
     .filter((id): id is number => typeof id === "number");
   const [playersById, teamsById] = await Promise.all([
-    fetchPlayerMeta(Array.from(new Set(playerIds))),
-    fetchTeamMeta(Array.from(new Set(teamIds))),
+    fetchPlayerMeta(client, playerIds),
+    fetchTeamMeta(client, teamIds),
   ]);
+  return { playersById, teamsById };
+}
+
+async function buildRankedSnapshotFromRows(
+  request: ContextualRankingsRequest,
+  snapshotDate: string,
+  sourceRows: RollingPlayerGameMetricRow[],
+  metricKeys: ContextualRankingMetricKey[],
+  metadata?: RankingSnapshotMetadata,
+) {
+  const rows = sourceRows.filter((row) => request.teamId == null || row.team_id === request.teamId);
+  const { playersById, teamsById } = metadata ?? await loadRankingSnapshotMetadata(supabase, rows);
   const { candidates, contextByEntityId } = buildCandidates({
     rows,
     request,
@@ -481,7 +494,7 @@ async function buildRankedSnapshotFromRows(
   };
 }
 
-async function fetchPlayerMeta(playerIds: number[]) {
+async function fetchPlayerMeta(client: typeof supabase, playerIds: number[]) {
   if (playerIds.length === 0) return new Map<number, PlayerMeta>();
   const rows: PlayerMeta[] = [];
   const uniqueIds = Array.from(new Set(playerIds));
@@ -489,7 +502,7 @@ async function fetchPlayerMeta(playerIds: number[]) {
   for (let index = 0; index < uniqueIds.length; index += IN_FILTER_CHUNK_SIZE) {
     const chunk = uniqueIds.slice(index, index + IN_FILTER_CHUNK_SIZE);
     for (let from = 0; ; from += METADATA_QUERY_PAGE_SIZE) {
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from("players")
         .select("id,fullName,position,team_id,image_url")
         .in("id", chunk)
@@ -505,7 +518,7 @@ async function fetchPlayerMeta(playerIds: number[]) {
   return new Map(rows.map((player) => [player.id, player]));
 }
 
-async function fetchTeamMeta(teamIds: number[]) {
+async function fetchTeamMeta(client: typeof supabase, teamIds: number[]) {
   if (teamIds.length === 0) return new Map<number, TeamMeta>();
   const rows: TeamMeta[] = [];
   const uniqueIds = Array.from(new Set(teamIds));
@@ -513,7 +526,7 @@ async function fetchTeamMeta(teamIds: number[]) {
   for (let index = 0; index < uniqueIds.length; index += IN_FILTER_CHUNK_SIZE) {
     const chunk = uniqueIds.slice(index, index + IN_FILTER_CHUNK_SIZE);
     for (let from = 0; ; from += METADATA_QUERY_PAGE_SIZE) {
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from("teams")
         .select("id,abbreviation,name")
         .in("id", chunk)
@@ -695,6 +708,7 @@ async function resolveRankedSnapshotsForMetrics(
   request: ContextualRankingsRequest,
   metricKeys: ContextualRankingMetricKey[],
   completeSeasonRows?: RollingPlayerGameMetricRow[],
+  metadata?: RankingSnapshotMetadata,
 ): Promise<RankedSnapshotResolution> {
   const uniqueMetricKeys = Array.from(new Set(metricKeys));
   const availableMetricKeys: ContextualRankingMetricKey[] = [];
@@ -728,7 +742,7 @@ async function resolveRankedSnapshotsForMetrics(
       (date): date is string => typeof date === "string",
     ).sort().at(-1) ?? null;
     const snapshot = snapshotDate == null ? null : await buildRankedSnapshotFromRows(
-      request, snapshotDate, completeSeasonRows, availableMetricKeys,
+      request, snapshotDate, completeSeasonRows, availableMetricKeys, metadata,
     );
     return {
       uniqueMetricKeys, availableMetricKeys, unavailableMetricKeys,
@@ -944,10 +958,10 @@ function metricResponseFromSnapshot(args: {
 export async function buildContextualRankingsSurfaces(
   request: ContextualRankingsRequest,
   metricKeys: ContextualRankingMetricKey[],
-  options?: { completeSeasonRows: RollingPlayerGameMetricRow[] },
+  options?: { completeSeasonRows: RollingPlayerGameMetricRow[]; metadata?: RankingSnapshotMetadata },
 ): Promise<Map<ContextualRankingMetricKey, ContextualRankingsResponse>> {
   const generatedAt = new Date().toISOString();
-  const resolution = await resolveRankedSnapshotsForMetrics(request, metricKeys, options?.completeSeasonRows);
+  const resolution = await resolveRankedSnapshotsForMetrics(request, metricKeys, options?.completeSeasonRows, options?.metadata);
   const responses = new Map<
     ContextualRankingMetricKey,
     ContextualRankingsResponse
@@ -990,12 +1004,13 @@ export async function buildContextualRankingsSurfaces(
 export async function buildContextualRankingSnapshotRowsByMetric(
   request: ContextualRankingsRequest,
   metricKeys: ContextualRankingMetricKey[],
-  options?: { completeSeasonRows?: RollingPlayerGameMetricRow[] },
+  options?: { completeSeasonRows?: RollingPlayerGameMetricRow[]; metadata?: RankingSnapshotMetadata },
 ): Promise<Map<ContextualRankingMetricKey, ContextualRankingSnapshotMetricRows>> {
   const resolution = await resolveRankedSnapshotsForMetrics(
     request,
     metricKeys,
     options?.completeSeasonRows,
+    options?.metadata,
   );
   const snapshots = new Map<
     ContextualRankingMetricKey,

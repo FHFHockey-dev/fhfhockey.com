@@ -1,0 +1,12 @@
+ ✓ lib/blsh/nativeCaptureV6/requestContextStore.test.ts (16 tests) 490ms
+ ✓ scripts/blsh/prepareV6Observation.test.ts (52 tests) 24552ms
+   ✓ one-skater v6 held observation export > derives a fixture frame from the two-game capture and refuses fixture evidence in the default frame/proposal modes  663ms
+   ✓ one-skater v6 held observation export > re-reads the writer packet, retains original bytes and checks source cells while withholding witnesses  1612ms
+   ✓ one-skater v6 held observation export > includes the exact last native retrieval and preserves the later independent review time  488ms
+   ✓ signed hosted official export through the actual frame and held reader > reaches a held observation from the real signed route and copies both original metadata buffers and every hosted object  505ms
+
+ Test Files  5 passed (5)
+      Tests  152 passed (152)
+   Start at  11:55:11
+   Duration  34.00s (transform 3ms, setup 6ms, collect 587ms, tests 25.28s, environment 1ms, prepare 241ms)
+

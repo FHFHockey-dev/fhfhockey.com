@@ -1,0 +1,72 @@
+
+ RUN  v3.2.7 /private/tmp/blsh-pilot-x/gate/web
+
+ ❯ lib/supabase/supportedBaselineMigration.test.ts (21 tests | 1 failed) 38ms
+   × supported Supabase schema-baseline reconciliation > keeps only the reviewed baseline and supported post-baseline deltas active 6ms
+     → expected [ …(168) ] to deeply equal [ …(156) ]
+   ✓ supported Supabase schema-baseline reconciliation > requires an editor event for every opening projection release 1ms
+   ✓ supported Supabase schema-baseline reconciliation > inherits long-lived season assumptions without auto-publishing direct stat edits 0ms
+   ✓ supported Supabase schema-baseline reconciliation > revokes browser execution of the two privileged maintenance RPCs 1ms
+   ✓ supported Supabase schema-baseline reconciliation > leaves browser roles only owner-scoped reads of provider-linkage tables 1ms
+   ✓ supported Supabase schema-baseline reconciliation > restores the private token vault the baseline wrappers call 4ms
+   ✓ supported Supabase schema-baseline reconciliation > keeps credential-bearing routines out of the current-schema baseline 12ms
+   ✓ supported Supabase schema-baseline reconciliation > makes the authoritative-root provenance RPC match the reviewed A-GDL source 1ms
+   ✓ supported Supabase schema-baseline reconciliation > preserves all three trigger semantics through one fail-closed Vault helper 1ms
+   ✓ supported Supabase schema-baseline reconciliation > keeps legacy RPC tombstones credential-free and browser-denied 1ms
+   ✓ supported Supabase schema-baseline reconciliation > keeps the separately authorized legacy-RPC final drop exact and fail-closed 1ms
+   ✓ supported Supabase schema-baseline reconciliation > repairs compile-invalid legacy routines without restoring duplicate writers 1ms
+   ✓ supported Supabase schema-baseline reconciliation > keeps SKO run control service-only with deterministic lease rejection 1ms
+   ✓ supported Supabase schema-baseline reconciliation > atomically versions complete Yahoo game metadata/week snapshots 1ms
+   ✓ supported Supabase schema-baseline reconciliation > bounds the Utah WGO identity repair to the frozen replay-safe manifest 0ms
+   ✓ supported Supabase schema-baseline reconciliation > makes the April 2023 WGO/trend season repair atomic and reversible 1ms
+   ✓ supported Supabase schema-baseline reconciliation > keeps the legacy Yahoo cache revocation postdeploy and fail-closed 0ms
+   ✓ supported Supabase schema-baseline reconciliation > keeps public view and routine hardening explicit and bounded 0ms
+   ✓ supported Supabase schema-baseline reconciliation > keeps canonical aggregate readers public while privatizing materialized storage 0ms
+   ✓ supported Supabase schema-baseline reconciliation > reconstructs the exact credential-free hosted analytics contract 2ms
+   ✓ supported Supabase schema-baseline reconciliation > keeps the frozen Production application classes and migration hashes exact 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/supabase/supportedBaselineMigration.test.ts > supported Supabase schema-baseline reconciliation > keeps only the reviewed baseline and supported post-baseline deltas active
+AssertionError: expected [ …(168) ] to deeply equal [ …(156) ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -153,6 +153,18 @@[39m
+[2m    "20261115210000_ranking_publications.sql",[22m
+[2m    "20261116000000_blsh_native_capture_v6.sql",[22m
+[2m    "20261116000100_blsh_request_context_v1.sql",[22m
+[2m    "20261116010000_forge_physical_totals_covering_index.sql",[22m
+[2m    "20261116020000_wgo_skater_stats_insert_autovacuum.sql",[22m
+[31m+   "20261117215012_forge_pregame_hosted_dispatch.sql",[39m
+[31m+   "20261118131414_blsh_request_context_custody.sql",[39m
+[31m+   "20261118135813_forge_pregame_publication.sql",[39m
+[31m+   "20261118155445_blsh_official_pilot.sql",[39m
+[31m+   "20261119230000_forge_live_pregame_run.sql",[39m
+[31m+   "20261120000100_forge_live_signed_verdict.sql",[39m
+[31m+   "20261120140104_nst_explicit_scope_audit_lookup.sql",[39m
+[31m+   "20261120143000_blsh_official_pilot_redate_20261121.sql",[39m
+[31m+   "20261121184000_yahoo_players_with_trend_history.sql",[39m
+[31m+   "20261121190000_sync_tweet_review_sources_keep_delivery_time.sql",[39m
+[31m+   "20261121205959_luna_fxtwitter_receipts.sql",[39m
+[31m+   "20261121210000_blsh_official_pilot_redate_20261122.sql",[39m
+[2m  ][22m
+
+ ❯ lib/supabase/supportedBaselineMigration.test.ts:65:7
+     63|         .filter((name) => name.endsWith(".sql"))
+     64|         .sort(),
+     65|     ).toEqual(activeMigrationNames);
+       |       ^
+     66| 
+     67|     expect(migrationAuthority.schemaVersion).toBe(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+   Start at  17:01:58
+   Duration  634ms (transform 35ms, setup 3ms, collect 31ms, tests 38ms, environment 282ms, prepare 47ms)
+
+exit 1

@@ -1,0 +1,27 @@
+{
+  "classification": "historical_metadata_fragment_reconstruction",
+  "gameId": 2026020336,
+  "playerId": 8478460,
+  "source": {
+    "relation": "player_stats_unified",
+    "receivedAt": "2026-11-17T22:44:14.775Z",
+    "rowFragment": {
+      "date": "2026-11-14",
+      "player_id": 8478460,
+      "nst_shots_per_60": 9.78,
+      "nst_ixg_per_60": 0.49
+    }
+  },
+  "supportedCalculation": {
+    "qualityPerShot": 0.0501,
+    "sampleWeight": 0.6617
+  },
+  "fullReplay": {
+    "status": "blocked_missing_native_reads",
+    "firstError": "Unrecorded projection input: from games"
+  },
+  "forecastComputed": false,
+  "published": false,
+  "imported": false,
+  "writes": 0
+}

@@ -1,0 +1,7 @@
+19:44:36Z notify pgrst sent
+19:44:36Z exposed: The schema must be one of the following: public, storage, graphql_public, analytics, blsh_replay_api
+Legacy JWT secret (hidden input, not stored): 
+19:44:38Z token minted (23 h, role blsh_replay_api); the secret was held only by the minting process
+19:44:38Z kit probes exit 0
+19:44:38Z pgsodium probes failures: 0
+19:44:39Z PASS: 9 kit + 4 pgsodium probes ok; token installed once. Tell Chef: step 2-3 passed (bring the 39a15979 push request).

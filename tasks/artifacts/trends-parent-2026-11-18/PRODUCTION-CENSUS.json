@@ -1,0 +1,19 @@
+{
+  "project": "fyhftlxokyjtpndbkfse",
+  "sqlSha256": "5684a7f95c6e4bcbe55874ba33bd411825e548d66ce96d40b152f012dd53ee87",
+  "reducerSha256": "296f60a2aec9f43c4baf9436c2adc83f68c3211c015653634e04d4e3c7553669",
+  "role": "service_role",
+  "startedAt": "2026-11-18T16:40:00.338265+00:00",
+  "status": "stopped",
+  "policy": "one read-only repeatable-read transaction; one connection; no retries",
+  "statementTimeoutMs": 3000,
+  "finishedAt": "2026-11-18T16:40:01.097832+00:00",
+  "exitCode": 2,
+  "error": "psql: error: could not translate host name \"db.fyhftlxokyjtpndbkfse.supabase.co\" to address: nodename nor servname provided, or not known\n",
+  "connectionAttempts": 1,
+  "establishedConnections": 0,
+  "sqlStatementsSent": 0,
+  "retries": 0,
+  "currentSeasonCoverage": null,
+  "defaultPageCoverage": null
+}

@@ -1,0 +1,12 @@
+execute_sql_acl|{postgres=X/postgres}
+csv_fn_acl|{postgres=X/postgres,service_role=X/postgres}|f63b3c6d6676e646422f4693e0242e80
+mask_role_acl|null
+vault_relacl|cron_secrets|null
+vault_relacl|decrypted_secrets|{supabase_admin=arwdDxt/supabase_admin,pgsodium_keyiduser=arwdDxt/supabase_admin}
+vault_relacl|secrets|{supabase_admin=arwdDxt/supabase_admin,pgsodium_keyiduser=arwdDxt/supabase_admin}
+vault_sr_select|cron_secrets|false
+vault_sr_select|decrypted_secrets|true
+vault_sr_select|secrets|true
+vault_fn_sr|vault.create_secret(text,text,text,uuid)|true
+vault_fn_sr|vault.secrets_encrypt_secret_secret()|true
+vault_fn_sr|vault.update_secret(uuid,text,text,text,uuid)|true

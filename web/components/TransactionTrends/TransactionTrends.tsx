@@ -28,19 +28,22 @@ type TrendPlayer = {
   previous: number;
   delta: number;
   deltaPct: number;
+  movementStartDate?: string;
+  movementEndDate?: string;
   sparkline: OwnershipSparkPoint[];
 };
 
 interface ApiResponse {
   success: boolean;
-  metric?: TrendMetric;
+  metric: TrendMetric;
   windowDays: number;
-  generatedAt?: string;
+  generatedAt?: string | null;
   sourceDate?: string | null;
-  page?: number;
-  pageSize?: number;
-  offset?: number;
-  pos?: string | null;
+  seasonFallbackApplied?: boolean;
+  page: number;
+  pageSize: number;
+  offset: number;
+  pos: string | null;
   totalRisers?: number;
   totalFallers?: number;
   risers: TrendPlayer[];
@@ -53,16 +56,30 @@ export const transactionTrendRequests = createTrendRequestCache<ApiResponse>(30_
 const WINDOWS = [1, 3, 5, 10];
 const POSITION_FILTERS = ["", "F", "C", "LW", "RW", "D", "G"] as const;
 const PAGE_SIZE = 10;
+const trendDateFormat = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+const trendDayFormat = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
 
 type TrendDirection = "risers" | "fallers";
 type TrendMetric = "ownership" | "adp";
+type TrendResult =
+  | { url: string; data: ApiResponse; error?: never }
+  | { url: string; data?: never; error: string };
 type TransactionTrendsProps = {
   defaultMetric?: TrendMetric;
 };
 
-function formatSignedDelta(value: number): string {
+function formatSignedDelta(value: number, isAdp: boolean): string {
   if (!Number.isFinite(value)) return "—";
-  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+  return `${value > 0 ? "+" : ""}${value.toFixed(1)}${isAdp ? "%" : " pp"}`;
 }
 
 function TrendPanel({
@@ -70,6 +87,7 @@ function TrendPanel({
   players,
   metric,
   windowDays,
+  sourceDate,
   offset,
   isMobileActive,
 }: {
@@ -77,6 +95,7 @@ function TrendPanel({
   players: TrendPlayer[];
   metric: TrendMetric;
   windowDays: number;
+  sourceDate?: string | null;
   offset: number;
   isMobileActive: boolean;
 }) {
@@ -84,6 +103,7 @@ function TrendPanel({
   const isAdp = metric === "adp";
   const variant = isRise ? "rise" : "fall";
   const title = isRise ? "Top Risers" : "Top Fallers";
+  const latestSourceDate = Date.parse(sourceDate ?? "");
 
   return (
     <section
@@ -112,9 +132,7 @@ function TrendPanel({
               {isAdp ? "Avg Pick" : "Own %"}
             </th>
             <th scope="col" className={styles.sparkCell}>
-              {/* The window is in the panel title ("Top risers (Δ 3D)"); keep it
-                  for screen readers only so the column stays narrow on phones. */}
-              Trend<span className={styles.visuallyHidden}> ({windowDays}D)</span>
+              Trend
             </th>
             <th scope="col" className={styles.deltaCell}>
               Δ {windowDays}D
@@ -123,13 +141,24 @@ function TrendPanel({
         </thead>
         <tbody>
           {players.map((player, index) => {
+            const playerId = player.playerId;
+            const hasNhlProfile =
+              typeof playerId === "number" && Number.isSafeInteger(playerId) && playerId > 0;
             const metadata = formatTrendPlayerMetadata(player);
             const teamFullName = normalizeTrendTeamName(player.teamFullName);
             const metadataTitle = teamFullName
               ? `${metadata.label} — ${teamFullName}`
               : metadata.label;
             const displayedDelta = isAdp ? player.deltaPct : player.delta;
-            const signedDelta = formatSignedDelta(displayedDelta);
+            const signedDelta = formatSignedDelta(displayedDelta, isAdp);
+            const start = Date.parse(player.movementStartDate ?? "");
+            const end = Date.parse(player.movementEndDate ?? "");
+            const comparisonDays = (end - start) / 86_400_000;
+            const comparisonDates =
+              comparisonDays > 0
+                ? `${trendDateFormat.format(start)} to ${trendDateFormat.format(end)}`
+                : null;
+            const endYear = player.movementEndDate?.slice(0, 4);
             const movementLabel = Number.isFinite(displayedDelta)
               ? isAdp
                 ? `Average pick moved ${Math.abs(displayedDelta).toFixed(1)}% ${
@@ -162,18 +191,24 @@ function TrendPanel({
                       />
                     )}
                     <span className={styles.playerCopy}>
-                      {player.playerId ? (
+                      {hasNhlProfile ? (
                         <Link
-                          href={`/trends/player/${player.playerId}`}
+                          href={`/trends/player/${playerId}`}
                           className={styles.playerName}
                           title={player.name}
                         >
                           {player.name}
                         </Link>
                       ) : (
-                        <span className={styles.playerName} title={player.name}>
-                          {player.name}
-                        </span>
+                        <>
+                          <span className={styles.playerName} title={player.name}>
+                            {player.name}
+                          </span>
+                          <span className={styles.footNote} title="NHL identity unconfirmed">
+                            Yahoo listing
+                            <span className={styles.visuallyHidden}>. NHL identity unconfirmed.</span>
+                          </span>
+                        </>
                       )}
                       <span
                         className={styles.mobilePlayerMeta}
@@ -196,9 +231,9 @@ function TrendPanel({
                   <span
                     className={styles.sparkline}
                     role="img"
-                    aria-label={`${player.name} ${
+                    aria-label={`${player.name} recent daily ${
                       isAdp ? "average draft pick" : "ownership"
-                    } trend over ${windowDays} days`}
+                    } history`}
                   >
                     <OwnershipSparkline
                       points={player.sparkline}
@@ -215,7 +250,7 @@ function TrendPanel({
                     />
                   </span>
                 </td>
-                <td className={styles.deltaCell}>
+                <td className={styles.deltaCell} title={comparisonDates ?? undefined}>
                   <span
                     className={`${styles.deltaValue} ${
                       isRise ? styles.deltaPositive : styles.deltaNegative
@@ -225,8 +260,22 @@ function TrendPanel({
                     <span aria-hidden="true">{signedDelta}</span>
                     {/* aria-label isn't allowed on a plain span (axe
                         aria-prohibited-attr); spoken text goes here instead. */}
-                    <span className={styles.visuallyHidden}>{movementLabel}</span>
+                    <span className={styles.visuallyHidden}>
+                      {movementLabel}
+                      {comparisonDates ? ` from ${comparisonDates}` : ""}
+                    </span>
                   </span>
+                  {comparisonDates && comparisonDays !== windowDays ? (
+                    <div className={styles.footNote}>{comparisonDays}D span</div>
+                  ) : null}
+                  {comparisonDates && end < latestSourceDate ? (
+                    <div className={styles.footNote} aria-hidden="true">
+                      <time dateTime={player.movementEndDate}>
+                        To {trendDayFormat.format(end)}
+                        {endYear !== sourceDate?.slice(0, 4) ? <><br />{endYear}</> : null}
+                      </time>
+                    </div>
+                  ) : null}
                 </td>
               </tr>
             );
@@ -272,26 +321,26 @@ export default function TransactionTrends({
   const [metric, setMetric] = useState<TrendMetric>(defaultMetric);
   const [pos, setPos] = useState<string>("");
   const [offset, setOffset] = useState(0);
-  const [data, setData] = useState<ApiResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<TrendResult | null>(null);
   const [activeTable, setActiveTable] = useState<TrendDirection>("risers");
+  const page = Math.floor(offset / PAGE_SIZE) + 1;
+  const params = new URLSearchParams({
+    window: String(windowDays),
+    metric,
+    limit: String(PAGE_SIZE),
+    offset: String(offset),
+  });
+  if (pos) params.set("pos", pos);
+  const url = `/api/v1/transactions/ownership-trends?${params.toString()}`;
+  const current = result?.url === url ? result : null;
+  const data = current?.data;
+  const loading = current === null;
 
   useEffect(() => {
     let active = true;
 
     (async () => {
-      setLoading(true);
-      setError(null);
       try {
-        const params = new URLSearchParams();
-        params.set("window", String(windowDays));
-        params.set("metric", metric);
-        params.set("limit", String(PAGE_SIZE));
-        params.set("offset", String(offset));
-        if (pos) params.set("pos", pos);
-
-        const url = `/api/v1/transactions/ownership-trends?${params.toString()}`;
         const json = await transactionTrendRequests.get(url, async () => {
           const response = await fetch(url);
           const body = await response.text();
@@ -300,32 +349,32 @@ export default function TransactionTrends({
           }
           const result: ApiResponse = JSON.parse(body);
           if (!result.success) throw new Error(result.error || "Unknown error");
+          if (
+            result.metric !== metric ||
+            result.windowDays !== windowDays ||
+            (result.pos ?? "") !== pos ||
+            result.offset !== offset ||
+            result.page !== page ||
+            result.pageSize !== PAGE_SIZE ||
+            !Array.isArray(result.risers) ||
+            !Array.isArray(result.fallers)
+          ) {
+            throw new Error("Transaction trend data did not match the selected filters or page.");
+          }
           return result;
         });
-        if (!active) return;
-        setData(json);
+        if (active) setResult({ url, data: json });
       } catch (caught) {
-        if (!active) return;
-        setError(caught instanceof Error ? caught.message : String(caught));
-      } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setResult({ url, error: caught instanceof Error ? caught.message : String(caught) });
+        }
       }
     })();
 
     return () => {
       active = false;
     };
-  }, [windowDays, metric, pos, offset]);
-
-  useEffect(() => {
-    setOffset(0);
-  }, [windowDays, metric, pos, activeTable]);
-
-  const selectMetric = (nextMetric: TrendMetric) => {
-    if (nextMetric === metric) return;
-    setData(null);
-    setMetric(nextMetric);
-  };
+  }, [url, windowDays, metric, pos, offset, page]);
 
   const selectMobilePanel = (direction: TrendDirection) => {
     setActiveTable(direction);
@@ -341,22 +390,16 @@ export default function TransactionTrends({
   const modulePresentation = buildHomepageModulePresentation({
     source: "transaction-trends",
     loading,
-    error,
-    isEmpty:
-      Boolean(data) &&
-      Array.isArray(data?.risers) &&
-      Array.isArray(data?.fallers) &&
-      data.risers.length + data.fallers.length === 0,
+    error: current?.error,
+    isEmpty: data && data.risers.length + data.fallers.length === 0,
     timestamp: data?.sourceDate ?? data?.generatedAt ?? null,
     maxAgeHours: 18,
     loadingMessage: `Loading ${movementName}...`,
     emptyMessage: `No ${movementName} is available right now.`,
     staleMessage: `${isAdp ? "ADP" : "Ownership"} movement may be stale.`,
   });
-  const supportingCopy =
-    windowDays === 1
-      ? `${isAdp ? "Average draft pick" : "Ownership"} movement over the last day.`
-      : `${isAdp ? "Average draft pick" : "Ownership"} movement over the last ${windowDays} days.`;
+  const supportingCopy = `${isAdp ? "Average draft pick" : "Ownership"} movement for a ${windowDays}-day target window.`;
+  const sourceDate = Date.parse(data?.sourceDate ?? "");
   const showData = Boolean(data) && modulePresentation.state !== "empty";
   const totalRisers = data?.totalRisers ?? data?.risers.length ?? 0;
   const totalFallers = data?.totalFallers ?? data?.fallers.length ?? 0;
@@ -378,7 +421,19 @@ export default function TransactionTrends({
               View all
             </Link>
           </div>
-          <p className={styles.subtitle}>{supportingCopy}</p>
+          <p className={styles.subtitle}>
+            {supportingCopy}
+            {Number.isFinite(sourceDate) ? (
+              <>
+                {" Yahoo! data as of "}
+                <time dateTime={data?.sourceDate ?? undefined}>
+                  {trendDateFormat.format(sourceDate)}
+                </time>
+                .
+              </>
+            ) : showData ? " Yahoo! data date unavailable." : null}
+            {data?.seasonFallbackApplied ? " Searched across seasons." : null}
+          </p>
           {modulePresentation.state === "stale" ? (
             <div className={styles.staleNotice} role="status">
               <span aria-hidden="true">●</span>{" "}
@@ -401,7 +456,11 @@ export default function TransactionTrends({
                   type="button"
                   className={option === metric ? styles.isActive : ""}
                   aria-pressed={option === metric}
-                  onClick={() => selectMetric(option)}
+                  onClick={() => {
+                    if (option === metric) return;
+                    setMetric(option);
+                    setOffset(0);
+                  }}
                 >
                   {option === "adp" ? "ADP" : "Ownership"}
                 </button>
@@ -422,7 +481,11 @@ export default function TransactionTrends({
                   type="button"
                   className={position === pos ? styles.isActive : ""}
                   aria-pressed={position === pos}
-                  onClick={() => setPos(position)}
+                  onClick={() => {
+                    if (position === pos) return;
+                    setPos(position);
+                    setOffset(0);
+                  }}
                   title={position ? `Filter: ${position}` : "All positions"}
                 >
                   {position || "All"}
@@ -444,7 +507,11 @@ export default function TransactionTrends({
                   type="button"
                   className={window === windowDays ? styles.isActive : ""}
                   aria-pressed={window === windowDays}
-                  onClick={() => setWindowDays(window)}
+                  onClick={() => {
+                    if (window === windowDays) return;
+                    setWindowDays(window);
+                    setOffset(0);
+                  }}
                 >
                   {window}D
                 </button>
@@ -496,6 +563,7 @@ export default function TransactionTrends({
               players={data.risers}
               metric={metric}
               windowDays={data.windowDays}
+              sourceDate={data.sourceDate}
               offset={offset}
               isMobileActive={activeTable === "risers"}
             />
@@ -504,46 +572,56 @@ export default function TransactionTrends({
               players={data.fallers}
               metric={metric}
               windowDays={data.windowDays}
+              sourceDate={data.sourceDate}
               offset={offset}
               isMobileActive={activeTable === "fallers"}
             />
           </div>
+        </>
+      ) : null}
 
-          <footer className={styles.footer}>
-            <div className={styles.footerCopy}>
-              <div className={styles.pagerInfo}>
-                <span>Page {Math.floor(offset / PAGE_SIZE) + 1}</span>
-                <span className={styles.separator}>·</span>
-                <span>
-                  Risers: {totalRisers} | Fallers: {totalFallers}
-                </span>
-              </div>
+      {showData || offset > 0 ? (
+        <footer className={styles.footer}>
+          <div className={styles.footerCopy}>
+            <div className={styles.pagerInfo}>
+              <span>Page {page}</span>
+              {showData ? (
+                <>
+                  <span className={styles.separator}>·</span>
+                  <span>
+                    Risers: {totalRisers} | Fallers: {totalFallers}
+                  </span>
+                </>
+              ) : null}
+            </div>
+            {showData ? (
               <p className={styles.footNote}>
                 {isAdp
-                  ? "Δ = relative change in Yahoo! average draft pick over the selected window; lower average picks rank as risers. Sparkline shows recent daily average-pick trajectory."
-                  : "Δ = change in Yahoo! percent ownership (percentage points) over the selected window. Sparkline shows recent daily trajectory."}
+                  ? "Δ is the relative change in average draft pick. Lower average picks rank as risers."
+                  : "Δ is the change in ownership in percentage points."}
+                {" The comparison uses the latest available snapshot and a baseline at or before the target date. The sparkline shows recent daily history."}
               </p>
-            </div>
-            <nav className={styles.pagerButtons} aria-label="Pagination">
-              <button
-                type="button"
-                onClick={() =>
-                  setOffset((current) => Math.max(0, current - PAGE_SIZE))
-                }
-                disabled={offset === 0}
-              >
-                <span aria-hidden="true">‹</span> Previous
-              </button>
-              <button
-                type="button"
-                onClick={() => setOffset((current) => current + PAGE_SIZE)}
-                disabled={!hasNextPage}
-              >
-                Next <span aria-hidden="true">›</span>
-              </button>
-            </nav>
-          </footer>
-        </>
+            ) : null}
+          </div>
+          <nav className={styles.pagerButtons} aria-label="Pagination">
+            <button
+              type="button"
+              onClick={() =>
+                setOffset((current) => Math.max(0, current - PAGE_SIZE))
+              }
+              disabled={offset === 0}
+            >
+              <span aria-hidden="true">‹</span> Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setOffset((current) => current + PAGE_SIZE)}
+              disabled={!showData || !hasNextPage}
+            >
+              Next <span aria-hidden="true">›</span>
+            </button>
+          </nav>
+        </footer>
       ) : null}
     </section>
   );

@@ -1,0 +1,5 @@
+   1 LOG:  disconnection: session time: 0:00:00.007 user=postgres database=postgres host=127.0.0.1 port=58837
+   1 LOG:  disconnection: session time: 0:00:00.016 user=postgres database=postgres host=127.0.0.1 port=58836
+   1 LOG:  disconnection: session time: 0:00:00.023 user=postgres database=postgres host=127.0.0.1 port=58839
+   1 LOG:  disconnection: session time: 0:00:00.035 user=postgres database=postgres host=127.0.0.1 port=58843
+   1 LOG:  disconnection: session time: 0:00:01.581 user=postgres database=postgres host=127.0.0.1 port=58841

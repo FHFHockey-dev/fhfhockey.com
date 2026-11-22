@@ -1,0 +1,187 @@
+{
+ "batch": "A",
+ "approval": "TJ-APPROVALS.md Batch A (verbatim)",
+ "release": "f47905d28718f6910d7acfa1471517c0235775de",
+ "deployment": "dpl_9YQAY1gpwwe8XBa1qWDExzaGzevP",
+ "preconditions": {
+  "appearanceRepair": "terminal 18:10:48Z xid 15054058, slot released (CODEX-TO-CLAUDE.md)",
+  "blshInstall": "held (TJ 17:37Z)",
+  "beforeImage": "before.json",
+  "schedule": "schedule-before.txt (13 FUT, >=136 min)",
+  "activeWriters": null
+ },
+ "calls": [
+  {
+   "n": 1,
+   "start": "2026-11-21T18:13:43Z",
+   "end": "2026-11-21T18:15:33Z",
+   "http": "200",
+   "runId": "ced8d73f-caaf-4d61-afd4-61492817f340",
+   "termination": "completed",
+   "bodySha256": "07468802a6521db432a78a310f8a0c1e375977e1f84dfeb104f0e5b04a59e9ba"
+  }
+ ],
+ "db": {
+  "newRun": {
+   "run_id": "ced8d73f-caaf-4d61-afd4-61492817f340",
+   "status": "succeeded",
+   "git_sha": "f47905d28718f6910d7acfa1471517c0235775de",
+   "created_at": "2026-11-21T18:13:59.30448+00:00",
+   "scope": {
+    "mode": "selected_games",
+    "requested_game_ids": [
+     2026020360,
+     2026020361,
+     2026020362,
+     2026020363,
+     2026020364,
+     2026020365,
+     2026020366,
+     2026020367,
+     2026020368,
+     2026020369,
+     2026020370,
+     2026020371,
+     2026020372
+    ]
+   },
+   "resume": {
+    "version": "forge-run-resume-v1",
+    "scope_key": "h1:2026020360,2026020361,2026020362,2026020363,2026020364,2026020365,2026020366,2026020367,2026020368,2026020369,2026020370,2026020371,2026020372",
+    "invocations": 1,
+    "lease_owner": "e92a4d11-017a-4930-9728-1d711f3d4472",
+    "released_by": "e92a4d11-017a-4930-9728-1d711f3d4472",
+    "lease_expires_at": "2026-11-21T18:15:33.179Z",
+    "completed_game_ids": [
+     2026020360,
+     2026020361,
+     2026020362,
+     2026020363,
+     2026020364,
+     2026020365,
+     2026020366,
+     2026020367,
+     2026020368,
+     2026020369,
+     2026020370,
+     2026020371,
+     2026020372
+    ]
+   }
+  },
+  "playerRowsPerGame": 36,
+  "teamRows": 26,
+  "goalieRows": 26,
+  "live0359": {
+   "outcome": "succeeded",
+   "terminal_at": "2026-11-21T17:25:05.231792+00:00",
+   "revision_id": "365d0704-fc92-46a6-9269-7b0a5fc7b146"
+  },
+  "live0359RowsUnchanged": true
+ },
+ "startChart": {
+  "http": 200,
+  "projectionRunId": "ced8d73f-caaf-4d61-afd4-61492817f340",
+  "servingMode": "exact",
+  "sourceStatus": "ready",
+  "gameRuns": [
+   {
+    "runId": "ced8d73f-caaf-4d61-afd4-61492817f340",
+    "basis": "verified_producer_closure",
+    "releaseSha": "f47905d28718f6910d7acfa1471517c0235775de",
+    "closureSha256": "cdf87b73d436f83841e0af9d70fa1bd58df13236e2a1abdb74495eb912a43540",
+    "gameIds": [
+     2026020360,
+     2026020361,
+     2026020362,
+     2026020363,
+     2026020364,
+     2026020365,
+     2026020366,
+     2026020367,
+     2026020368,
+     2026020369,
+     2026020370,
+     2026020371,
+     2026020372
+    ]
+   }
+  ],
+  "skaterRowsPerGame": {
+   "2026020360": 36,
+   "2026020361": 36,
+   "2026020362": 36,
+   "2026020363": 36,
+   "2026020364": 36,
+   "2026020365": 36,
+   "2026020366": 36,
+   "2026020367": 36,
+   "2026020368": 36,
+   "2026020369": 36,
+   "2026020370": 36,
+   "2026020371": 36,
+   "2026020372": 36
+  },
+  "note": "0359 shows goalies only; live run f55203dc not among Start Chart gameRuns (record itself unchanged)",
+  "bodySha256": "7b9ffe75814c799048ca173433ccb02b9985b8de8d0d5cbb2e34b6a742d201ad"
+ },
+ "dailyRso": {
+  "http": 200,
+  "bridgeRuns": [
+   [
+    "forge-daily-bridge-v1:ced8d73f-caaf-4d61-afd4-61492817f340",
+    "forge-daily-bridge-v1:ced8d73f-caaf-4d61-afd4-61492817f340",
+    "forge-daily-bridge-v1:f47905d28718f6910d7acfa1471517c0235775de",
+    "2026-11-21T18:13:59.304Z",
+    "2026-11-21T18:13:59.304Z"
+   ]
+  ],
+  "proofs": [
+   {
+    "runId": "ced8d73f-caaf-4d61-afd4-61492817f340",
+    "basis": "verified_producer_closure",
+    "releaseSha": "f47905d28718f6910d7acfa1471517c0235775de",
+    "closureSha256": "cdf87b73d436f83841e0af9d70fa1bd58df13236e2a1abdb74495eb912a43540"
+   }
+  ],
+  "rowsPerGame": {
+   "2026020360": 66,
+   "2026020361": 68,
+   "2026020362": 60,
+   "2026020363": 58,
+   "2026020364": 63,
+   "2026020365": 65,
+   "2026020366": 60,
+   "2026020367": 61,
+   "2026020368": 64,
+   "2026020369": 65,
+   "2026020370": 61,
+   "2026020371": 64,
+   "2026020372": 55
+  },
+  "totalRows": 810,
+  "before11:06Z": {
+   "forecastRows": 0,
+   "bridgePresent": false
+  },
+  "bodySha256": "7eb8d0f6432b1b53135d211f1ee66c184544a348322f10b2b7a7886910c11d00"
+ },
+ "gamesRecovered": [
+  "2026020360",
+  "2026020361",
+  "2026020362",
+  "2026020363",
+  "2026020364",
+  "2026020365",
+  "2026020366",
+  "2026020367",
+  "2026020368",
+  "2026020369",
+  "2026020370",
+  "2026020371",
+  "2026020372"
+ ],
+ "gamesNotRecovered": {
+  "2026020359": "started 18:00Z; excluded from the recovery scope; its live record is unchanged"
+ }
+}

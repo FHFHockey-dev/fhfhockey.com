@@ -1,0 +1,266 @@
+{
+ "deployedSha": "f47905d28718f6910d7acfa1471517c0235775de",
+ "chromium": "148.0.7778.96",
+ "servedDateLabel": "Nov 14, 2026",
+ "matrixSnapshotDate": "2026-11-14",
+ "trendingSnapshotDates": {
+  "season": "2026-11-19",
+  "last20": "2026-11-19",
+  "last10": "2026-11-19",
+  "last5": "2026-11-19"
+ },
+ "trendingDatesShown": [],
+ "comparison": [
+  {
+   "id": 8477492,
+   "player": "Nathan MacKinnon",
+   "evidence": "No live opportunity-change signal in the current trending sample."
+  },
+  {
+   "id": 8479542,
+   "player": "Brandon Hagel",
+   "evidence": "No live opportunity-change signal in the current trending sample."
+  },
+  {
+   "id": 8479400,
+   "player": "Pierre-Luc Dubois",
+   "evidence": "No live opportunity-change signal in the current trending sample."
+  },
+  {
+   "id": 8482093,
+   "player": "Seth Jarvis",
+   "evidence": "No live opportunity-change signal in the current trending sample."
+  },
+  {
+   "id": 8478402,
+   "player": "Connor McDavid",
+   "evidence": "No live opportunity-change signal in the current trending sample."
+  },
+  {
+   "id": 8476981,
+   "player": "Josh Anderson",
+   "evidence": "No live opportunity-change signal in the current trending sample."
+  }
+ ],
+ "trending": [
+  {
+   "rank": 1,
+   "id": 8482859,
+   "player": "Zack Ostapchuk",
+   "signals": [
+    "TOI/G down -56s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +15.4 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 2,
+   "id": 8483690,
+   "player": "Noah Laba",
+   "signals": [
+    "Shot Attempts/60 percentile +45.7 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 3,
+   "id": 8483890,
+   "player": "Braeden Bowman",
+   "signals": [
+    "TOI/G down -86s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +34.4 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 4,
+   "id": 8483524,
+   "player": "Shane Wright",
+   "signals": [
+    "TOI/G up +40s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +33.6 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 5,
+   "id": 8486103,
+   "player": "Ivar Stenberg",
+   "signals": [
+    "TOI/G up +67s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +19.1 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 6,
+   "id": 8477444,
+   "player": "Andre Burakovsky",
+   "signals": [
+    "TOI/G down -34s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +50.6 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 7,
+   "id": 8476331,
+   "player": "Dylan DeMelo",
+   "signals": [
+    "TOI/G down -188s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +19.6 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 8,
+   "id": 8478443,
+   "player": "Brandon Carlo",
+   "signals": [
+    "Shot Attempts/60 percentile +26.8 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 9,
+   "id": 8478474,
+   "player": "Lawson Crouse",
+   "signals": [
+    "TOI/G down -49s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +24.2 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 10,
+   "id": 8477938,
+   "player": "Haydn Fleury",
+   "signals": [
+    "TOI/G down -143s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +38.5 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 11,
+   "id": 8478178,
+   "player": "Darren Raddysh",
+   "signals": []
+  },
+  {
+   "rank": 12,
+   "id": 8474102,
+   "player": "David Perron",
+   "signals": [
+    "Shot Attempts/60 percentile +23.0 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 13,
+   "id": 8475786,
+   "player": "Zach Hyman",
+   "signals": [
+    "Shot Attempts/60 percentile +21.1 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 14,
+   "id": 8478399,
+   "player": "Jonas Siegenthaler",
+   "signals": [
+    "Shot Attempts/60 percentile +45.0 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 15,
+   "id": 8475200,
+   "player": "Dmitry Orlov",
+   "signals": [
+    "Shot Attempts/60 percentile +23.3 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 16,
+   "id": 8478911,
+   "player": "Matt Roy",
+   "signals": [
+    "Shot Attempts/60 percentile +19.9 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 17,
+   "id": 8481563,
+   "player": "Drew Helleson",
+   "signals": [
+    "TOI/G down -53s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +24.5 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 18,
+   "id": 8480023,
+   "player": "Robert Thomas",
+   "signals": [
+    "TOI/G down -80s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +16.1 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 19,
+   "id": 8479371,
+   "player": "Dante Fabbro",
+   "signals": [
+    "Shot Attempts/60 percentile +37.1 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 20,
+   "id": 8478840,
+   "player": "Will Borgen",
+   "signals": [
+    "Shot Attempts/60 percentile +27.9 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 21,
+   "id": 8482720,
+   "player": "Matthew Knies",
+   "signals": [
+    "TOI/G up +70s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +39.8 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 22,
+   "id": 8478047,
+   "player": "Michael Bunting",
+   "signals": []
+  },
+  {
+   "rank": 23,
+   "id": 8476967,
+   "player": "Brett Kulak",
+   "signals": [
+    "Shot Attempts/60 percentile +26.1 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 24,
+   "id": 8477479,
+   "player": "Tyler Bertuzzi",
+   "signals": [
+    "TOI/G up +80s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +19.9 from last 20 to last 5."
+   ]
+  },
+  {
+   "rank": 25,
+   "id": 8482055,
+   "player": "Drew O'Connor",
+   "signals": [
+    "TOI/G down -100s from last 20 to last 5.",
+    "Shot Attempts/60 percentile +29.0 from last 20 to last 5."
+   ]
+  }
+ ],
+ "signalBadges": 36,
+ "calls": [
+  "metadata",
+  "season",
+  "matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings",
+  "trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+  "comparison?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&player_ids=8477492%2C8479542%2C8479400%2C8482093%2C8478402%2C8476981"
+ ],
+ "blockedExternalImages": 10,
+ "parityKey": "152cfd305feaeb06a69cebc86f04646c1c36630787c8c2cff4726795a14d376b"
+}

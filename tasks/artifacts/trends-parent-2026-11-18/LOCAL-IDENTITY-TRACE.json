@@ -1,0 +1,130 @@
+{
+  "scope": "Deterministic synthetic loopback traces. Game codes and fake NHL IDs are fixture identifiers.",
+  "fixture": "benchmark/fixture.cjs",
+  "candidate": "15f4a18f274fff959e3e88f5819f41b4d5c67b48",
+  "asOf": "2026-11-18T12:00:00Z",
+  "populations": {
+    "default": {
+      "params": {
+        "metric": "ownership",
+        "window": 3,
+        "limit": 10,
+        "offset": 0
+      },
+      "sourceDate": "2026-11-17",
+      "sourceRows": 4438,
+      "uniqueSeasonalKeys": 4438,
+      "mapped": 2373,
+      "unmapped": 2065,
+      "risers": {
+        "eligible": 89,
+        "eligibleUnmapped": 39,
+        "pageOne": 10,
+        "pageOneUnmapped": 5
+      },
+      "fallers": {
+        "eligible": 200,
+        "eligibleUnmapped": 89,
+        "pageOne": 10,
+        "pageOneUnmapped": 5
+      }
+    },
+    "explicitSeason2026": {
+      "params": {
+        "metric": "ownership",
+        "window": 3,
+        "limit": 10,
+        "offset": 0,
+        "season": 2026
+      },
+      "sourceDate": "2026-11-17",
+      "sourceRows": 2420,
+      "uniqueSeasonalKeys": 2420,
+      "mapped": 1295,
+      "unmapped": 1125,
+      "risers": {
+        "eligible": 89,
+        "eligibleUnmapped": 39,
+        "pageOne": 10,
+        "pageOneUnmapped": 5
+      },
+      "fallers": {
+        "eligible": 200,
+        "eligibleUnmapped": 89,
+        "pageOne": 10,
+        "pageOneUnmapped": 5
+      }
+    }
+  },
+  "traces": [
+    {
+      "key": "480.p.20008",
+      "name": "Fixture Player 8",
+      "position": "G",
+      "team": "OTT",
+      "exactMapping": 8420008,
+      "historicalKey": "453.p.20008",
+      "historicalMapping": 8420008,
+      "ranked": 1,
+      "observed": [
+        "2026-11-15",
+        "2026-11-17"
+      ],
+      "values": [
+        41,
+        50
+      ],
+      "delta": 9,
+      "profile": "/trends/player/8420008"
+    },
+    {
+      "key": "480.p.20035",
+      "name": "Fixture Player 35",
+      "position": "C",
+      "team": "OTT",
+      "exactMapping": null,
+      "historicalKey": "453.p.20035",
+      "historicalMapping": null,
+      "ranked": 4,
+      "observed": [
+        "2026-11-15",
+        "2026-11-17"
+      ],
+      "values": [
+        41,
+        50
+      ],
+      "delta": 9,
+      "profile": null
+    },
+    {
+      "key": "480.p.20026",
+      "name": "Fixture Player 26",
+      "position": "D",
+      "team": "OTT",
+      "exactMapping": null,
+      "historicalKey": "453.p.20026",
+      "historicalMapping": 8420026,
+      "ranked": 3,
+      "observed": [
+        "2026-11-15",
+        "2026-11-17"
+      ],
+      "values": [
+        41,
+        50
+      ],
+      "delta": 9,
+      "profile": null
+    }
+  ],
+  "explicitCurrentSelected": {
+    "ids": [
+      8420008,
+      8420026
+    ],
+    "actual": [
+      "480.p.20008"
+    ]
+  }
+}

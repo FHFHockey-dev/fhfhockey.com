@@ -1,0 +1,4 @@
+BEGIN
+SET
+{"probe" : "blsh-pgsodium-indirect-v1", "at" : "2026-11-21T19:17:18.715857+00:00", "exposed" : ["public", "storage", "graphql_public", "analytics", "blsh_replay_api"], "exposesPgsodiumOrVault" : 0, "pgsodiumUsageViaPublicOnly" : { "blsh_replay_api" : true, "blsh_replay_owner" : true }, "bridgeFunctions" : ["vault.create_secret", "vault.secrets_encrypt_secret_secret"], "bridgeViews" : ["vault.decrypted_secrets"], "bridgeSchemaUsableByRole" : [], "reachableFunctionsCount" : { "blsh_replay_owner" : 94, "blsh_replay_api" : 71 }, "reachableTouchingPgsodiumVaultDynamicOrBridge" : [], "definerWrappers" : 16, "wrappersNotOwnedBySandboxOwner" : [], "wrapperCalleeSchemasOutsideSandbox" : [], "pgsodiumLabels" : ["pgsodium.key", "vault.secrets"], "pgsodiumLabelsInReach" : [], "keyRoleMemberships" : [], "verdict" : "ok"}
+ROLLBACK

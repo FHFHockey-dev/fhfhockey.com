@@ -58,7 +58,7 @@ vi.mock("lib/supabase/server", () => ({
   default: sharedSupabaseMock
 }));
 
-import handler, { prepareBoundedSchedule, toGamesRow } from "../../../../../pages/api/v1/db/update-games";
+import handler, { buildRankingsCalendarReceipt, prepareBoundedSchedule, toGamesRow } from "../../../../../pages/api/v1/db/update-games";
 
 function createMockRes() {
   const res: any = {
@@ -105,6 +105,33 @@ describe("/api/v1/db/update-games", () => {
     getCurrentSeasonMock.mockResolvedValue({ seasonId: 20252026 });
   });
   afterEach(() => vi.useRealTimers());
+
+  it("attests only a full reciprocal league slate and distinguishes known empty Eastern dates", () => {
+    const season = 20262027;
+    const asOf = "2026-11-18T03:00:00Z";
+    const clubs = Array.from({ length: 32 }, (_, index) => {
+      const home = Math.floor(index / 2) * 2 + 1;
+      return {
+        teamId: index + 1,
+        games: [{ id: 2026020000 + home, season, gameType: 2, gameDate: "2026-11-17",
+          gameScheduleState: "OK", homeTeam: { id: home }, awayTeam: { id: home + 1 } }],
+      };
+    });
+    const receipt = buildRankingsCalendarReceipt(season, asOf, clubs);
+    const expected = Array.from({ length: 16 }, (_, index) => 2026020001 + 2 * index);
+    expect(receipt).toMatchObject({
+      version: 1, status: "complete", seasonId: season, observedAt: asOf,
+      days: { "2026-11-16": [], "2026-11-17": expected },
+    });
+    expect(receipt).not.toHaveProperty(["days", "2026-11-18"]);
+    expect(buildRankingsCalendarReceipt(season, asOf, clubs.slice(1))).toMatchObject({ status: "incomplete" });
+    expect(buildRankingsCalendarReceipt(season, asOf,
+      [{ ...clubs[0], games: [{ ...clubs[0].games[0], gameScheduleState: "PPD" }] }, ...clubs.slice(1)],
+    )).toMatchObject({ status: "incomplete" });
+    expect(buildRankingsCalendarReceipt(season, asOf,
+      [{ ...clubs[0], games: [{ ...clubs[0].games[0], id: 2026021001 }] }, ...clubs.slice(1)],
+    )).toMatchObject({ status: "incomplete" });
+  });
 
   it("refreshes the upcoming preseason schedule after the previous season ends", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });

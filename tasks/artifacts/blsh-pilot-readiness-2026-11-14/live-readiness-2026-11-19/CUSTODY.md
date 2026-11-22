@@ -1,5 +1,10 @@
 # BLSH v6 signer custody and public-key verification
 
+> **Dated correction, 2026-11-21 23:02Z (BLSH Chef, owner of these docs per the pilot addendum §7). The pilot was re-dated (TJ R0, Nov 21). Where this file differs, this note wins:**
+> - Live window: native 12:05Z, request-context 12:35Z and official 12:45Z on **2026-11-23**, for the **2026-11-22** slate (games 2026020373–2026020377). Line 3's 2026-11-22 / 2026-11-21 dates are retired.
+> - Vault name: the official envelope goes to **`blsh_official_grant_20261122`** (line 53's `blsh_official_grant_20261121` is retired). The pinned `redate-20261123/SCHEDULE-ONCE.sql` (`33b1ead0…`) refuses any other name, and only inside 12:35:00–12:44:59Z on 2026-11-23.
+> - Operator SQL for this window: `tasks/artifacts/blsh-replay-2026-11-20/live-pilot-20261121/redate-20261123/`. Do not use `live-readiness-2026-11-20/redate-20261122/`.
+
 This applies to the first live window: native at 12:05Z, request-context at 12:35Z and official at 12:45Z on **2026-11-22**, for the 2026-11-21 slate. (Re-dated 2026-11-20 under TJ's packet 6.1 approval; the original window was 2026-11-21 for the empty 2026-11-20 slate.) TJ holds the real keys. Nobody else requests, receives or prints a private key. Every check in this lane used throwaway keys that were generated in memory or in a deleted temporary folder.
 
 ## What the handlers accept

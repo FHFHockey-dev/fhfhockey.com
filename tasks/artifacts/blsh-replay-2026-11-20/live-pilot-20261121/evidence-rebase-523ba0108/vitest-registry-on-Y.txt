@@ -1,0 +1,11 @@
+
+ RUN  v3.2.7 /private/tmp/blsh-pilot-x/ywork/web
+
+ ✓ lib/projections/verifiedForgeReleases.test.ts (28 tests) 13ms
+
+ Test Files  1 passed (1)
+      Tests  28 passed (28)
+   Start at  17:01:23
+   Duration  504ms (transform 28ms, setup 3ms, collect 27ms, tests 13ms, environment 256ms, prepare 38ms)
+
+vitest exit 0

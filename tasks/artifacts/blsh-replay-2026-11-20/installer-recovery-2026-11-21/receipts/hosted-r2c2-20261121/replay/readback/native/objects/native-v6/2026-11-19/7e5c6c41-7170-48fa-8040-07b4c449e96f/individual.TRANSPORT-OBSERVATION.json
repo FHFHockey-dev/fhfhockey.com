@@ -1,0 +1,60 @@
+{
+  "status": "candidate_requires_adapter_and_source_review",
+  "operation": "nst:individual",
+  "file": "individual.parser-input.html",
+  "sha256": "6b56920095aef1485715e5ff9130136410a87ba23c36f23e7dcb260bf6d61ada",
+  "bytes": 6941,
+  "retrievedAtUTC": "2026-11-21T21:01:05.027Z",
+  "retainedAtUTC": "2026-11-21T21:01:05.063Z",
+  "httpStatus": 200,
+  "finalUrl": "https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&sit=all&score=all&stdoi=std&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-19&td=2026-11-19&lines=single&draftteam=ALL",
+  "redirected": false,
+  "TLSVerified": null,
+  "tls": {
+    "channel": "undici:client:sendHeaders",
+    "authorized": false,
+    "authorizationError": "replay-fixture: no network connection was made",
+    "servername": "data.naturalstattrick.com",
+    "alpnProtocol": "replay-fixture",
+    "protocol": "replay-fixture",
+    "cipher": {
+      "name": "replay-fixture",
+      "standardName": null,
+      "version": null
+    },
+    "sessionReused": false,
+    "connectionReused": false,
+    "connectionSequence": 3,
+    "resumedFromOperation": null,
+    "connectionFromOperation": null,
+    "peerCertificate": {
+      "fingerprint256": "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00",
+      "valid_from": "replay-fixture",
+      "valid_to": "replay-fixture",
+      "subjectCN": "replay-fixture",
+      "issuerCNChain": [
+        "replay-fixture"
+      ]
+    },
+    "defaultCACertificatesSHA256": "5aab51f94c9a1ad6b5185229b65ca308fcae0e6fdb31bdf6f34278e099fb024c",
+    "globalDispatcher": {
+      "present": true,
+      "constructorName": "Agent",
+      "identityUnchanged": true
+    }
+  },
+  "tlsEvidence": "pending_runtime_review",
+  "representation": "client_redacted_parser_input",
+  "deploymentBinding": {
+    "deploymentId": "dpl_DebFbbRByWvcVCdBTJc7FewDhu5w",
+    "gitCommitSha": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+    "routeBundleSHA256": null
+  },
+  "parsedRows": 48,
+  "completedGameIds": null,
+  "originalPublicationUTC": null,
+  "modelDefinition": "unknown",
+  "independentlyAccepted": false,
+  "advancedAdmission": false,
+  "score": null
+}

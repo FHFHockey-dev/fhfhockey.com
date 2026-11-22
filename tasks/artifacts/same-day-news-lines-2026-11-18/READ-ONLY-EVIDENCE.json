@@ -1,0 +1,527 @@
+{
+  "date": "2026-11-18",
+  "natural_ifttt_receipts": [
+    {
+      "id": "fb451c19-3231-4f3c-8b81-25cacff982b9",
+      "source": "ifttt",
+      "source_group": "dfo",
+      "source_key": "dfofantasy",
+      "source_account": "DFOFantasy",
+      "tweet_id": "2118523774014530047",
+      "received_at": "2026-11-06 02:03:34.112967+00",
+      "processing_status": "processed",
+      "recognized_envelope_fields": [
+        "link_to_tweet",
+        "source",
+        "text",
+        "username"
+      ]
+    },
+    {
+      "id": "400ac548-90b0-49ed-936b-94e626136993",
+      "source": "ifttt",
+      "source_group": "nhl_rosters",
+      "source_key": "nhl_rosters",
+      "source_account": "NHL_Rosters",
+      "tweet_id": "2118703124865319192",
+      "received_at": "2026-11-06 13:54:25.754233+00",
+      "processing_status": "rejected",
+      "recognized_envelope_fields": [
+        "link_to_tweet",
+        "source",
+        "text",
+        "username"
+      ]
+    }
+  ],
+  "scope": "Read-only FHFH records. Times are UTC unless the source supplies an offset. These are observations of retained state.",
+  "buf_vgk": {
+    "date": "2026-11-08",
+    "original_id": "2119520323309617358",
+    "queried_team_ids": [
+      7,
+      54
+    ],
+    "buf_rows": 0,
+    "vgk_rows": [
+      {
+        "team_id": 54,
+        "game_id": 2026020278,
+        "report_date": "2026-11-08",
+        "report_key": "6ef794795799c2cdfd0911fcda7e1fdb7b0fa400c31ee9a8e69aa21a3fd7f2e0:54:2026-11-06.1",
+        "interpretation_version": "2026-11-06.1",
+        "original_url": "https://x.com/ByMHarrington/status/2119520323309617358",
+        "text": "It’s Colten Ellis vs Adin Hill in goal. The Bills are en route to Minny for MNF, so it’s the #Sabres and #Vgk. The Goatheads and the Flying Eichels get warm! https://t.co/5Nd97nqNyt",
+        "published_at": "2026-11-08T19:59:58.517Z",
+        "received_at": "2026-11-08T20:02:08.663592+00:00",
+        "interpreted_at": "2026-11-08T20:02:18.946Z",
+        "context": "game",
+        "events": [
+          {
+            "name": "Adin Hill",
+            "role": "starter",
+            "state": "confirmed",
+            "teamId": 54,
+            "playerId": 8478499
+          }
+        ]
+      },
+      {
+        "team_id": 54,
+        "game_id": 2026020278,
+        "report_date": "2026-11-08",
+        "report_key": "d2ce9ab2f54233ded4ccfaf2d803dfdceef77099caf986ca8a8b2e53eeb8870e:54:2026-11-06.1",
+        "interpretation_version": "2026-11-06.1",
+        "original_url": "https://x.com/ByMHarrington/status/2119520323309617358",
+        "text": "It’s Colten Ellis vs Adin Hill in goal. The Bills are en route to Minny for MNF, so it’s the #Sabres and #Vgk. The Goatheads and the Flying Eichels get warm! pic.twitter.com/5Nd97nqNyt",
+        "published_at": "2026-11-08T19:59:58.000Z",
+        "received_at": "2026-11-08T20:08:18.771514+00:00",
+        "interpreted_at": "2026-11-08T20:09:19.895Z",
+        "context": "game",
+        "events": [
+          {
+            "name": "Adin Hill",
+            "role": "starter",
+            "state": "confirmed",
+            "teamId": 54,
+            "playerId": 8478499
+          }
+        ]
+      }
+    ]
+  },
+  "ana_counts": [
+    {
+      "game_id": 2026020328,
+      "date": "2026-11-15",
+      "entries": 2,
+      "claims": 8,
+      "pp_decisions": 2,
+      "legacy_game_reports": 5
+    },
+    {
+      "game_id": 2026020339,
+      "date": "2026-11-17",
+      "entries": 2,
+      "claims": 0,
+      "pp_decisions": 2,
+      "legacy_game_reports": 1
+    }
+  ],
+  "ana_evidence": [
+    {
+      "game_id": 2026020328,
+      "entry": [
+        {
+          "id": "1b6b6223c5ac8530dfe06c15e57cb2afa828942fd66bfa8ae88e9614e945db1c",
+          "units": 0,
+          "cutoff": null,
+          "status": "expected",
+          "previous": null,
+          "revision": 1
+        },
+        {
+          "id": "552f93be822d4faf5137c582d027030e64dfeae5b142f080f935f59e2d0f3910",
+          "units": 0,
+          "cutoff": "2026-11-16T01:32:13.658Z",
+          "status": "frozen",
+          "previous": "1b6b6223c5ac8530dfe06c15e57cb2afa828942fd66bfa8ae88e9614e945db1c",
+          "revision": 2
+        }
+      ],
+      "claims": [
+        {
+          "id": "5357b956f4ffbbe72417209689f2a2d295fb1e63de6e1e4a8941213d2741303b",
+          "url": "https://x.com/ZachCav/status/2122126809533923555",
+          "kind": "entry",
+          "slot": "es_defense",
+          "time": "2026-11-16T00:37:13.000Z",
+          "phase": "pregame",
+          "accepted": true
+        },
+        {
+          "id": "5bd7fc15f9405d3d0d05536d367c0f46c06534c4066704da9fbcd493d656023b",
+          "url": "https://x.com/ZachCav/status/2122126809533923555",
+          "kind": "entry",
+          "slot": "es_defense",
+          "time": "2026-11-16T00:37:13.000Z",
+          "phase": "pregame",
+          "accepted": true
+        },
+        {
+          "id": "5ec1af7067e40da9982fccd04f3982e06208e3ea78b0fae00e3c716d268386e5",
+          "url": "https://x.com/ZachCav/status/2122126809533923555",
+          "kind": "entry",
+          "slot": "es_forward",
+          "time": "2026-11-16T00:37:13.000Z",
+          "phase": "pregame",
+          "accepted": true
+        },
+        {
+          "id": "68a0b1bb20252f88beaebd8c35544c267debd5fbf118a00715942e5da4dd2f0e",
+          "url": "https://x.com/ZachCav/status/2122126809533923555",
+          "kind": "entry",
+          "slot": null,
+          "time": "2026-11-16T00:37:13.000Z",
+          "phase": "pregame",
+          "accepted": true
+        },
+        {
+          "id": "70ae0b5726d232056dd7ac1a06013df6d902f2388408e5781c91026279f3cde9",
+          "url": "https://x.com/ZachCav/status/2122126809533923555",
+          "kind": "entry",
+          "slot": "es_forward",
+          "time": "2026-11-16T00:37:13.000Z",
+          "phase": "pregame",
+          "accepted": true
+        },
+        {
+          "id": "ce7bbaf895e80dfb6beab94c4a9c34597fdd629d5ce73cfe094430f89ae1c63a",
+          "url": "https://x.com/ZachCav/status/2122126809533923555",
+          "kind": "entry",
+          "slot": "es_defense",
+          "time": "2026-11-16T00:37:13.000Z",
+          "phase": "pregame",
+          "accepted": true
+        },
+        {
+          "id": "d35e11a4e69a15af6bee570f9c735afbc79ac4ce9f33e48ee42ea95a268ec619",
+          "url": "https://x.com/ZachCav/status/2122126809533923555",
+          "kind": "entry",
+          "slot": "es_forward",
+          "time": "2026-11-16T00:37:13.000Z",
+          "phase": "pregame",
+          "accepted": true
+        },
+        {
+          "id": "f487ab0ccfb3e9182042485f06f831fccef04712d02e36b46fb38aa42d45ccc8",
+          "url": "https://x.com/ZachCav/status/2122126809533923555",
+          "kind": "entry",
+          "slot": "es_forward",
+          "time": "2026-11-16T00:37:13.000Z",
+          "phase": "pregame",
+          "accepted": true
+        }
+      ],
+      "pp": [
+        {
+          "id": "78773511a8cb897e4294a9dae7cc2d950304e3decfc1dda6f36e5df01bfe0990",
+          "reason": "No applicable PP evidence"
+        },
+        {
+          "id": "83af7b1e40848765c8871a84e343d76d8e8497d29365bf489dcf6e6139a562b8",
+          "reason": "No applicable PP evidence"
+        }
+      ]
+    },
+    {
+      "game_id": 2026020339,
+      "entry": [
+        {
+          "id": "33d7ba21e2ef0448d58cfaa83d8cba8492f53bae4b3360d997800b46fca7216d",
+          "units": 0,
+          "cutoff": null,
+          "status": "expected",
+          "previous": null,
+          "revision": 1
+        },
+        {
+          "id": "c5e754581c21c754a4273c461343536e3cb62056786f16f87f7a37c27d49ff10",
+          "units": 0,
+          "cutoff": "2026-11-18T03:45:16.175Z",
+          "status": "frozen",
+          "previous": "33d7ba21e2ef0448d58cfaa83d8cba8492f53bae4b3360d997800b46fca7216d",
+          "revision": 2
+        }
+      ],
+      "claims": null,
+      "pp": [
+        {
+          "id": "f6fee940e3c9701354d18efe2fc94cb20829fdb8a8a79be081d6df640eafb7b1",
+          "reason": "No applicable PP evidence"
+        },
+        {
+          "id": "af7147a1d733fb421ccbe645e13b93e0c44f72dad4e574a3b6eb90e8f3cf2b5f",
+          "reason": "No applicable PP evidence"
+        }
+      ]
+    }
+  ],
+  "season_pp": [
+    {
+      "games": "2026020001–2026020229",
+      "decisions": 0,
+      "carried": 0,
+      "in_game": 0,
+      "recent_report_leads": null
+    },
+    {
+      "games": "2026020230–2026020355",
+      "pp_decisions": 360,
+      "carried": 0,
+      "in_game": 0,
+      "examples": null
+    }
+  ],
+  "source_examples": [
+    {
+      "id": "2118523774014530047",
+      "snapshots": [
+        {
+          "game": null,
+          "team": 18,
+          "route": "dfofantasy",
+          "goalie": "Justus Annunen",
+          "disposition": "accepted",
+          "quoted_text": null
+        }
+      ],
+      "news": null,
+      "projections": 1
+    },
+    {
+      "id": "2118526109264539958",
+      "snapshots": [
+        {
+          "game": 2026020261,
+          "team": 18,
+          "route": "ccc",
+          "goalie": "Justus Annunen",
+          "disposition": "accepted",
+          "quoted_text": null
+        }
+      ],
+      "news": null,
+      "projections": 1
+    },
+    {
+      "id": "2118731705632555008",
+      "snapshots": null,
+      "news": null,
+      "projections": 0
+    },
+    {
+      "id": "2118727470493155634",
+      "snapshots": null,
+      "news": null,
+      "projections": 0
+    },
+    {
+      "id": "2118703124865319192",
+      "snapshots": [
+        {
+          "game": null,
+          "team": null,
+          "route": "nhl_rosters",
+          "goalie": null,
+          "disposition": "rejected_ambiguous",
+          "quoted_text": null
+        }
+      ],
+      "news": null,
+      "projections": 0
+    },
+    {
+      "id": "2118523662190223538",
+      "snapshots": null,
+      "news": null,
+      "projections": 0
+    },
+    {
+      "id": "2118526534642553031",
+      "snapshots": [
+        {
+          "game": null,
+          "team": null,
+          "route": "ccc",
+          "goalie": null,
+          "disposition": "rejected_ambiguous",
+          "quoted_text": null
+        }
+      ],
+      "news": null,
+      "projections": 0
+    }
+  ],
+  "wrapper_lineage": [
+    {
+      "id": "2118731705632555008",
+      "queue": null,
+      "snaps": null,
+      "news": 0,
+      "projections": 0
+    },
+    {
+      "id": "2118738623487213742",
+      "queue": [
+        {
+          "id": "cd79b51c-184a-4ec8-96bf-bc7ba52710a6",
+          "source": "gamedaynewsnhl",
+          "status": "processed",
+          "received": "2026-11-06T16:18:43.171372+00:00"
+        }
+      ],
+      "snaps": [
+        {
+          "game": null,
+          "team": 7,
+          "source": "gamedaynewsnhl",
+          "status": "accepted",
+          "capture": "gamedaynewsnhl:2026-11-06:7:no-game:2118738623487213742:no-quoted-tweet:goalie_start:accepted"
+        }
+      ],
+      "news": 0,
+      "projections": 1
+    },
+    {
+      "id": "2118727470493155634",
+      "queue": null,
+      "snaps": null,
+      "news": 0,
+      "projections": 0
+    },
+    {
+      "id": "2118730040208994800",
+      "queue": [
+        {
+          "id": "c4d187f1-2080-4dfa-b006-f42232bb7633",
+          "source": "gamedaygoalies",
+          "status": "rejected",
+          "received": "2026-11-06T15:42:07.290355+00:00"
+        }
+      ],
+      "snaps": [
+        {
+          "game": null,
+          "team": null,
+          "source": "gamedaygoalies",
+          "status": "rejected_ambiguous",
+          "capture": "gamedaygoalies:2026-11-06:no-team:no-game:2118730040208994800:no-quoted-tweet:goalie_start:rejected_ambiguous"
+        }
+      ],
+      "news": 0,
+      "projections": 0
+    }
+  ],
+  "historical_subject_reports": [
+    {
+      "id": "2122130720714088703",
+      "projections": [
+        {
+          "url": "https://x.com/ReignInsider/status/2122130720714088703",
+          "game": null,
+          "team": 21,
+          "units": 0,
+          "version": "2026-11-15.1",
+          "provenance": {
+            "relayTweetId": "2122130720714088703",
+            "originalTweetId": "2122130720714088703",
+            "attributionStatus": "resolved"
+          }
+        }
+      ],
+      "news": [
+        {
+          "id": "eba43239-3b31-4d19-9d62-253d707cd141",
+          "team": 21,
+          "status": "draft"
+        }
+      ]
+    },
+    {
+      "id": "2122107530822468012",
+      "projections": [
+        {
+          "url": null,
+          "game": null,
+          "team": 4,
+          "units": 0,
+          "version": "2026-11-06.1",
+          "provenance": {
+            "relayTweetId": "2122107530822468012",
+            "originalTweetId": null,
+            "attributionStatus": "pending"
+          }
+        }
+      ],
+      "news": null
+    }
+  ],
+  "audit_scope": "September 19 through October 6 inclusive (UTC). Counts are failure audit rows, including retries. The key check looked for a projection or raw capture-key pattern in each error record.",
+  "fk_counts": [
+    {
+      "job_name": "/api/v1/db/update-line-sources",
+      "constraint_name": "player_forecast_goalie_start_observatio_source_capture_key_fkey",
+      "audit_rows": 190,
+      "first": "2026-09-29 15:27:41.18436+00",
+      "last": "2026-10-04 17:14:12.173183+00",
+      "capture_key_in_message": 0
+    },
+    {
+      "job_name": "/api/v1/db/update-line-sources",
+      "constraint_name": "player_forecast_lineup_snapshots_source_capture_key_fkey",
+      "audit_rows": 313,
+      "first": "2026-09-26 15:13:33.204207+00",
+      "last": "2026-10-04 02:15:24.772867+00",
+      "capture_key_in_message": 0
+    },
+    {
+      "job_name": "/api/v1/db/update-lines-ccc",
+      "constraint_name": "player_forecast_goalie_start_observatio_source_capture_key_fkey",
+      "audit_rows": 23,
+      "first": "2026-09-26 16:14:14.738035+00",
+      "last": "2026-10-04 02:13:14.350124+00",
+      "capture_key_in_message": 0
+    },
+    {
+      "job_name": "/api/v1/db/update-lines-ccc",
+      "constraint_name": "player_forecast_lineup_snapshots_source_capture_key_fkey",
+      "audit_rows": 16,
+      "first": "2026-09-26 16:54:45.572292+00",
+      "last": "2026-09-29 23:33:11.71224+00",
+      "capture_key_in_message": 0
+    }
+  ],
+  "oct4_ccc": [
+    {
+      "job": "/api/v1/db/update-lines-ccc",
+      "run_time": "2026-10-04 02:07:21.895466+00",
+      "http": 500,
+      "duration_ms": 12655,
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "job": "/api/v1/db/update-lines-ccc",
+      "run_time": "2026-10-04 02:08:09.955756+00",
+      "http": 200,
+      "duration_ms": 612,
+      "error": null,
+      "events_loaded": 0,
+      "rows_upserted": 0
+    },
+    {
+      "job": "/api/v1/db/update-lines-ccc",
+      "run_time": "2026-10-04 02:09:13.73122+00",
+      "http": 500,
+      "duration_ms": 4529,
+      "error": "insert or update on table \"player_forecast_goalie_start_observations\" violates foreign key constraint \"player_forecast_goalie_start_observatio_source_capture_key_fkey\""
+    }
+  ],
+  "served": {
+    "path": "/api/v1/lines/projected?teamId=24",
+    "host": "fhfhockey.com",
+    "http": 200,
+    "enabled": true,
+    "mode": "legacy",
+    "scope": {
+      "requestedDate": "2026-11-18",
+      "reportDate": "2026-11-18",
+      "fallback": false
+    },
+    "reports": 1,
+    "unit_sets": 0,
+    "report_keys": [
+      "29707079456c4f2fabe3c83a25bf670e43d1ae214dc1cc653eb9520ac5863105:24:2026-11-16.2"
+    ]
+  }
+}

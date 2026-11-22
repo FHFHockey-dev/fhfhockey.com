@@ -1,0 +1,38 @@
+fact|usename|application_name|client_addr|backend_type|sessions|oldest_backend_start
+session|<none>|<blank>|<local>|archiver|1|2026-11-18 10:13:00+00
+session|<none>|<blank>|<local>|autovacuum launcher|1|2026-11-18 10:13:00+00
+session|<none>|<blank>|<local>|background writer|1|2026-11-18 10:13:00+00
+session|<none>|<blank>|<local>|checkpointer|1|2026-11-18 10:13:00+00
+session|<none>|<blank>|<local>|walwriter|1|2026-11-18 10:13:00+00
+session|authenticator|PostgREST 12.0.2 (a4e00ff)|::1|client backend|7|2026-11-21 21:13:00+00
+session|pgbouncer|Supavisor (auth_query)|2600:1f18:2e13:9d00:d391:6b7a:dcc0:2092|client backend|1|2026-11-22 00:48:00+00
+session|postgres|<blank>|<local>|logical replication launcher|1|2026-11-18 10:13:00+00
+session|postgres|<blank>|<local>|pg_net 0.8.0 worker|1|2026-11-18 10:13:00+00
+session|postgres|Supavisor|2600:1f18:2e13:9d00:d391:6b7a:dcc0:2092|client backend|1|2026-11-22 00:48:00+00
+session|postgres|TimescaleDB Background Worker Launcher|<local>|TimescaleDB Background Worker Launcher|1|2026-11-18 10:13:00+00
+session|postgres|pg_cron scheduler|<local>|pg_cron launcher|1|2026-11-18 10:13:00+00
+session|supabase_admin|<blank>|::1|client backend|1|2026-11-19 11:02:00+00
+session|supabase_admin|postgres_exporter|::1|client backend|1|2026-11-18 10:14:00+00
+(14 rows)
+fact|function|can_execute
+service_role_fn|cron.alter_job(bigint,text,text,text,text,boolean)|f
+service_role_fn|cron.schedule(text,text)|t
+service_role_fn|cron.schedule(text,text,text)|t
+service_role_fn|cron.unschedule(bigint)|t
+service_role_fn|cron.unschedule(text)|
+service_role_fn|net.http_get(text,jsonb,jsonb,integer)|t
+service_role_fn|net.http_post(text,jsonb,jsonb,jsonb,integer)|t
+service_role_fn|public.execute_sql(text)|f
+(8 rows)
+fact|relation|can_select|can_write
+service_role_rel|cron.job|t|f
+service_role_rel|cron.job_run_details|t|t
+service_role_rel|net._http_response|f|f
+service_role_rel|net.http_request_queue|f|f
+(4 rows)
+fact|status_counts
+cron_runs_last_60m|succeeded:134
+(1 row)
+fact|postgres_has_pg_signal_backend|postgres_is_super
+terminate|t|f
+(1 row)

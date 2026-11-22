@@ -1,0 +1,168 @@
+{
+    "scope": {
+        "from": "2023-11-20",
+        "rows": 66797,
+        "players": 474
+    },
+    "sidecar": {
+        "no_sidecar": 66797
+    },
+    "plan_md5": "90ae6392aee0cae4028e307d4d95ce0e",
+    "by_status": {
+        "resolved": 66797
+    },
+    "resolved_rows": 66797,
+    "resolved_sample": [
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8470610,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "all"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8470610,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "ev"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8470610,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "pk"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8470610,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "pp"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8470621,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "all"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8470621,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "ev"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8470621,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "pk"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8470621,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "pp"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471274,
+            "new_game_id": 2023021307,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "all"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471274,
+            "new_game_id": 2023021307,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "ev"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471274,
+            "new_game_id": 2023021307,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "pk"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471274,
+            "new_game_id": 2023021307,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "pp"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471677,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "all"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471677,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "ev"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471677,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "pk"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471677,
+            "new_game_id": 2023021310,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "pp"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471685,
+            "new_game_id": 2023021312,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "all"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471685,
+            "new_game_id": 2023021312,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "ev"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471685,
+            "new_game_id": 2023021312,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "pk"
+        },
+        {
+            "game_date": "2024-04-18",
+            "player_id": 8471685,
+            "new_game_id": 2023021312,
+            "sidecar_action": "no_sidecar",
+            "strength_state": "pp"
+        }
+    ],
+    "by_season_status": {
+        "20232024:resolved": 66797
+    },
+    "unresolved_sample": [
+    ],
+    "by_strength_status": {
+        "ev:resolved": 16714,
+        "pk:resolved": 16655,
+        "pp:resolved": 16714,
+        "all:resolved": 16714
+    }
+}

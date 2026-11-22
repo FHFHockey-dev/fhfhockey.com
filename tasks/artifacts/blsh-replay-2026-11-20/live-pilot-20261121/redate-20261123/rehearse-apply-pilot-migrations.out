@@ -1,0 +1,63 @@
+script apply-pilot-migrations.sh sha256 26a0a326a39dcae29aae7de2e4c00a97e5dc6e2293b7633bac7f0988bcead914
+PASS ledger seed ends at the pinned max and omits both re-date versions
+PASS template PRECHECK is apply_20261120143000_first (hosted today)
+PASS precheck mode: exit 0, start state first, nothing changed, no apply file
+PASS precheck mode: blobs read from Y with the pinned sha256s
+PASS happy: exit 0
+PASS happy: PRECHECK reads already_redated with 03a29fd4 and 0 runs
+PASS happy: ledger has both rows, max is 20261121210000
+PASS happy: ledger names follow the CLI convention
+PASS happy: apply-20261120143000.out has exactly one BEGIN and one COMMIT, no WARNING
+PASS happy: apply-20261121210000.out has exactly one BEGIN and one COMMIT, no WARNING
+PASS happy: receipt records the readbacks in order
+PASS happy: receipt directory is 0700 and holds no credential text
+PASS rerun: exits 7 with 'PRECHECK verdict is not apply_20261120143000_first or ready_to_apply: already_redated|'
+PASS rerun: PRECHECK line and ledger rows identical before/after
+PASS rerun: no apply-*.sql was written
+PASS wrong-pin: exits 7 with 'ledger max is 20261121205959, pinned 20261121190000'
+PASS wrong-pin: PRECHECK line and ledger rows identical before/after
+PASS wrong-pin: no apply-*.sql was written
+PASS ledger-moved: exits 7 with 'ledger max is 20261121205970, pinned 20261121205959'
+PASS ledger-moved: PRECHECK line and ledger rows identical before/after
+PASS ledger-moved: no apply-*.sql was written
+PASS copy-control: the copy differs from the script only in the Y= line
+  copy-control copy diff:
+    21c21
+    < Y=1efdfb4364dffa73a9c249f382dbfebe22ebbbd2
+    ---
+    > Y=32d4ea22f5c9980cb1dcad307fc773565cb75093
+PASS copy-control: the copy with untampered blobs passes precheck (exit 0)
+PASS tampered-blob: the copy differs from the script only in the Y= line
+  tampered-blob copy diff:
+    21c21
+    < Y=1efdfb4364dffa73a9c249f382dbfebe22ebbbd2
+    ---
+    > Y=2766fb4eb44ec11749ec798a034030a8baf59205
+PASS tampered-blob: exits 7 with 'supabase/migrations/20261121210000_blsh_official_pilot_redate_20261122.sql at 2766fb4eb44ec11749ec798a034030a8baf59205 has sha256 '
+PASS tampered-blob: PRECHECK line and ledger rows identical before/after
+PASS tampered-blob: no apply-*.sql was written
+PASS tampered-blob: refused before any database call
+PASS official-run: exits 7 with 'PRECHECK verdict is not apply_20261120143000_first or ready_to_apply: stop_official_runs_exist|'
+PASS official-run: PRECHECK line and ledger rows identical before/after
+PASS official-run: no apply-*.sql was written
+PASS atomic-ledger-fail: exits 7 with '20261120143000 did not commit cleanly'
+PASS atomic-ledger-fail: PRECHECK line and ledger rows identical before/after
+PASS atomic-ledger-fail: the body ran inside the transaction and the injected ledger error rolled it back
+PASS atomic-guard: a raced ledger row makes the transaction raise ledger_version_exists and roll back
+PASS mid-stop: exit 7 at the second file, first file committed
+PASS from-ready: exit 0, start state ready, only the second file applied
+PASS from-ready: PRECHECK already_redated, ledger 1|1|20261121210000
+PASS ready-no-ledger-row: exits 7 with 'state ready_to_apply needs'
+PASS ready-no-ledger-row: PRECHECK line and ledger rows identical before/after
+PASS ready-no-ledger-row: no apply-*.sql was written
+PASS ledger-row-without-schema: exits 7 with 'state apply_20261120143000_first needs both ledger rows absent'
+PASS ledger-row-without-schema: PRECHECK line and ledger rows identical before/after
+PASS ledger-row-without-schema: no apply-*.sql was written
+PASS no-confirm: exits 7 with '--apply needs --confirm 20261121210000'
+PASS no-confirm: PRECHECK line and ledger rows identical before/after
+PASS no-confirm: no apply-*.sql was written
+PASS no-pin: exits 7 with '--ledger-max <14-digit version> is required'
+PASS no-pin: PRECHECK line and ledger rows identical before/after
+PASS no-pin: no apply-*.sql was written
+PASS script bytes unchanged during the rehearsal
+ALL 51 CHECKS PASSED (script sha256 26a0a326a39dcae29aae7de2e4c00a97e5dc6e2293b7633bac7f0988bcead914)

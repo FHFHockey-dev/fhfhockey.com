@@ -1,0 +1,1 @@
+{"verdict":"rolled_back_clean","attempts":1,"note":"state equals pre-install; any further attempt needs its own approval"}

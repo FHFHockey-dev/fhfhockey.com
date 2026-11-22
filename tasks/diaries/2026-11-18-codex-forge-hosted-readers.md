@@ -1,0 +1,9 @@
+# Hosted RSO reader records
+
+- Scope: connect published game projections to both RSO readers for the bounded hosted capture. Own new hostedReaders module and focused checks.
+- Checkout: octoberBranch, initial HEAD 789713fb5; release candidate f8081453463da1c30f60a4572f5a65da3c9d2dbf. Existing publication/consumer work belongs to others.
+- Start: inspecting publicationConsumer fixture and real reader entry points. Next: settle approval context and verify admissions/refusals locally. No remote actions.
+- Implemented hostedReaders.ts. Parent accepted versioned one-center context. Reads use native bridge, detailed planner/admission, `gameForecastPoints` and slot eligibility. Positive values are server reader readbacks for a synthetic roster; browser authority stays with its existing same-origin GET. Next: connect the disposable PostgreSQL checks and compare with the production planner test.
+- Connected SQL publication passed with both readers and client-planner parity. Five fail-closed cases passed. Broad tsc hit its default 4GB process heap limit.
+- Parent added portable synthetic rehearsal setup. Use a fresh isolated Supabase project with native SQL, pg_net/pg_cron and actual service transport. Shared fixture extracted and made prospective with optional synthetic game ID/start. Next: emit fresh-project schema and seed, execute local SQL checks.
+- Done. Prospective fixture helper and reader integration passed after extraction; focused TypeScript check passed. Bootstrap emitted a single transaction and passed a fresh local PG15 application-schema check. PostgREST 16.6 and normal HTTP Next handlers passed four signed deliveries, native strict capture, separate witness LOGIN, fenced publication and two stored reader results. 166 PostgREST calls, one fixture TSA request; receipts and commands in rehearsal/README.md. No remote traffic. Handed off to parent for candidate assembly and external authority gates.

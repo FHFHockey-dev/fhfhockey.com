@@ -1,0 +1,1 @@
+{"verdict":"STOP","attempts":1,"detail":{"verdict": "ambiguous_lingering", "reason": "the attempt's backend is still alive; its transaction outcome is not final", "detail": [{"pid": 53319, "state": "idle in transaction", "xactStart": "2026-11-21T11:17:31.97113-06:00"}]},"note":"ambiguous: no retry; operator must inspect"}

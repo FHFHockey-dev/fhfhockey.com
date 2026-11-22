@@ -143,6 +143,63 @@ function gameStateRank(game: any): number {
   return state == null ? -1 : NHL_GAME_STATES.indexOf(state);
 }
 
+type ClubSchedule = { teamId: number; games: OfficialClubGame[] };
+type OfficialClubGame = {
+  id: number; season: number; gameType: number; gameDate: string; gameScheduleState: string;
+  homeTeam: { id: number }; awayTeam: { id: number };
+};
+
+export function buildRankingsCalendarReceipt(
+  seasonId: number | null,
+  observedAt: string | null,
+  clubs: readonly ClubSchedule[],
+) {
+  const incomplete = { version: 1, status: "incomplete", seasonId };
+  // The scheduled Rankings cohort is the current 32-club NHL league. One
+  // club's response can omit another game even when the HTTP request succeeds.
+  const teams = new Set(clubs.map((club) => club.teamId));
+  if (seasonId == null || observedAt == null || !Number.isFinite(Date.parse(observedAt)) ||
+      clubs.length !== 32 || teams.size !== 32) return incomplete;
+  const appearances = new Map<number, { date: string; home: number; away: number; scheduleState: string; clubs: Set<number> }>();
+  for (const club of clubs) {
+    if (!Array.isArray(club.games)) return incomplete;
+    let regularGames = 0;
+    for (const game of club.games) {
+      if (!game || ![1, 2, 3, 4].includes(game.gameType)) return incomplete;
+      if (game.gameType !== 2) continue;
+      const home = game.homeTeam?.id;
+      const away = game.awayTeam?.id;
+      const scheduleState = normalizeNhlGameScheduleState(game.gameScheduleState);
+      if (!Number.isSafeInteger(game.id) || Math.floor(game.id / 1_000_000) !== Math.floor(seasonId / 10_000) ||
+          Math.floor(game.id / 10_000) % 100 !== 2 || game.season !== seasonId ||
+          !teams.has(home) || !teams.has(away) || home === away || (club.teamId !== home && club.teamId !== away) ||
+          !scheduleState || typeof game.gameDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(game.gameDate)) return incomplete;
+      const prior = appearances.get(game.id);
+      if (prior && (prior.date !== game.gameDate || prior.home !== home || prior.away !== away ||
+          prior.scheduleState !== scheduleState || prior.clubs.has(club.teamId))) return incomplete;
+      if (prior) prior.clubs.add(club.teamId);
+      else appearances.set(game.id, { date: game.gameDate, home, away, scheduleState, clubs: new Set([club.teamId]) });
+      regularGames += 1;
+    }
+    if (!regularGames) return incomplete;
+  }
+  if ([...appearances.values()].some(({ clubs }) => clubs.size !== 2)) return incomplete;
+  const hockeyDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date(observedAt));
+  const dayMs = Date.parse(`${hockeyDate}T00:00:00Z`);
+  const days: Record<string, number[]> = {};
+  for (let offset = 14; offset >= 0; offset -= 1) {
+    days[new Date(dayMs - offset * 86_400_000).toISOString().slice(0, 10)] = [];
+  }
+  for (const [id, { date }] of appearances) days[date]?.push(id);
+  for (const ids of Object.values(days)) {
+    if (ids.length > 16) return incomplete;
+    ids.sort((a, b) => a - b);
+  }
+  return { version: 1, status: "complete", seasonId, observedAt, days };
+}
+
 async function getScheduleSeasonId(): Promise<number> {
   const current = await getCurrentSeason();
   const endDate = current.seasonEndDate?.slice(0, 10);
@@ -161,14 +218,17 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
     return updateBoundedSchedule(req, res);
   }
   const { supabase } = req;
+  let seasonId: number | null = null;
   try {
-    const seasonId = req.query.seasonId ? Number(req.query.seasonId) : await getScheduleSeasonId();
+    seasonId = req.query.seasonId ? Number(req.query.seasonId) : await getScheduleSeasonId();
     if (!Number.isSafeInteger(seasonId) || seasonId <= 0) throw new Error("Invalid schedule season");
-    const teams = (await getAllTeams(seasonId)) ?? [];
+    const requestedSeason = seasonId;
+    const teams = (await getAllTeams(requestedSeason)) ?? [];
     const taskResults = await Promise.allSettled(
       teams.map(async (team) => ({
+        teamId: team.id,
         abbreviation: team.abbreviation,
-        games: await getGamesByTeam(team.abbreviation, seasonId)
+        games: await getGamesByTeam(team.abbreviation, requestedSeason)
       }))
     );
     const failedTeams: Array<{ abbreviation: string; message: string }> = [];
@@ -197,6 +257,9 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
 
     // Every schedule has been fetched, so each state was current at or before this time.
     const observedAt = new Date().toISOString();
+    const rankingsCalendar = buildRankingsCalendarReceipt(
+      seasonId, observedAt, taskResults.flatMap((result) => result.status === "fulfilled" ? [result.value] : []),
+    );
     const gamesMap: any = {};
     games.forEach((game) => {
       const previous = gamesMap[game.id];
@@ -212,7 +275,7 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
       (game) => teamIds.has(game.homeTeam.id) && teamIds.has(game.awayTeam.id)
     );
 
-    const rows = games.map((game: any) => toGamesRow(game, seasonId, observedAt));
+    const rows = games.map((game: any) => toGamesRow(game, requestedSeason, observedAt));
     const unknownGameStates = [...new Set(games.flatMap((game: any) => [
       game.gameState != null && normalizeNhlGameState(game.gameState) == null ? `gameState ${game.gameState}` : [],
       game.gameScheduleState != null && normalizeNhlGameScheduleState(game.gameScheduleState) == null
@@ -231,6 +294,7 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
       success: true,
       partialFailures: failedTeams.length,
       gameStateObservedAt: observedAt,
+      rankingsCalendar,
       warnings: [
         ...failedTeams.map(
           (failure) => `${failure.abbreviation}: ${failure.message}`
@@ -244,7 +308,8 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
     console.error(e);
     res.status(400).json({
       message: e.message,
-      success: false
+      success: false,
+      rankingsCalendar: buildRankingsCalendarReceipt(seasonId, null, []),
     });
   }
 }));

@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "lib/supabase/database-generated.types";
 import type { RollingPlayerGameMetricRow, SkaterWindowStrengthState } from "./skaterWindowAggregation";
+import type { RankingSnapshotMetadata } from "./rankingQueries";
+import { resultsLuckRollingSelectFields } from "./resultsLuckSources";
 import { ROLLING_RANKING_SELECT_FIELDS } from "./rollingRankingSelectFields";
 import {
   attachWindowCountSupport,
@@ -35,6 +37,7 @@ type SourceCoverageRequest = {
   cutoffDate: string;
   usedSnapshots?: Map<number, { date: string | null; updatedAt: string | null }>;
   requireCompletePopulation?: boolean;
+  includeDailyInputs?: boolean;
 };
 
 async function loadAndCheckSourceCoverage(
@@ -51,6 +54,9 @@ async function loadAndCheckSourceCoverage(
     blockers: [],
   };
   const sourceRows: RollingPlayerGameMetricRow[] = [];
+  const rollingFields = args.includeDailyInputs
+    ? [...new Set([...ROLLING_RANKING_SELECT_FIELDS, ...resultsLuckRollingSelectFields("season")])]
+    : ROLLING_RANKING_SELECT_FIELDS;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CHECK_TIMEOUT_MS);
   const latestDateByPlayer = new Map<number, string>();
@@ -110,7 +116,7 @@ async function loadAndCheckSourceCoverage(
         `and(player_id.eq.${playerId},game_date.eq.${date})`,
       ).join(",");
       const { data, error } = await client.from("rolling_player_game_metrics")
-        .select(includeSourceValues ? ROLLING_RANKING_SELECT_FIELDS.join(",") : "player_id,game_date,updated_at")
+        .select(includeSourceValues ? rollingFields.join(",") : "player_id,game_date,updated_at")
         .eq("season", args.season)
         .eq("strength_state", args.strength)
         .or(identityFilter)
@@ -127,7 +133,7 @@ async function loadAndCheckSourceCoverage(
       if (includeSourceValues && rows.length > 0) {
         // L6 window counts for the same identities (W2-P0-11); absent = unknown.
         const support = await client.from(WINDOW_COUNT_SUPPORT_TABLE as "rolling_player_metric_support_payloads")
-          .select(WINDOW_COUNT_SUPPORT_SELECT)
+          .select(args.includeDailyInputs ? `${WINDOW_COUNT_SUPPORT_SELECT},updated_at` : WINDOW_COUNT_SUPPORT_SELECT)
           .eq("season", args.season)
           .eq("strength_state", args.strength)
           .or(identityFilter)
@@ -172,3 +178,7 @@ export async function loadSkaterCompositeSeasonSources(
 ) {
   return loadAndCheckSourceCoverage(client, args, true);
 }
+
+export type PreparedRankingSources = Awaited<ReturnType<typeof loadSkaterCompositeSeasonSources>> & {
+  metadata: RankingSnapshotMetadata;
+};

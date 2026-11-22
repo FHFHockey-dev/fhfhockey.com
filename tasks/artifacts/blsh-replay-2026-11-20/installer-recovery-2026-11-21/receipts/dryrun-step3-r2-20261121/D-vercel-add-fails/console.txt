@@ -1,0 +1,12 @@
+20:43:14Z notify pgrst sent
+20:43:14Z exposed: The schema must be one of the following: public, storage, graphql_public, analytics, blsh_replay_api
+Legacy JWT secret (hidden input, not stored): 
+20:43:16Z token minted (23 h, role blsh_replay_api); the secret was held only by the minting process
+20:43:16Z kit probes exit 0
+20:43:16Z pgsodium probes failures: 0
+20:43:16Z FAIL: vercel env add failed (see vercel-env-add.err) -> cleanup
+20:43:16Z no token in Vercel
+20:43:16Z ACTION FOR TJ: remove blsh_replay_api from Supabase → Data API → Exposed schemas now (keep the other four). Waiting up to 8s.
+20:43:16Z unexposed: The schema must be one of the following: public, storage, graphql_public, analytics
+20:43:16Z {"cleanupVerified": true, "roles": 0, "schemas": 0, "memberships": 0, "outsideNarrowFingerprint": "4eebb9633ba7e4718a82f12435ea4ecb"}
+20:43:16Z FAILED (vercel env add failed (see vercel-env-add.err)); cleanup verified: token absent, unexposed, sandbox reset to the step-0 state

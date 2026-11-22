@@ -1,0 +1,15 @@
+{
+  "batch": "B",
+  "approval": "TJ-APPROVALS.md Batch B (verbatim)",
+  "push": {"at": "2026-11-21T18:17:13Z", "from": "f47905d28718f6910d7acfa1471517c0235775de", "to": "096b78b622a72a8378b8f60c0c7704fc4e2fee41", "fastForward": true, "precheck": "origin/master == f47905d28 at 18:16:59Z; candidate = gated tree (gates/GATES.json); no in-flight builds; push-hold note posted 18:17Z"},
+  "deployments": {
+    "fhfhockey": {"id": "dpl_2psc7uGM4UhXgEFHwmhrVx8GA3G1", "url": "fhfhockey-nnfen8t2u-fhfhockeydevs-projects.vercel.app", "status": "Ready", "buildDuration": "4m", "created": "2026-11-21T18:17:16Z", "aliases": ["fhfhockey.com", "www.fhfhockey.com"], "shaEvidence": "vercel ls fhfhockey -m githubCommitSha=096b78b6… returns this deployment"},
+    "functions-fhfhockey": {"id": "dpl_7qX57bbrDeGj4St92wHdKw3r9E5U", "status": "Canceled", "duration": "10s"},
+    "cms-fhfhockey": {"id": "dpl_FjuCgWWjsoSdKV9F5YeM7VDZnMe3", "status": "Canceled", "duration": "10s"},
+    "fhfhockey.com (project)": {"status": "unresolved: the CLI resolves the name to the fhfhockey project; that project's entry not observed"}
+  },
+  "buildCount": "1 completed production build (fhfhockey); 2 canceled entries confirmed; 3rd companion unresolved",
+  "smoke": {"request": "GET https://fhfhockey.com/api/v1/runs/latest", "at": "2026-11-21T18:33:10Z", "http": 200, "cache": "MISS", "latestRun": "ced8d73f-caaf-4d61-afd4-61492817f340 (succeeded, 13 games, 468/26/26 rows)", "file": "smoke.json"},
+  "rollbackTarget": "dpl_9YQAY1gpwwe8XBa1qWDExzaGzevP (f47905d28)",
+  "note": "Smoke proves deployment only, not daily pipeline recovery. First pipeline acceptance: Nov 22 10:05Z scheduled run (nonempty control); first live off-day: Nov 27 10:05Z."
+}

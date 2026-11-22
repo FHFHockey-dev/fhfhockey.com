@@ -31,6 +31,7 @@ import { standardizeColumnName } from "lib/standardization/columnStandardization
 import { useSnackbar } from "notistack";
 import { doPOST } from "lib/supabase"; // Your existing helper
 import AdminPageGate from "components/Admin/AdminPageGate";
+import styles from "./upsert-projections.module.scss";
 import Container from "components/Layout/Container";
 import PageTitle from "components/PageTitle";
 import ClientOnly from "components/ClientOnly";
@@ -631,32 +632,34 @@ function UpsertProjections() {
   }
 
   return (
-    <Container>
-      <PageTitle>Admin: Upsert CSV Projections</PageTitle>
+    <Container className={styles.page}>
+      <div className={styles.topbar}>
+        <div>
+          <span className={styles.eyebrow}>Admin · Database</span>
+          <h1>Upsert CSV projections</h1>
+        </div>
+        <Link href="/db" className={styles.topLink}>
+          Back to /db
+        </Link>
+      </div>
       <ClientOnly>
         {" "}
         {/* Ensures this only renders on client after auth check */}
         <Paper elevation={3} sx={{ padding: 3, marginY: 2 }}>
-          <Typography variant="h5" gutterBottom sx={{ marginBottom: 2 }}>
+          <Typography variant="h5" component="h2" gutterBottom sx={{ marginBottom: 2 }}>
             1. Upload CSV File
           </Typography>
           <Box
             {...getRootProps()}
-            sx={{
-              border: "2px dashed grey",
-              padding: 4,
-              textAlign: "center",
-              cursor: "pointer",
-              marginBottom: 2,
-              backgroundColor: isDragActive ? "#e3f2fd" : "transparent"
-            }}
+            className={styles.dropzone}
+            data-active={isDragActive ? "true" : undefined}
           >
-            <input {...getInputProps()} />
+            <input {...getInputProps()} aria-label="CSV file" />
             {isDragActive ? (
               <p>Drop the CSV file here ...</p>
             ) : (
               <p>
-                Drag &aposn&apos drop a CSV file here, or click to select file
+                Drag and drop a CSV file here, or click to select one
               </p>
             )}
             {file && (
@@ -669,7 +672,7 @@ function UpsertProjections() {
         </Paper>
         {csvHeaders.length > 0 && (
           <Paper elevation={3} sx={{ padding: 3, marginY: 2 }}>
-            <Typography variant="h5" gutterBottom sx={{ marginBottom: 2 }}>
+            <Typography variant="h5" component="h2" gutterBottom sx={{ marginBottom: 2 }}>
               2. Configure Source & Process
             </Typography>
             <FormControl fullWidth margin="normal" variant="outlined">
@@ -677,6 +680,7 @@ function UpsertProjections() {
                 Player Name Column (from CSV)
               </InputLabel>
               <Select
+                MenuProps={{ PaperProps: { className: styles.menuPaper } }}
                 labelId="player-column-select-label"
                 label="Player Name Column (from CSV)"
                 value={playerColumn}
@@ -705,7 +709,7 @@ function UpsertProjections() {
         )}
         {processedHeaders.length > 0 && (
           <Paper elevation={3} sx={{ padding: 3, marginY: 2 }}>
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h5" component="h2" gutterBottom>
               3. Define Supabase Table Schema
             </Typography>
             <Typography
@@ -759,6 +763,7 @@ function UpsertProjections() {
                       Data Type
                     </InputLabel>
                     <Select
+                      MenuProps={{ PaperProps: { className: styles.menuPaper } }}
                       labelId={`data-type-label-${index}`}
                       label="Data Type"
                       value={header.dataType}
@@ -791,7 +796,7 @@ function UpsertProjections() {
               + Add Custom Column (as TEXT)
             </Button>
 
-            <Typography variant="h6" sx={{ marginTop: 3, marginBottom: 1 }}>
+            <Typography variant="h6" component="h3" sx={{ marginTop: 3, marginBottom: 1 }}>
               Supabase Table Name
             </Typography>
             <TextField
@@ -808,7 +813,7 @@ function UpsertProjections() {
         )}
         {standardizedPreviewData.length > 0 && processedHeaders.length > 0 && (
           <Paper elevation={3} sx={{ padding: 3, marginY: 2 }}>
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h5" component="h2" gutterBottom>
               4. Preview Standardized Data (First{" "}
               {standardizedPreviewData.length} Rows)
             </Typography>

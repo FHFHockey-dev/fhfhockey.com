@@ -1,0 +1,31 @@
+diff --git a/web/lib/projections/verifiedForgeReleases.test.ts b/web/lib/projections/verifiedForgeReleases.test.ts
+index 4737e2859..0be7824aa 100644
+--- a/web/lib/projections/verifiedForgeReleases.test.ts
++++ b/web/lib/projections/verifiedForgeReleases.test.ts
+@@ -73,6 +73,7 @@ describe("verified FORGE releases", () => {
+       ["d633c57257cfd34e78e2ed4680bbdb86ccc363374dddf0f6eb48db833c921be4", "cf0cb680ec1e381c3edc4a2d4059534b93c0b2cc"],
+       ["cdf87b73d436f83841e0af9d70fa1bd58df13236e2a1abdb74495eb912a43540", "7a13f65c071889f9bff650f10cb61f672ecd6ec7"],
+       ["0446100e09f468bc061dbc7049ddc1fddec54237a617d7e63ca4835a66b48223", "e2f8c6bc9fb79894ee61df70bf7377166559f467"],
++      ["d6520f1c72711fcd151c1484f81c0379fc15c57e80963e72e024c1cd4e23e1e2", "b5e18f49078addde4bda3e5679e5602f8ed58393"],
+     ]);
+   });
+ 
+diff --git a/web/lib/projections/verifiedForgeReleases.ts b/web/lib/projections/verifiedForgeReleases.ts
+index dc9855396..ea09e8a30 100644
+--- a/web/lib/projections/verifiedForgeReleases.ts
++++ b/web/lib/projections/verifiedForgeReleases.ts
+@@ -213,6 +213,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
+     verifierVersion: "forge-release-sha-verifier-v1",
+     note: "November 21 daily NST off-day verification. The verifier found no excluded projection inputs in the 243-module producer closure.",
+   },
++  {
++    closureSha256: "d6520f1c72711fcd151c1484f81c0379fc15c57e80963e72e024c1cd4e23e1e2",
++    commit: "b5e18f49078addde4bda3e5679e5602f8ed58393",
++    receipt: "tasks/artifacts/blsh-replay-2026-11-20/live-pilot-20261121/b5e18f49078addde4bda3e5679e5602f8ed58393.json",
++    receiptSha256: "8c2d3a3ca8b513f009ae6f74e75745e6cd1b547e890ff3fadbca0d5a7d069dba",
++    verifierVersion: "forge-release-sha-verifier-v1",
++    note: "November 21 BLSH pilot re-date on master 523ba0108 (restores the L7 NST registry). The verifier found no excluded projection inputs in the 243-module producer closure.",
++  },
+ ];
+ 
+ const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;

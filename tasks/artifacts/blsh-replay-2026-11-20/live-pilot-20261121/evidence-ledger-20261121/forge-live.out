@@ -1,0 +1,6 @@
+2026-11-21 22:59:22.578598+00
+live_run|2026020359|2026-11-21|2026-11-21 18:00:00+00|2026-11-21 15:17:33.356703+00|succeeded|f47905d28
+open_runs|0
+forge_job|305|build-forge-derived-v2|25 10 * * *|true
+forge_job|308|run-forge-projection-v2|05 10 * * *|false
+forge_job|408|forge-pregame-hosted-dispatch|* * * * *|false

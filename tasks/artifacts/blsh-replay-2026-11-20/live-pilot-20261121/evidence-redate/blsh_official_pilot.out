@@ -1,0 +1,4 @@
+PASS exact native 20/20, schedule/deployment pins, sorted slate, four concurrent claims
+PASS PostgreSQL table, uncommitted-claim and post-write waits, expiry rollback, actual transition times
+PASS durable journal, 4 MiB binary readback, resealed manifest refusal, terminal readback and role/owner mutation controls
+exit 0

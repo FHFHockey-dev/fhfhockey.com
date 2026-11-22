@@ -1,0 +1,5 @@
+INSTALL_BACKEND 53086 2026-11-21 11:17:27.020167-06
+psql:/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-replay-2026-11-20/installer-recovery-2026-11-21/artifact/install.sql:1232: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+psql:/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-replay-2026-11-20/installer-recovery-2026-11-21/artifact/install.sql:1232: error: connection to server was lost

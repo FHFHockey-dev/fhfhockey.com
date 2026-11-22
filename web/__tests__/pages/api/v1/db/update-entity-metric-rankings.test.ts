@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { buildRowsMock, upsertRowsMock, fakeSupabase } = vi.hoisted(() => ({
   buildRowsMock: vi.fn(),
   upsertRowsMock: vi.fn(),
-  fakeSupabase: { from: vi.fn() },
+  fakeSupabase: { from: vi.fn(), rpc: vi.fn() },
 }));
 
 vi.mock("../../../../../lib/cron/withCronJobAudit", () => ({
@@ -54,6 +54,11 @@ function createMockRes() {
 describe("/api/v1/db/update-entity-metric-rankings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    fakeSupabase.rpc.mockImplementation(async (name) => ({
+      data: name === "claim_ranking_publication_dispatch"
+        ? { outcome: "claimed", id: "claim-id", priorCutoff: "2026-11-14" } : null,
+      error: null,
+    }));
     buildRowsMock.mockResolvedValue({
       request: {},
       rows: [{ entity_id: 1 }, { entity_id: 2 }],
@@ -74,6 +79,41 @@ describe("/api/v1/db/update-entity-metric-rankings", () => {
       rowsUpserted: 2, dbWrittenRows: 2, marked: false, notMarkedReasons: ["fixture"],
       complete: false, windows: [],
     });
+  });
+
+  afterEach(() => vi.unstubAllEnvs());
+
+  it.each([[{ min_gp: "3" }, true], [{ position: "D" }, false]] as const)(
+    "protects colliding all-skater keys while allowing independent keys under the same lock", async (filters, protect) => {
+      vi.stubEnv("RANKINGS_DAILY_PUBLICATION", "daily");
+      const res = createMockRes();
+      await handler({ method: "POST", query: { season: "20262027", dryRun: "false", ...filters } } as any, res);
+      expect(fakeSupabase.rpc).toHaveBeenCalledWith("claim_ranking_publication_dispatch",
+        expect.objectContaining({ p_protect: protect }));
+      expect(upsertRowsMock).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each([{}, { min_gp: "3", limit: "2", metrics: "points_per_60" }])(
+    "guards default and custom current 5v5 writes while a scheduled pair is active", async (filters) => {
+      fakeSupabase.rpc.mockResolvedValueOnce({
+        data: { outcome: "busy", id: null, priorCutoff: "2026-11-14", reason: "Active writer" },
+        error: null,
+      });
+      const res = createMockRes();
+      await handler({ method: "POST", query: { season: "20262027", dryRun: "false", ...filters } } as any, res);
+      expect(fakeSupabase.rpc).toHaveBeenCalledWith("claim_ranking_publication_dispatch",
+        expect.objectContaining({ p_season: 20262027, p_mode: "manual_rankings" }));
+      expect(res.statusCode).toBe(409);
+      expect(upsertRowsMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps a current-season dry run free of ledger writes", async () => {
+    const res = createMockRes();
+    await handler({ method: "GET", query: { season: "20262027" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(fakeSupabase.rpc).not.toHaveBeenCalled();
   });
 
   it("returns 405 for unsupported methods", async () => {

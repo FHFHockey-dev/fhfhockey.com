@@ -1,0 +1,278 @@
+--- a/fixture.cjs
++++ b/fixture.cjs
+@@ -47,7 +47,9 @@
+   }
+   await db.query(`CREATE TABLE news_feed_items(id integer PRIMARY KEY, headline text); INSERT INTO news_feed_items VALUES (1,'control');
+     GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO service_role`);
+-  await db.query(fs.readFileSync(path.join(root,'new/supabase/migrations/20261121173000_sync_tweet_review_sources_v1.sql'),'utf8'));
++  // Model the hosted baseline's default EXECUTE grants before applying the exact migration.
++  await db.query('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated, service_role');
++  await db.query(fs.readFileSync(path.join(root, 'new', process.env.FIXTURE_MIGRATION), 'utf8'));
+ }
+ // Compile the pinned module with its real text/key builders. Off-path admin, trainer
+ // and external integrations are inert, and fail if the sync ever calls them.
+@@ -124,114 +126,141 @@
+   const r=await one(`select md5(string_agg(v,chr(10) order by v)) digest from (select (to_jsonb(t)-$1::text[])::text v from ${table} t) rows`,[omit]);
+   return r.digest;
+ }
+-async function proof(out){
+-  const sync={base:loadSync('base'),new:loadSync('new')};
+-  const reports={sha:evidence.deployment.sha,postgres:(await one('show server_version')).server_version,
+-    postgrest_image:'public.ecr.aws/supabase/postgrest:v12.0.2',node:process.version,
+-    client:require(path.join(sdkRoot,'@supabase/supabase-js/package.json')).version,db_wal_settings:await one("select current_setting('wal_level') wal_level,current_setting('full_page_writes') full_page_writes,current_setting('synchronous_commit') synchronous_commit,current_setting('autovacuum') autovacuum"),cases:[],bench:[]};
+-  const run=(version,c=client())=>sync[version]({supabase:c,perSourceLimit:500});
++async function proof(out) {
++  const sync = loadSync('new');
++  const expected = { syncedCount: 400, preferredSourceCount: 400 };
++  const receipts = {
++    candidate: process.env.FIXTURE_CANDIDATE,
++    baseline: evidence.deployment.sha,
++    schema: target,
++    fixture: 'Synthetic inputs through the exact caller and standalone PostgREST, loopback only',
++    postgres: (await one('SHOW server_version')).server_version,
++    postgrest: '12.0.2',
++    sdk: require(path.join(sdkRoot, '@supabase/supabase-js/package.json')).version,
++    node: process.version,
++    files: {}, cases: []
++  };
++  const callerPath = 'web/pages/api/v1/db/tweet-pattern-review.ts';
++  for (const file of [callerPath, process.env.FIXTURE_MIGRATION]) {
++    receipts.files[file] = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, 'new', file))).digest('hex');
++  }
++  assert.equal(receipts.files[process.env.FIXTURE_MIGRATION], '963955d3331df80b44bdc018e151696732a092376d272bf93c611d9941a56893');
++  const fn = 'public.sync_tweet_review_sources_v1(jsonb)';
++  const privileges = await one(
++    "SELECT has_function_privilege('anon', p.oid, 'EXECUTE') anon, has_function_privilege('authenticated', p.oid, 'EXECUTE') authenticated," +
++    " has_function_privilege('service_role', p.oid, 'EXECUTE') service_role, p.prosecdef security_definer," +
++    " EXISTS (SELECT 1 FROM aclexplode(p.proacl) acl WHERE acl.grantee=0 AND acl.privilege_type='EXECUTE') public_execute" +
++    " FROM pg_proc p WHERE p.oid=to_regprocedure($1)", [fn]);
++  assert.deepEqual(privileges, { anon: false, authenticated: false, service_role: true, security_definer: false, public_execute: false });
++  receipts.privileges = privileges;
++  receipts.execute_denials = {};
++  for (const role of ['anon', 'authenticated']) {
++    await db.query('BEGIN');
++    try {
++      await db.query('SET LOCAL ROLE ' + role);
++      await assert.rejects(db.query("SELECT public.sync_tweet_review_sources_v1('[]'::jsonb)"), error => {
++        receipts.execute_denials[role] = error.code;
++        return error.code === '42501';
++      });
++    } finally { await db.query('ROLLBACK'); }
++  }
++
+   await sources();
+-  const seeded=await run('base');
+-  assert.deepEqual(seeded,{syncedCount:400,preferredSourceCount:400});
+-  await db.query(`UPDATE ${target} SET metadata=metadata || '{"sentinel":"preexisting","shadowPostId":"kept"}'::jsonb, updated_at='2026-11-20T16:00Z'; CREATE TABLE seed AS SELECT * FROM ${target}`);
+-  const permissions=await one("SELECT has_function_privilege('anon','public.sync_tweet_review_sources_v1(jsonb)','EXECUTE') anon,has_function_privilege('authenticated','public.sync_tweet_review_sources_v1(jsonb)','EXECUTE') authenticated,has_function_privilege('service_role','public.sync_tweet_review_sources_v1(jsonb)','EXECUTE') service_role");
+-  assert.deepEqual(permissions,{anon:false,authenticated:false,service_role:true});reports.permissions=permissions;
+-  const expectedDigests=new Map();
+-  for(const v of ['base','new']){
+-    for(const scenario of ['insert','identical','correction','review_then_identical','review_then_correction','locked_review_then_identical','locked_review_then_correction']){
+-      await restore();
+-      const correction=scenario.includes('correction'), racing=scenario.includes('review_then'),locked=scenario.startsWith('locked');
+-      if(correction)await change();
+-      if(scenario==='insert')await db.query('TRUNCATE '+target);
+-      const before=await snapshot();const initial=await targetRow();
+-      let afterReview=null;let waited=false;let seen=0;const requests=[];
+-      const c=client(async(u,opt,send)=>{
+-        const method=opt.method||'GET', endpoint=u.pathname;
+-        requests.push(method+' '+endpoint);
+-        if(!racing||method!=='POST'||!(endpoint==='/'+target||endpoint==='/rpc/'+rpc)||seen++)return send();
+-        // All source reads have returned. The baseline has also read the queue.
+-        assert(syntheticSources.every(s=>requests.includes('GET /'+s)));
+-        if(v==='base')assert(requests.includes('GET /'+target));else assert(!requests.includes('GET /'+target));
+-        await reviewer.query('BEGIN');
+-        afterReview=(await reviewer.query(`UPDATE ${target} SET review_status='reviewed',reviewed_category='lineup',reviewed_subcategory='correction',notes='Reviewer B committed',
+-          selected_highlights='["human highlight"]',review_assignments='[{"notes":"human assignment"}]',reviewed_at='2026-11-21T10:00Z',updated_at=clock_timestamp(),
+-          metadata=metadata || '{"answerKey":{"verdict":"corrected","notes":"human verdict"},"sentinel":"concurrent"}'::jsonb WHERE ${probe} RETURNING *,xmin::text x,ctid::text slot`)).rows[0];
+-        if(!locked){await reviewer.query('COMMIT');return send();}
+-        const pending=send();
+-        try{
+-          for(let k=0;k<100;k++){
+-            const x=await one("select exists(select 1 from pg_stat_activity where datname=current_database() and wait_event_type='Lock' and state='active' and usename='authenticator') b");
+-            if(x.b){waited=true;break;}await sleep(15);
+-          }
+-        }finally{await reviewer.query('COMMIT');}
+-        const res=await pending;assert(waited,'expected database lock wait');return res;
+-      });
+-      const result=await run(v,c);assert.deepEqual(result,seeded);
+-      const after=await snapshot();const final=await targetRow();
+-      const saved=afterReview?JSON.stringify(reviewState(final))===JSON.stringify(reviewState(afterReview)):null;
+-      const sameReviewerTuple=afterReview?JSON.stringify(tuple(final))===JSON.stringify(tuple(afterReview)):null;
+-      if(racing){assert.equal(saved,v==='new');assert.equal(sameReviewerTuple,v==='new'&&!correction);}
+-      if(correction){assert.equal(final.raw_text,'corrected source text');assert.equal(final.review_text,'corrected source text');assert.deepEqual(final.keyword_hits,['changed']);assert.equal(final.metadata.retainedInterpretation.state,'corrected');assert(!('intakeRosterEvidence' in final.metadata));}
+-      if(scenario!=='insert'){assert.equal(final.id,initial.id);assert.deepEqual(final.created_at,initial.created_at);assert.equal(final.metadata.shadowPostId,'kept');}
+-      const allChanged=written(before,after);
+-      const syncWrites=racing&&v==='new'&&!correction?allChanged-1:allChanged;
+-      assert.equal(syncWrites,(v==='base'||scenario==='insert')?400:correction?1:0);
+-      let digest=null;
+-      if(!racing){
+-        digest=await logicalDigest(target, scenario==='insert'?['id','created_at','updated_at']:['updated_at']);
+-        if(v==='base')expectedDigests.set(scenario,digest);else assert.equal(digest,expectedDigests.get(scenario));
+-      }
+-      if(!racing&&correction)assert(final.updated_at>initial.updated_at,'changed source must advance edit time');
+-      if(scenario==='identical'&&v==='new')assert.deepEqual(tuple(initial),tuple(final));
+-      reports.cases.push({version:v,scenario,whole_queue_logical_digest:digest,accepted:result.syncedCount,sync_rows_inserted_or_rewritten:syncWrites,reviewer_fields_survive:saved,same_physical_reviewer_tuple:sameReviewerTuple,wait_observed:waited,source_correction_applied:correction?true:null,control_note:final.notes,answer_key:final.metadata.answerKey??null,requests:tally(requests)});
++  assert.deepEqual(await sync({ supabase: client(), perSourceLimit: 500 }), expected);
++  await db.query("UPDATE " + target + " SET metadata=metadata || '{\"sentinel\":\"preexisting\",\"shadowPostId\":\"kept\"}'::jsonb, updated_at=clock_timestamp()-interval '1 day'");
++  await db.query('CREATE TABLE seed AS SELECT * FROM ' + target);
++  const reviewerPid = (await reviewer.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
++  for (const scenario of ['identical', 'correction', 'identical_ahead_of_clock']) {
++    await restore();
++    if (scenario === 'correction') await change();
++    const before = await snapshot();
++    const initial = await targetRow();
++    const events = [], batchSizes = [];
++    let reviewed, lockObserved = false;
++    const observedClient = client(async (u, options, send) => {
++      events.push((options.method || 'GET') + ' ' + u.pathname);
++      if (options.method !== 'POST') return send();
++      assert.equal(u.pathname, '/rpc/' + rpc);
++      const rows = JSON.parse(options.body).p_rows;
++      batchSizes.push(rows.length);
++      if (!rows.some(row => row.dedupe_key === initial.dedupe_key)) return send();
++      assert(!reviewed, 'target must appear only once in this delivery');
++      assert(syntheticSources.every(source => events.includes('GET /' + source)));
++      await reviewer.query('BEGIN');
++      let pending;
++      try {
++        const edit = await reviewer.query(
++          "UPDATE " + target + " SET review_status='reviewed', reviewed_category='lineup', reviewed_subcategory='correction', notes='Reviewer B committed'," +
++          " selected_highlights='[\"human highlight\"]', review_assignments='[{\"notes\":\"human assignment\"}]', reviewed_at=clock_timestamp()," +
++          " updated_at=clock_timestamp() + $1::interval, metadata=metadata || '{\"answerKey\":{\"verdict\":\"corrected\",\"notes\":\"human verdict\"},\"sentinel\":\"concurrent\"}'" +
++          " WHERE " + probe + " RETURNING *, updated_at::text edit_clock, xmin::text x, ctid::text slot",
++          [scenario === 'identical_ahead_of_clock' ? '5 minutes' : '0 seconds']);
++        assert.equal(edit.rowCount, 1);
++        reviewed = edit.rows[0];
++        pending = send();
++        for (let attempt = 0; attempt < 100; attempt++) {
++          const { blocked } = await one("SELECT EXISTS (SELECT 1 FROM pg_stat_activity a WHERE a.datname=current_database() AND a.usename='authenticator' AND a.wait_event_type='Lock' AND $1::integer=ANY(pg_blocking_pids(a.pid))) AS blocked", [reviewerPid]);
++          if (blocked) { lockObserved = true; break; }
++          await sleep(15);
++        }
++      } finally { await reviewer.query('COMMIT'); }
++      const response = await pending;
++      assert(lockObserved, 'RPC must wait on this reviewer before commit');
++      return response;
++    });
++    assert.deepEqual(await sync({ supabase: observedClient, perSourceLimit: 500 }), expected);
++    assert.deepEqual(batchSizes, [100, 100, 100, 100]);
++    assert.deepEqual(tally(events), Object.fromEntries([...syntheticSources.map(t => ['GET /' + t, 1]), ['POST /rpc/' + rpc, 4]]));
++    const final = await targetRow();
++    const clock = await one('SELECT updated_at::text delivered, (extract(epoch FROM updated_at-$1::timestamptz)*1000000)::bigint::text delta_us FROM ' + target + ' WHERE ' + probe, [reviewed.edit_clock]);
++    assert(BigInt(clock.delta_us) >= 1000n);
++    assert(final.updated_at > reviewed.updated_at, 'visible to millisecond-resolution readers');
++    if (scenario === 'identical_ahead_of_clock') assert.equal(clock.delta_us, '1000');
++    assert.equal(final.id, initial.id);
++    assert.deepEqual(final.created_at, initial.created_at);
++    assert.deepEqual(reviewState(final), reviewState(reviewed));
++    assert.equal(final.review_status, 'reviewed');
++    assert.equal(final.notes, 'Reviewer B committed');
++    assert.equal(final.metadata.answerKey.verdict, 'corrected');
++    assert.equal(final.metadata.shadowPostId, 'kept');
++    assert.notEqual(final.x, reviewed.x);
++    const source = row => Object.fromEntries(Object.entries(row).filter(([key]) =>
++      ![...flds, 'x', 'slot', 'updated_at', 'edit_clock'].includes(key)));
++    const expectedSource = source(reviewed);
++    if (scenario === 'correction') {
++      expectedSource.raw_text = expectedSource.review_text = 'corrected source text';
++      expectedSource.keyword_hits = ['changed'];
++      expectedSource.metadata = { ...expectedSource.metadata, retainedInterpretation: { state: 'corrected' } };
++      delete expectedSource.metadata.intakeRosterEvidence;
+     }
+-  }
+-  // Paired full-syncs; the restore, corrections, snapshot checks and connection
+-  // warm-up are outside the clock and WAL interval. The cluster is single-tenant.
+-  for(const workload of ['identical','10pct_changes']){
+-    for(let trial=1;trial<=5;trial++){
+-      for(const v of (trial%2?['base','new']:['new','base'])){
+-        await restore();
+-        if(workload==='10pct_changes')await db.query("UPDATE lines_ccc SET raw_text='batch correction '||capture_key WHERE split_part(capture_key,'-',2)::int<=40");
+-        else await db.query("UPDATE lines_ccc SET raw_text='synthetic source '||split_part(capture_key,'-',2) WHERE split_part(capture_key,'-',2)::int<=40");
+-        const inputHashes={queue:await logicalDigest(target)};
+-        for(const name of syntheticSources) inputHashes[name]=await logicalDigest(name);
+-        const fixtureHash=crypto.createHash('sha256').update(JSON.stringify(inputHashes)).digest('hex');
+-        if(!expectedDigests.has(workload+'-input'))expectedDigests.set(workload+'-input',fixtureHash);
+-        assert.equal(fixtureHash,expectedDigests.get(workload+'-input'));
+-        const b=await snapshot();const events=[];const c=client((u,opt,send)=>{events.push((opt.method||'GET')+' '+u.pathname);return send()});
+-        const {lsn}=await one('select pg_current_wal_insert_lsn()::text lsn');const start=performance.now();
+-        const result=await run(v,c);const ms=performance.now()-start;
+-        const {bytes}=await one('select pg_wal_lsn_diff(pg_current_wal_insert_lsn(), $1)::bigint::text bytes',[lsn]);
+-        const n=written(b,await snapshot());assert.equal(n,v==='base'?400:workload==='identical'?0:40);
+-        reports.bench.push({workload,trial,version:v,input_sha256:fixtureHash,accepted:result.syncedCount,written:n,wal_bytes:Number(bytes),elapsed_ms:+ms.toFixed(2),http:events.length});
+-      }
++    assert.deepEqual(source(final), expectedSource);
++    const after = await snapshot();
++    assert.equal(written(before, after), 400);
++    const { advanced } = await one('SELECT count(*)::integer advanced FROM ' + target + ' q JOIN seed s USING(dedupe_key) WHERE q.updated_at>s.updated_at');
++    assert.equal(advanced, 400);
++    receipts.cases.push({ scenario, key: initial.dedupe_key, accepted: expected.syncedCount,
++      timestamps_advanced: advanced, rpc_batch_sizes: batchSizes, reviewer_blocked_rpc: lockObserved,
++      reviewer_updated_at: reviewed.edit_clock, delivery_updated_at: clock.delivered, advancement_us: clock.delta_us,
++      review_state: reviewState(final), original_identity_and_creation_preserved: true,
++      source_text: final.raw_text, retained_interpretation: final.metadata.retainedInterpretation,
++      roster_evidence_present: 'intakeRosterEvidence' in final.metadata, requests: tally(events) });
++  }
++
++  const baselineSync = loadSync('base');
++  const saved = await targetRow();
++  for (const drop of [false, true]) {
++    if (drop) {
++      await db.query(fs.readFileSync(path.join(here, 'rollback.sql'), 'utf8'));
++      assert.equal((await one('SELECT to_regprocedure($1)::text fn', [fn])).fn, null);
+     }
+-  }
+-  // The retained gateway logs have body length and media type, but no body.
+-  // A same-size valid envelope is a stage control; it does not recreate its data.
+-  const payload={headline:''};payload.headline='x'.repeat(14698-Buffer.byteLength(JSON.stringify(payload)));
+-  let sentBytes;
+-  const rest=client((u,opt,send)=>{assert.equal(opt.method,'PATCH');sentBytes=Buffer.byteLength(opt.body);return send()});
+-  const ctrl=await rest.from('news_feed_items').update(payload).eq('id',1);
+-  assert.ifError(ctrl.error);assert.equal((await one('select length(headline) n from news_feed_items where id=1')).n,payload.headline.length);
+-  assert.equal(sentBytes,14698);reports.card_patch_control={bytes:sentBytes,http:ctrl.status,valid_json:true,original_body_available:false};
+-  // Caller first, then optional schema rollback. Restore holds a historical seed
+-  // containing unknown metadata; the existing caller works both before and after DROP.
+-  await restore();
+-  await run('new');const restored=await targetRow();const rollbackState=reviewState(restored);
+-  await run('base');const oldWithRpc=await targetRow();
+-  await db.query(fs.readFileSync(path.join(here,'rollback.sql'),'utf8'));
+-  assert.equal((await one("select to_regprocedure('public.sync_tweet_review_sources_v1(jsonb)')::text fn")).fn,null);
+-  await run('base');const oldWithoutRpc=await targetRow();
+-  assert.equal(oldWithoutRpc.id,restored.id);assert.deepEqual(reviewState(oldWithRpc),rollbackState);assert.deepEqual(reviewState(oldWithoutRpc),rollbackState);
+-  reports.rollback={old_caller_rpc_present:true,old_caller_after_drop:true,queue_id_and_review_state_preserved:true,concurrent_old_writer_risk_returns:true};
+-  const cmp=(a,b)=>a-b;const median=xs=>[...xs].sort(cmp)[Math.floor(xs.length/2)];
+-  reports.medians=[];
+-  for(const workload of ['identical','10pct_changes'])for(const version of ['base','new']){
+-    const xs=reports.bench.filter(x=>x.workload===workload&&x.version===version);reports.medians.push({workload,version,rows:median(xs.map(x=>x.written)),wal_bytes:median(xs.map(x=>x.wal_bytes)),elapsed_ms:median(xs.map(x=>x.elapsed_ms)),range_ms:xs.map(x=>x.elapsed_ms).sort(cmp).filter((_,i)=>i===0||i===4),http:xs[0].http});
+-  }
+-  fs.writeFileSync(out,JSON.stringify(reports,null,2)+'\n');console.log(JSON.stringify({cases:reports.cases.length,medians:reports.medians,control:reports.card_patch_control},null,2));
++    assert.deepEqual(await baselineSync({ supabase: client(), perSourceLimit: 500 }), expected);
++    const final = await targetRow();
++    assert.equal(final.id, saved.id);
++    assert.deepEqual(reviewState(final), reviewState(saved));
++  }
++  receipts.rollback = { previous_caller_with_rpc: true, previous_caller_after_drop: true, concurrent_reviewer: false };
++  fs.writeFileSync(out, JSON.stringify(receipts, null, 2) + '\n');
++  console.log('Passed three reviewer-blocked deliveries, API role grants and caller-first rollback.');
+ }
+ (async()=>{
+   if(!Number.isInteger(pgOptions.port)||!process.env.FIXTURE_ROOT)throw Error('Run via reproduce.sh');
+--- a/reproduce.sh
++++ b/reproduce.sh
+@@ -23,9 +23,12 @@
+   mkdir -p "$scratch/base/$(dirname "$f")"
+   git -C "$repo" show "$rev:$f" > "$scratch/base/$f"
+ done
+-cp -R "$scratch/base" "$scratch/new"
+-mkdir -p "$scratch/new/supabase/migrations"
+-(cd "$scratch/new" && git apply --check "$here/proposal.patch" && git apply "$here/proposal.patch")
++export FIXTURE_CANDIDATE=5c51ad0d9b8f7dd004c380bb1f48a6716f4f2981
++export FIXTURE_MIGRATION=supabase/migrations/20261121190000_sync_tweet_review_sources_keep_delivery_time.sql
++for f in web/pages/api/v1/db/tweet-pattern-review.ts web/lib/sources/tweetPatternReview.ts web/lib/sources/tweetLineupParsing.ts "$FIXTURE_MIGRATION"; do
++  mkdir -p "$scratch/new/$(dirname "$f")"
++  git -C "$repo" show "$FIXTURE_CANDIDATE:$f" > "$scratch/new/$f"
++done
+ docker network create "$tag" >/dev/null
+ export FIXTURE_PG_PASSWORD=$(openssl rand -hex 32)
+ export FIXTURE_GATEWAY=$(docker network inspect "$tag" --format '{{(index .IPAM.Config 0).Gateway}}')

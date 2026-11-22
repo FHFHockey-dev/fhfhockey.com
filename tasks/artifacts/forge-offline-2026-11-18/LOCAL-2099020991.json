@@ -1,0 +1,117 @@
+{
+  "environment": "local disposable PostgreSQL 15 / PostgREST 16.6 / Node 22.23.4",
+  "evidenceScope": "Signed real handlers over loopback HTTP. SQL queue transport and RFC 3161 signer are local fixtures. Separate directly authenticated PostgreSQL witness session. All IDs/times below are synthetic local evidence.",
+  "gameId": 2099020991,
+  "releaseLabel": "f886ddac731ae825a12fab915848d2b5fd7d9b8c",
+  "phase": "succeeded",
+  "claim": "543fc867-3940-452c-b2eb-69c40f3beea0",
+  "revisionId": "caae184a-3909-4eee-ae6c-03f52aafeb1b",
+  "independent": "accepted",
+  "applicationDeliveries": 4,
+  "tsaCalls": 1,
+  "appToDbHttpRequests": {
+    "preflight": 2,
+    "capture": 135,
+    "publish": 6,
+    "readers": 23
+  },
+  "receipt": {
+    "claim": "543fc867-3940-452c-b2eb-69c40f3beea0",
+    "phase": "succeeded",
+    "steps": [
+      {
+        "stage": "preflight",
+        "beganAt": "2026-11-18T16:52:52.982778+00:00",
+        "queuedAt": "2026-11-18T16:52:52.967272+00:00",
+        "requestId": 1
+      },
+      {
+        "stage": "capture",
+        "beganAt": "2026-11-18T16:52:52.994559+00:00",
+        "queuedAt": "2026-11-18T16:52:52.990131+00:00",
+        "requestId": 2
+      },
+      {
+        "stage": "publish",
+        "beganAt": "2026-11-18T16:52:53.19799+00:00",
+        "queuedAt": "2026-11-18T16:52:53.19575+00:00",
+        "requestId": 3
+      },
+      {
+        "stage": "readers",
+        "beganAt": "2026-11-18T16:52:58.385859+00:00",
+        "queuedAt": "2026-11-18T16:52:58.383621+00:00",
+        "requestId": 4
+      }
+    ],
+    "gameId": 2099020991,
+    "opened": "2026-11-18T16:52:52.950332+00:00",
+    "policy": "pregame-native-v1",
+    "reason": "readers_recorded",
+    "armedAt": "2026-11-18T16:52:52.453588+00:00",
+    "custody": "qualified",
+    "readers": {
+      "daily": {
+        "points": 2.965,
+        "reason": null,
+        "playerId": "471001",
+        "legalSlot": "C#1",
+        "revisionId": "forge-daily-bridge-v1:543fc867-3940-452c-b2eb-69c40f3beea0",
+        "selectedRun": "543fc867-3940-452c-b2eb-69c40f3beea0"
+      },
+      "detailed": {
+        "points": null,
+        "reason": "missing_participation",
+        "playerId": "471001",
+        "legalSlot": null,
+        "revisionId": "caae184a-3909-4eee-ae6c-03f52aafeb1b",
+        "selectedRun": "543fc867-3940-452c-b2eb-69c40f3beea0"
+      },
+      "contextId": "synthetic-single-center-points-v1",
+      "evaluatedAt": "2026-11-18T16:52:58.386Z",
+      "playerNhlId": 8471001
+    },
+    "release": "f886ddac731ae825a12fab915848d2b5fd7d9b8c",
+    "dispatch": {
+      "id": "2e0b5532-301d-41ad-b685-6ded0f5b2915",
+      "state": "finished",
+      "reason": "endpoint_finished",
+      "queuedAt": "2026-11-18T16:52:52.990131+00:00",
+      "startedAt": "2026-11-18T16:52:52.994559+00:00"
+    },
+    "playerId": 8471001,
+    "slateDate": "2026-11-18",
+    "terminalAt": "2026-11-18T16:52:58.426535+00:00",
+    "independent": {
+      "reason": null,
+      "game_id": 2099020991,
+      "verdict": "accepted",
+      "claim_id": "543fc867-3940-452c-b2eb-69c40f3beea0",
+      "raw_sha256": "661357cb69ecbd56d6bbc4542c2f369716fa77f6a3903911897b7585b05a8cdc",
+      "verified_at": "2026-11-18T16:52:53.194998+00:00",
+      "token_sha256": "c3d7a59f37886649a2192914f1b576d4c4bee1b20aeda6eab543a8d42354a880",
+      "verifier_role": "forge_independent_verifier",
+      "canonical_sha256": "9606ddf01b3fbe3942cf1eb66595a93cc9139ea41879464536fbc81b08a4bfcc"
+    },
+    "inputCutoff": "2026-11-18T16:52:53.016467+00:00",
+    "publication": {
+      "runId": "543fc867-3940-452c-b2eb-69c40f3beea0",
+      "observedAt": "2026-11-18T16:52:58.380493+00:00",
+      "revisionId": "caae184a-3909-4eee-ae6c-03f52aafeb1b",
+      "publishedAt": "2026-11-18T16:52:58.365747+00:00",
+      "inputSnapshotId": "18341cc4-7e5c-4f9f-b9fb-2a0bfa6cf24c",
+      "alreadyPublished": true
+    },
+    "tokenSha256": "c3d7a59f37886649a2192914f1b576d4c4bee1b20aeda6eab543a8d42354a880",
+    "packetSha256": "661357cb69ecbd56d6bbc4542c2f369716fa77f6a3903911897b7585b05a8cdc",
+    "approvedStart": "2026-11-18T18:12:49+00:00",
+    "readerContext": "synthetic-single-center-points-v1",
+    "latestDispatch": "2026-11-18T17:05:49+00:00",
+    "canonicalSha256": "9606ddf01b3fbe3942cf1eb66595a93cc9139ea41879464536fbc81b08a4bfcc",
+    "fenceReleasedAt": null,
+    "tokenUpperBound": "2026-11-18T16:52:53.665+00:00",
+    "witnessDeadline": "2026-11-18T17:12:49+00:00",
+    "witnessAuthority": "automated",
+    "committedRevision": "caae184a-3909-4eee-ae6c-03f52aafeb1b"
+  }
+}

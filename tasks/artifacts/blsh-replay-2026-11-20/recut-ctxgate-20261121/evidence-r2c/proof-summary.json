@@ -1,0 +1,23 @@
+{
+ "proof": [
+  "ok",
+  24,
+  24,
+  []
+ ],
+ "negatives": [
+  "ok",
+  11,
+  11
+ ],
+ "routeShas": {
+  "native-1": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+  "context-1": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+  "native-2": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+  "context-2": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+  "native-rerun": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+  "context-rerun": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1"
+ },
+ "allRouteShasR3": true,
+ "sqlRefusals": 13
+}

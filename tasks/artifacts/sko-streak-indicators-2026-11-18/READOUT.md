@@ -1,0 +1,34 @@
+# Sko Element streak study · first historical pass
+
+The Sko Element owns the player-production question. Use Three Pillars Sustainability/Trends for research and the gamelog display. BLSH can read qualified outputs alongside market context. VuDu needs goalie-specific outcomes and baselines. [Owner intent](../calculation-inventory-2026-11-10/master/OWNER-INTENT-SKO-VUDU.md#6-outputs-consumers-and-product-boundaries)
+
+## Existing pieces
+
+| Source | What can be reused | Limit |
+|---|---|---|
+| [Trends sandbox](../../../web/pages/trendsSandbox.tsx) | Builds hot/cold segments with dates, indices and length; draws shaded rectangles and endpoint markers. | SVG gradient IDs identify chart elements. Persistent research episode IDs need an outcome and policy version. Snapshot grain and skipped missing values need reconciliation with played games. |
+| [Player Trends helper](../../../web/lib/trends/trendsSurface.ts) | Existing user-facing rolling-versus-baseline metric and latest run beyond ±8%. | Covers the latest run per metric. A shot-rate streak and a scoring streak answer different questions. |
+| [Legacy sKO series SQL](../../../web/sql/functions/analytics.rpc_sko_player_series.sql) | EWMA span 5 and separate hot/cold thresholds. | Frozen baseline uses 2021–22 through 2023–24. LAG compares endpoints only. Hot-hot-hot increments its counter twice; cold-neutral-cold can increment the cold counter, and subsequent neutral rows retain the last positive ID. Cross-season ordering and zero spread also need explicit handling. The quarantine registry lists no runtime TypeScript caller. |
+| [Sustainability player reader](../../../web/lib/sustainability/read.ts) | Explicit missing-probability contract. | Hot/normal/cold probabilities are pending calibration. |
+
+## Outcome, dates and episode IDs
+
+[Historical chart](debrincat-streaks.png) · [Indicator comparisons](indicator-profiles.csv) · [Relative-game profiles](phase-profiles.csv) · [Episodes](episodes.csv) · [Episode-to-game memberships](event_windows.csv.gz) · [Game rows](games.csv.gz) · [Reproduce from repository root](pilot.py)
+
+Pilot v1 uses raw NHL points for skaters. Within each uninterrupted player-season segment compute last-five points/GP minus the preceding non-overlapping 20 GP average. At two successive closes at least +0.40 above reference confirm hot; at two at or below −0.40 confirm cold. Exit at the first subsequent appearance outside the confirmed state. A single flagged game is insufficient. Threshold and windows are exploratory. No chart band is backdated. Rows with insufficient history stay unavailable. Dates, provider player ID, season and direction distinguish episodes within this fixed policy. Future combined exports must include the policy version and outcome key.
+
+GP counts player appearances. Start S is first confirmed appearance. Keep S−5…S−1, S…S+4 capped at the last inside game, all inside games, and E−2…E+2 where E is the first outside appearance. Same convention applies independently to hot and cold. Flag starts/ends censored by file boundaries. Event windows may overlap and some offsets have fewer observations. Post-exit observations can describe recovery; only prior observations may forecast the exit. A neutral first breach followed by confirmation is scored separately from anticipating the confirmation itself.
+
+## Findings and interpretation
+
+Input was the historical development file web/scripts/output/sko_features.parquet. Read only raw observed columns and identifiers, never stored targets, prediction outputs or sealed datasets. All 35,246 player-date rows were unique and had games_played=1. It contains 723 skaters from part of 2024–25. Its season_game_number can restart midseason, so all windows restart at discontinuities. The extract does not establish full league or point-in-time provider coverage. Only 7,162 rows were classifiable. Of 260 observed hot runs and 244 cold runs, 185 and 168 respectively had observable confirmed entries; 177 and 175 had observable exits.
+
+For each process feature use its five-game mean minus its own preceding 20-game mean. Compare higher versus lower feature change using pooled single-feature AUC. Case/control denominators and raw feature mean differences are in the CSV; PP/total time changes are seconds per appearance. During-state comparisons use confirmed interior games versus neutral games. Continuation and exit are complementary next-appearance outcomes among already-active games. They are not independent experiments. The early comparison uses a neutral, unbreached observation and asks whether the first breach starts next GP and confirms the following GP.
+
+Higher individual xG and shots show the clearest early hot signal of these five candidates (AUC .597 and .588). Before a cold breach, lower PP time and lower individual xG are weak (.528 and .529 in the lower-is-positive direction). Inside confirmed runs, shots and individual xG are elevated in hot runs and depressed in cold ones. At the next exit the best process contrasts are weak: lower PP time for hot exit (.554), lower missed shots for cold exit (.540). The exploratory data do not justify an exit alert. Shot change averaged +0.31 at hot E−1 and +0.02 at E+2; cold averaged −0.17 and +0.04. Available row counts vary by offset.
+
+The recent points gap itself ranked the early hot outcome at .824 and early cold at .674 in the expected directions. This is partly mechanical: future rolling labels reuse several already-observed games. Compare process features against recent production, streak age, the points about to roll off and state persistence before attributing incremental predictive value. One pooled development season with repeated skaters and overlapping windows supplies no independent validation, causal ranking or calibrated odds.
+
+## Next experiment
+
+Freeze the target, minimum meaningful change, reference policy, eligible population, rebound/exit convention and forecast horizons before accessing fresh evaluation data. Compare alternative labels on development data, including sustained future production with a wholly forward, non-overlapping scoring window. Keep points, league-scored fantasy points and Game Score separate. Account for low-production floors, repeated players, role/position, team changes, DNPs, missing games and end-of-season censoring. Test deployment, shot/ixG generation, chances, primary vs secondary assists, conversion and teammate/PP-unit changes at valid as-of times. Evaluate goalie starts/relief, shot quality, workload and stopping separately. Use season-forward splits with purged overlapping targets, player/episode-cluster uncertainty, precision-recall/base rate, calibration and Brier improvement over the frozen baselines. Present each driver with dated support, direction and uncertainty, and promote onset, continuation and exit individually only where they add held-out value.

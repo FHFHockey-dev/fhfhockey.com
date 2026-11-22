@@ -1,0 +1,6 @@
+authenticator_member|anon|f|f|f
+authenticator_member|authenticated|f|f|f
+authenticator_member|jwt_minted_emul|f|f|f
+authenticator_member|service_role|f|t|f
+login_role|postgres|t|t
+login_role|service_role|f|f

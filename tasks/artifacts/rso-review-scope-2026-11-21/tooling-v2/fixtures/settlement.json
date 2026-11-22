@@ -1,0 +1,86 @@
+[
+  {
+    "playerId": 8470001,
+    "gameId": 2026120101,
+    "target": "SHOTS_ON_GOAL",
+    "gameDate": "2026-12-01",
+    "actual": 3,
+    "dressed": true,
+    "recordedAt": "2026-12-02T17:00:00Z",
+    "settlementVersion": 1
+  },
+  {
+    "playerId": 8470002,
+    "gameId": 2026120101,
+    "target": "SHOTS_ON_GOAL",
+    "gameDate": "2026-12-01",
+    "actual": 1,
+    "dressed": true,
+    "recordedAt": "2026-12-02T17:00:00Z",
+    "settlementVersion": 1
+  },
+  {
+    "playerId": 8470003,
+    "gameId": 2026120102,
+    "target": "SHOTS_ON_GOAL",
+    "gameDate": "2026-12-01",
+    "actual": 0,
+    "dressed": false,
+    "recordedAt": "2026-12-02T17:00:00Z",
+    "settlementVersion": 1
+  },
+  {
+    "playerId": 8470004,
+    "gameId": 2026120102,
+    "target": "SHOTS_ON_GOAL",
+    "gameDate": "2026-12-01",
+    "actual": 2,
+    "dressed": true,
+    "recordedAt": "2026-12-02T17:00:00Z",
+    "settlementVersion": 1
+  },
+  {
+    "playerId": 8470001,
+    "gameId": 2026120101,
+    "target": "GOALS",
+    "gameDate": "2026-12-01",
+    "actual": 1,
+    "dressed": true,
+    "recordedAt": "2026-12-02T17:00:00Z",
+    "settlementVersion": 1,
+    "penaltyShotExcluded": 0
+  },
+  {
+    "playerId": 8470002,
+    "gameId": 2026120101,
+    "target": "GOALS",
+    "gameDate": "2026-12-01",
+    "actual": 0,
+    "dressed": true,
+    "recordedAt": "2026-12-02T17:00:00Z",
+    "settlementVersion": 1,
+    "penaltyShotExcluded": 0
+  },
+  {
+    "playerId": 8470003,
+    "gameId": 2026120102,
+    "target": "GOALS",
+    "gameDate": "2026-12-01",
+    "actual": 0,
+    "dressed": false,
+    "recordedAt": "2026-12-02T17:00:00Z",
+    "settlementVersion": 1,
+    "penaltyShotExcluded": 0
+  },
+  {
+    "playerId": 8470004,
+    "gameId": 2026120102,
+    "target": "GOALS",
+    "gameDate": "2026-12-01",
+    "actual": 0,
+    "dressed": true,
+    "recordedAt": "2026-12-02T17:00:00Z",
+    "settlementVersion": 1,
+    "penaltyShotExcluded": 0
+  }
+]

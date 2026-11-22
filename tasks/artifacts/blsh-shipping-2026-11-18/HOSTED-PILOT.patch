@@ -1,0 +1,2235 @@
+diff --git a/supabase/migrations/20261118155445_blsh_official_pilot.sql b/supabase/migrations/20261118155445_blsh_official_pilot.sql
+new file mode 100644
+index 0000000000000000000000000000000000000000..eee1f32bb208e6b63d8d48e4c7ea0834a24f9a87
+--- /dev/null
++++ b/supabase/migrations/20261118155445_blsh_official_pilot.sql
+@@ -0,0 +1,237 @@
++-- Durable custody for one hosted official slate. Dispatch requires a separate signed authorization.
++begin;
++set local lock_timeout = '5s';
++
++-- Only the owner can replace the database clock; no caller controls slot or ledger timestamps.
++create function public.blsh_official_clock_v1() returns timestamptz language sql volatile set search_path = '' as $$
++  select pg_catalog.clock_timestamp()
++$$;
++
++create table public.blsh_official_runs (
++  run_id uuid primary key default gen_random_uuid(),
++  source_date date not null unique check (source_date = date '2026-11-20'),
++  native_run_id uuid not null unique references public.blsh_capture_runs(run_id),
++  native_manifest_sha256 text not null check (native_manifest_sha256 ~ '^[0-9a-f]{64}$'),
++  deployment_id text not null check (deployment_id ~ '^[A-Za-z0-9_-]{1,128}$'),
++  git_commit_sha text not null check (git_commit_sha ~ '^[0-9a-f]{40}$'),
++  schedule_sha256 text not null check (schedule_sha256 ~ '^[0-9a-f]{64}$'),
++  game_ids integer[] not null check (cardinality(game_ids) between 1 and 16),
++  claimed_at timestamptz not null default public.blsh_official_clock_v1(),
++  state text not null default 'claimed' check (state in ('claimed','failed','packet_complete_pending_review')),
++  closed_at timestamptz,
++  reason text check (reason ~ '^[a-z][a-z0-9_:]{2,100}$'),
++  manifest_sha256 text check (manifest_sha256 ~ '^[0-9a-f]{64}$'),
++  check ((state = 'claimed') = (closed_at is null)),
++  check ((state = 'failed') = (reason is not null)),
++  check ((state = 'packet_complete_pending_review') = (manifest_sha256 is not null))
++);
++create table public.blsh_official_objects (
++  run_id uuid not null references public.blsh_official_runs(run_id),
++  ordinal integer not null check (ordinal between 1 and 50),
++  path text not null unique,
++  bytes integer not null check (bytes between 1 and 4194304),
++  sha256 text not null check (sha256 ~ '^[0-9a-f]{64}$'),
++  written_at timestamptz not null default public.blsh_official_clock_v1(),
++  game_ordinal integer,
++  game_id integer,
++  intent_url text,
++  check ((game_ordinal is null) = (game_id is null) and (game_id is null) = (intent_url is null)),
++  primary key (run_id,ordinal),
++  unique (run_id,game_ordinal)
++);
++alter table public.blsh_official_runs enable row level security;
++alter table public.blsh_official_objects enable row level security;
++revoke all on public.blsh_official_runs,public.blsh_official_objects from public,anon,authenticated,service_role;
++grant select on public.blsh_official_runs,public.blsh_official_objects to service_role;
++
++-- Original bytes and metadata commit together. Normal metadata readback never loads bytea.
++create table public.blsh_official_originals (
++  run_id uuid not null, ordinal integer not null,
++  body bytea not null check (octet_length(body) between 1 and 4194304),
++  primary key(run_id,ordinal),
++  foreign key(run_id) references public.blsh_official_runs(run_id)
++);
++-- The indexed write clock is sampled after its original bytes have been inserted.
++alter table public.blsh_official_objects add foreign key(run_id,ordinal) references public.blsh_official_originals(run_id,ordinal);
++alter table public.blsh_official_originals enable row level security;
++revoke all on public.blsh_official_originals from public,anon,authenticated,service_role;
++grant select on public.blsh_official_originals to service_role;
++
++-- Prevent accidental future mutation even under broader table grants. Only the
++-- run's single terminal transition is mutable; all binding fields stay fixed.
++create function public.blsh_official_guard_v1() returns trigger language plpgsql set search_path = '' as $$
++begin
++  if tg_op <> 'UPDATE' or tg_table_name <> 'blsh_official_runs' then raise exception 'official_ledger_immutable'; end if;
++  if old.state <> 'claimed' or new.state='claimed' or
++    (to_jsonb(old)-array['state','closed_at','reason','manifest_sha256']) is distinct from
++    (to_jsonb(new)-array['state','closed_at','reason','manifest_sha256']) then raise exception 'official_run_immutable'; end if;
++  return new;
++end $$;
++create trigger blsh_official_run_guard before update or delete on public.blsh_official_runs for each row execute function public.blsh_official_guard_v1();
++create trigger blsh_official_index_guard before update or delete on public.blsh_official_objects for each row execute function public.blsh_official_guard_v1();
++create trigger blsh_official_original_guard before update or delete on public.blsh_official_originals for each row execute function public.blsh_official_guard_v1();
++create trigger blsh_official_run_keep before truncate on public.blsh_official_runs execute function public.blsh_official_guard_v1();
++create trigger blsh_official_index_keep before truncate on public.blsh_official_objects execute function public.blsh_official_guard_v1();
++create trigger blsh_official_original_keep before truncate on public.blsh_official_originals execute function public.blsh_official_guard_v1();
++
++create function public.blsh_official_binding_v1(r public.blsh_official_runs) returns jsonb
++language sql stable strict set search_path = '' as $$
++  select jsonb_build_object('runId',r.run_id,'sourceDate',r.source_date,'nativeRunId',r.native_run_id,
++    'nativeManifestSHA256',r.native_manifest_sha256,'deploymentId',r.deployment_id,'gitCommitSha',r.git_commit_sha,
++    'scheduleSHA256',r.schedule_sha256,'gameIds',r.game_ids)
++$$;
++
++create function public.blsh_official_slot_v1(ids integer[], n integer, out filename text, out lim integer)
++returns record language sql immutable strict set search_path = '' as $$
++  select case when n=1 then 'RUNTIME.json' when n=cardinality(ids)*3+2 then 'MANIFEST.json'
++    when n between 2 and cardinality(ids)*3+1 then case (n-2)%3
++      when 0 then 'operation-' || ((n-2)/3+1) || '-STARTED.json'
++      when 1 then 'boxscore-' || ids[(n-2)/3+1] || '.body.json'
++      when 2 then 'boxscore-' || ids[(n-2)/3+1] || '.receipt.json' end end,
++    case when n between 2 and cardinality(ids)*3+1 and (n-2)%3=1 then 4194304
++      when n between 2 and cardinality(ids)*3+1 and (n-2)%3=2 then 393216 else 65536 end
++$$;
++
++create function public.blsh_official_claim_v1(p_source_date date,p_native_run_id uuid,p_native_manifest_sha256 text,
++  p_deployment_id text,p_git_commit_sha text,p_schedule_sha256 text,p_game_ids integer[]) returns jsonb
++language plpgsql security definer set search_path = '' as $$
++declare native_deployment jsonb; src jsonb; id uuid; at_utc timestamptz; after_write timestamptz;
++begin
++  if p_source_date is distinct from date '2026-11-20'
++    or p_deployment_id is null or p_deployment_id !~ '^[A-Za-z0-9_-]{1,128}$'
++    or p_git_commit_sha is null or p_git_commit_sha !~ '^[0-9a-f]{40}$'
++    or p_game_ids is null or cardinality(p_game_ids) not between 1 and 16 or array_ndims(p_game_ids) <> 1
++    or array_lower(p_game_ids,1) <> 1 or exists (select 1 from generate_subscripts(p_game_ids,1) i
++      where p_game_ids[i] is null or p_game_ids[i] not between 2026020000 and 2026029999 or p_game_ids[i] <= p_game_ids[i-1])
++    then raise exception 'official_binding_invalid'; end if;
++  select deployment into strict native_deployment from public.blsh_capture_runs where run_id=p_native_run_id for share;
++  src := public.blsh_context_source_v1(p_source_date,p_native_run_id,p_native_manifest_sha256);
++  if native_deployment->>'deploymentId' is distinct from p_deployment_id
++    or not (native_deployment ? 'gitCommitSha')
++    or (native_deployment->'gitCommitSha' <> 'null'::jsonb and native_deployment->>'gitCommitSha' is distinct from p_git_commit_sha)
++    or p_schedule_sha256 is null or src->'objects'->5->>'sha256' is distinct from p_schedule_sha256
++    then raise exception 'official_native_binding_mismatch'; end if;
++  -- Exactly one date is eligible. Serialize competing claims before evaluating
++  -- the slot, including an uncommitted insert that later rolls back.
++  lock table public.blsh_official_runs in share row exclusive mode;
++  at_utc := public.blsh_official_clock_v1();
++  if at_utc < timestamptz '2026-11-21 12:45:00+00' or at_utc >= timestamptz '2026-11-21 12:46:00+00'
++    or at_utc < (src->>'closedAtUTC')::timestamptz then raise exception 'official_claim_outside_slot'; end if;
++  insert into public.blsh_official_runs(claimed_at,source_date,native_run_id,native_manifest_sha256,deployment_id,git_commit_sha,schedule_sha256,game_ids)
++    values(at_utc,p_source_date,p_native_run_id,p_native_manifest_sha256,p_deployment_id,p_git_commit_sha,p_schedule_sha256,p_game_ids)
++    on conflict do nothing returning run_id into id;
++  after_write := public.blsh_official_clock_v1();
++  if after_write < at_utc or after_write >= timestamptz '2026-11-21 12:46:00+00' then raise exception 'official_claim_outside_slot'; end if;
++  if id is null then
++    if exists (select 1 from public.blsh_official_runs where source_date=p_source_date) then return jsonb_build_object('claimed',false); end if;
++    raise exception 'official_claim_conflict';
++  end if;
++  return jsonb_build_object('claimed',true,'runId',id);
++end $$;
++
++create function public.blsh_official_object_v1(p_run_id uuid,p_ordinal integer,p_path text,p_bytes integer,p_sha256 text,p_body_base64 text)
++returns boolean language plpgsql security definer set search_path = '' as $$
++declare r public.blsh_official_runs%rowtype; n integer; g integer; gid integer; url text;
++  filename text; lim integer := 65536; journal jsonb; raw bytea; journal_text text; runtime jsonb; at_utc timestamptz; after_write timestamptz; deadline timestamptz;
++begin
++  select * into strict r from public.blsh_official_runs where run_id=p_run_id and state='claimed' for update;
++  select count(*)+1 into n from public.blsh_official_objects where run_id=p_run_id;
++  if p_ordinal is distinct from n or n > cardinality(r.game_ids)*3+2 then raise exception 'official_object_order'; end if;
++  select s.filename,s.lim into filename,lim from public.blsh_official_slot_v1(r.game_ids,n) s;
++  if p_bytes is null or p_bytes not between 1 and lim or p_sha256 is null or p_sha256 !~ '^[0-9a-f]{64}$'
++    or p_body_base64 is null or octet_length(p_body_base64) <> 4*((p_bytes+2)/3) then raise exception 'official_object_scope_or_bounds'; end if;
++  raw := decode(p_body_base64,'base64');
++  if octet_length(raw) <> p_bytes or encode(sha256(raw),'hex') is distinct from p_sha256 then raise exception 'official_object_digest'; end if;
++  if n=1 then
++    runtime := convert_from(raw,'UTF8')::jsonb;
++    if not (runtime @> public.blsh_official_binding_v1(r)) or runtime->'gameIds' is distinct from to_jsonb(r.game_ids) or runtime->>'version' is distinct from 'fhfh.blsh.official-pilot-runtime.v1'
++      or runtime->>'region' is distinct from 'iad1' or runtime->>'acquisitionClass' is distinct from 'vercel_direct_https'
++      or (runtime->>'startedAtUTC' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z$') is not true
++      or (length(runtime->>'grantBase64') between 1 and 4096) is not true
++      or runtime->>'acquisitionPinsSHA256' is distinct from encode(sha256(decode(runtime->>'grantBase64','base64')),'hex')
++      then raise exception 'official_runtime_binding'; end if;
++  else
++    select convert_from(body,'UTF8')::jsonb into strict runtime from public.blsh_official_originals where run_id=p_run_id and ordinal=1;
++  end if;
++  if n between 2 and cardinality(r.game_ids)*3+1 and (n-2)%3=0 then
++    g := (n-2)/3+1; gid := r.game_ids[g];
++    url := 'https://api-web.nhle.com/v1/gamecenter/' || gid || '/boxscore';
++    journal_text := convert_from(raw,'UTF8'); journal := journal_text::jsonb;
++    if not (journal ?& array['operation','method','url','acquisitionPinsSHA256','startedAtUTC'])
++      or (select count(*) from json_each(journal_text::json)) <> 5
++      or journal->'operation' is distinct from to_jsonb(g) or journal->>'method' is distinct from 'GET'
++      or journal->>'url' is distinct from url or journal->>'acquisitionPinsSHA256' is distinct from runtime->>'acquisitionPinsSHA256'
++      or (journal->>'startedAtUTC' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z$') is not true
++      then raise exception 'official_intent_scope'; end if;
++  end if;
++  if p_path is distinct from 'official-v1/' || r.source_date::text || '/' || r.run_id::text || '/' || filename
++    then raise exception 'official_object_scope_or_bounds'; end if;
++  lock table public.blsh_official_originals,public.blsh_official_objects in row exclusive mode;
++  insert into public.blsh_official_originals(run_id,ordinal,body) values(p_run_id,n,raw);
++  at_utc := public.blsh_official_clock_v1();
++  deadline := least((runtime->>'startedAtUTC')::timestamptz + interval '120 seconds',r.claimed_at + interval '225 seconds');
++  if at_utc > deadline then raise exception 'official_acquisition_deadline'; end if;
++  if (runtime->>'startedAtUTC')::timestamptz not between r.claimed_at and at_utc
++    or exists(select 1 from public.blsh_official_objects where run_id=p_run_id and ordinal=n-1 and written_at>at_utc)
++    then raise exception 'official_object_clock'; end if;
++  if journal is not null and (journal->>'startedAtUTC')::timestamptz not between (runtime->>'startedAtUTC')::timestamptz and at_utc
++    then raise exception 'official_intent_scope'; end if;
++  insert into public.blsh_official_objects(run_id,ordinal,path,bytes,sha256,written_at,game_ordinal,game_id,intent_url)
++    values(p_run_id,n,p_path,p_bytes,p_sha256,at_utc,case when url is not null then g end,case when url is not null then gid end,url);
++  after_write := public.blsh_official_clock_v1();
++  if after_write not between at_utc and deadline then raise exception 'official_acquisition_deadline'; end if;
++  if journal is not null and (after_write >= (journal->>'startedAtUTC')::timestamptz + interval '15 seconds'
++    or after_write + interval '15 seconds' > deadline) then raise exception 'official_intent_deadline'; end if;
++  return true;
++end $$;
++
++create function public.blsh_official_close_v1(p_run_id uuid,p_state text,p_reason text,p_manifest_sha256 text,p_manifest_text text)
++returns boolean language plpgsql security definer set search_path = '' as $$
++declare r public.blsh_official_runs%rowtype; final public.blsh_official_objects%rowtype; files jsonb; manifest jsonb; runtime jsonb; at_utc timestamptz; after_write timestamptz; deadline timestamptz;
++begin
++  lock table public.blsh_official_runs in row exclusive mode;
++  select * into strict r from public.blsh_official_runs where run_id=p_run_id and state='claimed' for update;
++  if p_state='packet_complete_pending_review' then
++    if p_reason is not null or p_manifest_text is null or octet_length(p_manifest_text) not between 1 and 65536
++      or encode(sha256(convert_to(p_manifest_text,'UTF8')),'hex') is distinct from p_manifest_sha256 then raise exception 'official_manifest_digest'; end if;
++    perform 1 from public.blsh_capture_runs where run_id=r.native_run_id for share;
++    perform public.blsh_context_source_v1(r.source_date,r.native_run_id,r.native_manifest_sha256);
++    select * into strict final from public.blsh_official_objects where run_id=p_run_id and ordinal=cardinality(r.game_ids)*3+2;
++    select jsonb_agg(jsonb_build_object('file',split_part(path,'/',4),'sha256',sha256,'bytes',bytes) order by ordinal)
++      into files from public.blsh_official_objects where run_id=p_run_id and ordinal < final.ordinal;
++    manifest := p_manifest_text::jsonb;
++    select convert_from(body,'UTF8')::jsonb into strict runtime from public.blsh_official_originals where run_id=p_run_id and ordinal=1;
++    deadline := least((runtime->>'startedAtUTC')::timestamptz + interval '120 seconds',r.claimed_at + interval '225 seconds');
++    if not (manifest @> public.blsh_official_binding_v1(r)) or manifest->'gameIds' is distinct from to_jsonb(r.game_ids)
++      or (select count(*) from jsonb_object_keys(manifest))<>15 or manifest->>'version' is distinct from 'fhfh.blsh.official-pilot-manifest.v1'
++      or manifest->>'status' is distinct from 'acquisition_complete_pending_review'
++      or manifest->'requests' is distinct from to_jsonb(cardinality(r.game_ids)) or manifest->'retries' is distinct from to_jsonb(0)
++      or manifest->>'acquisitionPinsSHA256' is distinct from runtime->>'acquisitionPinsSHA256'
++      or (manifest->>'completedAtUTC' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z$') is not true
++      or (manifest->>'completedAtUTC')::timestamptz not between (runtime->>'startedAtUTC')::timestamptz and final.written_at
++      then raise exception 'official_terminal_binding'; end if;
++    if final.sha256 is distinct from p_manifest_sha256 or final.bytes <> octet_length(p_manifest_text)
++      or manifest->>'runId' is distinct from r.run_id::text or manifest->>'sourceDate' is distinct from r.source_date::text
++      or manifest->'files' is distinct from files or (select count(*) from json_each(p_manifest_text::json)) <>
++        (select count(*) from jsonb_object_keys(manifest))
++      or exists(select 1 from json_array_elements(p_manifest_text::json->'files') row where (select count(*) from json_each(row))<>3)
++      then raise exception 'official_manifest_index_mismatch'; end if;
++  elsif p_state='failed' then
++    if p_reason is null or p_reason !~ '^[a-z][a-z0-9_:]{2,100}$' or p_manifest_sha256 is not null or p_manifest_text is not null
++      then raise exception 'official_failure_invalid'; end if;
++  else raise exception 'official_state_invalid';
++  end if;
++  update public.blsh_official_runs set state=p_state,reason=p_reason,manifest_sha256=p_manifest_sha256,
++    closed_at=public.blsh_official_clock_v1() where run_id=p_run_id returning closed_at into at_utc;
++  after_write := public.blsh_official_clock_v1();
++  if after_write < at_utc or at_utc < r.claimed_at or (p_state='packet_complete_pending_review'
++    and (at_utc < final.written_at or after_write > deadline)) then raise exception 'official_terminal_binding'; end if;
++  return true;
++end $$;
++
++revoke all on function public.blsh_official_guard_v1(),public.blsh_official_clock_v1(),public.blsh_official_binding_v1(public.blsh_official_runs),public.blsh_official_slot_v1(integer[],integer),public.blsh_official_claim_v1(date,uuid,text,text,text,text,integer[]),
++  public.blsh_official_object_v1(uuid,integer,text,integer,text,text),public.blsh_official_close_v1(uuid,text,text,text,text)
++  from public,anon,authenticated,service_role;
++grant execute on function public.blsh_official_claim_v1(date,uuid,text,text,text,text,integer[]),
++  public.blsh_official_object_v1(uuid,integer,text,integer,text,text),public.blsh_official_close_v1(uuid,text,text,text,text) to service_role;
++commit;
+diff --git a/supabase/tests/blsh_official_pilot.py b/supabase/tests/blsh_official_pilot.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..810b9cc3eed48d3689c74639f819892532650b4f
+--- /dev/null
++++ b/supabase/tests/blsh_official_pilot.py
+@@ -0,0 +1,233 @@
++#!/usr/bin/env python3
++"""Disposable Unix-socket-only PostgreSQL 15 proof, with local Storage metadata stubs."""
++from concurrent.futures import ThreadPoolExecutor
++from contextlib import closing
++from hashlib import sha256
++from base64 import b64encode
++import json
++import os
++from pathlib import Path
++import subprocess
++import tempfile
++from threading import Barrier
++from time import monotonic, sleep
++from uuid import uuid4
++from importlib.util import module_from_spec, spec_from_file_location
++
++import psycopg2
++
++spec = spec_from_file_location("context_test",Path(__file__).with_name("blsh_request_context_custody.py"))
++context = module_from_spec(spec)
++spec.loader.exec_module(context)
++sql, rpc, refused = context.sql,context.rpc,context.refused
++DAY="2026-11-20"
++CLOCK="2026-11-21T12:45:05.000Z"
++DEP="dpl_fixture"
++GIT="f"*40
++IDS=[2026020301,2026020302]
++SCHEDULE=sha256(b"schedule").hexdigest()
++
++def exercise(socket):
++    def connect(role):
++        con=psycopg2.connect(host=socket,port=5432,dbname="postgres",user=role)
++        con.autocommit=True
++        return con
++    with closing(connect("postgres")) as admin:
++        sql(admin,"""create role anon login; create role authenticated login; create role service_role bypassrls login;
++            create role custody_owner login; grant create,usage on schema public to custody_owner;
++            create schema storage authorization custody_owner;""")
++    with closing(connect("custody_owner")) as own, closing(connect("service_role")) as svc:
++        sql(own,"""alter default privileges in schema public grant all on tables to anon,authenticated,service_role;
++            alter default privileges in schema public grant all on functions to anon,authenticated,service_role;
++            create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
++            create table storage.objects(bucket_id text,name text,metadata jsonb,primary key(bucket_id,name));
++            alter table storage.objects enable row level security;
++            grant usage on schema storage to anon,authenticated,service_role;
++            grant all on storage.objects, storage.buckets to service_role;
++            grant select,insert on storage.objects to anon,authenticated;
++            create policy other_storage on storage.objects for all using(true) with check(true);""")
++        for name in ["20261116000000_blsh_native_capture_v6.sql","20261118131414_blsh_request_context_custody.sql","20261118155445_blsh_official_pilot.sql"]:
++            sql(own,(context.MIGRATIONS/name).read_text())
++        def storage(path,size,bucket):
++            sql(own,"insert into storage.objects values(%s,%s,jsonb_build_object('size',%s))",(bucket,path,size))
++        def native(day,count=20,commit=GIT):
++            rid=str(uuid4())
++            sql(own,"""insert into public.blsh_capture_runs(run_id,pipeline,source_date,state,deployment,manifest_sha256,closed_at)
++                values(%s,'native-v6',%s,'packet_complete_pending_review',%s,%s,'2026-11-21 12:10:00Z')""",
++                (rid,day,json.dumps(dict(deploymentId=DEP,gitCommitSha=commit)),context.H))
++            for i,name in enumerate(context.NATIVE[:count],1):
++                path=f"native-v6/{day}/{rid}/{name}"
++                storage(path,1,"blsh-native-packets")
++                sql(own,"insert into blsh_capture_objects(run_id,ordinal,path,bytes,sha256) values(%s,%s,%s,1,%s)",(rid,i,path,SCHEDULE if i==6 else context.H))
++            return [day,rid,context.H,DEP,GIT,SCHEDULE,IDS]
++        claim=lambda conn,pins: rpc(conn,"blsh_official_claim_v1",*pins)
++        # Change a test-only clock row from a separate transaction while the RPC is blocked.
++        sql(own,"create table official_fixture_clock(at_utc timestamptz not null); revoke all on official_fixture_clock from public,anon,authenticated,service_role")
++        sql(own,"insert into official_fixture_clock values (%s)",(CLOCK,))
++        sql(own,"""create or replace function public.blsh_official_clock_v1() returns timestamptz language sql volatile set search_path='' as $$
++            select at_utc from public.official_fixture_clock $$""")
++        def clock(at):
++            sql(own,"update public.official_fixture_clock set at_utc=%s",(at,))
++        clock(CLOCK)
++        def blocked_write(operation, table, after, error=None, *, after_write=False, uncommitted_claim=None):
++            # An owner-only trigger barrier also exercises the final check after DML.
++            with closing(connect("custody_owner")) as blocker, ThreadPoolExecutor(max_workers=1) as pool:
++                if after_write:
++                    sql(own,"""create function public.official_fixture_wait() returns trigger language plpgsql as $$
++                        begin perform pg_advisory_xact_lock(112145); return new; end $$""")
++                    sql(own,f"create trigger official_fixture_wait after insert or update on public.{table} for each row execute function public.official_fixture_wait()")
++                sql(blocker,"begin")
++                if uncommitted_claim is not None: assert claim(blocker,uncommitted_claim)["claimed"]
++                elif after_write: sql(blocker,"select pg_advisory_xact_lock(112145)")
++                else: sql(blocker,f"lock table public.{table} in share mode")
++                future=pool.submit(operation)
++                try:
++                    until=monotonic()+4
++                    while not sql(own,"select %s=any(pg_blocking_pids(%s))",(blocker.get_backend_pid(),svc.get_backend_pid())):
++                        assert monotonic()<until,"waiting RPC did not reach its lock"
++                        sleep(.01)
++                    clock(after)
++                finally:
++                    sql(blocker,"rollback" if uncommitted_claim is not None else "commit")
++                try:
++                    if error is None: return future.result()
++                    refused(future.result,error)
++                finally:
++                    if after_write:
++                        sql(own,f"drop trigger official_fixture_wait on public.{table}; drop function public.official_fixture_wait()")
++                    clock(CLOCK)
++        # Exercise exceptional sources without consuming the single pilot date.
++        sql(own,"begin");short=native(DAY,count=19)
++        refused(lambda:claim(own,short),"context_native_index_or_storage_invalid")
++        sql(own,"rollback")
++        sql(own,"begin");nullable=native(DAY,commit=None)
++        assert claim(own,nullable)["claimed"]
++        sql(own,"rollback")
++        pins=native(DAY)
++        for at in ["2026-11-21T12:44:59.999999Z","2026-11-21T12:46:00.000000Z"]:
++            clock(at)
++            refused(lambda:claim(svc,pins),"official_claim_outside_slot")
++        clock(CLOCK)
++        for k,wrong,reason in [(0,"2026-11-21","official_binding_invalid"),(3,"other","official_native_binding"),(4,"1"*40,"official_native_binding"),(5,"0"*64,"official_native_binding"),(6,IDS[::-1],"official_binding_invalid"),(6,[IDS[0],IDS[0]],"official_binding_invalid")]:
++            bad=pins.copy();bad[k]=wrong
++            refused(lambda:claim(svc,bad),reason)
++        for after_write in (False,True):
++            blocked_write(lambda:claim(svc,pins),"blsh_official_runs","2026-11-21T12:46:00.000001Z","official_claim_outside_slot",after_write=after_write)
++            assert sql(own,"select count(*) from blsh_official_runs")==0
++        blocked_write(lambda:claim(svc,pins),"blsh_official_runs","2026-11-21T12:46:00.000001Z","official_claim_outside_slot",uncommitted_claim=pins)
++        assert sql(own,"select count(*) from blsh_official_runs")==0
++        later="2026-11-21T12:45:06.000Z"
++        sql(svc,"begin")
++        acknowledged=blocked_write(lambda:claim(svc,pins),"blsh_official_runs",later)
++        assert sql(svc,"select claimed_at=%s::timestamptz from blsh_official_runs where run_id=%s",(later,acknowledged["runId"]))
++        sql(svc,"rollback")
++        barrier=Barrier(4)
++        def race(_):
++            with closing(connect("service_role")) as c:
++                barrier.wait()
++                return claim(c,pins)
++        with ThreadPoolExecutor(max_workers=4) as pool: results=list(pool.map(race,range(4)))
++        winners=[r for r in results if r["claimed"]]
++        assert len(winners)==1 and results.count({"claimed":False})==3
++        run=winners[0]["runId"]; prefix=f"official-v1/{pins[0]}/{run}/"
++        print("PASS exact native 20/20, schedule/deployment pins, sorted slate, four concurrent claims")
++        for role in ["anon","authenticated"]:
++            with closing(connect(role)) as c:
++                refused(lambda:claim(c,pins),"permission denied")
++                refused(lambda:sql(c,"select * from public.blsh_official_objects"),"permission denied")
++                refused(lambda:sql(c,"select body from public.blsh_official_originals"),"permission denied")
++        for tab in ["blsh_official_runs","blsh_official_objects","blsh_official_originals"]:
++            for perm in ["INSERT","UPDATE","DELETE","TRUNCATE"]:
++                assert sql(own,"select has_table_privilege('service_role',%s,%s)",(tab,perm)) is False
++            refused(lambda:sql(svc,"delete from "+tab),"permission denied")
++        refused(lambda:sql(svc,"select public.blsh_official_clock_v1()"),"permission denied")
++        sql(svc,"begin")
++        assert rpc(svc,"blsh_official_close_v1",run,"failed","lost_ack",None,None)
++        assert claim(svc,pins)=={"claimed":False}
++        sql(svc,"rollback")
++        files=[]
++        def txt(obj):return json.dumps(obj,separators=(",",":"))
++        def put(n,name,body):
++            path=prefix+name;digest=sha256(body.encode()).hexdigest()
++            assert rpc(svc,"blsh_official_object_v1",run,n,path,len(body.encode()),digest,b64encode(body.encode()).decode())
++            files.append(dict(file=name,bytes=len(body.encode()),sha256=digest))
++            return digest
++        approval=dict(runId=run,sourceDate=DAY,nativeRunId=pins[1],nativeManifestSHA256=context.H,deploymentId=DEP,gitCommitSha=GIT,scheduleSHA256=SCHEDULE,gameIds=IDS)
++        grant=b'{"synthetic":true}'; grant_hash=sha256(grant).hexdigest()
++        runtime=dict(**approval,version="fhfh.blsh.official-pilot-runtime.v1",region="iad1",acquisitionClass="vercel_direct_https",startedAtUTC=CLOCK,grantBase64=b64encode(grant).decode(),acquisitionPinsSHA256=grant_hash)
++        refused(lambda:put(1,"RUNTIME.json",txt(dict(runtime,gameIds=IDS[::-1]))),"official_runtime_binding")
++        put(1,"RUNTIME.json",txt(runtime))
++        refused(lambda:sql(own,"update blsh_official_originals set body=%s where run_id=%s",(b"replaced",run)),"official_ledger_immutable")
++        refused(lambda:sql(own,"truncate blsh_official_originals cascade"),"official_ledger_immutable")
++        refused(lambda:sql(own,"update blsh_official_runs set native_manifest_sha256=%s where run_id=%s",("0"*64,run)),"official_run_immutable")
++        refused(lambda:rpc(svc,"blsh_official_object_v1",run,3,prefix+"x",1,context.H,None),"official_object_order")
++        for i,g in enumerate(IDS,1):
++            url=f"https://api-web.nhle.com/v1/gamecenter/{g}/boxscore"
++            journal=dict(operation=i,method="GET",url=url,acquisitionPinsSHA256=grant_hash,startedAtUTC=CLOCK)
++            jpath=prefix+f"operation-{i}-STARTED.json"
++            bad=txt(dict(journal,url=url+"?widen"))
++            refused(lambda:rpc(svc,"blsh_official_object_v1",run,3*i-1,jpath,len(bad),sha256(bad.encode()).hexdigest(),b64encode(bad.encode()).decode()),"official_intent_scope")
++            if i==1:
++                good=txt(journal)
++                def intent():
++                    return rpc(svc,"blsh_official_object_v1",run,2,jpath,len(good),sha256(good.encode()).hexdigest(),b64encode(good.encode()).decode())
++                for table,after_write in [("blsh_official_originals",False),("blsh_official_objects",False),("blsh_official_objects",True)]:
++                    blocked_write(intent,table,"2026-11-21T12:47:05.000001Z","official_acquisition_deadline",after_write=after_write)
++                    for name in ["blsh_official_objects","blsh_official_originals"]:
++                        assert sql(own,"select count(*) from "+name+" where run_id=%s and ordinal=2",(run,))==0
++                blocked_write(intent,"blsh_official_objects","2026-11-21T12:45:20.000Z","official_intent_deadline")
++                sql(svc,"begin")
++                assert blocked_write(intent,"blsh_official_originals",later)
++                assert sql(svc,"select written_at=%s::timestamptz from blsh_official_objects where run_id=%s and ordinal=2",(later,run))
++                sql(svc,"rollback")
++            put(3*i-1,jpath.removeprefix(prefix),txt(journal))
++            assert sql(svc,"select array[game_ordinal::text,game_id::text,intent_url] from blsh_official_objects where path=%s",(jpath,))==[str(i),str(g),url]
++            refused(lambda:rpc(svc,"blsh_official_object_v1",run,3*i-1,jpath,len(bad),sha256(bad.encode()).hexdigest(),b64encode(bad.encode()).decode()),"official_object_order")
++            box='{"id":%d}'%g
++            if i==1:
++                box=box.ljust(4194304)
++                assert (4*((len(box)+2)//3))==5592408
++            put(3*i,f"boxscore-{g}.body.json",box)
++            assert bytes(sql(svc,"select body from blsh_official_originals where run_id=%s and ordinal=%s",(run,3*i)))==box.encode()
++            put(3*i+1,f"boxscore-{g}.receipt.json",'{"version":"fixture"}')
++        manifest_obj=dict(**approval,version="fhfh.blsh.official-pilot-manifest.v1",status="acquisition_complete_pending_review",acquisitionPinsSHA256=grant_hash,requests=len(IDS),retries=0,completedAtUTC=CLOCK,files=list(files))
++        manifest=txt(manifest_obj)
++        def close(state,reason=None,h=None,text=None):
++            return rpc(svc,"blsh_official_close_v1",run,state,reason,h,text)
++        for override,reason in [({"gameIds":IDS[::-1]},"official_terminal_binding"),
++                ({"nativeManifestSHA256":"0"*64},"official_terminal_binding"),({"files":files[:-1]},"official_manifest_index_mismatch")]:
++            sql(svc,"begin")
++            wrong=txt(dict(manifest_obj,**override)); wrongh=put(8,"MANIFEST.json",wrong)
++            refused(lambda:close("packet_complete_pending_review",None,wrongh,wrong),reason)
++            sql(svc,"rollback");files.pop()
++        digest=put(8,"MANIFEST.json",manifest)
++        refused(lambda:close("packet_complete_pending_review",None,"0"*64,manifest),"official_manifest_digest")
++        clock("2026-11-21T12:47:05.000001Z")
++        refused(lambda:close("packet_complete_pending_review",None,digest,manifest),"official_terminal_binding")
++        clock(CLOCK)
++        for after_write in (False,True):
++            blocked_write(lambda:close("packet_complete_pending_review",None,digest,manifest),"blsh_official_runs",
++                "2026-11-21T12:47:05.000001Z","official_terminal_binding",after_write=after_write)
++            assert sql(own,"select state from blsh_official_runs where run_id=%s",(run,))=="claimed"
++        sql(svc,"begin")
++        assert blocked_write(lambda:close("packet_complete_pending_review",None,digest,manifest),"blsh_official_runs",later)
++        assert sql(svc,"select closed_at=%s::timestamptz from blsh_official_runs where run_id=%s",(later,run))
++        sql(svc,"rollback")
++        print("PASS PostgreSQL table, uncommitted-claim and post-write waits, expiry rollback, actual transition times")
++        assert close("packet_complete_pending_review",None,digest,manifest)
++        refused(lambda:close("failed","operator_failure"),"query returned no rows")
++        assert sql(svc,"select manifest_sha256 from blsh_official_runs where run_id=%s",(run,))==digest
++        assert bytes(sql(svc,"select body from blsh_official_originals where run_id=%s and ordinal=8",(run,)))==manifest.encode()
++        assert claim(svc,pins)=={"claimed":False}
++        print("PASS durable journal, 4 MiB binary readback, resealed manifest refusal, terminal readback and role/owner mutation controls")
++
++def main():
++    for k in tuple(os.environ):
++        if k.startswith(("PG","SUPABASE")) or k in ("DATABASE_URL","DB_HOST","DB_PORT"): del os.environ[k]
++    with tempfile.TemporaryDirectory(prefix="blsh-off-",dir="/tmp") as root:
++        pg=context.PG;data=Path(root)/"data";env={"PATH":str(pg)+":/usr/bin:/bin","HOME":root,"LC_ALL":"C"}
++        subprocess.run([pg/"initdb","-D",data,"-U","postgres","-A","trust","--no-locale","-E","UTF8","--no-sync"],env=env,check=True,capture_output=True)
++        subprocess.run([pg/"pg_ctl","-D",data,"-l",Path(root)/"log","-o",f"-k {root} -p 5432 -c listen_addresses=''","-w","start"],env=env,check=True,capture_output=True)
++        try: exercise(root)
++        finally: subprocess.run([pg/"pg_ctl","-D",data,"-m","immediate","-w","stop"],env=env,check=True,capture_output=True)
++if __name__=="__main__": main()
+diff --git a/tasks/artifacts/blsh-shipping-2026-11-18/PART-B.md b/tasks/artifacts/blsh-shipping-2026-11-18/PART-B.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..07b6cc3177e0d2cfab0fbca5aebf94d6d4006c80
+--- /dev/null
++++ b/tasks/artifacts/blsh-shipping-2026-11-18/PART-B.md
+@@ -0,0 +1,15 @@
++# November 19 disabled-path readback
++
++For the existing Claude BLSH Chef and hosted operator. Read the two naturally occurring firings for November 19, 2026 (UTC). Registration and the switch-off readback are recorded in the [November 16 receipt](../blsh-pilot-readiness-2026-11-14/v6-schedule/SCHEDULE-APPLY-RECEIPT.md). This checklist calls for passive evidence only.
++
++| Job | Scheduled UTC | Method and path | Expected application result |
++| --- | --- | --- | --- |
++| 404, blsh-native-capture | 12:05 | POST /api/v1/db/blsh-native-capture | HTTP 200, success true, skipped disabled, sourceDate 2026-11-18 |
++| 405, blsh-native-capture-backup | 12:20 | Same | Same. Record this response separately. |
++
++1. Read each job's existing row in `cron.job_run_details` for its slot. Preserve jobid, runid, start/end UTC, status and sanitized return_message. Record the actual dispatch time and any queue delay. Use job 404 and 405 and the two slot windows, bounded to 12:05–12:30 UTC. If the job is absent, label it missing. If failed, record the scheduler failure.
++2. While pg_net's response is retained, correlate to the actual HTTP request ID if the logs have it. Read that response's id, created, status_code, timed_out, error_msg and the whitelisted JSON outcome fields. Check the production Vercel route log, method, UTC, deployment ID, Git SHA, region and request ID. The invoker enqueues asynchronously and the schedule does not persist its return value in a job-to-request mapping. pg_cron runid and pg_net request id have different meanings. Without an explicit ID require a unique match across the slot, path, time, application body and runtime log. Multiple plausible matches or missing application evidence leave the application disposition unknown. Do not retain headers, keys or unrelated response bodies.
++3. Record each result as observed. The native route wrapper can write its normal cron_job_audit row even on a skip; that row may corroborate time and response. It is separate from a native date claim. The expected response demonstrates bearer acceptance, clock gate, required environment, runtime precheck and a readable off switch. The handler returns there, before the observer self-test, claim, schedule GET or NST admission. A cron success or HTTP status alone does not establish those prechecks. A fence skip, timeout, refusal, different source date, unacknowledged claim or unexpected enabled work gets its own disposition. On any unexpected work stop and alert the existing operator/Scout; do not invoke the route.
++4. Return two sanitized rows and their receipt pins to Scout/BLSH. Jobs 406 and 407 at 12:50 and 12:52 are separate reconciliation jobs. Keep the existing jobs and switch in their current operator-owned state. Do not initiate a retry, fallback, provider request or manual probe.
++
++November 17 v5 remains unknown. Its operator's terminal attestation, exit record or consumed-date evidence is the only basis to update that disposition.
+diff --git a/tasks/artifacts/blsh-shipping-2026-11-18/official-dispatch/SCHEDULE-ONCE.sql b/tasks/artifacts/blsh-shipping-2026-11-18/official-dispatch/SCHEDULE-ONCE.sql
+new file mode 100644
+index 0000000000000000000000000000000000000000..344ffbb74317546827aa1991850efc46ae249c49
+--- /dev/null
++++ b/tasks/artifacts/blsh-shipping-2026-11-18/official-dispatch/SCHEDULE-ONCE.sql
+@@ -0,0 +1,71 @@
++-- Operator artifact only. Register after independent native/context readback, signed grant and TJ approval.
++-- One queue insertion at most, with the pg_net request ID retained for the operator.
++\set ON_ERROR_STOP on
++begin;
++set local lock_timeout = '5s';
++set local statement_timeout = '15s';
++
++do $preflight$
++begin
++  if pg_catalog.clock_timestamp() not between timestamptz '2026-11-21 12:35Z' and timestamptz '2026-11-21 12:44:59Z'
++     or exists (select 1 from cron.job where jobname = 'blsh-official-once-20261120')
++     or exists (select 1 from public.blsh_official_runs where source_date = date '2026-11-20')
++     or not exists (select 1 from public.blsh_context_runs c join public.blsh_capture_runs n
++                    on n.run_id = c.native_run_id and n.source_date = c.source_date
++                    and n.manifest_sha256 = c.native_manifest_sha256
++                    where c.source_date = date '2026-11-20' and n.pruned_at is null
++                    and c.state = 'packet_complete_pending_review' and n.state = c.state)
++     or (select count(*) from vault.decrypted_secrets where name = 'blsh_official_grant_20261120') <> 1 then
++    raise exception 'official_pilot_preflight_refused';
++  end if;
++end $preflight$;
++
++create table fhfh_internal.blsh_official_dispatch_20261120 (
++  singleton boolean primary key default true check (singleton),
++  job_id bigint not null unique,
++  disposition text not null default 'registered' check
++    (disposition in ('registered','expired','refused','enqueue_failed','queued')),
++  observed_at timestamptz,
++  request_id bigint unique,
++  check ((disposition = 'queued') = (request_id is not null))
++);
++revoke all on fhfh_internal.blsh_official_dispatch_20261120 from public, anon, authenticated, service_role;
++
++insert into fhfh_internal.blsh_official_dispatch_20261120 (job_id)
++select cron.schedule('blsh-official-once-20261120','45 12 21 11 *', $command$
++do $fire$
++declare
++  dispatch fhfh_internal.blsh_official_dispatch_20261120%rowtype;
++  grant_header text;
++  http_id bigint;
++  now_utc timestamptz;
++begin
++  select * into strict dispatch from fhfh_internal.blsh_official_dispatch_20261120 where singleton for update;
++  if dispatch.disposition <> 'registered' then return; end if;
++  -- pg_cron has no year field. Remove this exact registration on its first firing, even after a missed year.
++  if not cron.unschedule(dispatch.job_id) then raise exception 'official_pilot_job_missing'; end if;
++  now_utc := pg_catalog.clock_timestamp();
++  if now_utc < timestamptz '2026-11-21 12:45Z' or now_utc >= timestamptz '2026-11-21 12:46Z' then
++    update fhfh_internal.blsh_official_dispatch_20261120 set disposition = 'expired', observed_at = now_utc where singleton;
++    return;
++  end if;
++  begin
++    select case when count(*) = 1 then min(decrypted_secret) end into grant_header
++      from vault.decrypted_secrets where name = 'blsh_official_grant_20261120';
++    if grant_header is null or length(grant_header) not between 1 and 4096 then
++      update fhfh_internal.blsh_official_dispatch_20261120 set disposition = 'refused', observed_at = now_utc where singleton;
++      return;
++    end if;
++    select net.http_get(url := 'https://fhfhockey.com/api/v1/db/blsh-official-boxscores',
++      headers := fhfh_internal.require_cron_request_headers() || jsonb_build_object('x-blsh-official-grant', grant_header),
++      timeout_milliseconds := 240000) into strict http_id;
++    if http_id is null then raise exception 'official_pilot_enqueue_missing'; end if;
++    update fhfh_internal.blsh_official_dispatch_20261120
++      set disposition = 'queued', observed_at = now_utc, request_id = http_id where singleton;
++  exception when others then
++    -- Enqueue and its correlation row are in the same local subtransaction. Never queue a replacement.
++    update fhfh_internal.blsh_official_dispatch_20261120 set disposition = 'enqueue_failed', observed_at = now_utc where singleton;
++  end;
++end $fire$;
++$command$);
++commit;
+diff --git a/tasks/artifacts/blsh-shipping-2026-11-18/official-dispatch/verify.py b/tasks/artifacts/blsh-shipping-2026-11-18/official-dispatch/verify.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..9bfe26325fd29cae7077d9d4d03c235fff173612
+--- /dev/null
++++ b/tasks/artifacts/blsh-shipping-2026-11-18/official-dispatch/verify.py
+@@ -0,0 +1,67 @@
++"""Offline pg_cron/pg_net transaction rehearsal, with loopback network disabled."""
++from pathlib import Path
++import os
++import subprocess
++import tempfile
++
++SQL = Path(__file__).with_name("SCHEDULE-ONCE.sql").read_text()
++PG = Path(os.getenv("PG_BINDIR", "/opt/homebrew/opt/postgresql@15/bin"))
++SCHEMA = """
++create schema cron; create schema net; create schema vault; create schema fhfh_internal;
++create role anon; create role authenticated; create role service_role;
++create table cron.job (jobid bigserial primary key,jobname text unique,schedule text,command text);
++create function cron.schedule(text,text,text) returns bigint language sql as $$
++  insert into cron.job(jobname,schedule,command) values ($1,$2,$3) returning jobid $$;
++create function cron.unschedule(bigint) returns boolean language sql as $$
++  delete from cron.job where jobid=$1 returning true $$;
++create table vault.decrypted_secrets(name text,decrypted_secret text);
++create function fhfh_internal.require_cron_request_headers() returns jsonb language sql as
++  $$select '{"Authorization":"fixture"}'::jsonb$$;
++create table net.queue(id bigserial primary key,url text,headers jsonb,timeout_ms int);
++create function net.http_get(url text,headers jsonb,timeout_milliseconds int) returns bigint language sql as $$
++  insert into net.queue(url,headers,timeout_ms) values ($1,$2,$3) returning id $$;
++create table public.blsh_official_runs(source_date date);
++create table public.blsh_capture_runs(run_id int,source_date date,manifest_sha256 text,pruned_at timestamptz,state text);
++create table public.blsh_context_runs(native_run_id int,source_date date,native_manifest_sha256 text,state text);
++insert into vault.decrypted_secrets values ('blsh_official_grant_20261120','fixture-grant');
++insert into public.blsh_capture_runs values (1,'2026-11-20','fixture',null,'packet_complete_pending_review');
++insert into public.blsh_context_runs values (1,'2026-11-20','fixture','packet_complete_pending_review');
++"""
++with tempfile.TemporaryDirectory(prefix="blsh-dispatch-", dir="/tmp") as root:
++    env = {"PATH": str(PG) + ":/usr/bin:/bin", "LC_ALL": "C", "HOME": root}
++    data = Path(root, "data")
++    def run(*args, **kw):
++        return subprocess.run(args, capture_output=True, text=True, env=env, timeout=40, **kw)
++    def query(db, statement, expect_ok=True):
++        result = run(PG/"psql", "-XqAt", "-v", "ON_ERROR_STOP=1", "-h", root, "-U", "postgres", db, input=statement)
++        assert (result.returncode == 0) == expect_ok, result.stderr
++        return result.stdout.strip()
++    run(PG/"initdb", "-D", data, "-U", "postgres", "-A", "trust", "--no-locale", "--no-sync", check=True)
++    run(PG/"pg_ctl", "-D", data, "-l", Path(root, "log"), "-o", f"-k {root} -c listen_addresses=''", "-w", "start", check=True)
++    try:
++        query("postgres", SCHEMA)
++        # The psql script itself accepts no clock input. Substitute the DB wall clock only in fixture copies.
++        script = SQL.replace("pg_catalog.clock_timestamp()", "current_setting('fixture.now')::timestamptz")
++        cases = [("normal", "2026-11-21 12:45:35Z", "queued"), ("late", "2026-11-21 12:46Z", "expired"),
++                 ("later_year", "2027-11-21 12:45Z", "expired"), ("missing_grant", "2026-11-21 12:45Z", "refused"),
++                 ("net_failure", "2026-11-21 12:45Z", "enqueue_failed")]
++        for db, clock, outcome in cases:
++            query("postgres", f"create database {db} template postgres")
++            query(db, "set fixture.now='2026-11-21 12:45Z';\n" + script, expect_ok=False)
++            query(db, "set fixture.now='2026-11-21 12:44Z';\n" + script)
++            command = query(db, "select command from cron.job")
++            if db == "missing_grant": query(db, "delete from vault.decrypted_secrets")
++            if db == "net_failure": query(db, "alter table net.queue add check (false)")
++            fire = f"set fixture.now='{clock}';\n" + command
++            query(db, fire)
++            query(db, fire)
++            assert query(db, "select count(*) from cron.job") == "0"
++            assert query(db, "select disposition from fhfh_internal.blsh_official_dispatch_20261120") == outcome
++            assert query(db, "select count(*) from net.queue") == ("1" if outcome == "queued" else "0")
++            if outcome == "queued":
++                assert query(db, """select request_id=id and url='https://fhfhockey.com/api/v1/db/blsh-official-boxscores'
++                    and timeout_ms=240000 and headers->>'x-blsh-official-grant'='fixture-grant' and headers->>'Authorization'='fixture'
++                    from net.queue cross join fhfh_internal.blsh_official_dispatch_20261120""") == "t"
++        print("PASS one queued GET with durable HTTP ID, duplicate suppressed, registration cutoff, late/next-year expiry, missing grant, rejected enqueue, self-unscheduling")
++    finally:
++        run(PG/"pg_ctl", "-D", data, "-m", "immediate", "-w", "stop", check=True)
+diff --git a/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/ARM.sql b/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/ARM.sql
+new file mode 100644
+index 0000000000000000000000000000000000000000..494f3195e11fa78cfe1e43cc3cc07124a178da7d
+--- /dev/null
++++ b/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/ARM.sql
+@@ -0,0 +1,29 @@
++-- Separate operator authorization. Supply the same independently reviewed psql pins as INSTALL.sql.
++\set ON_ERROR_STOP on
++begin;
++set local lock_timeout = '5s';
++set local statement_timeout = '15s';
++lock table public.blsh_capture_control, public.blsh_capture_runs in share row exclusive mode;
++
++do $$
++begin
++  if not exists (select 1 from public.blsh_capture_control where singleton and not enabled)
++     or exists (select 1 from public.blsh_capture_runs where pipeline = 'native-v6' and source_date = date '2026-11-20')
++     or not exists (select 1 from pg_catalog.pg_trigger
++                    where tgrelid = 'public.blsh_capture_runs'::regclass and tgname = 'blsh_pilot_claim_20261121'
++                      and tgfoid = pg_catalog.to_regprocedure('public.blsh_pilot_claim_20261121()') and tgenabled = 'O') then
++    raise exception 'pilot_not_armable';
++  end if;
++end $$;
++update public.blsh_capture_control c set enabled = true, updated_at = pg_catalog.clock_timestamp()
++from public.blsh_pilot_20261121 p
++where c.singleton and p.singleton and p.release_sha = :'release_sha' and p.deployment_id = :'deployment_id'
++  and pg_catalog.clock_timestamp() < timestamptz '2026-11-21 12:05:00+00';
++do $$
++begin
++  if not exists (select 1 from public.blsh_capture_control where singleton and enabled)
++     or public.blsh_capture_enabled_v1() is distinct from false then
++    raise exception 'pilot_arm_pins_or_time_mismatch';
++  end if;
++end $$;
++commit;
+diff --git a/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/DISARM-ROLLBACK.sql b/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/DISARM-ROLLBACK.sql
+new file mode 100644
+index 0000000000000000000000000000000000000000..4397e503020256b3f397a06191663ac3bc1d7e99
+--- /dev/null
++++ b/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/DISARM-ROLLBACK.sql
+@@ -0,0 +1,24 @@
++-- Retire the installed permit in one transaction. This preserves every run and object.
++\set ON_ERROR_STOP on
++begin;
++set local lock_timeout = '5s';
++set local statement_timeout = '15s';
++lock table public.blsh_capture_control, public.blsh_capture_runs in share row exclusive mode;
++update public.blsh_capture_control set enabled = false, updated_at = pg_catalog.clock_timestamp() where singleton;
++
++-- Restore the reviewed migration 153 function only after clearing its raw singleton.
++create or replace function public.blsh_capture_enabled_v1() returns boolean
++language sql stable security definer set search_path = '' as $$
++  select coalesce((select c.enabled from public.blsh_capture_control as c where c.singleton), false)
++$$;
++do $$
++begin
++  if not exists (select 1 from public.blsh_capture_control where singleton and not enabled)
++     or public.blsh_capture_enabled_v1() is distinct from false then
++    raise exception 'pilot_rollback_requires_switch_off';
++  end if;
++end $$;
++drop trigger blsh_pilot_claim_20261121 on public.blsh_capture_runs;
++drop function public.blsh_pilot_claim_20261121();
++drop table public.blsh_pilot_20261121;
++commit;
+diff --git a/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/INSTALL.sql b/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/INSTALL.sql
+new file mode 100644
+index 0000000000000000000000000000000000000000..14a7493e378df9e4e028f1bad6404e91a39f0ee4
+--- /dev/null
++++ b/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/INSTALL.sql
+@@ -0,0 +1,63 @@
++-- Operator artifact for job 404 on November 21. Supply reviewed release_sha and deployment_id as psql variables.
++\set ON_ERROR_STOP on
++begin;
++set local lock_timeout = '5s';
++set local statement_timeout = '15s';
++lock table public.blsh_capture_control, public.blsh_capture_runs in share row exclusive mode;
++
++do $$
++begin
++  -- These PostgreSQL 15 definitions come from the reviewed migration 153. Refuse schema drift.
++  if pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(pg_catalog.pg_get_functiondef(
++       'public.blsh_capture_enabled_v1()'::regprocedure), 'UTF8')), 'hex') <> '8dfa681a7e3e1439b6a47f4e2dc9b9e2aeab431251234f8939e01928b1a4a923'
++     or pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(pg_catalog.pg_get_functiondef(
++       'public.blsh_capture_claim_v1(text,date,jsonb)'::regprocedure), 'UTF8')), 'hex') <> '28386d1d686b48fc3cee2f42578a9cbc8912161aa8b3dc5e8d546bfb29882bee' then
++    raise exception 'pilot_migration_153_definition_mismatch';
++  end if;
++  if not exists (select 1 from public.blsh_capture_control where singleton and not enabled)
++     or public.blsh_capture_enabled_v1() is distinct from false then
++    raise exception 'pilot_install_requires_switch_off';
++  end if;
++  if exists (select 1 from public.blsh_capture_runs where pipeline = 'native-v6' and source_date = date '2026-11-20') then
++    raise exception 'pilot_date_already_consumed';
++  end if;
++  if pg_catalog.clock_timestamp() >= timestamptz '2026-11-21 12:05:00+00' then
++    raise exception 'pilot_install_after_primary_start';
++  end if;
++end $$;
++
++create table public.blsh_pilot_20261121 (
++  singleton boolean primary key check (singleton),
++  release_sha text not null check (release_sha ~ '^[0-9a-f]{40}$'),
++  deployment_id text not null check (deployment_id ~ '^dpl_[A-Za-z0-9_-]{1,124}$')
++);
++alter table public.blsh_pilot_20261121 enable row level security;
++revoke all on public.blsh_pilot_20261121 from public, anon, authenticated, service_role;
++insert into public.blsh_pilot_20261121 values (true, :'release_sha', :'deployment_id');
++
++-- Both the route preflight and migration 153's unchanged claim RPC use this same switch.
++create or replace function public.blsh_capture_enabled_v1() returns boolean
++language sql volatile security definer set search_path = '' as $$
++  select coalesce((select c.enabled from public.blsh_capture_control c where c.singleton), false)
++     and pg_catalog.tstzrange(timestamptz '2026-11-21 12:05:00+00', timestamptz '2026-11-21 12:07:00+00', '[)')
++         @> pg_catalog.clock_timestamp()
++$$;
++
++-- AFTER INSERT rechecks the clock after any uniqueness wait. The original claim owns its transaction
++-- and returns its run ID only after this trigger succeeds. Existing rows and later close operations are unaffected.
++create function public.blsh_pilot_claim_20261121() returns trigger
++language plpgsql set search_path = '' as $$
++begin
++  perform 1 from public.blsh_capture_control where singleton and enabled for share;
++  if not found or not public.blsh_capture_enabled_v1()
++     or new.pipeline <> 'native-v6' or new.source_date <> date '2026-11-20'
++     or not exists (select 1 from public.blsh_pilot_20261121 p where p.singleton
++           and new.deployment @> pg_catalog.jsonb_build_object('gitCommitSha', p.release_sha, 'deploymentId', p.deployment_id)) then
++    raise exception 'pilot_claim_outside_permit';
++  end if;
++  return new;
++end $$;
++revoke all on function public.blsh_pilot_claim_20261121() from public, anon, authenticated, service_role;
++create trigger blsh_pilot_claim_20261121 after insert on public.blsh_capture_runs
++  for each row execute function public.blsh_pilot_claim_20261121();
++commit;
+diff --git a/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/verify.py b/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/verify.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..bb48cfc2d97c0261072c50884579a981a5a9b654
+--- /dev/null
++++ b/tasks/artifacts/blsh-shipping-2026-11-18/pilot-control/verify.py
+@@ -0,0 +1,139 @@
++#!/usr/bin/env python3
++"""Disposable PostgreSQL 15 proof. No TCP listener or inherited database configuration."""
++from datetime import datetime
++from hashlib import sha256
++from pathlib import Path
++import subprocess
++import tempfile
++
++HERE = Path(__file__).resolve().parent
++ROOT = HERE.parents[3]
++PG = Path("/opt/homebrew/opt/postgresql@15/bin")
++BASE = ROOT / "supabase/migrations/20261116000000_blsh_native_capture_v6.sql"
++PINS = {"release_sha": "a" * 40, "deployment_id": "dpl_ReviewedFixture"}
++OFF = "2026-11-21 12:04:59.999999+00"
++OPEN = "2026-11-21 12:05:00+00"
++END = "2026-11-21 12:07:00+00"
++ENABLED = "select public.blsh_capture_enabled_v1()"
++CLAIMS = "select count(*) from public.blsh_capture_runs"
++
++
++def exercise(root, env):
++    def sql(statement, *, at=OFF, role="postgres", pins=PINS, error=None):
++        # The only caller-supplied clock is in the test cluster's private schema.
++        datetime.fromisoformat(at)
++        cli = [PG / "psql", "-XAtq", "-h", root, "-U", role, "-d", "postgres", "-v", "ON_ERROR_STOP=1"]
++        for name, value in pins.items():
++            cli += ["-v", name + "=" + value]
++        result = subprocess.run(cli, input=f"set fixture.at = '{at}';\n" + statement, env=env,
++                                text=True, capture_output=True, timeout=15)
++        if error:
++            assert result.returncode and error in result.stderr, (error, result.stdout, result.stderr)
++        else:
++            assert result.returncode == 0, result.stderr
++        return result.stdout.strip()
++
++    def artifact(name):
++        body = (HERE / (name + ".sql")).read_text()
++        assert "fixture." not in body and "current_setting" not in body
++        return body.replace("pg_catalog.clock_timestamp()", "fixture.wall_clock()")
++
++    def claim(*, at=OPEN, day="2026-11-20", deployment=None, pipeline="native-v6", error=None):
++        deployment = deployment if deployment is not None else '{"deploymentId":"dpl_ReviewedFixture","gitCommitSha":"' + PINS["release_sha"] + '"}'
++        return sql(f"select public.blsh_capture_claim_v1('{pipeline}', '{day}', '{deployment}') ->> 'claimed';",
++                   role="service_role", at=at, error=error)
++
++    base = BASE.read_bytes()
++    assert sha256(base).hexdigest() == "4e896a891d02543a5a500597c7ce97d745e6a724d1c5100de1a7a2e8c9250c70"
++    sql("""
++        create role anon; create role authenticated; create role service_role bypassrls login;
++        create schema storage;
++        create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
++        create table storage.objects(bucket_id text,name text,metadata jsonb);
++        create schema fixture;
++        create function fixture.wall_clock() returns timestamptz language sql volatile as
++          $$select current_setting('fixture.at')::timestamptz$$;
++    """)
++    sql(base.decode())
++    baseline = sql("select pg_get_functiondef('public.blsh_capture_enabled_v1()'::regprocedure)")
++    install, arm, retire = (artifact(name) for name in ("INSTALL", "ARM", "DISARM-ROLLBACK"))
++    # Verify baseline-definition drift is refused before installation; restore it on this disposable database.
++    sql("alter function public.blsh_capture_enabled_v1() volatile")
++    sql(install, error="pilot_migration_153_definition_mismatch")
++    sql(baseline)
++    # Also compile the unchanged production installer and rollback against the real database clock.
++    if sql("select clock_timestamp() < timestamptz '2026-11-21 12:05:00+00'") == "t":
++        sql((HERE / "INSTALL.sql").read_text())
++        assert sql(ENABLED, role="service_role") == "f"
++        sql((HERE / "DISARM-ROLLBACK.sql").read_text())
++    else:
++        sql((HERE / "INSTALL.sql").read_text(), error="pilot_install_after_primary_start")
++    sql("update public.blsh_capture_control set enabled = true")
++    sql(install, error="pilot_install_requires_switch_off")
++    sql("update public.blsh_capture_control set enabled = false")
++    sql("insert into public.blsh_capture_runs(pipeline,source_date) values ('native-v6','2026-11-20')")
++    sql(install, error="pilot_date_already_consumed")
++    sql("truncate public.blsh_capture_objects, public.blsh_capture_runs")
++    sql(install, pins={**PINS, "release_sha": "bad"}, error="check constraint")
++    sql(install, pins={**PINS, "deployment_id": "invalid"}, error="check constraint")
++    sql(install, at=OPEN, error="pilot_install_after_primary_start")
++    sql(install)
++    assert sql(ENABLED, at=OPEN, role="service_role") == "f"
++    claim(error="BLSH capture is disabled")
++    sql(arm, pins={**PINS, "deployment_id": "dpl_Wrong"}, error="pilot_arm_pins_or_time_mismatch")
++    sql(arm, at=OPEN, error="pilot_arm_pins_or_time_mismatch")
++    assert sql("select enabled from public.blsh_capture_control") == "f"
++    sql(arm)
++    sql(arm, error="pilot_not_armable")
++    sql("update public.blsh_pilot_20261121 set deployment_id = 'dpl_Other'", role="service_role", error="permission denied")
++    for at in (OFF, END, "2026-11-21 12:20:00+00", "2026-11-22 12:05:00+00"):
++        assert sql(ENABLED, at=at, role="service_role") == "f"
++        claim(at=at, error="BLSH capture is disabled")
++    assert sql(ENABLED, at="2026-11-21 12:06:59.999999+00", role="service_role") == "t"
++    claim(day="2026-11-21", error="pilot_claim_outside_permit")
++    claim(pipeline="other", error="check constraint")
++    for deployment in ('{}', '{"deploymentId":"dpl_Other","gitCommitSha":"' + PINS["release_sha"] + '"}',
++                       '{"deploymentId":"dpl_ReviewedFixture","gitCommitSha":"' + 'b' * 40 + '"}'):
++        claim(deployment=deployment, error="pilot_claim_outside_permit")
++    assert sql(CLAIMS) == "0"
++    # Simulate time advancing between the original claim RPC precheck and our insert trigger.
++    sql("""create sequence fixture.tick;
++        create or replace function fixture.wall_clock() returns timestamptz language sql volatile as $$
++          select case when nextval('fixture.tick') = 1 then timestamptz '2026-11-21 12:06:59.999999+00'
++                      else timestamptz '2026-11-21 12:07:00+00' end$$;""")
++    claim(error="pilot_claim_outside_permit")
++    assert sql(CLAIMS) == "0"
++    sql("""create or replace function fixture.wall_clock() returns timestamptz language sql volatile as
++             $$select current_setting('fixture.at')::timestamptz$$;""")
++    assert claim() == "true"
++    assert claim(at="2026-11-21 12:06:59.999999+00") == "false"
++    assert sql(CLAIMS) == "1"
++    assert sql("select enabled from public.blsh_capture_control") == "t"
++    assert sql(ENABLED, at=END, role="service_role") == "f"
++    sql(retire, at=OPEN)
++    assert sql(CLAIMS) == "1"
++    assert sql("select pg_get_functiondef('public.blsh_capture_enabled_v1()'::regprocedure)") == baseline
++    assert sql("select enabled from public.blsh_capture_control") == "f"
++    assert sql(ENABLED, at=OPEN, role="service_role") == "f"
++    claim(error="BLSH capture is disabled")
++    sql(arm, error="pilot_not_armable")
++    print("PASS guarded installation and arming, immutable client pins, DB expiry and backup, exact claim identity, "
++          "in-flight expiry, unique primary, rollback with original function and switch off")
++
++
++def main():
++    with tempfile.TemporaryDirectory(prefix="blsh-primary-", dir="/tmp") as root:
++        data = Path(root) / "data"
++        env = {"PATH": str(PG) + ":/usr/bin:/bin", "LC_ALL": "C", "HOME": root}
++        def pg(*args):
++            return subprocess.run(args, env=env, check=True, capture_output=True, timeout=45)
++        pg(PG / "initdb", "-D", data, "-U", "postgres", "-A", "trust", "--no-locale", "-E", "UTF8", "--no-sync")
++        pg(PG / "pg_ctl", "-D", data, "-l", Path(root) / "log", "-o", f"-k {root} -c listen_addresses=''", "-w", "start")
++        try:
++            exercise(root, env)
++        finally:
++            pg(PG / "pg_ctl", "-D", data, "-m", "immediate", "-w", "stop")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/web/lib/blsh/nativeCaptureV6/officialPilotAcquisition.transport.mjs b/web/lib/blsh/nativeCaptureV6/officialPilotAcquisition.transport.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..90282670227c380b31bd9f6088cefad2f098fecd
+--- /dev/null
++++ b/web/lib/blsh/nativeCaptureV6/officialPilotAcquisition.transport.mjs
+@@ -0,0 +1,93 @@
++/** Shared by the hosted one-date route and the separately pinned local acquisition. */
++import { X509Certificate } from "node:crypto";
++import { request } from "node:https";
++import { performance } from "node:perf_hooks";
++import { rootCertificates } from "node:tls";
++
++export const BUDGET = Object.freeze({ maxGames: 16, perRequestTimeoutMs: 15000, totalMs: 120000, maxBodyBytes: 4 * 1024 * 1024, spacingMs: 1000, retries: 0 });
++const host = "api-web.nhle.com";
++export const officialUrl = id => `https://${host}/v1/gamecenter/${id}/boxscore`;
++export const liveRoots = () => [...rootCertificates];
++function need(ok, code) { if (!ok) throw Object.assign(new Error(code), { code }); }
++
++// Verify the actual leaf, its identity, validity intervals and signature chain against the enumerated roots.
++// Each operation demands a fresh full handshake, so there is no inferred certificate from an earlier game.
++export function verifyOfficialTLS(observed, roots, when) {
++  need(observed?.servername === host && observed.authorized === true && observed.authorizationError === null
++    && observed.channel === "https.ClientRequest:secureConnect" && observed.sessionReused === false && observed.connectionReused === false
++    && ["TLSv1.2", "TLSv1.3"].includes(observed.protocol) && typeof observed.cipher === "string" && observed.cipher.length > 0
++    && Array.isArray(observed.chainDER) && observed.chainDER.length > 0 && observed.chainDER.length <= 10, "official_tls_observation_invalid");
++  const chain = observed.chainDER.map(der => {
++    need(typeof der === "string" && der.length <= 32768 && /^[A-Za-z0-9+/]+=*$/.test(der), "official_certificate_invalid");
++    const certificate = new X509Certificate(Buffer.from(der, "base64"));
++    need(Date.parse(certificate.validFrom) <= when && when <= Date.parse(certificate.validTo), "official_certificate_time");
++    return certificate;
++  });
++  need(chain[0].checkHost(host) && chain[0].fingerprint256 === observed.peerFingerprint256, "official_certificate_identity");
++  for (let i = 1; i < chain.length; i++) need(chain[i].ca && chain[i-1].checkIssued(chain[i]) && chain[i-1].verify(chain[i].publicKey), "official_certificate_chain");
++  const top = chain.at(-1);
++  need(roots.some(pem => {
++    const ca = new X509Certificate(pem);
++    return ca.ca && Date.parse(ca.validFrom) <= when && when <= Date.parse(ca.validTo) &&
++      (top.fingerprint256 === ca.fingerprint256 || (top.checkIssued(ca) && top.verify(ca.publicKey)));
++  }), "official_certificate_untrusted");
++}
++
++export function getBox(url, journalWall, journalMono, runWall, runMono, fixture) {
++  return new Promise((resolveGet, reject) => {
++    const endpoint = new URL(url), roots = fixture ? [fixture.ca] : liveRoots();
++    need(/^https:\/\/api-web\.nhle\.com\/v1\/gamecenter\/202602\d{4}\/boxscore$/.test(url), "official_endpoint_invalid");
++    if (fixture) need(Number.isSafeInteger(fixture.port) && fixture.port > 0 && fixture.port <= 65535 && typeof fixture.ca === "string", "official_fixture_parameters");
++    let observation, writes = 0;
++    const requestOptions = { method: "GET", agent: false, ca: roots, rejectUnauthorized: true, servername: host,
++      headers: { Host: host, Accept: "application/json", "Accept-Encoding": "identity", Connection: "close" },
++      // A fixture can only connect to numeric loopback. It can never route to a provider.
++      ...(fixture ? { hostname: "127.0.0.1", port: fixture.port } : {}) };
++    // The journal and its directory have been fsynced. Re-read both clocks at
++    // the actual outbound boundary; journaling consumes the original operation budget.
++    const dispatched = Date.now(), dispatchedMono = performance.now();
++    const wallDeadline = journalWall + BUDGET.perRequestTimeoutMs, monoDeadline = journalMono + BUDGET.perRequestTimeoutMs;
++    need(dispatched >= journalWall && dispatched < wallDeadline && dispatchedMono >= journalMono && dispatchedMono < monoDeadline, "official_request_deadline");
++    need(dispatched + BUDGET.perRequestTimeoutMs <= runWall + BUDGET.totalMs
++      && dispatchedMono + BUDGET.perRequestTimeoutMs <= runMono + BUDGET.totalMs, "official_acquisition_deadline");
++    const req = request(url, requestOptions, response => {
++      const chunks = []; let size = 0;
++      const fail = error => { reject(error); req.destroy(); response.destroy(); };
++      try {
++        need(response.statusCode === 200 && !response.headers.location && ["identity", undefined].includes(response.headers["content-encoding"])
++          && req.method === "GET" && req.path === endpoint.pathname && req.getHeader("host") === host
++          && writes === 1 && observation, "official_transport_response_invalid");
++      } catch (e) { fail(e); return; }
++      response.on("data", chunk => {
++        size += chunk.length;
++        if (size > BUDGET.maxBodyBytes) { fail(new Error("official_body_limit")); return; }
++        chunks.push(chunk);
++      });
++      response.once("aborted", () => fail(new Error("official_incomplete_body")));
++      response.once("error", fail);
++      response.once("end", () => {
++        if (!response.complete || !size) { fail(new Error("official_incomplete_body")); return; }
++        resolveGet({ body: Buffer.concat(chunks), tls: observation, writes, httpStatus: response.statusCode, dispatchedAtUTC: new Date(dispatched).toISOString() });
++      });
++    });
++    // Hard timeout covers resolution, handshake, headers and body, including a stalled stream.
++    const timer = setTimeout(() => req.destroy(new Error("official_request_deadline")), Math.max(1, Math.min(wallDeadline - Date.now(), monoDeadline - performance.now())));
++    req.once("close", () => clearTimeout(timer));
++    req.once("error", reject);
++    req.once("finish", () => { writes++; });
++    req.once("socket", socket => socket.once("secureConnect", () => {
++      try {
++        const chainDER = [], seen = new Set(); let cert = socket.getPeerCertificate(true);
++        while (cert?.raw && !seen.has(cert.fingerprint256)) {
++          need(chainDER.length < 10, "official_certificate_chain_length");
++          seen.add(cert.fingerprint256); chainDER.push(cert.raw.toString("base64")); cert = cert.issuerCertificate;
++        }
++        observation = { channel: "https.ClientRequest:secureConnect", servername: socket.servername, authorized: socket.authorized,
++          authorizationError: socket.authorizationError || null, protocol: socket.getProtocol(), cipher: socket.getCipher()?.name,
++          sessionReused: socket.isSessionReused(), connectionReused: req.reusedSocket === true, peerFingerprint256: socket.getPeerCertificate().fingerprint256, chainDER };
++        verifyOfficialTLS(observation, roots, Date.now());
++      } catch (error) { req.destroy(error); }
++    }));
++    req.end();
++  });
++}
+diff --git a/web/lib/blsh/nativeCaptureV6/officialPilotAcquisition.ts b/web/lib/blsh/nativeCaptureV6/officialPilotAcquisition.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..d53cd59e845999f260fa92b1e2bcb006274c1222
+--- /dev/null
++++ b/web/lib/blsh/nativeCaptureV6/officialPilotAcquisition.ts
+@@ -0,0 +1,116 @@
++import { createHash } from "node:crypto";
++import { constants, openSync, fstatSync, readSync, closeSync } from "node:fs";
++import { performance } from "node:perf_hooks";
++import { decodeReviewedEvidenceJSON } from "../../buyLowSellHigh/reviewedFiveGameWindow.server";
++import { NST_ADMISSION_PROJECT_HOST } from "../../nst/admissionOrigin";
++import { defaultCAStoreSHA256, RUNTIME_OVERRIDE_KEYS } from "./runtimeReceipt";
++import type { OfficialPilotStore, OfficialPilotTarget } from "./officialPilotStore";
++import { BUDGET, getBox, liveRoots, officialUrl } from "./officialPilotAcquisition.transport.mjs";
++
++export const OFFICIAL_ORIGIN = "https://" + NST_ADMISSION_PROJECT_HOST;
++export const OFFICIAL_SLOT = Date.parse("2026-11-21T12:45:00Z");
++export const officialSlot = (wall: number) => wall >= OFFICIAL_SLOT && wall < OFFICIAL_SLOT + 60000;
++const digest = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
++export const pilotDigest = (bytes: Buffer) => digest(new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength));
++const json = (value: unknown) => Buffer.from(JSON.stringify(value) + "\n");
++const iso = (time: number) => new Date(time).toISOString();
++const need = (ok: unknown, code: string) => { if (!ok) throw new Error(code); };
++export type FixtureSocket = { port: number; ca: string };
++export type PilotIntake = { approval: OfficialPilotTarget; grantBase64: string; acquisitionPinsSHA256: string };
++export type PilotClock = { wall: number; mono: number };
++export const pilotClock = (): PilotClock => ({ wall: Date.now(), mono: performance.now() });
++function remaining(start: PilotClock, now: PilotClock, limit: number) {
++  if (now.wall < start.wall || now.mono < start.mono) return -1;
++  return Math.floor(limit - Math.max(now.wall - start.wall, now.mono - start.mono));
++}
++function fits(start: PilotClock, now: PilotClock, limit: number, reserve: number) {
++  return remaining(start, now, limit) >= reserve;
++}
++export const outerRemaining = (ingress: PilotClock) => remaining(ingress, pilotClock(), 225000);
++export function outerTime(ingress: PilotClock, reserve = 0) {
++  need(fits(ingress, pilotClock(), 225000, reserve), "official_function_deadline");
++}
++
++/** The deployed JS and executable are read-only runtime identities. Never create local custody files. */
++function fileDigest(path: string, maxBytes: number, ingress: PilotClock) {
++  const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
++  try {
++    const info = fstatSync(fd);
++    need(info.isFile() && info.size > 0 && info.size <= maxBytes, "official_runtime_file");
++    const chunk = new Uint8Array(65536), hash = createHash("sha256");
++    for (let offset = 0; offset < info.size;) {
++      outerTime(ingress, BUDGET.totalMs + 10000);
++      const n = readSync(fd, chunk, 0, Math.min(chunk.length, info.size - offset), offset);
++      need(n > 0, "official_runtime_file"); hash.update(chunk.subarray(0, n)); offset += n;
++    }
++    const end = fstatSync(fd);
++    need(end.size === info.size && end.mtimeMs === info.mtimeMs, "official_runtime_file");
++    return hash.digest("hex");
++  } finally { closeSync(fd); }
++}
++
++export function officialRuntime(routePath: string, ingress: PilotClock, fixture?: FixtureSocket) {
++  need(/^v22\.\d+\.\d+$/.test(process.version) && process.versions.modules === "127" && process.execArgv.length === 0
++    && typeof routePath === "string" && routePath.startsWith("/") && process.env.VERCEL_REGION === "iad1"
++    && (process.env.VERCEL_PROJECT_ID === undefined || process.env.VERCEL_PROJECT_ID === "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw"), "official_runtime_identity");
++  const overrideKeysPresent = RUNTIME_OVERRIDE_KEYS.filter(key => Object.hasOwn(process.env, key));
++  const roots = liveRoots(), defaultCASHA256 = defaultCAStoreSHA256(), bundledCASHA256 = digest(roots.join("\n"));
++  need(!overrideKeysPresent.length && roots.length > 0 && defaultCASHA256 === bundledCASHA256, "official_trust_store_mismatch");
++  return { acquisitionClass: fixture ? "loopback_fixture_only" : "vercel_direct_https", supabaseOrigin: OFFICIAL_ORIGIN,
++    region: process.env.VERCEL_REGION!, nodeVersion: process.version, nodeABI: process.versions.modules, opensslVersion: process.versions.openssl,
++    execPathSHA256: fileDigest(process.execPath, 512 * 1024 * 1024, ingress), routeBundleSHA256: fileDigest(routePath, 64 * 1024 * 1024, ingress),
++    bundledCASHA256: fixture ? digest(fixture.ca) : bundledCASHA256, defaultCASHA256, overrideKeysPresent,
++    ...(fixture ? { fixtureCA: fixture.ca } : {}) };
++}
++
++type BoxResponse = { body: Buffer; tls: unknown; writes: number; httpStatus: number; dispatchedAtUTC: string };
++export async function runOfficialPilot(store: OfficialPilotStore, runId: string, intake: PilotIntake,
++  runtime: ReturnType<typeof officialRuntime>, ingress: PilotClock, fixture?: FixtureSocket) {
++  const { approval, grantBase64, acquisitionPinsSHA256 } = intake, start = pilotClock(), startedAtUTC = iso(start.wall);
++  need(officialSlot(start.wall), "official_slot_closed");
++  const files: { file: string; bytes: number; sha256: string }[] = [];
++  let lastRetrieval = start.wall;
++  const check = (reserve = 0) => {
++    const now = pilotClock();
++    need(now.wall >= lastRetrieval && fits(start, now, BUDGET.totalMs, reserve), "official_acquisition_deadline");
++    outerTime(ingress, Math.max(reserve, 5000));
++  };
++  const closeRemaining = () => Math.min(remaining(start, pilotClock(), BUDGET.totalMs), outerRemaining(ingress));
++  const put = async (file: string, bytes: Buffer, journal?: PilotClock) => {
++    check();
++    const sha256 = pilotDigest(bytes), ordinal = files.length + 1;
++    // The original bytes and index (a journal's intent) are one acknowledged SQL commit.
++    const remainingMs = () => Math.min(closeRemaining(), outerRemaining(ingress) - 5000,
++      journal ? remaining(journal, pilotClock(), BUDGET.perRequestTimeoutMs) : Infinity);
++    need(remainingMs() > 0, "official_acquisition_deadline");
++    await store.putObject(runId, approval.sourceDate, ordinal, file, bytes, sha256, remainingMs);
++    check(); files.push({ file, bytes: bytes.length, sha256 }); return sha256;
++  };
++  await put("RUNTIME.json", json({ version: "fhfh.blsh.official-pilot-runtime.v1", ...runtime, ...approval, runId, grantBase64, acquisitionPinsSHA256, startedAtUTC }));
++  for (const [index, gameId] of approval.gameIds.entries()) {
++    if (index) { check(BUDGET.spacingMs + BUDGET.perRequestTimeoutMs); await new Promise(resolve => setTimeout(resolve, BUDGET.spacingMs)); }
++    check(BUDGET.perRequestTimeoutMs);
++    const journal = pilotClock(), operation = index + 1, url = officialUrl(gameId);
++    need(journal.wall >= lastRetrieval + (index ? BUDGET.spacingMs : 0), "official_acquisition_chronology");
++    const journalSHA256 = await put(`operation-${operation}-STARTED.json`, json({ operation, method: "GET", url, acquisitionPinsSHA256, startedAtUTC: iso(journal.wall) }), journal);
++    check(BUDGET.perRequestTimeoutMs);
++    const result = await getBox(url, journal.wall, journal.mono, start.wall, start.mono, fixture) as BoxResponse;
++    const end = pilotClock();
++    need(fits(journal, end, BUDGET.perRequestTimeoutMs, 0) && Date.parse(result.dispatchedAtUTC) <= end.wall
++      && result.httpStatus === 200 && result.writes === 1 && result.body.length > 0 && result.body.length <= BUDGET.maxBodyBytes, "official_provider_receipt");
++    lastRetrieval = end.wall; check();
++    const box = decodeReviewedEvidenceJSON<Record<string, unknown>>(new Uint8Array(result.body));
++    need(box.id === gameId && box.gameDate === approval.sourceDate && box.season === 20262027 && box.gameType === 2
++      && (box.gameState === "FINAL" || box.gameState === "OFF") && box.gameScheduleState === "OK", "official_game_scope");
++    const sha256 = await put(`boxscore-${gameId}.body.json`, result.body);
++    await put(`boxscore-${gameId}.receipt.json`, json({ version: "fhfh.blsh.v6-official-boxscore-receipt.v2", acquisitionPinsSHA256, journalSHA256,
++      acquisitionStartedAtUTC: startedAtUTC, operation, url, finalUrl: url, method: "GET", httpStatus: 200, redirected: false, writeEvents: 1,
++      dispatchedAtUTC: result.dispatchedAtUTC, retrievedAtUTC: iso(end.wall), sha256, bytes: result.body.length, tls: result.tls }));
++  }
++  check();
++  const manifest = json({ version: "fhfh.blsh.official-pilot-manifest.v1", status: "acquisition_complete_pending_review", runId, ...approval, acquisitionPinsSHA256,
++    requests: approval.gameIds.length, retries: 0, completedAtUTC: iso(Date.now()), files });
++  const manifestSHA256 = await put("MANIFEST.json", manifest);
++  check(5000);
++  return { manifest, manifestSHA256, closeRemaining };
++}
+diff --git a/web/lib/blsh/nativeCaptureV6/officialPilotHandler.test.ts b/web/lib/blsh/nativeCaptureV6/officialPilotHandler.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..339df65d0d6a8a4992e9eb47d8cb1d349d5b7c15
+--- /dev/null
++++ b/web/lib/blsh/nativeCaptureV6/officialPilotHandler.test.ts
+@@ -0,0 +1,115 @@
++// @vitest-environment node
++import { generateKeyPairSync } from "node:crypto";
++import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { afterEach, describe, expect, it, vi } from "vitest";
++import route, { config } from "../../../pages/api/v1/db/blsh-official-boxscores";
++import { exportHostedOfficialFixture, fakeOfficialInvocation, fixtureDeployment, pilotSlot, setOfficialFixtureEnv, signedOfficialGrant } from "./officialPilotHandler.testHelper";
++import { officialPilotHandler } from "./officialPilotHandler";
++import type { OfficialPilotStore } from "./officialPilotStore";
++
++const { factory } = vi.hoisted(() => ({ factory: vi.fn(() => { throw new Error("external_store_forbidden"); }) }));
++vi.mock("./officialPilotStore", () => ({ createOfficialPilotStore: factory }));
++const target = { ...fixtureDeployment, sourceDate: "2026-11-20", nativeRunId: "00000000-0000-4000-8000-000000000001",
++  nativeManifestSHA256: "b".repeat(64), scheduleSHA256: "c".repeat(64), gameIds: [2026020001, 2026020002] };
++const boxes = target.gameIds.map(id => ({ id, gameDate: target.sourceDate, season: 20262027, gameType: 2, gameState: "OFF", gameScheduleState: "OK" }));
++const dirs: string[] = [];
++const temp = () => { const dir = mkdtempSync(join(tmpdir(), "official-hosted-handler-")); dirs.push(dir); return dir; };
++afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.clearAllMocks(); while (dirs.length) rmSync(dirs.pop()!, { recursive: true, force: true }); });
++describe("one approved hosted official GET", () => {
++  it("does no external I/O for missing key, wrong slot, unsigned identity, ambiguous grant, wrong project, or caller parameters", async () => {
++    const grant = signedOfficialGrant(target); setOfficialFixtureEnv(grant.approvalPublicKey);
++    expect(config).toEqual({ maxDuration: 240, api: { bodyParser: false } });
++    const clock = vi.spyOn(Date, "now").mockReturnValue(pilotSlot);
++    expect((await fakeOfficialInvocation(route, grant.header, { method: "POST" })).code).toBe(405);
++    expect((await fakeOfficialInvocation(route, grant.header, { headers: { authorization: "Bearer adminkey" } })).code).toBe(403);
++    for (const req of [{ query: { gameIds: "1" } }, { body: {} }, { headers: { authorization: "Bearer fixture-cron", "transfer-encoding": "chunked" } }]) {
++      expect((await fakeOfficialInvocation(route, grant.header, req)).code).toBe(400);
++    }
++    vi.stubEnv("BLSH_OFFICIAL_PILOT_APPROVAL_PUBLIC_KEY", ""); expect((await fakeOfficialInvocation(route, grant.header)).value.reason).toBe("disabled");
++    vi.stubEnv("BLSH_OFFICIAL_PILOT_APPROVAL_PUBLIC_KEY", grant.approvalPublicKey);
++    for (const time of [Date.parse("2026-11-21T12:44:59.999Z"),Date.parse("2026-11-21T12:46:00Z"),pilotSlot+86400000]) {
++      clock.mockReturnValue(time); expect((await fakeOfficialInvocation(route, grant.header)).value.reason).toBe("outside_official_slot");
++    }
++    clock.mockReturnValue(pilotSlot);
++    const original = Buffer.from(grant.header, "base64").toString("utf8"), other = generateKeyPairSync("ed25519").publicKey.export({ format: "pem", type: "spki" }).toString();
++    for (const invalid of [original.replace(target.nativeManifestSHA256,"d".repeat(64)), original.replace('"gameIds":','"gameIds":[],"gameIds":'), '{"approval":{}}']) {
++      expect((await fakeOfficialInvocation(route, Buffer.from(invalid).toString("base64"))).value.reason).toBe("approval_invalid");
++    }
++    vi.stubEnv("BLSH_OFFICIAL_PILOT_APPROVAL_PUBLIC_KEY", other); expect((await fakeOfficialInvocation(route, grant.header)).value.reason).toBe("approval_invalid");
++    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://other.invalid"); expect((await fakeOfficialInvocation(route, grant.header)).value.reason).toBe("environment_mismatch");
++    expect(factory).not.toHaveBeenCalled();
++  });
++  it("rejects a signed out-of-scope game/date/deployment and a TLS override before a claim", async () => {
++    vi.spyOn(Date,"now").mockReturnValue(pilotSlot);
++    for (const change of [{ sourceDate:"2026-11-19" }, { gameIds:[] }, { gameIds:[target.gameIds[0],target.gameIds[0]] },
++      { gameIds:[...target.gameIds].reverse() }, { gameIds:[2025020003] }, { gitCommitSha:"0".repeat(40) }]) {
++      const grant = signedOfficialGrant({ ...target, ...change }); setOfficialFixtureEnv(grant.approvalPublicKey);
++      expect((await fakeOfficialInvocation(route, grant.header)).value.reason).toBe("approval_invalid");
++    }
++    const grant = signedOfficialGrant(target); setOfficialFixtureEnv(grant.approvalPublicKey); vi.stubEnv("NODE_EXTRA_CA_CERTS", "unused");
++    expect((await fakeOfficialInvocation(route, grant.header)).value.reason).toBe("official_runtime_unverified"); expect(factory).not.toHaveBeenCalled();
++    for (const [k,v] of [["VERCEL_REGION","sfo1"],["VERCEL_PROJECT_ID","other-project"]]) {
++      setOfficialFixtureEnv(grant.approvalPublicKey); vi.stubEnv(k,v);
++      expect((await fakeOfficialInvocation(route, grant.header)).value.reason).toBe("official_runtime_unverified"); expect(factory).not.toHaveBeenCalled();
++      vi.stubEnv(k,undefined);
++    }
++  });
++  it("binds exact private custody and signature to original boxscore bytes and per-game TLS v2 receipt, serially", async () => {
++    const f = await exportHostedOfficialFixture({ ...target, outDir: temp(), boxes });
++    expect(f.result).toMatchObject({ state:"packet_complete_pending_review", requests:2,manifestSHA256:f.acquisitionManifestSHA256 });
++    expect(f.events).toEqual(["claim","RUNTIME.json", ...target.gameIds.flatMap((id,i)=>[`operation-${i+1}-STARTED.json`,`GET /v1/gamecenter/${id}/boxscore`,`boxscore-${id}.body.json`,`boxscore-${id}.receipt.json`]),"MANIFEST.json","packet_complete_pending_review"]);
++    const runtime = JSON.parse(readFileSync(join(f.fileRoot,"RUNTIME.json"),"utf8"));
++    expect(runtime).toMatchObject({ acquisitionClass:"loopback_fixture_only", ...target, overrideKeysPresent:[], acquisitionPinsSHA256:f.acquisitionPinsSHA256 });
++    const times = [];
++    for (const [i,id] of target.gameIds.entries()) {
++      expect(readFileSync(join(f.fileRoot,`boxscore-${id}.body.json`))).toEqual(f.bodies[id]);
++      const receipt = JSON.parse(readFileSync(join(f.fileRoot,`boxscore-${id}.receipt.json`),"utf8"));
++      expect(receipt).toMatchObject({ version:"fhfh.blsh.v6-official-boxscore-receipt.v2", operation:i+1, writeEvents:1, httpStatus:200, redirected:false,
++        tls:{servername:"api-web.nhle.com",authorized:true,sessionReused:false,connectionReused:false}, acquisitionPinsSHA256:f.acquisitionPinsSHA256 });
++      expect(Date.parse(receipt.dispatchedAtUTC)).toBeLessThanOrEqual(Date.parse(receipt.retrievedAtUTC)); times.push(receipt);
++    }
++    expect(Date.parse(times[1].dispatchedAtUTC)-Date.parse(times[0].retrievedAtUTC)).toBeGreaterThanOrEqual(1000);
++  });
++  it("issues no provider GET after an unacknowledged durable journal", async () => {
++    const f = await exportHostedOfficialFixture({ ...target, outDir:temp(), boxes, afterJournal: () => { throw new Error("lost journal acknowledgement"); } });
++    expect(f.result).toMatchObject({ state:"failed" }); expect(f.events).toEqual(["claim","RUNTIME.json","operation-1-STARTED.json","failed"]);
++    expect(existsSync(join(f.fileRoot,"MANIFEST.json"))).toBe(false);
++  });
++  it("reports a refused repeat and uncertain claim or terminal writes without dispatching", async () => {
++    vi.spyOn(Date, "now").mockReturnValue(pilotSlot);
++    const grant = signedOfficialGrant(target); setOfficialFixtureEnv(grant.approvalPublicKey); const old = process.execArgv; process.execArgv=[];
++    const store = { claim:vi.fn<OfficialPilotStore["claim"]>(), putObject: vi.fn<OfficialPilotStore["putObject"]>().mockRejectedValue(new Error("lost write")),
++      close:vi.fn<OfficialPilotStore["close"]>().mockRejectedValue(new Error("lost close")) };
++    const handler=officialPilotHandler(__filename,{store,socket:{port:1,ca:"unused"}});
++    try {
++      store.claim.mockResolvedValueOnce({claimed:false}).mockRejectedValueOnce(new Error("unknown")).mockResolvedValueOnce({claimed:true,runId:"fixture"});
++      expect((await fakeOfficialInvocation(handler, grant.header)).value.reason).toBe("already_claimed");
++      expect((await fakeOfficialInvocation(handler, grant.header)).value.reason).toBe("claim_unacknowledged");
++      expect((await fakeOfficialInvocation(handler, grant.header)).value.reason).toBe("failure_close_unacknowledged");
++      expect(store.putObject).toHaveBeenCalledTimes(1); expect(store.close).toHaveBeenCalledTimes(1);
++    } finally {process.execArgv=old;}
++  });
++  it.each([["journal",15001],["RUNTIME.json",120001],["RUNTIME.json",225001]] as const)("stops at a late %s acknowledgement after %i ms", async (stage, elapsed) => {
++    let time = pilotSlot;
++    vi.spyOn(Date,"now").mockImplementation(() => time);
++    const grant = signedOfficialGrant(target); setOfficialFixtureEnv(grant.approvalPublicKey);
++    const old = process.execArgv; process.execArgv = [];
++    const store = { claim: vi.fn<OfficialPilotStore["claim"]>().mockResolvedValue({claimed:true,runId:"fixture"}),
++      putObject:vi.fn<OfficialPilotStore["putObject"]>().mockImplementation(async (_run,_day,_n,file,_bytes,_sha,remaining) => {
++        expect(remaining!()).toBeGreaterThan(0);
++        if (file === stage || (stage === "journal" && file === "operation-1-STARTED.json")) {
++          if (stage === "journal") expect(remaining!()).toBeLessThanOrEqual(15000);
++          time += elapsed;
++          expect(remaining!()).toBeLessThanOrEqual(0);
++        }
++      }), close:vi.fn<OfficialPilotStore["close"]>().mockResolvedValue() };
++    try {
++      const res = await fakeOfficialInvocation(officialPilotHandler(__filename,{store,socket:{port:1,ca:"unused"}}),grant.header);
++      expect(res.value).toMatchObject({state:elapsed>225000?"uncertain":"failed",nativeRunId:target.nativeRunId,nativeManifestSHA256:target.nativeManifestSHA256});
++      expect(store.putObject.mock.calls.map(c=>c[3])).toEqual(stage==="journal"?["RUNTIME.json","operation-1-STARTED.json"]:["RUNTIME.json"]);
++      expect(store.close).toHaveBeenCalledTimes(elapsed>225000?0:1);
++    } finally { process.execArgv=old; }
++  });
++});
+diff --git a/web/lib/blsh/nativeCaptureV6/officialPilotHandler.testHelper.ts b/web/lib/blsh/nativeCaptureV6/officialPilotHandler.testHelper.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..fa208d2bec636a6720bab09de99e4f53163002aa
+--- /dev/null
++++ b/web/lib/blsh/nativeCaptureV6/officialPilotHandler.testHelper.ts
+@@ -0,0 +1,119 @@
++/** Exercise the hosted handler with in-process keys, numeric loopback TLS and a local SQL-shaped ledger. */
++import { execFileSync } from "node:child_process";
++import { createHash, generateKeyPairSync, sign } from "node:crypto";
++import { once } from "node:events";
++import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import { createServer } from "node:https";
++import { tmpdir } from "node:os";
++import { dirname, join } from "node:path";
++import { performance } from "node:perf_hooks";
++import type { NextApiRequest, NextApiResponse } from "next";
++import { vi } from "vitest";
++import { OFFICIAL_ORIGIN, pilotDigest } from "./officialPilotAcquisition";
++import { officialPilotApprovalBytes, officialPilotHandler } from "./officialPilotHandler";
++import type { OfficialPilotTarget } from "./officialPilotStore";
++import { RUNTIME_OVERRIDE_KEYS } from "./runtimeReceipt";
++
++export const pilotSlot = Date.parse("2026-11-21T12:45:02Z");
++export const fixtureDeployment = { deploymentId: "dpl_official_fixture", gitCommitSha: "a".repeat(40) };
++const runId = "77777777-7777-4777-8777-777777777777";
++export function signedOfficialGrant(approval: OfficialPilotTarget) {
++  const key = generateKeyPairSync("ed25519");
++  const signature = sign(null, officialPilotApprovalBytes(approval), key.privateKey).toString("base64");
++  const bytes = Buffer.from(JSON.stringify({ approval, signature }), "utf8");
++  return { header: bytes.toString("base64"), approvalPublicKey: key.publicKey.export({ type: "spki", format: "pem" }).toString(), acquisitionPinsSHA256: pilotDigest(bytes) };
++}
++export function setOfficialFixtureEnv(approvalPublicKey: string, deployment = fixtureDeployment) {
++  for (const key of RUNTIME_OVERRIDE_KEYS) vi.stubEnv(key, undefined);
++  for (const [k, v] of Object.entries({ BLSH_OFFICIAL_PILOT_APPROVAL_PUBLIC_KEY: approvalPublicKey, NEXT_PUBLIC_SUPABASE_URL: OFFICIAL_ORIGIN, CRON_SECRET: "fixture-cron",
++    VERCEL_ENV: "production", VERCEL_REGION: "iad1", VERCEL_DEPLOYMENT_ID: deployment.deploymentId, VERCEL_GIT_COMMIT_SHA: deployment.gitCommitSha,
++    SUPABASE_SERVICE_ROLE_KEY: "fixture-only" })) vi.stubEnv(k, v);
++}
++export async function fakeOfficialInvocation(handler: ReturnType<typeof officialPilotHandler>, header: string, overrides: Partial<NextApiRequest> = {}) {
++  const res = { code: 0, value: {} as Record<string, unknown>, setHeader() {}, status(n: number) { this.code = n; return this; }, json(v: Record<string, unknown>) { this.value = v; } };
++  await handler({ method: "GET", headers: { authorization: "Bearer fixture-cron", "x-blsh-official-grant": header }, query: {}, ...overrides } as NextApiRequest, res as unknown as NextApiResponse);
++  return res;
++}
++export async function exportHostedOfficialFixture(args: { outDir: string; nativeRunId: string; nativeManifestSHA256: string; scheduleSHA256: string;
++  boxes: Record<string, unknown>[]; deploymentId?: string; gitCommitSha?: string; afterJournal?: (operation: number) => void }) {
++  const { outDir, nativeRunId, nativeManifestSHA256, scheduleSHA256 } = args;
++  const gameIds = args.boxes.map(b => Number(b.id));
++  const deployment = { deploymentId: args.deploymentId ?? fixtureDeployment.deploymentId, gitCommitSha: args.gitCommitSha ?? fixtureDeployment.gitCommitSha };
++  const approval = { ...deployment, nativeRunId, nativeManifestSHA256, scheduleSHA256, sourceDate: "2026-11-20", gameIds };
++  const grant = signedOfficialGrant(approval);
++  mkdirSync(outDir, { recursive: true });
++  const keys = mkdtempSync(join(tmpdir(), "official-pilot-ephemeral-"));
++  const openssl = (...argv: string[]) => execFileSync("openssl", argv, { cwd: keys, stdio: "ignore" });
++  let ca = "", socketKey: Buffer;
++  try {
++    writeFileSync(join(keys,"ca.cnf"), "[ca]\ndefault_ca=fixture\n[fixture]\ndatabase=index\nserial=serial\nnew_certs_dir=.\ndefault_md=sha256\npolicy=policy\nx509_extensions=ext\n[policy]\ncommonName=supplied\n[ext]\nbasicConstraints=critical,CA:true\nsubjectAltName=DNS:api-web.nhle.com\n");
++    writeFileSync(join(keys,"index"), ""); writeFileSync(join(keys,"serial"), "01\n");
++    openssl("req","-new","-newkey","rsa:2048","-nodes","-subj","/CN=api-web.nhle.com","-keyout","fixture.key","-out","fixture.csr");
++    openssl("ca","-batch","-selfsign","-config","ca.cnf","-keyfile","fixture.key","-in","fixture.csr","-out","fixture.crt","-notext","-startdate","20200101000000Z","-enddate","20990101000000Z");
++    ca = readFileSync(join(keys,"fixture.crt"),"utf8"); socketKey = readFileSync(join(keys,"fixture.key"));
++  } finally { rmSync(keys, { recursive: true, force: true }); }
++  const events: string[] = [], bodies: Record<string, Buffer> = {};
++  for (const box of args.boxes) bodies[String(box.id)] = Buffer.from(JSON.stringify(box, null, 2) + "\r\n");
++  const server = createServer({ cert: ca, key: socketKey }, (req, res) => {
++    events.push(req.method + " " + req.url);
++    const match = /^\/v1\/gamecenter\/(202602\d{4})\/boxscore$/.exec(req.url ?? "");
++    if (req.method !== "GET" || req.headers.host !== "api-web.nhle.com" || !match || !bodies[match[1]]) { res.writeHead(404); res.end(); return; }
++    res.end(bodies[match[1]]);
++  });
++  const at = () => new Date(Date.now()).toISOString();
++  let claimed = false;
++  const rows: Record<string, unknown>[] = [], run: Record<string, unknown> = { run_id: runId, source_date: approval.sourceDate,
++    native_run_id: nativeRunId, native_manifest_sha256: nativeManifestSHA256, deployment_id: approval.deploymentId, git_commit_sha: approval.gitCommitSha,
++    schedule_sha256: scheduleSHA256, game_ids: gameIds };
++  const fileRoot = join(outDir, "objects", "official-v1", approval.sourceDate, runId);
++  const { createOfficialPilotStore } = await vi.importActual<typeof import("./officialPilotStore")>("./officialPilotStore");
++  const store = createOfficialPilotStore({ serviceKey: "fixture-only", transport: async request => {
++    const prefix = OFFICIAL_ORIGIN + "/rest/v1/rpc/", body = JSON.parse(request.body!.toString("utf8"));
++    if (request.method !== "POST" || !request.url.startsWith(prefix) || !(request.timeoutMs > 0 && request.timeoutMs <= 5000)) throw new Error("fixture_transport_scope");
++    const rpc = request.url.slice(prefix.length);
++    if (rpc === "blsh_official_claim_v1") {
++      events.push("claim");
++      if (claimed) return Buffer.from('{"claimed":false}');
++      if (body.p_native_run_id !== nativeRunId || body.p_native_manifest_sha256 !== nativeManifestSHA256 || body.p_schedule_sha256 !== scheduleSHA256
++        || body.p_deployment_id !== deployment.deploymentId || body.p_git_commit_sha !== deployment.gitCommitSha || body.p_source_date !== approval.sourceDate
++        || JSON.stringify(body.p_game_ids) !== JSON.stringify(gameIds)) throw new Error("fixture_claim_binding");
++      claimed = true; run.claimed_at = at(); return Buffer.from(JSON.stringify({ claimed: true, runId }));
++    }
++    if (!claimed || body.p_run_id !== runId) throw new Error("fixture_ledger_binding");
++    if (rpc === "blsh_official_object_v1") {
++      const ordinal = body.p_ordinal, bytes = Buffer.from(body.p_body_base64, "base64"), path = body.p_path, file = path.split("/").at(-1);
++      if (path !== "official-v1/" + approval.sourceDate + "/" + runId + "/" + file || ordinal !== rows.length + 1 || body.p_bytes !== bytes.length
++        || pilotDigest(bytes) !== body.p_sha256) throw new Error("fixture_ledger_binding");
++      const journal = /^operation-(\d+)-STARTED\.json$/.exec(file), operation = journal ? Number(journal[1]) : null;
++      const out = join(outDir, "objects", path);
++      mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, new Uint8Array(bytes), { flag: "wx" });
++      rows.push({ run_id: runId, ordinal, path, sha256: body.p_sha256, bytes: bytes.length, written_at: at(), game_ordinal: operation,
++        game_id: operation === null ? null : gameIds[operation - 1], intent_url: operation === null ? null : JSON.parse(bytes.toString()).url });
++      events.push(file); if (operation !== null) args.afterJournal?.(operation);
++    } else if (rpc === "blsh_official_close_v1") {
++      if (body.p_manifest_text !== null && pilotDigest(Buffer.from(body.p_manifest_text)) !== body.p_manifest_sha256) throw new Error("fixture_terminal_binding");
++      Object.assign(run, { state: body.p_state, reason: body.p_reason, manifest_sha256: body.p_manifest_sha256, closed_at: at() }); events.push(body.p_state);
++      writeFileSync(join(outDir, "run.json"), JSON.stringify(run)); writeFileSync(join(outDir, "objects.json"), JSON.stringify(rows));
++    } else throw new Error("fixture_unknown_rpc");
++    return Buffer.from("true");
++  }});
++  const argv = process.execArgv;
++  setOfficialFixtureEnv(grant.approvalPublicKey, deployment); process.execArgv = [];
++  const t0 = performance.now(), clock = vi.spyOn(Date,"now").mockImplementation(() => pilotSlot + Math.floor(performance.now() - t0));
++  const routePath = join(__dirname, "../../../pages/api/v1/db/blsh-official-boxscores.ts");
++  try {
++    server.listen(0, "127.0.0.1"); await once(server, "listening");
++    const addr = server.address(); if (!addr || typeof addr === "string") throw new Error("fixture_port");
++    const handler = officialPilotHandler(routePath, { socket: { ca, port: addr.port }, store });
++    const result = await fakeOfficialInvocation(handler, grant.header);
++    const runtime = JSON.parse(readFileSync(join(fileRoot, "RUNTIME.json"), "utf8"));
++    return { outDir, result: result.value, events, bodies, run, rows, fileRoot, acquisitionPinsSHA256: grant.acquisitionPinsSHA256,
++      acquisitionManifestSHA256: String(result.value.manifestSHA256 ?? ""), evidenceAsOfUTC: at(), hostedOfficial: { ...deployment,
++        runId, approvalPublicKey: grant.approvalPublicKey, runtime: { region: "iad1", nodeVersion: process.version, nodeABI: process.versions.modules,
++          opensslVersion: process.versions.openssl, routeBundleSHA256: createHash("sha256").update(new Uint8Array(readFileSync(routePath))).digest("hex"),
++          execPathSHA256: createHash("sha256").update(new Uint8Array(readFileSync(process.execPath))).digest("hex"),
++          bundledCASHA256: createHash("sha256").update(ca).digest("hex"), defaultCASHA256: runtime.defaultCASHA256 } } };
++  } finally {
++    await new Promise<void>(resolve => server.close(() => resolve())); clock.mockRestore(); process.execArgv = argv; vi.unstubAllEnvs();
++  }
++}
+diff --git a/web/lib/blsh/nativeCaptureV6/officialPilotHandler.ts b/web/lib/blsh/nativeCaptureV6/officialPilotHandler.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..695db58e95425d99a3e36a7ff9e5f837cf57058d
+--- /dev/null
++++ b/web/lib/blsh/nativeCaptureV6/officialPilotHandler.ts
+@@ -0,0 +1,89 @@
++import { createPublicKey, timingSafeEqual, verify } from "node:crypto";
++import type { NextApiRequest, NextApiResponse } from "next";
++import { decodeReviewedEvidenceJSON } from "../../buyLowSellHigh/reviewedFiveGameWindow.server";
++import type { OfficialPilotStore, OfficialPilotTarget } from "./officialPilotStore";
++import { OFFICIAL_ORIGIN, OFFICIAL_SLOT, officialRuntime, officialSlot, outerRemaining, outerTime, pilotClock, pilotDigest, runOfficialPilot, type FixtureSocket, type PilotIntake } from "./officialPilotAcquisition";
++
++const SOURCE = "2026-11-20";
++const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/, sha = /^[a-f0-9]{64}$/;
++function need(ok: unknown): asserts ok { if (!ok) throw new Error("official_approval_invalid"); }
++export const officialPilotApprovalBytes = (a: OfficialPilotTarget) => new TextEncoder().encode(JSON.stringify(["fhfh.blsh.official-pilot-approval.v1",
++  a.sourceDate, a.nativeRunId, a.nativeManifestSHA256, a.scheduleSHA256, a.deploymentId, a.gitCommitSha, a.gameIds]));
++
++function readGrant(grant: unknown, pem: string): PilotIntake {
++  need(typeof grant === "string" && grant.length > 0 && grant.length <= 4096);
++  const bytes = Buffer.from(grant, "base64");
++  need(bytes.toString("base64") === grant && pem.length <= 512 && /^-----BEGIN PUBLIC KEY-----\r?\n[A-Za-z0-9+/=\r\n]+\r?\n-----END PUBLIC KEY-----$/.test(pem.trim()));
++  const key = createPublicKey(pem);
++  need(key.type === "public" && key.asymmetricKeyType === "ed25519");
++  const envelope = decodeReviewedEvidenceJSON<{ approval: OfficialPilotTarget; signature: string }>(new Uint8Array(bytes));
++  need(envelope && Object.keys(envelope).sort().join(",") === "approval,signature");
++  const a = envelope.approval;
++  need(a && Object.keys(a).sort().join(",") === "deploymentId,gameIds,gitCommitSha,nativeManifestSHA256,nativeRunId,scheduleSHA256,sourceDate");
++  need(a.sourceDate === SOURCE && typeof a.nativeRunId === "string" && uuid.test(a.nativeRunId)
++    && typeof a.nativeManifestSHA256 === "string" && sha.test(a.nativeManifestSHA256) && typeof a.scheduleSHA256 === "string" && sha.test(a.scheduleSHA256)
++    && typeof a.deploymentId === "string" && /^[a-zA-Z0-9_-]{1,128}$/.test(a.deploymentId) && a.deploymentId === process.env.VERCEL_DEPLOYMENT_ID
++    && typeof a.gitCommitSha === "string" && /^[a-f0-9]{40}$/.test(a.gitCommitSha) && a.gitCommitSha === process.env.VERCEL_GIT_COMMIT_SHA
++    && Array.isArray(a.gameIds) && a.gameIds.length > 0 && a.gameIds.length <= 16 && a.gameIds.every((id, i) =>
++      Number.isSafeInteger(id) && /^202602\d{4}$/.test(String(id)) && (i === 0 || id > a.gameIds[i - 1])));
++  need(typeof envelope.signature === "string" && /^[A-Za-z0-9+/]{86}==$/.test(envelope.signature));
++  const sig = Buffer.from(envelope.signature, "base64");
++  need(sig.length === 64 && sig.toString("base64") === envelope.signature && verify(null, officialPilotApprovalBytes(a), key, new Uint8Array(sig)));
++  return { approval: a, grantBase64: grant, acquisitionPinsSHA256: pilotDigest(bytes) };
++}
++function cron(header: string | undefined) {
++  const secret = process.env.CRON_SECRET;
++  if (!secret?.trim() || typeof header !== "string") return false;
++  const a = new Uint8Array(Buffer.from(header)), b = new Uint8Array(Buffer.from("Bearer " + secret));
++  return a.length === b.length && timingSafeEqual(a, b);
++}
++
++export function officialPilotHandler(routePath: string, fixture?: { socket: FixtureSocket; store: OfficialPilotStore }) {
++  return async (req: NextApiRequest, res: NextApiResponse) => {
++    const ingress = pilotClock();
++    res.setHeader("Cache-Control", "no-store");
++    if (!cron(req.headers.authorization)) return res.status(403).json({ state: "refused", reason: "cron_bearer_required" });
++    if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).json({ state: "refused", reason: "method_not_allowed" }); }
++    if (Object.keys(req.query ?? {}).length || req.body !== undefined || req.headers["transfer-encoding"] !== undefined
++      || (req.headers["content-length"] !== undefined && req.headers["content-length"] !== "0") || req.readableLength > 0) {
++      return res.status(400).json({ state: "refused", reason: "unexpected_parameters" });
++    }
++    const pem = process.env.BLSH_OFFICIAL_PILOT_APPROVAL_PUBLIC_KEY;
++    if (!pem) return res.status(200).json({ state: "skipped", reason: "disabled" });
++    if (!officialSlot(ingress.wall)) return res.status(409).json({ state: "refused", reason: "outside_official_slot" });
++    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
++    if (process.env.VERCEL_ENV !== "production" || process.env.NEXT_PUBLIC_SUPABASE_URL !== OFFICIAL_ORIGIN || !serviceKey) {
++      return res.status(503).json({ state: "refused", reason: "environment_mismatch" });
++    }
++    let intake: PilotIntake;
++    try { intake = readGrant(req.headers["x-blsh-official-grant"], pem); } catch { return res.status(403).json({ state: "refused", reason: "approval_invalid" }); }
++    let runtime: ReturnType<typeof officialRuntime>, store: OfficialPilotStore;
++    try {
++      runtime = officialRuntime(routePath, ingress, fixture?.socket);
++      store = fixture?.store ?? (await import("./officialPilotStore")).createOfficialPilotStore({ serviceKey });
++      outerTime(ingress, 130000);
++      if (!officialSlot(Date.now())) return res.status(409).json({ state: "refused", reason: "outside_official_slot" });
++    } catch { return res.status(503).json({ state: "refused", reason: "official_runtime_unverified" }); }
++    let claim: Awaited<ReturnType<OfficialPilotStore["claim"]>>;
++    const related = { sourceDate: SOURCE, nativeRunId: intake.approval.nativeRunId, nativeManifestSHA256: intake.approval.nativeManifestSHA256 };
++    try { claim = await store.claim(intake.approval, () => Math.min(OFFICIAL_SLOT + 60000 - Date.now(), outerRemaining(ingress) - 125000)); }
++    catch { return res.status(503).json({ state: "uncertain", reason: "claim_unacknowledged", ...related }); }
++    if (!claim.claimed) return res.status(200).json({ state: "skipped", reason: "already_claimed", ...related });
++    const runId = claim.runId;
++    let packet: Awaited<ReturnType<typeof runOfficialPilot>>;
++    try {
++      packet = await runOfficialPilot(store, runId, intake, runtime, ingress, fixture?.socket);
++    }
++    catch {
++      try { outerTime(ingress,1); await store.close(runId, "failed", "official_capture_failed", null, null, () => outerRemaining(ingress)); outerTime(ingress); }
++      catch { return res.status(503).json({ state: "uncertain", reason: "failure_close_unacknowledged", ...related, runId }); }
++      return res.status(502).json({ state: "failed", reason: "official_capture_failed", ...related, runId });
++    }
++    try {
++      need(packet.closeRemaining() > 0);
++      await store.close(runId, "packet_complete_pending_review", null, packet.manifestSHA256, packet.manifest, packet.closeRemaining);
++      need(packet.closeRemaining() >= 0);
++    } catch { return res.status(503).json({ state: "uncertain", reason: "completion_close_unacknowledged", ...related, runId }); }
++    return res.status(200).json({ state: "packet_complete_pending_review", sourceDate: SOURCE, runId, manifestSHA256: packet.manifestSHA256, requests: intake.approval.gameIds.length });
++  };
++}
+diff --git a/web/lib/blsh/nativeCaptureV6/officialPilotStore.test.ts b/web/lib/blsh/nativeCaptureV6/officialPilotStore.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..ca82ad97ad9f1990354602f4a89bb093068927c7
+--- /dev/null
++++ b/web/lib/blsh/nativeCaptureV6/officialPilotStore.test.ts
+@@ -0,0 +1,77 @@
++// @vitest-environment node
++import { createHash } from "node:crypto";
++import { describe, expect, it, vi } from "vitest";
++import { createOfficialPilotStore, type OfficialPilotTarget } from "./officialPilotStore";
++import { type ContextTransport } from "./requestContextStore";
++
++const run = "11111111-2222-4333-8444-555555555555", sha = "1".repeat(64);
++const target: OfficialPilotTarget = { sourceDate: "2026-11-20", nativeRunId: run, nativeManifestSHA256: sha,
++  scheduleSHA256: "2".repeat(64), deploymentId: "dpl_pilot", gitCommitSha: "3".repeat(40), gameIds: [2026020301,2026020302] };
++const encoded = (data: unknown) => Buffer.from(JSON.stringify(data));
++const hash = (data: Buffer) => createHash("sha256").update(new Uint8Array(data)).digest("hex");
++const json = (data: Buffer | undefined) => JSON.parse(data!.toString("utf8"));
++const fixture = (send: ContextTransport) => {
++  const transport = vi.fn(send);
++  return { store: createOfficialPilotStore({ serviceKey: "synthetic-test-only", transport }), transport };
++};
++
++describe("official pilot custody transport", () => {
++  it("makes one fixed-origin claim and propagates only a fresh run or a consumed claim", async () => {
++    let first = true;
++    const { store, transport } = fixture(async r => {
++      expect(r.url).toBe("https://fyhftlxokyjtpndbkfse.supabase.co/rest/v1/rpc/blsh_official_claim_v1");
++      expect(r).toMatchObject({method:"POST",timeoutMs:5000,limit:65536});
++      expect(json(r.body)).toEqual({ p_source_date: target.sourceDate,p_native_run_id:run,p_native_manifest_sha256:sha,
++        p_deployment_id: target.deploymentId,p_git_commit_sha:target.gitCommitSha,p_schedule_sha256:target.scheduleSHA256,p_game_ids:target.gameIds });
++      const ack = first ? { claimed: true, runId: run } : { claimed: false };
++      first = false;
++      return encoded(ack);
++    });
++    expect(await store.claim(target)).toEqual({claimed:true,runId:run});
++    expect(await store.claim(target)).toEqual({claimed:false});
++    expect(transport).toHaveBeenCalledTimes(2);
++  });
++  it("rejects a widened slate, an invalid date, and ambiguous acknowledgements", async () => {
++    const {store,transport}=fixture(async () => encoded({claimed:false,runId:run}));
++    for (const patch of [{gameIds:[]},{gameIds:[...target.gameIds].reverse()},{gameIds:Array(17).fill(2026020301)},{sourceDate:"2026-11-21"}]) {
++      await expect(store.claim({...target,...patch})).rejects.toThrow("official_target_invalid");
++    }
++    expect(transport).not.toHaveBeenCalled();
++    await expect(store.claim(target)).rejects.toThrow("official_claim_unacknowledged");
++  });
++  it("commits original journal bytes and intent in one bounded RPC", async () => {
++    const {store,transport}=fixture(async () => encoded(true));
++    const name="operation-1-STARTED.json", bytes=encoded({operation:1,method:"GET",url:"https://api-web.nhle.com/v1/gamecenter/2026020301/boxscore"});
++    await store.putObject(run,target.sourceDate,2,name,bytes,hash(bytes),()=>731);
++    const path="official-v1/"+target.sourceDate+"/"+run+"/"+name;
++    expect(transport).toHaveBeenCalledTimes(1);
++    const [r]=transport.mock.calls[0];
++    expect(r).toMatchObject({method:"POST",timeoutMs:731,url:"https://fyhftlxokyjtpndbkfse.supabase.co/rest/v1/rpc/blsh_official_object_v1"});
++    expect(json(r.body)).toEqual({p_run_id:run,p_ordinal:2,p_path:path,p_bytes:bytes.length,p_sha256:hash(bytes),p_body_base64:bytes.toString("base64")});
++  });
++  it("never retries a lost append acknowledgement and never sends an expired RPC",async () => {
++    const {store,transport}=fixture(async () => {throw new Error("sensitive transport details");});
++    const bytes=encoded({x:"test"});
++    await expect(store.putObject(run,target.sourceDate,2,"operation-1-STARTED.json",bytes,hash(bytes))).rejects.toThrow("official_store_transport_failed");
++    await expect(store.close(run,"failed","lost_ack",null,null,()=>0)).rejects.toThrow("official_store_deadline");
++    await expect(store.claim(target,()=>Number.NaN)).rejects.toThrow("official_store_deadline");
++    expect(transport).toHaveBeenCalledTimes(1);
++  });
++  it("refuses wrong bytes, bounds or paths and binds both terminal states",async () => {
++    const {store,transport}=fixture(async () => encoded(true));
++    const bytes=encoded({files:[]}),oversize=Buffer.alloc(4*1024*1024+1);
++    for(const [file, data, h] of [["../game",bytes,hash(bytes)],["RUNTIME.json",bytes,sha],
++      ["boxscore-2026020301.body.json",oversize,hash(oversize)]] as const){
++      await expect(store.putObject(run,target.sourceDate,1,file,data,h)).rejects.toThrow("official_object_invalid");
++    }
++    await expect(store.close(run,"failed","bad reason",null,null)).rejects.toThrow("official_failure_invalid");
++    await expect(store.close(run,"packet_complete_pending_review",null,sha,bytes)).rejects.toThrow("official_manifest_invalid");
++    expect(transport).not.toHaveBeenCalled();
++    await store.close(run,"packet_complete_pending_review",null,hash(bytes),bytes);
++    await store.close(run,"failed","uncertain",null,null);
++    expect(transport.mock.calls.map(([r]) => json(r.body))).toEqual([
++      {p_run_id:run,p_state:"packet_complete_pending_review",p_reason:null,p_manifest_sha256:hash(bytes),p_manifest_text:bytes.toString()},
++      {p_run_id:run,p_state:"failed",p_reason:"uncertain",p_manifest_sha256:null,p_manifest_text:null},
++    ]);
++  });
++});
+diff --git a/web/lib/blsh/nativeCaptureV6/officialPilotStore.ts b/web/lib/blsh/nativeCaptureV6/officialPilotStore.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..a65b13675b0899db3403719826f58aa815b42b61
+--- /dev/null
++++ b/web/lib/blsh/nativeCaptureV6/officialPilotStore.ts
+@@ -0,0 +1,74 @@
++/** One hosted official pilot. Every RPC and append-only upload is attempted once. */
++import { createHash } from "node:crypto";
++import { PINNED_SUPABASE_ORIGIN } from "./core";
++import { matches, need, object, parseJSON } from "./packetFormat";
++import { boundedHTTPS, type ContextTransport } from "./requestContextStore";
++
++const SOURCE_DATE = "2026-11-20";
++const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/, SHA = /^[0-9a-f]{64}$/;
++const SMALL = 65536;
++export type OfficialPilotTarget = {
++  sourceDate: string; nativeRunId: string; nativeManifestSHA256: string;
++  deploymentId: string; gitCommitSha: string; scheduleSHA256: string; gameIds: readonly number[];
++};
++export interface OfficialPilotStore {
++  claim(target: OfficialPilotTarget, remainingMs?: () => number): Promise<{ claimed: true; runId: string } | { claimed: false }>;
++  putObject(runId: string, sourceDate: string, ordinal: number, file: string, bytes: Buffer, sha256: string, remainingMs?: () => number): Promise<void>;
++  close(runId: string, state: "packet_complete_pending_review" | "failed", reason: string | null,
++    manifestSHA256: string | null, manifestBytes: Buffer | null, remainingMs?: () => number): Promise<void>;
++}
++const digest = (bytes: Buffer) => createHash("sha256").update(new Uint8Array(bytes)).digest("hex");
++const utf8 = (bytes: Buffer) => new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(new Uint8Array(bytes));
++
++export function officialPilotObjectLimit(file: string): number {
++  if (file === "RUNTIME.json" || file === "MANIFEST.json" || /^operation-(?:[1-9]|1[0-6])-STARTED\.json$/.test(file)) return SMALL;
++  if (/^boxscore-202602\d{4}\.body\.json$/.test(file)) return 4 * 1024 * 1024;
++  if (/^boxscore-202602\d{4}\.receipt\.json$/.test(file)) return 384 * 1024;
++  return 0;
++}
++
++export function createOfficialPilotStore(options: { serviceKey: string; transport?: ContextTransport }): OfficialPilotStore {
++  need(typeof options.serviceKey === "string" && options.serviceKey.trim().length > 0, "official_credentials_missing");
++  const transport = options.transport ?? boundedHTTPS;
++  const rpc = async (name: string, args: Record<string,unknown>, remainingMs?: () => number) => {
++    const body = Buffer.from(JSON.stringify(args));
++    const timeoutMs = Math.min(5000, Math.floor(remainingMs?.() ?? 5000));
++    need(Number.isFinite(timeoutMs) && timeoutMs > 0, "official_store_deadline");
++    try {
++      const response = await transport({ method: "POST", url: PINNED_SUPABASE_ORIGIN + "/rest/v1/rpc/" + name,
++        headers: { apikey: options.serviceKey, Authorization: "Bearer " + options.serviceKey,
++          "Accept-Encoding": "identity", "Content-Type": "application/json" }, body, limit: SMALL, timeoutMs });
++      need(Buffer.isBuffer(response) && response.length <= SMALL, "official_response_bound");
++      return parseJSON(new Uint8Array(response));
++    } catch { throw new Error("official_store_transport_failed"); }
++  };
++  return {
++    async claim(t, remainingMs) {
++      need(t.sourceDate === SOURCE_DATE && matches(t.nativeRunId, UUID) && matches(t.nativeManifestSHA256, SHA)
++        && matches(t.scheduleSHA256, SHA) && matches(t.deploymentId, /^[A-Za-z0-9_-]{1,128}$/)
++        && matches(t.gitCommitSha, /^[0-9a-f]{40}$/) && Array.isArray(t.gameIds) && t.gameIds.length >= 1 && t.gameIds.length <= 16
++        && t.gameIds.every((id,i) => Number.isSafeInteger(id) && /^202602\d{4}$/.test(String(id)) && (!i || t.gameIds[i-1] < id)), "official_target_invalid");
++      const ack = object(await rpc("blsh_official_claim_v1", { p_source_date: t.sourceDate, p_native_run_id: t.nativeRunId,
++        p_native_manifest_sha256: t.nativeManifestSHA256, p_schedule_sha256: t.scheduleSHA256,
++        p_deployment_id: t.deploymentId, p_git_commit_sha: t.gitCommitSha, p_game_ids: t.gameIds }, remainingMs));
++      if (ack.claimed === false && Object.keys(ack).length === 1) return { claimed: false };
++      need(ack.claimed === true && Object.keys(ack).length === 2 && matches(ack.runId, UUID), "official_claim_unacknowledged");
++      return { claimed: true, runId: ack.runId };
++    },
++    async putObject(runId, day, ordinal, file, bytes, hash, remainingMs) {
++      need(matches(runId, UUID) && day === SOURCE_DATE && Number.isInteger(ordinal) && ordinal >= 1 && ordinal <= 50
++        && Buffer.isBuffer(bytes) && bytes.length >= 1 && bytes.length <= officialPilotObjectLimit(file) && digest(bytes) === hash, "official_object_invalid");
++      const path = "official-v1/" + day + "/" + runId + "/" + file;
++      need(await rpc("blsh_official_object_v1", { p_run_id: runId, p_ordinal: ordinal, p_path: path,
++        p_bytes: bytes.length, p_sha256: hash, p_body_base64: bytes.toString("base64") }, remainingMs) === true, "official_object_unacknowledged");
++    },
++    async close(runId, state, reason, hash, bytes, remainingMs) {
++      need(matches(runId, UUID), "official_run_invalid");
++      if (state === "failed") need(matches(reason, /^[a-z][a-z0-9_:]{2,100}$/) && hash === null && bytes === null, "official_failure_invalid");
++      else need(state === "packet_complete_pending_review" && reason === null && Buffer.isBuffer(bytes)
++        && bytes.length > 0 && bytes.length <= SMALL && digest(bytes) === hash, "official_manifest_invalid");
++      need(await rpc("blsh_official_close_v1", { p_run_id: runId, p_state: state, p_reason: reason,
++        p_manifest_sha256: hash, p_manifest_text: bytes === null ? null : utf8(bytes) }, remainingMs) === true, "official_close_unacknowledged");
++    },
++  };
++}
+diff --git a/web/lib/blsh/nativeCaptureV6/requestContextStore.ts b/web/lib/blsh/nativeCaptureV6/requestContextStore.ts
+index 9cae6e8397e82d1b198831c1246f3ae95f6aa8ba..c0bb173fa3cab68193de3dc74aa326789c20418f 100644
+--- a/web/lib/blsh/nativeCaptureV6/requestContextStore.ts
++++ b/web/lib/blsh/nativeCaptureV6/requestContextStore.ts
+@@ -41,7 +41,7 @@ function targetArguments(target: NativeContextTarget) {
+   return { p_source_date: target.sourceDate, p_native_run_id: target.nativeRunId, p_native_manifest_sha256: target.nativeManifestSHA256 };
+ }
+ 
+-const boundedHTTPS: ContextTransport = ({ method, url, headers, body, limit, timeoutMs }) => new Promise((resolve, reject) => {
++export const boundedHTTPS: ContextTransport = ({ method, url, headers, body, limit, timeoutMs }) => new Promise((resolve, reject) => {
+   let settled = false;
+   const fail = () => {
+     if (settled) return;
+diff --git a/web/pages/api/v1/db/blsh-official-boxscores.ts b/web/pages/api/v1/db/blsh-official-boxscores.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..316ccd0f17146f1ae8230d0a44a7c2ccf03bffe1
+--- /dev/null
++++ b/web/pages/api/v1/db/blsh-official-boxscores.ts
+@@ -0,0 +1,4 @@
++import { officialPilotHandler } from "lib/blsh/nativeCaptureV6/officialPilotHandler";
++
++export const config = { maxDuration: 240, api: { bodyParser: false } };
++export default officialPilotHandler(typeof __filename === "string" ? __filename : "");
+diff --git a/web/scripts/blsh/acquireV6Official.mjs b/web/scripts/blsh/acquireV6Official.mjs
+index 524744437f5bf2d87de343bf0fbfbe1eecc7cffe..e2f619cbbe2eb2f6a5d41924faa5897086f0e7e4 100644
+--- a/web/scripts/blsh/acquireV6Official.mjs
++++ b/web/scripts/blsh/acquireV6Official.mjs
+@@ -2,26 +2,22 @@
+ // From web: node scripts/blsh/acquireV6Official.mjs EXPORT LEDGER_PINS
+ // A separately authorized operator may add: --authorized-get INDEPENDENT_ACQUISITION_PINS
+ import { execFileSync } from "node:child_process";
+-import { X509Certificate } from "node:crypto";
+ import { closeSync, fsyncSync, openSync, readFileSync, realpathSync } from "node:fs";
+-import { request } from "node:https";
+ import { userInfo } from "node:os";
+ import { dirname, join, relative, resolve, sep } from "node:path";
+ import { performance } from "node:perf_hooks";
+-import * as tls from "node:tls";
+ import { fileURLToPath } from "node:url";
+ import { isDeepStrictEqual } from "node:util";
+ import { BUDGET } from "../../../tasks/artifacts/blsh-evidence-bridge-2026-11-15/acquire-boxscores.mjs";
+ import { createOutput, encode, MIB, need, parseJson, readBound, sha, stamp } from "../../../tasks/artifacts/blsh-evidence-bridge-2026-11-15/lib.mjs";
+ 
+-export { BUDGET };
++import { BUDGET as providerBudget, getBox, liveRoots, officialUrl, verifyOfficialTLS } from "../../lib/blsh/nativeCaptureV6/officialPilotAcquisition.transport.mjs";
++export { BUDGET, liveRoots, officialUrl, verifyOfficialTLS };
++need(isDeepStrictEqual(BUDGET, providerBudget), "official_provider_budget_changed");
+ 
+ const self = fileURLToPath(import.meta.url), web = resolve(dirname(self), "../..");
+ const bridge = resolve(web, "../tasks/artifacts/blsh-evidence-bridge-2026-11-15");
+-const host = "api-web.nhle.com";
+-export const officialUrl = id => `https://${host}/v1/gamecenter/${id}/boxscore`;
+ export const fixedOutput = date => join(userInfo().homedir, ".fhfh-blsh-official-v6-" + date);
+-export const liveRoots = () => [...tls.rootCertificates];
+ const bundledHash = roots => sha(roots.join("\n"));
+ const nodeHash = () => sha(readFileSync(process.execPath));
+ const syncDirectory = path => { const fd = openSync(path, "r"); try { fsyncSync(fd); } finally { closeSync(fd); } };
+@@ -38,7 +34,8 @@ export function captureBinding(profile, runBytes, acquisitionNodeSHA256 = nodeHa
+     deploymentId: profile.deploymentId, gitCommitSha: profile.gitCommitSha, manifestSHA256: profile.manifestSHA256,
+     profileSHA256: sha(encode(profile)), ledgerRowSHA256: sha(runBytes), ledgerClosedAtUTC: run.closed_at,
+     scheduleSHA256: profile.bodies.schedule.sha256, gameIds,
+-    toolSHA256: sha(readBound(self, MIB)), budgetSourceSHA256: sha(readBound(join(bridge, "acquire-boxscores.mjs"), MIB)),
++    toolSHA256: sha(readBound(self, MIB)), transportSHA256: sha(readBound(join(web, "lib/blsh/nativeCaptureV6/officialPilotAcquisition.transport.mjs"), MIB)),
++    budgetSourceSHA256: sha(readBound(join(bridge, "acquire-boxscores.mjs"), MIB)),
+     helperSHA256: sha(readBound(join(bridge, "lib.mjs"), MIB)), ledgerReaderSHA256: sha(readBound(join(dirname(self), "readNativeV6Ledger.ts"), MIB)),
+     packetFormatSHA256: sha(readBound(join(web, "lib/blsh/nativeCaptureV6/packetFormat.ts"), MIB)),
+     profileReaderSHA256: sha(readBound(join(dirname(self), "reviewNativeV6Packet.mjs"), MIB)),
+@@ -62,85 +59,6 @@ function readExternalPins(file, directory, ledgerPins) {
+   return readBound(path, 65536);
+ }
+ 
+-// Verify the actual leaf, its identity, validity intervals and signature chain against the enumerated roots.
+-// Each operation demands a fresh full handshake, so there is no inferred certificate from an earlier game.
+-export function verifyOfficialTLS(observed, roots, when) {
+-  need(observed?.servername === host && observed.authorized === true && observed.authorizationError === null
+-    && observed.channel === "https.ClientRequest:secureConnect" && observed.sessionReused === false && observed.connectionReused === false
+-    && ["TLSv1.2", "TLSv1.3"].includes(observed.protocol) && typeof observed.cipher === "string" && observed.cipher.length > 0
+-    && Array.isArray(observed.chainDER) && observed.chainDER.length > 0 && observed.chainDER.length <= 10, "official_tls_observation_invalid");
+-  const chain = observed.chainDER.map(der => {
+-    need(typeof der === "string" && der.length <= 32768 && /^[A-Za-z0-9+/]+=*$/.test(der), "official_certificate_invalid");
+-    const certificate = new X509Certificate(Buffer.from(der, "base64"));
+-    need(Date.parse(certificate.validFrom) <= when && when <= Date.parse(certificate.validTo), "official_certificate_time");
+-    return certificate;
+-  });
+-  need(chain[0].checkHost(host) && chain[0].fingerprint256 === observed.peerFingerprint256, "official_certificate_identity");
+-  for (let i = 1; i < chain.length; i++) need(chain[i].ca && chain[i-1].checkIssued(chain[i]) && chain[i-1].verify(chain[i].publicKey), "official_certificate_chain");
+-  const top = chain.at(-1);
+-  need(roots.some(pem => {
+-    const ca = new X509Certificate(pem);
+-    return ca.ca && Date.parse(ca.validFrom) <= when && when <= Date.parse(ca.validTo) &&
+-      (top.fingerprint256 === ca.fingerprint256 || (top.checkIssued(ca) && top.verify(ca.publicKey)));
+-  }), "official_certificate_untrusted");
+-}
+-
+-function getBox(url, journalWall, journalMono, runWall, runMono, fixture) {
+-  return new Promise((resolveGet, reject) => {
+-    const endpoint = new URL(url), roots = fixture ? [fixture.ca] : liveRoots();
+-    let observation, writes = 0;
+-    const requestOptions = { method: "GET", agent: false, ca: roots, rejectUnauthorized: true, servername: host,
+-      headers: { Host: host, Accept: "application/json", "Accept-Encoding": "identity", Connection: "close" },
+-      // A fixture can only connect to numeric loopback. It can never route to a provider.
+-      ...(fixture ? { hostname: "127.0.0.1", port: fixture.port } : {}) };
+-    // The journal and its directory have been fsynced. Re-read both clocks at
+-    // the actual outbound boundary; journaling consumes the original operation budget.
+-    const dispatched = Date.now(), dispatchedMono = performance.now();
+-    const wallDeadline = journalWall + BUDGET.perRequestTimeoutMs, monoDeadline = journalMono + BUDGET.perRequestTimeoutMs;
+-    need(dispatched >= journalWall && dispatched < wallDeadline && dispatchedMono >= journalMono && dispatchedMono < monoDeadline, "official_request_deadline");
+-    need(dispatched + BUDGET.perRequestTimeoutMs <= runWall + BUDGET.totalMs
+-      && dispatchedMono + BUDGET.perRequestTimeoutMs <= runMono + BUDGET.totalMs, "official_acquisition_deadline");
+-    const req = request(url, requestOptions, response => {
+-      const chunks = []; let size = 0;
+-      const fail = error => { req.destroy(); response.destroy(); reject(error); };
+-      try {
+-        need(response.statusCode === 200 && !response.headers.location && ["identity", undefined].includes(response.headers["content-encoding"])
+-          && req.method === "GET" && req.path === endpoint.pathname && req.getHeader("host") === host
+-          && writes === 1 && observation, "official_transport_response_invalid");
+-      } catch (e) { fail(e); return; }
+-      response.on("data", chunk => {
+-        size += chunk.length;
+-        if (size > BUDGET.maxBodyBytes) { fail(new Error("official_body_limit")); return; }
+-        chunks.push(chunk);
+-      });
+-      response.once("error", fail);
+-      response.once("end", () => {
+-        if (!response.complete || !size) { fail(new Error("official_incomplete_body")); return; }
+-        resolveGet({ body: Buffer.concat(chunks), tls: observation, writes, httpStatus: response.statusCode, dispatchedAtUTC: new Date(dispatched).toISOString() });
+-      });
+-    });
+-    // Hard timeout covers resolution, handshake, headers and body, including a stalled stream.
+-    const timer = setTimeout(() => req.destroy(new Error("official_request_deadline")), Math.max(1, Math.min(wallDeadline - Date.now(), monoDeadline - performance.now())));
+-    req.once("close", () => clearTimeout(timer));
+-    req.once("error", reject);
+-    req.once("finish", () => { writes++; });
+-    req.once("socket", socket => socket.once("secureConnect", () => {
+-      try {
+-        const chainDER = [], seen = new Set(); let cert = socket.getPeerCertificate(true);
+-        while (cert?.raw && !seen.has(cert.fingerprint256)) {
+-          need(chainDER.length < 10, "official_certificate_chain_length");
+-          seen.add(cert.fingerprint256); chainDER.push(cert.raw.toString("base64")); cert = cert.issuerCertificate;
+-        }
+-        observation = { channel: "https.ClientRequest:secureConnect", servername: socket.servername, authorized: socket.authorized,
+-          authorizationError: socket.authorizationError || null, protocol: socket.getProtocol(), cipher: socket.getCipher()?.name,
+-          sessionReused: socket.isSessionReused(), connectionReused: req.reusedSocket === true, peerFingerprint256: socket.getPeerCertificate().fingerprint256, chainDER };
+-        verifyOfficialTLS(observation, roots, Date.now());
+-      } catch (error) { req.destroy(error); }
+-    }));
+-    req.end();
+-  });
+-}
+-
+ async function acquire(exportDir, ledgerPins, pinsFile, fixture) {
+   if (!fixture) need(process.execArgv.length === 0 && resolve(process.argv[1]) === self
+     && Object.keys(process.env).every(key => ["PATH", "HOME", "TMPDIR", "LANG", "LC_ALL"].includes(key)), "official_clean_direct_launch_required");
+diff --git a/web/scripts/blsh/acquireV6OfficialFrame.ts b/web/scripts/blsh/acquireV6OfficialFrame.ts
+index 8dcde1db593414734437d9213f470b7aa5ac1914..75d116e8d7c17074804d2a20e595c8b414a73f53 100644
+--- a/web/scripts/blsh/acquireV6OfficialFrame.ts
++++ b/web/scripts/blsh/acquireV6OfficialFrame.ts
+@@ -11,7 +11,7 @@ const outside = (directory: string, file: string) => { const rel = relative(dire
+ export async function deriveV6OfficialFrame(exportDir: string, ledgerPins: string, officialDir: string, framePins: string, output: string, fixtureOnly = false) {
+   const { MIB, encode, isHash, need, parseJson, readBound, sha } = await import("../../../tasks/artifacts/blsh-evidence-bridge-2026-11-15/lib.mjs");
+   const { reviewNativeV6Packet } = await import("./reviewNativeV6Packet.mjs");
+-  const { deriveOfficialFrame } = await import("./prepareV6ObservationEvidence.mjs");
++  const { deriveOfficialFrame, deriveHostedOfficialFrame } = await import("./prepareV6ObservationEvidence.mjs");
+   const directory = realpathSync(officialDir), ledger = realpathSync(exportDir), pinsFile = realpathSync(framePins), ledgerPinFile = realpathSync(ledgerPins);
+   const destination = join(realpathSync(dirname(resolve(output))), basename(output));
+   need([ledger, directory].every(dir => outside(dir, pinsFile) && outside(dir, ledgerPinFile) && outside(dir, destination))
+@@ -29,8 +29,11 @@ export async function deriveV6OfficialFrame(exportDir: string, ledgerPins: strin
+     return bytes;
+   };
+   const schedule = parseJson(verified.files.get("schedule.raw.json"));
+-  const day = schedule.gameWeek.find((row: { date: string }) => row.date === pins.sourceDate);
+-  const { frame } = deriveOfficialFrame(read, readdirSync(directory), day, pins.playerId, pins, profile, runBytes, fixtureOnly);
++  const dates = schedule.gameWeek.filter((row: { date: string }) => row.date === pins.sourceDate);
++  need(dates.length === 1, "schedule_day_ambiguous");
++  const { frame } = Object.prototype.hasOwnProperty.call(pins, "hostedOfficial")
++    ? deriveHostedOfficialFrame(directory, dates[0], pins.playerId, pins, profile, runBytes, fixtureOnly, undefined)
++    : deriveOfficialFrame(read, readdirSync(directory), dates[0], pins.playerId, pins, profile, runBytes, fixtureOnly);
+   const bytes = encode(frame), fd = openSync(destination, "wx", 0o600);
+   try { writeFileSync(fd, new Uint8Array(bytes)); fsyncSync(fd); } finally { closeSync(fd); }
+   return { status: fixtureOnly ? "fixture_only_frame" : "official_frame_pending_independent_review", frameSHA256: sha(bytes), acceptedWitnesses: 0 };
+diff --git a/web/scripts/blsh/prepareV6Observation.test.ts b/web/scripts/blsh/prepareV6Observation.test.ts
+index 1cc5867bbf952b12e491ec33e7e74d141c5a365d..16faa026f9e7f6d2c8b231580f7215ff41593e22 100644
+--- a/web/scripts/blsh/prepareV6Observation.test.ts
++++ b/web/scripts/blsh/prepareV6Observation.test.ts
+@@ -12,6 +12,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+ import { capture, fixtureGames, sourceDate } from "./prepareV6ObservationCapture.testHelper";
+ import { buildRequestFromContextV1, REQUEST_CONTEXT_CAPTURE, REQUEST_CONTEXT_COLUMNS } from "../../lib/blsh/nativeCaptureV6/requestContext";
+ import { acquireOfficialLoopbackFixture, readAcquisitionPlan } from "./acquireV6Official.mjs";
++import { exportHostedOfficialFixture } from "../../lib/blsh/nativeCaptureV6/officialPilotHandler.testHelper";
+ import { deriveV6OfficialFrame } from "./acquireV6OfficialFrame";
+ import { prepareV6Observation } from "./prepareV6Observation";
+ 
+@@ -395,3 +396,121 @@ describe("one-skater v6 held observation export", () => {
+     await expect(test.run()).rejects.toThrow("acquisition_directory_file_set"); expect(existsSync(test.out)).toBe(false);
+   });
+ });
++
++describe("signed hosted official export through the actual frame and held reader", () => {
++  let fixture: Awaited<ReturnType<typeof exportHostedOfficialFixture>>;
++  let framePins: Record<string, unknown>;
++  const dir = join(root, "hosted-archive"), originalFrame = join(root, "hosted-frame.json");
++  beforeAll(async () => {
++    const boxes = fixtureGames.map(game => JSON.parse(readFileSync(join(archive, `boxscore-${game.id}.body.json`), "utf8")));
++    fixture = await exportHostedOfficialFixture({ outDir: dir, nativeRunId: packet.run.run_id, nativeManifestSHA256: packet.run.manifest_sha256!,
++      scheduleSHA256: packet.objects.find(row => row.path.endsWith("/schedule.raw.json"))!.sha256, boxes,
++      deploymentId: packet.pins.deploymentId, gitCommitSha: packet.pins.gitCommitSha });
++    framePins = { runId: packet.run.run_id, sourceDate, playerId, evidenceAsOfUTC: fixture.evidenceAsOfUTC, hostedOfficial: fixture.hostedOfficial,
++      acquisitionPinsSHA256: fixture.acquisitionPinsSHA256, acquisitionManifestSHA256: fixture.acquisitionManifestSHA256 };
++    const pins = join(root, "hosted-frame-pins.json");
++    write(pins, json(framePins));
++    await deriveV6OfficialFrame(exportDir, ledgerPins, dir, pins, originalFrame, true);
++  });
++  function held() {
++    const c = evidence(), ledger = join(c.evidenceDir, "official-ledger");
++    cpSync(dir, ledger, { recursive: true });
++    const frameSHA256 = write(join(c.evidenceDir, "OFFICIAL-FRAME.json"), readFileSync(originalFrame));
++    const pins = { ...JSON.parse(readFileSync(c.pinsPath, "utf8")), ...framePins, frameSHA256 };
++    write(c.pinsPath, json(pins));
++    return { ...c, ledger, pins };
++  }
++  it("reaches a held observation from the real signed route and copies both original metadata buffers and every hosted object", async () => {
++    const c = held(), result = await c.run();
++    expect(result).toMatchObject({ status: "fixture_only_held_observation", acceptedWitnesses: 0, score: null, currentUseQualified: false });
++    const report = JSON.parse(readFileSync(join(c.out, "HELD-OBSERVATION.json"), "utf8"));
++    expect(report.comparison.official).toMatchObject({ acquisitionClass: "loopback_fixture_only", officialRunId: fixture.hostedOfficial.runId,
++      acquisitionManifestSHA256: fixture.acquisitionManifestSHA256, acquisitionPinsSHA256: fixture.acquisitionPinsSHA256,
++      boxscoreSHA256: sha(fixture.bodies[String(gameId)]) });
++    for (const file of ["run.json", "objects.json"]) expect(readFileSync(join(c.out, "official-ledger-" + file))).toEqual(readFileSync(join(dir, file)));
++    for (const row of fixture.rows) {
++      const path = row.path as string, file = path.split("/").pop()!;
++      expect(readFileSync(join(c.out, "evidence-official-" + file))).toEqual(readFileSync(join(dir, "objects", path)));
++    }
++  });
++  it("refuses a hosted loopback packet under real-host policy", async () => {
++    const c = held();
++    await expect(prepareV6Observation(exportDir, ledgerPins, c.evidenceDir, c.pinsPath, c.out)).rejects.toThrow("official_hosted_runtime_profile");
++    expect(existsSync(c.out)).toBe(false);
++  });
++  it.each([
++    ["uncertain", "official_hosted_run_mismatch"], ["expired", "official_hosted_ledger_clock"],
++    ["wrong key", "official_grant_signature"], ["changed runtime pin", "official_hosted_runtime_profile"],
++    ["missing receipt", "official_hosted_index_count"], ["wrong game", "official_hosted_run_mismatch"],
++    ["reordered intent", "official_hosted_index_mismatch"], ["journal before prior commit", "official_hosted_intent_chronology"], ["corrected original", "official_hosted_object_digest"],
++    ["resealed wrong receipt", "official_receipt_or_chronology_mismatch"], ["resealed wrong game", "official_game_scope"],
++    ["late claim", "official_hosted_ledger_clock"], ["late closure", "official_hosted_runtime_clock"],
++    ["resealed frame", "supplied_frame_original_bytes_mismatch"],
++  ])("withholds %s before writing a proposal", async (kind, reason) => {
++      const c = held(), run = { ...fixture.run }, rows = fixture.rows.map(row => ({ ...row }));
++      if (kind === "uncertain") { run.state = "claimed"; run.closed_at = null; write(join(c.ledger, "run.json"), json(run)); }
++      if (kind === "expired") { c.pins.evidenceAsOfUTC = "2026-11-21T12:45:00Z"; write(c.pinsPath, json(c.pins)); }
++      if (kind === "wrong key") {
++        const { generateKeyPairSync } = await import("node:crypto");
++        c.pins.hostedOfficial = { ...c.pins.hostedOfficial, approvalPublicKey: generateKeyPairSync("ed25519").publicKey.export({type: "spki",format: "pem"}).toString() };
++        write(c.pinsPath, json(c.pins));
++      }
++      if (kind === "changed runtime pin") {
++        c.pins.hostedOfficial = { ...c.pins.hostedOfficial, runtime: { ...c.pins.hostedOfficial.runtime, routeBundleSHA256: "d".repeat(64) } };
++        write(c.pinsPath,json(c.pins));
++      }
++      if (kind === "missing receipt") { rows.splice(3, 1); write(join(c.ledger, "objects.json"), json(rows)); }
++      if (kind === "wrong game") { run.game_ids = [gameId+1]; write(join(c.ledger, "run.json"), json(run)); }
++      if (kind === "reordered intent") { rows[1].game_id = fixtureGames[1].id; write(join(c.ledger, "objects.json"), json(rows)); }
++      if (kind === "corrected original") {
++        const path = join(c.ledger, "objects", rows[2].path as string), bytes = readFileSync(path);
++        bytes[bytes.length-1] = 32; write(path,bytes);
++      }
++      if (kind === "resealed wrong receipt" || kind === "resealed wrong game" || kind === "journal before prior commit") {
++        const manifestPath = join(c.ledger, "objects", rows[rows.length - 1].path as string);
++        const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
++        const replace = (i: number, patch: Record<string, unknown>) => {
++          const file = join(c.ledger, "objects", rows[i].path as string);
++          const bytes = json({ ...JSON.parse(readFileSync(file, "utf8")), ...patch });
++          const hash = write(file, bytes);
++          Object.assign(rows[i], { bytes: bytes.length, sha256: hash });
++          if (i < rows.length - 1) Object.assign(manifest.files[i], { bytes: bytes.length, sha256: hash });
++          return { bytes: bytes.length, sha256: hash };
++        };
++        if (kind === "resealed wrong game") {
++          const updated = replace(2, { id: fixtureGames[1].id });
++          replace(3, updated);
++        } else if (kind === "journal before prior commit") {
++          // A valid ledger and wire order apart from one edge: the runtime commits 1µs after journal creation.
++          const journal = JSON.parse(readFileSync(join(c.ledger, "objects", rows[1].path as string), "utf8"));
++          const late = journal.startedAtUTC.replace("Z", "001Z");
++          rows[0].written_at = rows[1].written_at = late;
++          replace(3, { dispatchedAtUTC: new Date(Date.parse(journal.startedAtUTC) + 1).toISOString() });
++        } else replace(3, { operation: 2 });
++        c.pins.acquisitionManifestSHA256 = run.manifest_sha256 = replace(rows.length - 1, manifest).sha256;
++        if (kind === "journal before prior commit") {
++          const path = join(c.evidenceDir, "OFFICIAL-FRAME.json"), frame = JSON.parse(readFileSync(path, "utf8"));
++          frame.provenance.acquisitionManifestSHA256 = run.manifest_sha256;
++          frame.provenance.boxscoreReceiptSHA256 = rows[3].sha256;
++          c.pins.frameSHA256 = write(path, json(frame));
++        }
++        write(join(c.ledger, "run.json"), json(run));
++        write(join(c.ledger, "objects.json"), json(rows));
++        write(c.pinsPath, json(c.pins));
++      }
++      if (kind === "late claim" || kind === "late closure") {
++        if (kind === "late claim") run.claimed_at = "2026-11-21T12:46:00Z";
++        else run.closed_at = "2026-11-21T12:48:00Z";
++        c.pins.evidenceAsOfUTC = "2026-11-21T13:00:00Z";
++        write(join(c.ledger, "run.json"), json(run));
++        write(c.pinsPath, json(c.pins));
++      }
++      if (kind === "resealed frame") {
++        const file = join(c.evidenceDir,"OFFICIAL-FRAME.json"), frame = JSON.parse(readFileSync(file,"utf8"));
++        c.pins.frameSHA256 = write(file,json({ ...frame, totalToiSeconds: frame.totalToiSeconds + 1 }));
++        write(c.pinsPath,json(c.pins));
++      }
++      await expect(c.run()).rejects.toThrow(reason);
++      expect(existsSync(c.out)).toBe(false);
++    });
++});
+diff --git a/web/scripts/blsh/prepareV6Observation.ts b/web/scripts/blsh/prepareV6Observation.ts
+index 2ccfce4a1abede968369f10572ba45595f0d8a94..d3b6e6180b638c69bc7beb89f3bb30c2b35f4277 100644
+--- a/web/scripts/blsh/prepareV6Observation.ts
++++ b/web/scripts/blsh/prepareV6Observation.ts
+@@ -5,7 +5,9 @@
+  * EXPORT and LEDGER_PINS follow readNativeV6Ledger.ts. EVIDENCE contains context-ledger/ (the request run row, eight index rows and their original
+  * Storage bytes), OFFICIAL-FRAME.json and official/
+  * (the entire untouched acquisition directory: manifest, tool, runtime, ordered journals,
+- * boxscore bodies and v6 acquisition pins and matching v6 receipts). REVIEW_PINS is an independently held JSON object
++ * boxscore bodies and v6 acquisition pins and matching v6 receipts). For a signed Vercel run, use
++ * official-ledger/ with run.json, objects.json and objects/<indexed path> with each original PostgreSQL bytea body. REVIEW_PINS.hostedOfficial
++ * supplies the official run, deployment and commit, approval public key, and independent runtime pins. REVIEW_PINS is an independently held JSON object
+  * with sourceDate, runId, playerId, evidenceAsOfUTC, contextSHA256, requestSHA256, frameSHA256, acquisitionPinsSHA256 and acquisitionManifestSHA256,
+  * plus contextRunId, contextManifestSHA256, contextDeploymentId and contextGitCommitSha.
+  * Neither pins file may be inside an input directory. Output is a new private directory outside
+@@ -63,6 +65,10 @@ export async function prepareV6Observation(exportDir: string, ledgerPinsPath: st
+   const parserSource = readBound(join(__dirname, "prepareV6ObservationEvidence.mjs"), MIB);
+   const contextBuilderSource = readBound(join(root, "web/lib/blsh/nativeCaptureV6/requestContext.ts"), MIB);
+   keep("comparison-source.mjs", parserSource);
++  if (Object.prototype.hasOwnProperty.call(reviewPins, "hostedOfficial")) {
++    keep("hosted-official-reader.mjs", readBound(join(__dirname, "readHostedOfficialV6.mjs"), MIB));
++    keep("official-transport.mjs", readBound(join(root, "web/lib/blsh/nativeCaptureV6/officialPilotAcquisition.transport.mjs"), MIB));
++  }
+   keep("request-context-builder.ts", contextBuilderSource);
+   const sourceFiles = Object.entries(profile.sourceFiles).map(([path, pin]) => {
+     const value = execFileSync("git", ["--no-replace-objects", "--no-lazy-fetch", "cat-file", "blob", profile.gitCommitSha + ":" + path],
+diff --git a/web/scripts/blsh/prepareV6ObservationEvidence.mjs b/web/scripts/blsh/prepareV6ObservationEvidence.mjs
+index 3a7f065668fa78e6fed9dcf8001d021d2d4346cc..3fdfe535016f057e22a7c324472185941d71fd96 100644
+--- a/web/scripts/blsh/prepareV6ObservationEvidence.mjs
++++ b/web/scripts/blsh/prepareV6ObservationEvidence.mjs
+@@ -7,20 +7,14 @@ import { GROUPS, MIB, SEASON, isHash, need, parseJson, readBound, sha, stamp } f
+ 
+ import { BUDGET, captureBinding, officialUrl, verifyOfficialTLS, liveRoots } from "./acquireV6Official.mjs";
+ 
++import { evidenceMicros as micros, readHostedOfficialV6Export } from "./readHostedOfficialV6.mjs";
++const reviewedCleanHostTool = "f11ca1bd86a057874513bd47d3507a7a9b2043c9656f71122a334e3a2b206e2c";
+ const TABLES = { wgo: "public.wgo_skater_stats", calendar: "public.games", individual: "public.nst_gamelog_as_counts", onIce: "public.nst_gamelog_as_counts_oi" };
+ const one = (rows, code) => { need(rows.length === 1, code); return rows[0]; };
+ const positive = n => Number.isSafeInteger(n) && n > 0;
+ const fields = { individual: ["gp", "toi", "goals", "shots", "ixg"], onIce: ["gp", "toi", "xgf", "xga"] };
+ const keys = (obj, names) => isDeepStrictEqual(Object.keys(obj).sort(), [...names].sort());
+ 
+-// Validate the full calendar/offset grammar, then retain SQL's fractional microseconds.
+-function micros(value) {
+-  stamp(value);
+-  const result = Date.parse(value) * 1000 + Number((value.match(/\.(\d{1,6})/)?.[1] ?? "").padEnd(6, "0").slice(3));
+-  need(Number.isSafeInteger(result), "invalid_microsecond_timestamp");
+-  return result;
+-}
+-
+ function literal(text, field) {
+   if (field === "toi" && /^\d{1,3}:[0-5]\d$/.test(text)) {
+     const [m, s] = text.split(":").map(Number);
+@@ -75,7 +69,6 @@ function compareCells(body, group, playerId, team, stored) {
+ 
+ // The capture, projection and review stages use the same replay of the complete slate.
+ export function deriveOfficialFrame(read, officialNames, day, target, pins, profile, runBytes, fixtureOnly = false) {
+-  const scheduleFact = profile.bodies.schedule;
+   const files = read("official/MANIFEST.json", 4 * MIB, pins.acquisitionManifestSHA256);
+   const manifest = parseJson(files);
+   need(manifest.status === "acquisition_complete_pending_review" && Array.isArray(manifest.files), "acquisition_incomplete");
+@@ -95,7 +88,13 @@ export function deriveOfficialFrame(read, officialNames, day, target, pins, prof
+   const runtime = parseJson(get("ACQUISITION-RUNTIME.json")), pinBytes = get("ACQUISITION-PINS.json"), pinned = parseJson(pinBytes);
+   // The separately pinned acquisition binary need not match the offline review machine's binary.
+   need(isHash(pinned.nodeSHA256), "official_node_hash_invalid");
+-  const expected = captureBinding(profile, runBytes, pinned.nodeSHA256), inputHash = sha(pinBytes);
++  const current = captureBinding(profile, runBytes, pinned.nodeSHA256), inputHash = sha(pinBytes);
++  let expected = current;
++  // The reviewed pre-extraction v2 launcher contained its own immutable transport.
++  if (pinned.toolSHA256 === reviewedCleanHostTool) {
++    const { transportSHA256, ...prior } = current;
++    expected = { ...prior, toolSHA256: reviewedCleanHostTool };
++  }
+   need(isHash(pins.acquisitionPinsSHA256) && pins.acquisitionPinsSHA256 === inputHash
+     && isDeepStrictEqual(pinned, expected) && expected.toolSHA256 === sha(get("source-tool.mjs")), "official_independent_capture_pins_mismatch");
+   need(runtime.version === "fhfh.blsh.v6-official-acquisition-runtime.v1" && runtime.toolSHA256 === expected.toolSHA256
+@@ -112,6 +111,24 @@ export function deriveOfficialFrame(read, officialNames, day, target, pins, prof
+   const started = micros(runtime.startedAtUTC), completed = micros(manifest.completedAtUTC);
+   need(micros(expected.ledgerClosedAtUTC) <= started && started <= completed && completed <= micros(pins.evidenceAsOfUTC)
+     && completed - started <= BUDGET.totalMs * 1000, "official_acquisition_chronology");
++  return replayOfficialSlate({ games, get, target, pins, profile, runtime, inputHash, roots, klass, started, completed,
++    provenance: { profileSHA256: pinned.profileSHA256, toolSHA256: pinned.toolSHA256 } });
++}
++
++export function deriveHostedOfficialFrame(directory, day, target, pins, profile, runBytes, fixtureOnly, keep) {
++  const ledger = readHostedOfficialV6Export(directory, pins, profile, runBytes, fixtureOnly);
++  const games = [...day.games].sort((a, b) => a.id - b.id);
++  need(isDeepStrictEqual(games.map(game => game.id), ledger.gameIds), "official_hosted_native_slate_mismatch");
++  if (keep) {
++    keep("official-ledger-run.json", ledger.runBytes);
++    keep("official-ledger-objects.json", ledger.objectsBytes);
++    for (const [name, bytes] of ledger.files) keep("evidence-official-" + name, bytes);
++  }
++  return replayOfficialSlate({ ...ledger, games, get: name => ledger.files.get(name), target, pins, profile, inputHash: pins.acquisitionPinsSHA256 });
++}
++
++function replayOfficialSlate({games, get, target, pins, profile, runtime, inputHash, roots, klass, started, completed, provenance}) {
++  const scheduleFact = profile.bodies.schedule;
+   let previous = started;
+   const matches = [], seenPlayers = new Set();
+   for (const [i, game] of games.entries()) {
+@@ -162,14 +179,13 @@ export function deriveOfficialFrame(read, officialNames, day, target, pins, prof
+     final: true, gamesPlayed: 1, totalToiSeconds: fact.totalToiSeconds, completedByUTC: fact.completedByUTC, observedAtUTC: fact.observedAtUTC,
+     gamesOnNativeDate: 1, dateMembershipComplete: true,
+     provenance: { acquisitionClass: klass, runId: profile.runId, captureManifestSHA256: profile.manifestSHA256,
+-      acquisitionManifestSHA256: pins.acquisitionManifestSHA256, acquisitionPinsSHA256: inputHash, profileSHA256: pinned.profileSHA256,
+-      toolSHA256: pinned.toolSHA256, scheduleSHA256: scheduleFact.sha256, boxscoreSHA256: fact.boxscoreSHA256, boxscoreReceiptSHA256: fact.boxscoreReceiptSHA256 } };
++      acquisitionManifestSHA256: pins.acquisitionManifestSHA256, acquisitionPinsSHA256: inputHash, ...provenance, scheduleSHA256: scheduleFact.sha256, boxscoreSHA256: fact.boxscoreSHA256, boxscoreReceiptSHA256: fact.boxscoreReceiptSHA256 } };
+   return { fact, frame };
+ }
+ 
+ export function compareV6ObservationInputs(profile, packetFiles, evidenceDir, pins, keep, runBytes, fixtureOnly, verifiedContext) {
+   need(keys(pins, ["sourceDate", "runId", "playerId", "evidenceAsOfUTC", "contextSHA256", "requestSHA256", "frameSHA256", "acquisitionManifestSHA256", "acquisitionPinsSHA256",
+-    "contextRunId", "contextManifestSHA256", "contextDeploymentId", "contextGitCommitSha"])
++    "contextRunId", "contextManifestSHA256", "contextDeploymentId", "contextGitCommitSha", ...(Object.hasOwn(pins,"hostedOfficial") ? ["hostedOfficial"] : [])])
+     && pins.sourceDate === profile.sourceDate && pins.runId === profile.runId && positive(pins.playerId)
+     && [pins.contextSHA256, pins.requestSHA256, pins.frameSHA256, pins.acquisitionManifestSHA256, pins.acquisitionPinsSHA256].every(isHash), "independent_observation_pins_invalid");
+   const root = realpathSync(evidenceDir);
+@@ -202,9 +218,16 @@ export function compareV6ObservationInputs(profile, packetFiles, evidenceDir, pi
+     && captured <= Math.min(...nativeTimes) + 12 * 3600000000 && captured <= micros(pins.evidenceAsOfUTC), "request_capture_outside_native_window");
+   const schedule = parseJson(packetFiles.get("schedule.raw.json"));
+   const day = one(schedule.gameWeek.filter(d => d.date === sourceDate), "schedule_day_ambiguous");
+-  const officialNames = readdirSync(join(root, "official"));
+-  need(!officialNames.includes("FAILED.json") && !officialNames.includes(".MANIFEST.json.tmp"), "acquisition_incomplete");
+-  const derived = deriveOfficialFrame(read, officialNames, day, target, pins, profile, runBytes, fixtureOnly);
++  let derived;
++  if (Object.hasOwn(pins, "hostedOfficial")) {
++    const directory = join(root, "official-ledger");
++    need(realpathSync(directory) === directory, "official_export_path_mismatch");
++    derived = deriveHostedOfficialFrame(directory, day, target, pins, profile, runBytes, fixtureOnly, keep);
++  } else {
++    const officialNames = readdirSync(join(root, "official"));
++    need(!officialNames.includes("FAILED.json") && !officialNames.includes(".MANIFEST.json.tmp"), "acquisition_incomplete");
++    derived = deriveOfficialFrame(read, officialNames, day, target, pins, profile, runBytes, fixtureOnly);
++  }
+   need(isDeepStrictEqual(frame, derived.frame), "supplied_frame_original_bytes_mismatch");
+   const frameFacts = { ...derived.fact, frameSHA256: pins.frameSHA256, ...frame.provenance };
+   need(stamp(sourceDate + "T00:00:00Z") <= stamp(frameFacts.completedByUTC), "completion_precedes_event");
+diff --git a/web/scripts/blsh/readHostedOfficialV6.mjs b/web/scripts/blsh/readHostedOfficialV6.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..64507885ba84fb028f9026358420f7453da65dca
+--- /dev/null
++++ b/web/scripts/blsh/readHostedOfficialV6.mjs
+@@ -0,0 +1,120 @@
++// Offline custody of one completed official export. The independent review pins select the run, grant key and runtime.
++import { createPublicKey, verify } from "node:crypto";
++import { readdirSync, realpathSync } from "node:fs";
++import { join } from "node:path";
++import { isDeepStrictEqual as equal } from "node:util";
++import { encode, isHash, MIB, need, parseJson, readBound, sha, stamp } from "../../../tasks/artifacts/blsh-evidence-bridge-2026-11-15/lib.mjs";
++import { BUDGET, liveRoots, officialUrl } from "../../lib/blsh/nativeCaptureV6/officialPilotAcquisition.transport.mjs";
++
++const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
++const runtimeFields = ["region", "nodeVersion", "nodeABI", "opensslVersion", "execPathSHA256", "routeBundleSHA256", "bundledCASHA256", "defaultCASHA256"];
++const hasKeys = (value, names) => value && typeof value === "object" && !Array.isArray(value) && equal(Object.keys(value).sort(), [...names].sort());
++export function evidenceMicros(value) {
++  stamp(value);
++  const micros = Date.parse(value) * 1000 + Number((value.match(/\.(\d{1,6})/)?.[1] ?? "").padEnd(6, "0").slice(3));
++  need(Number.isSafeInteger(micros), "invalid_microsecond_timestamp");
++  return micros;
++}
++
++function canonicalBase64(text, maxBytes) {
++  need(typeof text === "string" && text.length > 0 && text.length <= 4 * Math.ceil(maxBytes / 3), "official_grant_encoding");
++  const bytes = Buffer.from(text, "base64");
++  need(bytes.length <= maxBytes && bytes.toString("base64") === text, "official_grant_encoding");
++  return bytes;
++}
++
++function verifyGrant(runtime, target, pins) {
++  const bytes = canonicalBase64(runtime.grantBase64, 3072);
++  need(sha(bytes) === pins.acquisitionPinsSHA256, "official_grant_digest");
++  const grant = parseJson(bytes), pem = pins.hostedOfficial.approvalPublicKey;
++  need(hasKeys(grant, ["approval", "signature"]) && equal(grant.approval, target)
++    && typeof pem === "string" && pem.length <= 512 && /^-----BEGIN PUBLIC KEY-----\r?\n[A-Za-z0-9+/=\r\n]+\r?\n-----END PUBLIC KEY-----$/.test(pem.trim()), "official_grant_binding");
++  const key = createPublicKey(pem), signature = canonicalBase64(grant.signature, 64);
++  const signed = JSON.stringify(["fhfh.blsh.official-pilot-approval.v1", target.sourceDate, target.nativeRunId, target.nativeManifestSHA256,
++    target.scheduleSHA256, target.deploymentId, target.gitCommitSha, target.gameIds]);
++  need(signature.length === 64 && key.type === "public" && key.asymmetricKeyType === "ed25519"
++    && verify(null, Buffer.from(signed), key, signature), "official_grant_signature");
++}
++
++export function readHostedOfficialV6Export(directory, pins, profile, nativeRunBytes, fixtureOnly = false) {
++  const h = pins.hostedOfficial, native = parseJson(nativeRunBytes);
++  need(hasKeys(h, ["runId", "deploymentId", "gitCommitSha", "approvalPublicKey", "runtime"]) && hasKeys(h.runtime, runtimeFields)
++    && typeof h.runId === "string" && UUID.test(h.runId) && typeof h.deploymentId === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(h.deploymentId)
++    && typeof h.gitCommitSha === "string" && /^[a-f0-9]{40}$/.test(h.gitCommitSha)
++    && isHash(pins.acquisitionPinsSHA256) && isHash(pins.acquisitionManifestSHA256), "official_hosted_pins");
++  const gameIds = profile.completedGameIds;
++  need(profile.status === "v6_packet_profile_checked_pending_independent_review" && pins.sourceDate === "2026-11-20"
++    && pins.sourceDate === profile.sourceDate && pins.runId === profile.runId && native.run_id === profile.runId && native.source_date === profile.sourceDate
++    && h.deploymentId === profile.deploymentId && h.gitCommitSha === profile.gitCommitSha
++    && native.manifest_sha256 === profile.manifestSHA256 && native.state === "packet_complete_pending_review"
++    && Array.isArray(gameIds) && gameIds.length > 0 && gameIds.length <= BUDGET.maxGames
++    && gameIds.every((g, i) => Number.isSafeInteger(g) && /^202602\d{4}$/.test(String(g)) && (!i || gameIds[i - 1] < g)), "official_hosted_native_binding");
++  const target = { sourceDate: profile.sourceDate, nativeRunId: profile.runId, nativeManifestSHA256: profile.manifestSHA256,
++    scheduleSHA256: profile.bodies.schedule.sha256, deploymentId: h.deploymentId, gitCommitSha: h.gitCommitSha, gameIds };
++  const root = realpathSync(directory);
++  const read = (name, limit) => {
++    const path = join(root, name);
++    need(realpathSync(path) === path, "official_export_path_mismatch");
++    return readBound(path, limit);
++  };
++  const runBytes = read("run.json", 65536), objectsBytes = read("objects.json", 65536);
++  const run = parseJson(runBytes), rows = parseJson(objectsBytes);
++  need(run.run_id === h.runId && run.state === "packet_complete_pending_review" && run.reason === null && run.manifest_sha256 === pins.acquisitionManifestSHA256
++    && run.source_date === target.sourceDate && run.native_run_id === target.nativeRunId && run.native_manifest_sha256 === target.nativeManifestSHA256
++    && run.deployment_id === h.deploymentId && run.git_commit_sha === h.gitCommitSha && run.schedule_sha256 === target.scheduleSHA256 && equal(run.game_ids, gameIds),
++  "official_hosted_run_mismatch");
++  const claimed = evidenceMicros(run.claimed_at), closed = evidenceMicros(run.closed_at);
++  const opens = evidenceMicros("2026-11-21T12:45:00Z"), expires = evidenceMicros("2026-11-21T12:46:00Z");
++  need(evidenceMicros(native.closed_at) <= claimed && opens <= claimed && claimed < expires && claimed <= closed
++    && closed <= evidenceMicros(pins.evidenceAsOfUTC), "official_hosted_ledger_clock");
++  const names = ["RUNTIME.json", ...gameIds.flatMap((g, i) => [`operation-${i + 1}-STARTED.json`, `boxscore-${g}.body.json`, `boxscore-${g}.receipt.json`]), "MANIFEST.json"];
++  const prefix = `official-v1/${target.sourceDate}/${h.runId}/`;
++  need(Array.isArray(rows) && rows.length === names.length, "official_hosted_index_count");
++  const sorted = [...rows].sort((a, b) => a.ordinal - b.ordinal), files = new Map(), written = [];
++  const objectDir = join(root, "objects", prefix.slice(0, -1));
++  need(realpathSync(objectDir) === objectDir && equal(readdirSync(objectDir).sort(), [...names].sort()), "official_hosted_object_set");
++  let prior = claimed;
++  const descriptors = names.map((file, i) => {
++    const row = sorted[i], path = prefix + file, game = Math.floor((i - 1) / 3), journal = file.startsWith("operation-");
++    const max = file.endsWith(".body.json") ? 4 * MIB : file.endsWith(".receipt.json") ? 384 * 1024 : 65536;
++    need(row.run_id === h.runId && row.ordinal === i + 1 && row.path === path && isHash(row.sha256)
++      && Number.isSafeInteger(row.bytes) && row.bytes > 0 && row.bytes <= max
++      && row.game_ordinal === (journal ? game + 1 : null) && row.game_id === (journal ? gameIds[game] : null)
++      && row.intent_url === (journal ? officialUrl(gameIds[game]) : null), "official_hosted_index_mismatch");
++    const at = evidenceMicros(row.written_at);
++    need(prior <= at && at <= closed, "official_hosted_index_clock");
++    prior = at; written.push(at);
++    const bytes = read(join("objects", path), row.bytes);
++    need(bytes.length === row.bytes && sha(bytes) === row.sha256, "official_hosted_object_digest");
++    files.set(file, bytes);
++    return { file, bytes: row.bytes, sha256: row.sha256 };
++  });
++  const runtime = parseJson(files.get("RUNTIME.json")), manifest = parseJson(files.get("MANIFEST.json"));
++  const klass = fixtureOnly ? "loopback_fixture_only" : "vercel_direct_https";
++  const identity = { runId: h.runId, ...target, acquisitionPinsSHA256: pins.acquisitionPinsSHA256 };
++  const roots = fixtureOnly ? [runtime.fixtureCA] : liveRoots();
++  need(runtime.acquisitionClass === klass && (!fixtureOnly || (typeof runtime.fixtureCA === "string" && runtime.fixtureCA.startsWith("-----BEGIN CERTIFICATE-----")))
++    && equal(runtime, {version: "fhfh.blsh.official-pilot-runtime.v1", acquisitionClass: klass, ...identity, grantBase64: runtime.grantBase64, startedAtUTC: runtime.startedAtUTC,
++      supabaseOrigin: "https://fyhftlxokyjtpndbkfse.supabase.co", ...h.runtime, overrideKeysPresent: [], ...(fixtureOnly ? {fixtureCA: runtime.fixtureCA} : {})}),
++  "official_hosted_runtime_profile");
++  need(runtime.region === "iad1" && /^v22\.\d+\.\d+$/.test(runtime.nodeVersion)
++    && runtime.nodeABI === "127" && typeof runtime.opensslVersion === "string" && runtime.opensslVersion.length > 0
++    && ["execPathSHA256", "routeBundleSHA256", "bundledCASHA256", "defaultCASHA256"].every(k => isHash(runtime[k]))
++    && runtime.bundledCASHA256 === sha(roots.join("\n")) && (fixtureOnly || runtime.defaultCASHA256 === runtime.bundledCASHA256), "official_hosted_runtime_pins");
++  verifyGrant(runtime, target, pins);
++  need(descriptors.at(-1).sha256 === pins.acquisitionManifestSHA256 && equal(manifest, {version: "fhfh.blsh.official-pilot-manifest.v1",
++    status: "acquisition_complete_pending_review", ...identity, requests: gameIds.length, retries: 0, completedAtUTC: manifest.completedAtUTC, files: descriptors.slice(0, -1)}),
++  "official_hosted_manifest_mismatch");
++  const started = evidenceMicros(runtime.startedAtUTC), completed = evidenceMicros(manifest.completedAtUTC);
++  need(claimed <= started && started < expires && started <= written[0] && started <= completed && completed <= written.at(-1)
++    && completed >= written.at(-2) && closed - started <= BUDGET.totalMs * 1000 && closed - claimed <= 225_000_000, "official_hosted_runtime_clock");
++  for (const [i, g] of gameIds.entries()) {
++    const j = 3*i + 1, journal = parseJson(files.get(names[j])), receipt = parseJson(files.get(`boxscore-${g}.receipt.json`));
++    const began = evidenceMicros(journal.startedAtUTC);
++    need(written[j - 1] <= began && began <= written[j] && written[j] <= evidenceMicros(receipt.dispatchedAtUTC)
++      && evidenceMicros(receipt.retrievedAtUTC) <= written[j + 1], "official_hosted_intent_chronology");
++  }
++  return { runBytes, objectsBytes, files, gameIds, runtime, manifest, roots, klass, started, completed,
++    provenance: { officialRunId: h.runId, deploymentId: h.deploymentId, gitCommitSha: h.gitCommitSha, routeBundleSHA256: runtime.routeBundleSHA256,
++      profileSHA256: sha(encode(profile)) } };
++}

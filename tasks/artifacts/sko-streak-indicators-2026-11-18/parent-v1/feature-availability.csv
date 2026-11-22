@@ -1,0 +1,17 @@
+column,unit_per_appearance,strength,source,retained_at,available_at_game_close,total_appearances,nonnull_appearances
+team_id,NHL club abbreviation,all,WGO,2026-11-04T00:09:23.279303Z,unverified,47224,47224
+shots,shots on goal,all,WGO,2026-11-04T00:09:23.279303Z,unverified,47224,47224
+goals,goals,all,WGO,2026-11-04T00:09:23.279303Z,unverified,47224,47224
+assists,assists,all,WGO,2026-11-04T00:09:23.279303Z,unverified,47224,47224
+toi_per_game,seconds,all,WGO,2026-11-04T00:09:23.279303Z,unverified,47224,47224
+es_toi_per_game,seconds,even strength,WGO,2026-11-04T00:09:23.279303Z,unverified,47224,47224
+pp_toi,seconds,power play,WGO,2026-11-04T00:09:23.279303Z,unverified,47224,47224
+total_primary_assists,first assists,all,WGO,2026-11-04T00:09:23.279303Z,unverified,47224,47224
+total_secondary_assists,second assists,all,WGO,2026-11-04T00:09:23.279303Z,unverified,47224,47224
+missed_shots,missed shots,all,pilot NHL,2025-09-26T08:00:00.050318Z,unverified,47224,35246
+nst_ixg,individual expected goals,all,NST counts,2026-11-04T00:09:23.279303Z,unverified,47224,47003
+nst_toi,exposure seconds,all,NST counts,2026-11-04T00:09:23.279303Z,unverified,47224,47003
+nst_icf,individual shot attempts,all,pilot NST individual,2025-09-26T08:00:00.050318Z,unverified,47224,35087
+nst_hdcf,individual high-danger chances,all,pilot NST individual,2025-09-26T08:00:00.050318Z,unverified,47224,35087
+nst_oi_gf,team goals for while on ice,all,pilot NST on-ice,2025-09-26T08:00:00.050318Z,unverified,47224,35116
+nst_oi_sf,team shots for while on ice,all,pilot NST on-ice,2025-09-26T08:00:00.050318Z,unverified,47224,35116

@@ -1,0 +1,46 @@
+{
+ "commit": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+ "results": [
+  {
+   "path": "web/lib/blsh/nativeCaptureV6/core.ts",
+   "ok": true
+  },
+  {
+   "path": "web/lib/blsh/nativeCaptureV6/adapter.ts",
+   "ok": true
+  },
+  {
+   "path": "web/lib/blsh/nativeCaptureV6/tlsObservation.ts",
+   "ok": true
+  },
+  {
+   "path": "web/lib/blsh/nativeCaptureV6/runtimeReceipt.ts",
+   "ok": true
+  },
+  {
+   "path": "web/lib/blsh/nativeCaptureV6/handler.ts",
+   "ok": true
+  },
+  {
+   "path": "web/lib/blsh/nativeCaptureV6/sourceDate.ts",
+   "ok": true
+  },
+  {
+   "path": "web/lib/blsh/nativeCaptureV6/writer.ts",
+   "ok": true
+  },
+  {
+   "path": "web/lib/blsh/nativeCaptureV6/sink.ts",
+   "ok": true
+  },
+  {
+   "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+   "ok": true
+  },
+  {
+   "path": "web/lib/nst/client.ts",
+   "ok": true
+  }
+ ],
+ "passed": "10/10"
+}

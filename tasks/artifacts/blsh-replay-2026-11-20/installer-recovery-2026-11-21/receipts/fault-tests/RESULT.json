@@ -1,0 +1,13 @@
+{
+ "referenceExit": [
+  "0",
+  "0"
+ ],
+ "referenceFingerprintStable": true,
+ "referenceSandboxFingerprint": "4399436c2a2f4a1a69e4953d74df1651",
+ "referenceTables": 13,
+ "referenceFunctions": 39,
+ "cases": 9,
+ "passed": 9,
+ "allPass": true
+}

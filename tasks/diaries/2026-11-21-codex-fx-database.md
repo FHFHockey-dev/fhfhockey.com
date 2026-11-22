@@ -1,0 +1,7 @@
+# FxTwitter database adapter
+
+On octoberBranch at 42a1502ff. Scope is a local candidate migration for first sighting seals, owner enrollment, and seven-day retirement. Checking actual hosted schema shape and existing guards before implementation. Verification uses disposable local PostgreSQL only. Production and activation remain owner decisions.
+
+Inspected the exported hosted DDL, including the deployed 234000000-nano-USD reservation and singleton legacy protection. Implemented an unconfigured single-pilot scope, atomic shadow admission and exact owner staging. Worker rollover requires reconciled retirement and preserves prior exposure. Cleanup retains canonical URLs and call accounting while deleting only enrolled copies. Next is independent local replay against the export and adversarial fixture checks.
+
+Verified on the exported hosted DDL in PostgreSQL 15 with fixtures only. The SQL regression exercises disabled/partial evidence, old rows, provider switch, duplicate/variant/genuine hydrated rows, quote of an independently sealed reporter with nested context, refusal of different primary text, contradictory originals at the receipt cap, exact staging, reservation/settlement/result, due-only retirement and replay, URL/budget/request ID carry, guard-protected legacy rollover, and two concurrent first-sighting writes. The local-only harness accepts a separate verifier through --run; Chef owns the genuine-row/complete TypeScript draft replay and integrated review. No activation, commit or release.

@@ -1,0 +1,17 @@
+fact|role|rolsuper|rolbypassrls|fhfh_internal_usage
+authenticator_member|anon|f|f|f
+authenticator_member|authenticated|f|f|f
+authenticator_member|service_role|f|t|t
+(3 rows)
+fact|rolname|rolsuper|rolcreaterole
+login_role|authenticator|f|f
+login_role|cli_login_postgres|f|f
+login_role|pgbouncer|f|f
+login_role|postgres|f|t
+login_role|supabase_admin|t|t
+login_role|supabase_auth_admin|f|t
+login_role|supabase_functions_admin|f|t
+login_role|supabase_read_only_user|f|f
+login_role|supabase_replication_admin|f|f
+login_role|supabase_storage_admin|f|t
+(10 rows)

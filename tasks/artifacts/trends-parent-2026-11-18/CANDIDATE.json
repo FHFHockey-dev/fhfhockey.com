@@ -1,0 +1,25 @@
+{
+  "releaseBaseLocalMaster": "50dea27b84a34b05a1aa6e67dc24d2774e5d3f24",
+  "exactLocalCommit": "15f4a18f274fff959e3e88f5819f41b4d5c67b48",
+  "tree": "71c8510d12d47cbd87aa5fe86952abad4a39f309",
+  "branchRefsMoved": false,
+  "scope": [
+    "supabase/migrations/20261118162126_homepage_yahoo_ownership_page.sql",
+    "web/pages/api/v1/transactions/ownership-trends.ts",
+    "web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts",
+    "web/components/TransactionTrends/TransactionTrends.tsx",
+    "web/components/TransactionTrends/TransactionTrends.test.tsx"
+  ],
+  "sha256": {
+    "supabase/migrations/20261118162126_homepage_yahoo_ownership_page.sql": "cfab2ea584c3887028fbd7b6b0b36e48338181852b3794e50e2a7a2c168d1eaa",
+    "web/pages/api/v1/transactions/ownership-trends.ts": "c02150410394641b8e0a824c249ab73f9526969c1ce7dd91969c0512cbb9a87f",
+    "web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts": "bb6ebd4d44cf753cd7b7dc32988379be7d7d2bad28f54ea71732400044859301",
+    "web/components/TransactionTrends/TransactionTrends.tsx": "44c6ec28841e83b1bb42e46544eefe228b52cb06cc686abf13e7f455d1558dcb",
+    "web/components/TransactionTrends/TransactionTrends.test.tsx": "7e537020e966a6d474ef27c21f09f89fcbbc5cf6b27341a135577c81ba6d776e"
+  },
+  "patchSha256": "4db86a6f15f3c465ffb0d1e32521aace3653e1fed33e1efa48391f68fe1262ec",
+  "benchmarkGitBaseline": "789713fb5bc12a2bb1c62ab6bea676d4c30cf6a6",
+  "benchmarkCandidateSourcePinsVerified": 17,
+  "observedAt": "2026-11-18T16:29:08.934768+00:00",
+  "status": "Local candidate only. Verify live base, RPC rollout, linked builds, approval and manager acceptance before release."
+}

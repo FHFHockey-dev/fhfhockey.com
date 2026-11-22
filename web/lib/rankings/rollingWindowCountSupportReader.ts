@@ -17,6 +17,7 @@ export const WINDOW_COUNT_SUPPORT_SELECT =
 const SUPPORT_PAGE_SIZE = 1000;
 
 export type WindowCountSupportRow = {
+  updated_at?: string;
   player_id: number | null;
   game_date: string | null;
   game_id: number | null;
@@ -49,7 +50,8 @@ export function attachWindowCountSupport(
       (match.game_id == null || row.game_id == null || match.game_id === row.game_id)
         ? match.windowCountSupport ?? null
         : null;
-    return { ...row, windowCountSupport: support };
+    return { ...row, windowCountSupport: support,
+      ...(match?.updated_at && support ? { windowCountSupportUpdatedAt: match.updated_at } : {}) };
   });
 }
 

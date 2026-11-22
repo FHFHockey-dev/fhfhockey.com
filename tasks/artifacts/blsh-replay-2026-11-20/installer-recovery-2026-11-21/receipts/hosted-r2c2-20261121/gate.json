@@ -1,0 +1,1 @@
+{"gate": "ok", "checks": {"isolation_ok": true, "denial_ok": true, "reachability_only_pgsodium_via_public": true, "pgsodium_indirect_ok": true}, "reasons": ["net_vault_pgsodium_usage:blsh_replay_api", "net_vault_pgsodium_usage:blsh_replay_owner"]}

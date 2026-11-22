@@ -1,0 +1,10 @@
+# SandboxFORGE daily reader
+
+- Scope: Reproduce the January 2024 null-game-ID regression in local fixtures. Verify RPC and legacy defaults and rejection in scope, with no external access or writes.
+- Start: `octoberBranch` at `62ce797ad`. `f886ddac731ae825a12fab915848d2b5fd7d9b8c` has identical rolling reader and test content. Both tracked paths are clean. The RPC selects latest before the cutoff, then validates the row before applying its lower date bound. Next, confirm the SQL contract and add the smallest regression.
+- Reproduced: Candidate rejects the default test for all three RPC strengths with `invalid_row`; all three fallback cases pass. Confirmed the 365-day and 1095-day boundaries (`2025-11-19`, `2023-11-20`).
+- Fix: Scoped game-identity validation after the lower bound for RPC only and kept strict checks in the table path. Added the incident fixture to `web/lib/projections/queries/skater-queries.test.ts`. Full affected file passed 118/118 on Darwin Node `v22.23.4`; targeted ESLint and `git diff --check` passed.
+- Handoff: Portable candidate patch and receipt at `tasks/artifacts/sandboxforge-2026-11-19/daily/`. Parent owns off-Mac execution and final acceptance. Work is local and uncommitted. Exact original response was unavailable.
+- Follow-up assignment from the lead requests a real PG15 and PostgREST 16.6 independent scenario. Building an isolated loopback-only cluster and credential-free traces around the original SQL migration and actual reader. macOS has PG15; obtaining the version-matched PostgREST bottle for local preflight.
+- Real transport preflight complete. On Darwin, PostgreSQL 15.19 and PostgREST 16.6 exercised 18 pinned-candidate and 18 fixed cases using the untouched migration and the real reader. Traces, fixture readback, and service logs are in `daily/local-postgrest/`. Confirmed services stopped and the archive's reader blob was restored.
+- Final handoff to lead includes `daily/run-postgrest.sh`, `daily/daily-postgrest.ts`, the original portable patch, and commands in `DAILY-ROLLING-LOOKBACK.md`. Lead owns independent Linux execution and any remaining acceptance.

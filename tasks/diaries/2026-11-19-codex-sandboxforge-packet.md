@@ -1,0 +1,7 @@
+# SandboxForge CBJ–NYI packet custody
+
+- Scope: Recover retained 2026020336 input bytes, verify raw and canonical digests when available, and prepare a clearly identified offline reconstruction if needed. Production and candidate code are outside this lane.
+- Workspace: `octoberBranch` at `62ce797ad`, with pre-existing candidate changes. Only packet artifacts and this diary are mine.
+- Start: Checkout and overlapping owners verified. Next, inspect recorded custody evidence and named local export locations.
+- Custody checkpoint: Nov 17 signed receipt and Nov 18 trace match. The game-time transcript recorded selected binding and Werenski read values. The prior verifier piped gzip to memory and omitted bytes from output. The exact local release archive, named temporary evidence and capsule contain metadata only. No production read occurred. Implementing a fragment replay with a strict stop at the first missing full response and a separate original-byte verifier.
+- Local fragment replay passed with actual source reader and calculator (0.0501 ixG per shot, 0.6617 weight); strict issued context refuses the first absent `games` read. The original-byte verifier rejected a wrong-size and same-size bad-hash file. Three existing synthetic publication parity cases passed separately. Exact historical archive verification and import are blocked on an owner-provided export. Lead owns any off-Mac run.

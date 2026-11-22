@@ -1,0 +1,23 @@
+{
+ "checks": {
+  "install1_exit0": true,
+  "install1_matches_reference": true,
+  "duplicate_refused_nonzero": true,
+  "duplicate_reason_already_installed": true,
+  "duplicate_changed_nothing": true,
+  "guarded_refused_not_clean_exit11": true,
+  "guarded_made_no_attempt": true,
+  "guarded_changed_nothing": true,
+  "reset1_exit0": true,
+  "reset1_back_to_pre": true,
+  "rerun_exit0_and_reference": true,
+  "reset2_back_to_pre": true,
+  "outside_unchanged_while_installed": true,
+  "server_install_txn_starts_2": true
+ },
+ "passed": 14,
+ "total": 14,
+ "allPass": true,
+ "referenceSandboxFingerprint": "4399436c2a2f4a1a69e4953d74df1651",
+ "outsideFullFingerprintPre": "da3aa08b980815da21aa92e133c7b1ab"
+}

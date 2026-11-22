@@ -1,0 +1,1503 @@
+{
+  "version": "after",
+  "reps": 5,
+  "cutoff": "2026-11-17",
+  "paritySha256": "245acd199f8edc9d5f5027ddf5d4e3c4040e64d811a6c213d6997391e1224d98",
+  "samples": [
+    {
+      "scenario": "comparison.cold",
+      "rep": 1,
+      "ms": 1071.5,
+      "requests": [
+        {
+          "route": "metadata",
+          "url": "/api/v1/contextual-rankings/metadata",
+          "ms": 4.4,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "season",
+          "url": "/api/v1/season",
+          "ms": 0,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "matrix",
+          "url": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings",
+          "ms": 582.7,
+          "reads": 96,
+          "rows": 27090,
+          "bytes": 11742385,
+          "tables": {
+            "ranking_publications": {
+              "reads": 2,
+              "rows": 6,
+              "bytes": 1088
+            },
+            "skater_composite_ratings": {
+              "reads": 3,
+              "rows": 751,
+              "bytes": 365715
+            },
+            "entity_metric_rankings": {
+              "reads": 77,
+              "rows": 26283,
+              "bytes": 11370502
+            },
+            "players": {
+              "reads": 2,
+              "rows": 20,
+              "bytes": 1634
+            },
+            "teams": {
+              "reads": 2,
+              "rows": 20,
+              "bytes": 926
+            },
+            "rolling_player_game_metrics": {
+              "reads": 10,
+              "rows": 10,
+              "bytes": 2520
+            }
+          }
+        },
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 648.6,
+          "reads": 72,
+          "rows": 15292,
+          "bytes": 48565006,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 34,
+              "rows": 10694,
+              "bytes": 46966612
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "rolling_player_metric_support_payloads": {
+              "reads": 22,
+              "rows": 750,
+              "bytes": 1324270
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        },
+        {
+          "route": "comparison",
+          "url": "/api/v1/contextual-rankings/comparison?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&player_ids=8470000%2C8470001%2C8470002%2C8470003%2C8470004%2C8470005",
+          "ms": 437,
+          "reads": 83,
+          "rows": 27214,
+          "bytes": 11759029,
+          "tables": {
+            "entity_metric_rankings": {
+              "reads": 27,
+              "rows": 26250,
+              "bytes": 11369412
+            },
+            "skater_composite_ratings": {
+              "reads": 2,
+              "rows": 750,
+              "bytes": 365683
+            },
+            "players": {
+              "reads": 2,
+              "rows": 100,
+              "bytes": 8296
+            },
+            "teams": {
+              "reads": 2,
+              "rows": 64,
+              "bytes": 3038
+            },
+            "rolling_player_game_metrics": {
+              "reads": 50,
+              "rows": 50,
+              "bytes": 12600
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "comparison.warm-server",
+      "rep": 1,
+      "ms": 128.3,
+      "requests": [
+        {
+          "route": "metadata",
+          "url": "/api/v1/contextual-rankings/metadata",
+          "ms": 3.9,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "season",
+          "url": "/api/v1/season",
+          "ms": 0,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "matrix",
+          "url": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings",
+          "ms": 1.1,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 99.4,
+          "reads": 20,
+          "rows": 3852,
+          "bytes": 274236,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 4,
+              "rows": 4,
+              "bytes": 112
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        },
+        {
+          "route": "comparison",
+          "url": "/api/v1/contextual-rankings/comparison?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&player_ids=8470000%2C8470001%2C8470002%2C8470003%2C8470004%2C8470005",
+          "ms": 2.8,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        }
+      ]
+    },
+    {
+      "scenario": "trending.warm-client",
+      "rep": 1,
+      "ms": 23.3,
+      "requests": []
+    },
+    {
+      "scenario": "comparison.warm-client",
+      "rep": 1,
+      "ms": 46.3,
+      "requests": []
+    },
+    {
+      "scenario": "trending.cold",
+      "rep": 1,
+      "ms": 582.6,
+      "requests": [
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 567.5,
+          "reads": 72,
+          "rows": 15292,
+          "bytes": 48565006,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 34,
+              "rows": 10694,
+              "bytes": 46966612
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "rolling_player_metric_support_payloads": {
+              "reads": 22,
+              "rows": 750,
+              "bytes": 1324270
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "trending.warm-server",
+      "rep": 1,
+      "ms": 81.8,
+      "requests": [
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 69,
+          "reads": 20,
+          "rows": 3852,
+          "bytes": 274236,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 4,
+              "rows": 4,
+              "bytes": 112
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "comparison.cold",
+      "rep": 2,
+      "ms": 1063.3,
+      "requests": [
+        {
+          "route": "metadata",
+          "url": "/api/v1/contextual-rankings/metadata",
+          "ms": 5.9,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "season",
+          "url": "/api/v1/season",
+          "ms": 0,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "matrix",
+          "url": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings",
+          "ms": 621.2,
+          "reads": 96,
+          "rows": 27090,
+          "bytes": 11742385,
+          "tables": {
+            "ranking_publications": {
+              "reads": 2,
+              "rows": 6,
+              "bytes": 1088
+            },
+            "skater_composite_ratings": {
+              "reads": 3,
+              "rows": 751,
+              "bytes": 365715
+            },
+            "entity_metric_rankings": {
+              "reads": 77,
+              "rows": 26283,
+              "bytes": 11370502
+            },
+            "players": {
+              "reads": 2,
+              "rows": 20,
+              "bytes": 1634
+            },
+            "teams": {
+              "reads": 2,
+              "rows": 20,
+              "bytes": 926
+            },
+            "rolling_player_game_metrics": {
+              "reads": 10,
+              "rows": 10,
+              "bytes": 2520
+            }
+          }
+        },
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 617.9,
+          "reads": 72,
+          "rows": 15292,
+          "bytes": 48565006,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 34,
+              "rows": 10694,
+              "bytes": 46966612
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "rolling_player_metric_support_payloads": {
+              "reads": 22,
+              "rows": 750,
+              "bytes": 1324270
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        },
+        {
+          "route": "comparison",
+          "url": "/api/v1/contextual-rankings/comparison?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&player_ids=8470000%2C8470001%2C8470002%2C8470003%2C8470004%2C8470005",
+          "ms": 395.1,
+          "reads": 83,
+          "rows": 27214,
+          "bytes": 11759029,
+          "tables": {
+            "entity_metric_rankings": {
+              "reads": 27,
+              "rows": 26250,
+              "bytes": 11369412
+            },
+            "skater_composite_ratings": {
+              "reads": 2,
+              "rows": 750,
+              "bytes": 365683
+            },
+            "players": {
+              "reads": 2,
+              "rows": 100,
+              "bytes": 8296
+            },
+            "teams": {
+              "reads": 2,
+              "rows": 64,
+              "bytes": 3038
+            },
+            "rolling_player_game_metrics": {
+              "reads": 50,
+              "rows": 50,
+              "bytes": 12600
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "comparison.warm-server",
+      "rep": 2,
+      "ms": 123.9,
+      "requests": [
+        {
+          "route": "metadata",
+          "url": "/api/v1/contextual-rankings/metadata",
+          "ms": 4.1,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "season",
+          "url": "/api/v1/season",
+          "ms": 0,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "matrix",
+          "url": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings",
+          "ms": 0.9,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 100.1,
+          "reads": 20,
+          "rows": 3852,
+          "bytes": 274236,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 4,
+              "rows": 4,
+              "bytes": 112
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        },
+        {
+          "route": "comparison",
+          "url": "/api/v1/contextual-rankings/comparison?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&player_ids=8470000%2C8470001%2C8470002%2C8470003%2C8470004%2C8470005",
+          "ms": 2.3,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        }
+      ]
+    },
+    {
+      "scenario": "trending.warm-client",
+      "rep": 2,
+      "ms": 15.5,
+      "requests": []
+    },
+    {
+      "scenario": "comparison.warm-client",
+      "rep": 2,
+      "ms": 28.1,
+      "requests": []
+    },
+    {
+      "scenario": "trending.cold",
+      "rep": 2,
+      "ms": 584.6,
+      "requests": [
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 572.9,
+          "reads": 72,
+          "rows": 15292,
+          "bytes": 48565006,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 34,
+              "rows": 10694,
+              "bytes": 46966612
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "rolling_player_metric_support_payloads": {
+              "reads": 22,
+              "rows": 750,
+              "bytes": 1324270
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "trending.warm-server",
+      "rep": 2,
+      "ms": 82.6,
+      "requests": [
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 69.9,
+          "reads": 20,
+          "rows": 3852,
+          "bytes": 274236,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 4,
+              "rows": 4,
+              "bytes": 112
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "comparison.cold",
+      "rep": 3,
+      "ms": 1072.3,
+      "requests": [
+        {
+          "route": "metadata",
+          "url": "/api/v1/contextual-rankings/metadata",
+          "ms": 5.1,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "season",
+          "url": "/api/v1/season",
+          "ms": 0,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "matrix",
+          "url": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings",
+          "ms": 622.4,
+          "reads": 96,
+          "rows": 27090,
+          "bytes": 11742385,
+          "tables": {
+            "ranking_publications": {
+              "reads": 2,
+              "rows": 6,
+              "bytes": 1088
+            },
+            "skater_composite_ratings": {
+              "reads": 3,
+              "rows": 751,
+              "bytes": 365715
+            },
+            "entity_metric_rankings": {
+              "reads": 77,
+              "rows": 26283,
+              "bytes": 11370502
+            },
+            "players": {
+              "reads": 2,
+              "rows": 20,
+              "bytes": 1634
+            },
+            "teams": {
+              "reads": 2,
+              "rows": 20,
+              "bytes": 926
+            },
+            "rolling_player_game_metrics": {
+              "reads": 10,
+              "rows": 10,
+              "bytes": 2520
+            }
+          }
+        },
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 611.3,
+          "reads": 72,
+          "rows": 15292,
+          "bytes": 48565006,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 34,
+              "rows": 10694,
+              "bytes": 46966612
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "rolling_player_metric_support_payloads": {
+              "reads": 22,
+              "rows": 750,
+              "bytes": 1324270
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        },
+        {
+          "route": "comparison",
+          "url": "/api/v1/contextual-rankings/comparison?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&player_ids=8470000%2C8470001%2C8470002%2C8470003%2C8470004%2C8470005",
+          "ms": 398.3,
+          "reads": 83,
+          "rows": 27214,
+          "bytes": 11759029,
+          "tables": {
+            "entity_metric_rankings": {
+              "reads": 27,
+              "rows": 26250,
+              "bytes": 11369412
+            },
+            "skater_composite_ratings": {
+              "reads": 2,
+              "rows": 750,
+              "bytes": 365683
+            },
+            "players": {
+              "reads": 2,
+              "rows": 100,
+              "bytes": 8296
+            },
+            "teams": {
+              "reads": 2,
+              "rows": 64,
+              "bytes": 3038
+            },
+            "rolling_player_game_metrics": {
+              "reads": 50,
+              "rows": 50,
+              "bytes": 12600
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "comparison.warm-server",
+      "rep": 3,
+      "ms": 117.9,
+      "requests": [
+        {
+          "route": "metadata",
+          "url": "/api/v1/contextual-rankings/metadata",
+          "ms": 3.5,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "season",
+          "url": "/api/v1/season",
+          "ms": 0,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "matrix",
+          "url": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings",
+          "ms": 1.1,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 93.2,
+          "reads": 20,
+          "rows": 3852,
+          "bytes": 274236,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 4,
+              "rows": 4,
+              "bytes": 112
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        },
+        {
+          "route": "comparison",
+          "url": "/api/v1/contextual-rankings/comparison?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&player_ids=8470000%2C8470001%2C8470002%2C8470003%2C8470004%2C8470005",
+          "ms": 1.8,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        }
+      ]
+    },
+    {
+      "scenario": "trending.warm-client",
+      "rep": 3,
+      "ms": 14.7,
+      "requests": []
+    },
+    {
+      "scenario": "comparison.warm-client",
+      "rep": 3,
+      "ms": 28.2,
+      "requests": []
+    },
+    {
+      "scenario": "trending.cold",
+      "rep": 3,
+      "ms": 574.4,
+      "requests": [
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 563.4,
+          "reads": 72,
+          "rows": 15292,
+          "bytes": 48565006,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 34,
+              "rows": 10694,
+              "bytes": 46966612
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "rolling_player_metric_support_payloads": {
+              "reads": 22,
+              "rows": 750,
+              "bytes": 1324270
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "trending.warm-server",
+      "rep": 3,
+      "ms": 82.2,
+      "requests": [
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 70.1,
+          "reads": 20,
+          "rows": 3852,
+          "bytes": 274236,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 4,
+              "rows": 4,
+              "bytes": 112
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "comparison.cold",
+      "rep": 4,
+      "ms": 1109.5,
+      "requests": [
+        {
+          "route": "metadata",
+          "url": "/api/v1/contextual-rankings/metadata",
+          "ms": 3.1,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "season",
+          "url": "/api/v1/season",
+          "ms": 0,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "matrix",
+          "url": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings",
+          "ms": 670.9,
+          "reads": 96,
+          "rows": 27090,
+          "bytes": 11742385,
+          "tables": {
+            "ranking_publications": {
+              "reads": 2,
+              "rows": 6,
+              "bytes": 1088
+            },
+            "skater_composite_ratings": {
+              "reads": 3,
+              "rows": 751,
+              "bytes": 365715
+            },
+            "entity_metric_rankings": {
+              "reads": 77,
+              "rows": 26283,
+              "bytes": 11370502
+            },
+            "players": {
+              "reads": 2,
+              "rows": 20,
+              "bytes": 1634
+            },
+            "teams": {
+              "reads": 2,
+              "rows": 20,
+              "bytes": 926
+            },
+            "rolling_player_game_metrics": {
+              "reads": 10,
+              "rows": 10,
+              "bytes": 2520
+            }
+          }
+        },
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 651.4,
+          "reads": 72,
+          "rows": 15292,
+          "bytes": 48565006,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 34,
+              "rows": 10694,
+              "bytes": 46966612
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "rolling_player_metric_support_payloads": {
+              "reads": 22,
+              "rows": 750,
+              "bytes": 1324270
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        },
+        {
+          "route": "comparison",
+          "url": "/api/v1/contextual-rankings/comparison?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&player_ids=8470000%2C8470001%2C8470002%2C8470003%2C8470004%2C8470005",
+          "ms": 394.9,
+          "reads": 83,
+          "rows": 27214,
+          "bytes": 11759029,
+          "tables": {
+            "entity_metric_rankings": {
+              "reads": 27,
+              "rows": 26250,
+              "bytes": 11369412
+            },
+            "skater_composite_ratings": {
+              "reads": 2,
+              "rows": 750,
+              "bytes": 365683
+            },
+            "players": {
+              "reads": 2,
+              "rows": 100,
+              "bytes": 8296
+            },
+            "teams": {
+              "reads": 2,
+              "rows": 64,
+              "bytes": 3038
+            },
+            "rolling_player_game_metrics": {
+              "reads": 50,
+              "rows": 50,
+              "bytes": 12600
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "comparison.warm-server",
+      "rep": 4,
+      "ms": 116,
+      "requests": [
+        {
+          "route": "metadata",
+          "url": "/api/v1/contextual-rankings/metadata",
+          "ms": 4.3,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "season",
+          "url": "/api/v1/season",
+          "ms": 0,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "matrix",
+          "url": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings",
+          "ms": 1,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 89,
+          "reads": 20,
+          "rows": 3852,
+          "bytes": 274236,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 4,
+              "rows": 4,
+              "bytes": 112
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        },
+        {
+          "route": "comparison",
+          "url": "/api/v1/contextual-rankings/comparison?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&player_ids=8470000%2C8470001%2C8470002%2C8470003%2C8470004%2C8470005",
+          "ms": 4.6,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        }
+      ]
+    },
+    {
+      "scenario": "trending.warm-client",
+      "rep": 4,
+      "ms": 13.4,
+      "requests": []
+    },
+    {
+      "scenario": "comparison.warm-client",
+      "rep": 4,
+      "ms": 25.5,
+      "requests": []
+    },
+    {
+      "scenario": "trending.cold",
+      "rep": 4,
+      "ms": 576.8,
+      "requests": [
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 563.9,
+          "reads": 72,
+          "rows": 15292,
+          "bytes": 48565006,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 34,
+              "rows": 10694,
+              "bytes": 46966612
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "rolling_player_metric_support_payloads": {
+              "reads": 22,
+              "rows": 750,
+              "bytes": 1324270
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "trending.warm-server",
+      "rep": 4,
+      "ms": 80.5,
+      "requests": [
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 67.9,
+          "reads": 20,
+          "rows": 3852,
+          "bytes": 274236,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 4,
+              "rows": 4,
+              "bytes": 112
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "comparison.cold",
+      "rep": 5,
+      "ms": 1065.1,
+      "requests": [
+        {
+          "route": "metadata",
+          "url": "/api/v1/contextual-rankings/metadata",
+          "ms": 5.8,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "season",
+          "url": "/api/v1/season",
+          "ms": 0,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "matrix",
+          "url": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings",
+          "ms": 619.7,
+          "reads": 96,
+          "rows": 27090,
+          "bytes": 11742385,
+          "tables": {
+            "ranking_publications": {
+              "reads": 2,
+              "rows": 6,
+              "bytes": 1088
+            },
+            "skater_composite_ratings": {
+              "reads": 3,
+              "rows": 751,
+              "bytes": 365715
+            },
+            "entity_metric_rankings": {
+              "reads": 77,
+              "rows": 26283,
+              "bytes": 11370502
+            },
+            "players": {
+              "reads": 2,
+              "rows": 20,
+              "bytes": 1634
+            },
+            "teams": {
+              "reads": 2,
+              "rows": 20,
+              "bytes": 926
+            },
+            "rolling_player_game_metrics": {
+              "reads": 10,
+              "rows": 10,
+              "bytes": 2520
+            }
+          }
+        },
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 616.4,
+          "reads": 72,
+          "rows": 15292,
+          "bytes": 48565006,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 34,
+              "rows": 10694,
+              "bytes": 46966612
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "rolling_player_metric_support_payloads": {
+              "reads": 22,
+              "rows": 750,
+              "bytes": 1324270
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        },
+        {
+          "route": "comparison",
+          "url": "/api/v1/contextual-rankings/comparison?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&player_ids=8470000%2C8470001%2C8470002%2C8470003%2C8470004%2C8470005",
+          "ms": 397.3,
+          "reads": 83,
+          "rows": 27214,
+          "bytes": 11759029,
+          "tables": {
+            "entity_metric_rankings": {
+              "reads": 27,
+              "rows": 26250,
+              "bytes": 11369412
+            },
+            "skater_composite_ratings": {
+              "reads": 2,
+              "rows": 750,
+              "bytes": 365683
+            },
+            "players": {
+              "reads": 2,
+              "rows": 100,
+              "bytes": 8296
+            },
+            "teams": {
+              "reads": 2,
+              "rows": 64,
+              "bytes": 3038
+            },
+            "rolling_player_game_metrics": {
+              "reads": 50,
+              "rows": 50,
+              "bytes": 12600
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "comparison.warm-server",
+      "rep": 5,
+      "ms": 122.9,
+      "requests": [
+        {
+          "route": "metadata",
+          "url": "/api/v1/contextual-rankings/metadata",
+          "ms": 3.7,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "season",
+          "url": "/api/v1/season",
+          "ms": 0,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "matrix",
+          "url": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings",
+          "ms": 1,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        },
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 96.6,
+          "reads": 20,
+          "rows": 3852,
+          "bytes": 274236,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 4,
+              "rows": 4,
+              "bytes": 112
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        },
+        {
+          "route": "comparison",
+          "url": "/api/v1/contextual-rankings/comparison?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&player_ids=8470000%2C8470001%2C8470002%2C8470003%2C8470004%2C8470005",
+          "ms": 4.1,
+          "reads": 0,
+          "rows": 0,
+          "bytes": 0,
+          "tables": {}
+        }
+      ]
+    },
+    {
+      "scenario": "trending.warm-client",
+      "rep": 5,
+      "ms": 13.4,
+      "requests": []
+    },
+    {
+      "scenario": "comparison.warm-client",
+      "rep": 5,
+      "ms": 28,
+      "requests": []
+    },
+    {
+      "scenario": "trending.cold",
+      "rep": 5,
+      "ms": 595.3,
+      "requests": [
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 584.2,
+          "reads": 72,
+          "rows": 15292,
+          "bytes": 48565006,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 34,
+              "rows": 10694,
+              "bytes": 46966612
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "rolling_player_metric_support_payloads": {
+              "reads": 22,
+              "rows": 750,
+              "bytes": 1324270
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "trending.warm-server",
+      "rep": 5,
+      "ms": 79.2,
+      "requests": [
+        {
+          "route": "trending",
+          "url": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25",
+          "ms": 66.7,
+          "reads": 20,
+          "rows": 3852,
+          "bytes": 274236,
+          "tables": {
+            "rolling_player_game_metrics": {
+              "reads": 4,
+              "rows": 4,
+              "bytes": 112
+            },
+            "games": {
+              "reads": 4,
+              "rows": 720,
+              "bytes": 15844
+            },
+            "players": {
+              "reads": 8,
+              "rows": 3000,
+              "bytes": 252204
+            },
+            "teams": {
+              "reads": 4,
+              "rows": 128,
+              "bytes": 6076
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,338 @@
+{
+  "scope": "Offline replay against the exact local release tree. Both dated Ottawa public responses, next-game response, NHL Gamecenter JSON and event HTML were retained during the previous live check.",
+  "candidate": "5babd77c191b0043e96411d6ebeacd10d722619e",
+  "base": "294554a488bcc62db91a1921e93372d4c981d9f7",
+  "officialSourceReplay": {
+    "gamecenterPlays": 98,
+    "verifiedFiveSkaterEvents": 13,
+    "savedReceiptEventsMatched": 7,
+    "savedReceiptEventsTotal": 7,
+    "matchedFields": [
+      "gameId",
+      "teamId",
+      "period",
+      "timeElapsed",
+      "gamecenterEvent",
+      "htmlEvent",
+      "five ordered player IDs"
+    ]
+  },
+  "normalRouteAndReactRender": [
+    {
+      "game": 2026020348,
+      "stateObservedAt": "2026-11-20T00:42:23.392Z",
+      "before": {
+        "entry": "d6c28ea30f2f8020de5fb33e94db923228b5ac461b909ddcc62ededbc3ca4a12",
+        "cutoff": "2026-11-20T00:42:23.392Z",
+        "mode": "entering",
+        "observations": 0
+      },
+      "after": {
+        "entry": "2c07dc8263654167d026a3b9d3d7b96133bd428a66e8d1e97fe5d5630a337ef8",
+        "cutoff": null,
+        "mode": "unrecorded",
+        "units": 4,
+        "sources": [
+          "https://x.com/SunGarrioch/status/2123562467645149441"
+        ],
+        "officialEvents": [
+          {
+            "id": 413,
+            "period": 1,
+            "elapsed": "17:42",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-97",
+            "players": [
+              8481528,
+              8482092,
+              8473512,
+              8481606,
+              8478469
+            ]
+          },
+          {
+            "id": 408,
+            "period": 1,
+            "elapsed": "17:39",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-96",
+            "players": [
+              8481528,
+              8482092,
+              8473512,
+              8481606,
+              8478469
+            ]
+          },
+          {
+            "id": 398,
+            "period": 1,
+            "elapsed": "16:43",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-95",
+            "players": [
+              8481528,
+              8482092,
+              8473512,
+              8481606,
+              8478469
+            ]
+          },
+          {
+            "id": 21,
+            "period": 1,
+            "elapsed": "16:43",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-94",
+            "players": [
+              8481596,
+              8482116,
+              8483676,
+              8480208,
+              8482105
+            ]
+          },
+          {
+            "id": 395,
+            "period": 1,
+            "elapsed": "16:34",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-93",
+            "players": [
+              8481596,
+              8482116,
+              8483676,
+              8480208,
+              8482105
+            ]
+          },
+          {
+            "id": 402,
+            "period": 1,
+            "elapsed": "16:27",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-92",
+            "players": [
+              8481596,
+              8482116,
+              8483676,
+              8480208,
+              8482105
+            ]
+          },
+          {
+            "id": 393,
+            "period": 1,
+            "elapsed": "16:25",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-91",
+            "players": [
+              8481596,
+              8482116,
+              8483676,
+              8480208,
+              8482105
+            ]
+          },
+          {
+            "id": 384,
+            "period": 1,
+            "elapsed": "15:43",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-90",
+            "players": [
+              8481596,
+              8482116,
+              8483676,
+              8480208,
+              8482105
+            ]
+          }
+        ],
+        "pp": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "game": 2026020348,
+      "stateObservedAt": "2026-11-20T00:44:11.844Z",
+      "before": {
+        "entry": "a1e6b019a689cc02ce710c9f3cac3c95e4a42e14b73e761a4ffac1d22449e6f2",
+        "cutoff": "2026-11-20T00:44:11.844Z",
+        "mode": "entering",
+        "observations": 0
+      },
+      "after": {
+        "entry": "2c07dc8263654167d026a3b9d3d7b96133bd428a66e8d1e97fe5d5630a337ef8",
+        "cutoff": null,
+        "mode": "unrecorded",
+        "units": 4,
+        "sources": [
+          "https://x.com/SunGarrioch/status/2123562467645149441"
+        ],
+        "officialEvents": [
+          {
+            "id": 413,
+            "period": 1,
+            "elapsed": "17:42",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-97",
+            "players": [
+              8481528,
+              8482092,
+              8473512,
+              8481606,
+              8478469
+            ]
+          },
+          {
+            "id": 408,
+            "period": 1,
+            "elapsed": "17:39",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-96",
+            "players": [
+              8481528,
+              8482092,
+              8473512,
+              8481606,
+              8478469
+            ]
+          },
+          {
+            "id": 398,
+            "period": 1,
+            "elapsed": "16:43",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-95",
+            "players": [
+              8481528,
+              8482092,
+              8473512,
+              8481606,
+              8478469
+            ]
+          },
+          {
+            "id": 21,
+            "period": 1,
+            "elapsed": "16:43",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-94",
+            "players": [
+              8481596,
+              8482116,
+              8483676,
+              8480208,
+              8482105
+            ]
+          },
+          {
+            "id": 395,
+            "period": 1,
+            "elapsed": "16:34",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-93",
+            "players": [
+              8481596,
+              8482116,
+              8483676,
+              8480208,
+              8482105
+            ]
+          },
+          {
+            "id": 402,
+            "period": 1,
+            "elapsed": "16:27",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-92",
+            "players": [
+              8481596,
+              8482116,
+              8483676,
+              8480208,
+              8482105
+            ]
+          },
+          {
+            "id": 393,
+            "period": 1,
+            "elapsed": "16:25",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-91",
+            "players": [
+              8481596,
+              8482116,
+              8483676,
+              8480208,
+              8482105
+            ]
+          },
+          {
+            "id": 384,
+            "period": 1,
+            "elapsed": "15:43",
+            "source": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-90",
+            "players": [
+              8481596,
+              8482116,
+              8483676,
+              8480208,
+              8482105
+            ]
+          }
+        ],
+        "pp": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "game": 2026020366,
+      "stateObservedAt": "2026-11-20T00:43:16.745Z",
+      "before": {
+        "entry": "1f69d5691e2905699ef2f5ff5d879f736e83191763f11155a2f61cd487657798",
+        "cutoff": null,
+        "mode": "expected",
+        "observations": 0
+      },
+      "after": {
+        "entry": "1f69d5691e2905699ef2f5ff5d879f736e83191763f11155a2f61cd487657798",
+        "cutoff": null,
+        "mode": "expected",
+        "units": 0,
+        "sources": [],
+        "officialEvents": [],
+        "pp": [
+          null,
+          null
+        ]
+      }
+    }
+  ],
+  "numberedCarryFixture": {
+    "originGameId": 2026010001,
+    "nextGameId": 2026010002,
+    "teamId": 14,
+    "unit": "PP1",
+    "originalSource": "https://x.com/fixtureauthor/status/124",
+    "originalPublishedAt": "2026-10-01T23:33:00Z",
+    "originalPlayers": [
+      "Carlson",
+      "Point",
+      "Kucherov",
+      "Guentzel",
+      "Hagel"
+    ],
+    "nextDesignation": "carried",
+    "supersedingSource": "https://x.com/fixtureauthor/status/125",
+    "supersedingPublishedAt": "2026-10-02T01:00:30.000Z",
+    "supersedingPlayers": [
+      "Replacement",
+      "Point",
+      "Kucherov",
+      "Guentzel",
+      "Hagel"
+    ],
+    "nextDesignationAfterSupersession": "reported",
+    "historicalOriginalRecovered": true
+  },
+  "parentStatus": "Open. Exact-release approval and live numbered next-game consumer readback outstanding.",
+  "localChecks": {
+    "testsPassed": 156,
+    "testFiles": 9,
+    "retainedApiAndDomReplay": "passed separately",
+    "fullWebTypeScript": "passed",
+    "scopedEslint": "passed",
+    "productionBuildAdmission": "passed locally"
+  }
+}

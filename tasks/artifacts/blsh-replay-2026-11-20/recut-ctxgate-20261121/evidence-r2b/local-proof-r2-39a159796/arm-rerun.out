@@ -1,0 +1,16 @@
+ schedule 
+----------
+        6
+(1 row)
+
+ schedule 
+----------
+        7
+(1 row)
+
+ jobid |           jobname            |   schedule    | active |                                               command                                                
+-------+------------------------------+---------------+--------+------------------------------------------------------------------------------------------------------
+     7 | blsh-replay-context-20261119 | 18 18 21 11 * | t      | select blsh_replay.replay_get_fire('blsh-replay-context-20261119', '/api/v1/db/blsh-replay-context')
+     6 | blsh-replay-native-20261119  | 15 18 21 11 * | t      | select blsh_replay.replay_get_fire('blsh-replay-native-20261119', '/api/v1/db/blsh-replay-native')
+(2 rows)
+

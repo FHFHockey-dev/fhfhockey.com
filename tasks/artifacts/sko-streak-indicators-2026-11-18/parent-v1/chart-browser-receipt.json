@@ -1,0 +1,47 @@
+{
+  "player": "8479337/20242025",
+  "selectablePlayerSeasons": 920,
+  "playedGames": 82,
+  "missingHistory": "2024020014",
+  "breach": "2024020462",
+  "oneGameEpisode": "2024020548",
+  "firstOutside": "2024020559",
+  "uncertainSheetBoundary": "2024020140",
+  "leftCensoredCold": "2024020586",
+  "unfinishedHot": "2024021306",
+  "browser": "148.0.7778.96",
+  "cutoffs": [
+    {
+      "url": "http://127.0.0.1:3167/sko-element/streaks?player=8471685/20242025&through=2024020957",
+      "gp": 58,
+      "htmlGames": 58,
+      "htmlFinalGame": "2024020957",
+      "nextDataGames": 58,
+      "nextDataFinalGame": "2024020957"
+    },
+    {
+      "url": "http://127.0.0.1:3167/sko-element/streaks?player=8479337/20242025&through=2024021036",
+      "gp": 65,
+      "htmlGames": 65,
+      "htmlFinalGame": "2024021036",
+      "nextDataGames": 65,
+      "nextDataFinalGame": "2024021036"
+    }
+  ],
+  "passed": [
+    "preview entry and player switch",
+    "keyboard + pointer selection",
+    "prior five and exit ±2 GP",
+    "one-game episode and right-censored as-of view",
+    "absent post-cutoff games and markers",
+    "short-sheet history gap",
+    "unknown episode start",
+    "unobserved season-end exit",
+    "390px viewport",
+    "two official-game deep links open at frozen closes",
+    "HTML and Next navigation JSON end at the named game",
+    "explicit full-season link restores later games",
+    "mismatched, unscoped and malformed links return 404",
+    "no page exceptions"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "game": 2026020336,
+  "claim": "e79f06a3-8f33-4f50-a856-02f880787934",
+  "startedUtc": "2026-11-19T18:40:28.787726+00:00",
+  "sqlSha256": "a6438caf686f62e8437c4b865b3a7c34478a3d438fe27eca5536123b129a91be",
+  "exportsAttempted": 1,
+  "classification": "original_native_packet_integrity_verified",
+  "binding": {
+    "awayAbbrev": "CBJ",
+    "awayTeamId": 29,
+    "calendarRevision": "09263747a787a6453b5fdf716f6642309ee108a711c5f7e4819192a2cbb53e83",
+    "claimId": "e79f06a3-8f33-4f50-a856-02f880787934",
+    "codeVersion": "83750b4abd672399113659b96c279a1ddaeb425b",
+    "gameId": 2026020336,
+    "homeAbbrev": "NYI",
+    "homeTeamId": 2,
+    "inputCutoff": "2026-11-17T22:44:01.746467+00:00",
+    "policyId": "pregame-native-v1",
+    "scheduledStart": "2026-11-18T00:00:00+00:00",
+    "slateDate": "2026-11-17"
+  },
+  "byteLength": 187301,
+  "rawSha256": "3a76caf5e5ad1485d3638ae13b8a2a432dd7578703ea09a188608029ff4d4a9b",
+  "canonicalSha256": "bf9041ca164e2cef73ee984237560caab82181892ad2b62e85fa0b34c0822d56",
+  "readCount": 187,
+  "witnessVerifiedInThisRun": false,
+  "finishedUtc": "2026-11-19T18:40:29.817082+00:00",
+  "phase": "Operator-side read-only export before off-Mac import",
+  "productionReads": 1,
+  "productionWrites": 0,
+  "transaction": "READ ONLY; ROLLBACK",
+  "reader": "public.forge_pregame_capture_read_v1(uuid)",
+  "exportColumn": "packet_base64",
+  "transfer": {
+    "ownerOnly": true,
+    "shared": false,
+    "size": 187301
+  }
+}

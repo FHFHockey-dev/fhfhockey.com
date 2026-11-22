@@ -1,0 +1,8 @@
+#!/bin/bash
+echo "vercel $*" >> "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-replay-2026-11-20/installer-recovery-2026-11-21/receipts/dryrun-step3-20261121/A-denial-probe-fails/calls.log"
+case "$1 $2" in
+  "env ls") [[ -e "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-replay-2026-11-20/installer-recovery-2026-11-21/receipts/dryrun-step3-20261121/A-denial-probe-fails/state/token" ]] && echo "BLSH_REPLAY_API_TOKEN  Encrypted  Production"; exit 0;;
+  "env add") v=$(cat); [[ 0 == 1 ]] && { echo "vercel-add-stub-fail" >&2; exit 1; }
+             python3 -I -c 'import sys;t=sys.argv[1];print("added-token-shape parts=%d len=%d" % (len(t.split(".")), len(t)))' "$v" >> "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-replay-2026-11-20/installer-recovery-2026-11-21/receipts/dryrun-step3-20261121/A-denial-probe-fails/calls.log"; touch "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-replay-2026-11-20/installer-recovery-2026-11-21/receipts/dryrun-step3-20261121/A-denial-probe-fails/state/token";;
+  "env rm") rm -f "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-replay-2026-11-20/installer-recovery-2026-11-21/receipts/dryrun-step3-20261121/A-denial-probe-fails/state/token";;
+esac

@@ -1,0 +1,44 @@
+# Hot and Cold Streak Indicators
+
+All rates below are per played appearance. A manager can read an observed state at the close that confirms it. Features are reconstructed from later archives. An episode-relative label such as “two before exit” uses hindsight. It becomes an actionable warning only if it separates future events on eligible, cutoff-fixed issues.
+
+## Hot Streak Indicators
+
+**Onset.** In the full-season replay, two appearances before confirmation the five-game shot rate averaged 0.122 above personal reference (831 known, player-cluster 95% interval +0.081 to +0.166). Individual xG was +0.022 (817 known, +0.015 to +0.029). One appearance before confirmation the points gap already averaged +0.540. That game is the first breach. Selecting only eventual hot episodes explains how they formed, while the at-risk tests below include the false alarms.
+
+- On the pilot's early-hot task, pooled shots and individual xG reproduced AUCs .588 and .597. On the common March–April development rows they scored .551 and .639, respectively. Scoring with threshold distance, state history and upcoming roll-off reached .901. Adding process yielded .899, a paired −.001 [−.023, +.020] across 39 events in 947 issues. The comparable task exceeded .60 through information already in the scoring history.
+- On the separate five-future-game outcome, adding process lifted AUC from .550 to .642 and AP from .144 to .206. Dropping deployment cost .028 AUC [.007, .047]. Dropping shot generation did not detectably cost AUC. Five-game PP time had adjusted training odds ratio 1.60 per 72.6 seconds/GP higher [0.80, 3.19]. This identifies a family worth studying, with substantial uncertainty about the independent contribution of PP time.
+- The frozen alert fired on 524 of 6,778 neutral, unbreached issues. It caught 143 of 855 eventual hot production blocks, or 27.3% precision at 16.7% recall. Of those 143 correct block alerts, 102 also had a hot chart confirmation within the horizon, median four appearances after issue. Others produced enough points without a chart confirmation in those five games. Calibration slope was .64; the estimates were too spread out.
+- A longer personal scoring history largely accounted for the gain. Against that scoring-only comparator, the frozen process model gained .003 AUC [−.029, +.036] and had worse AP and Brier. Adding the same process families to the longer baseline gave .659 versus .639, gain +.0199 [−.003, +.042], also with worse AP and Brier. **Keep hot onset in research.** [Frozen evaluation](RESULTS.md) · [Longer-history comparison](longer-reference-frozen-pairs.csv) · [Effects](evaluation/forward/effects.csv)
+
+**Continuation.** There were 890 hot episodes and 2,401 confirmed appearances. Compared with the same skaters' neutral closes, interior games showed a larger shot-rate change by 0.328 shots/GP [0.268, 0.398] and an individual-xG change larger by 0.049/GP [0.039, 0.058]. The shot comparison covers 1,511 interior memberships in 612 episodes. Extra PP time averaged 7.8 seconds/GP [4.2, 11.7]. Those associations describe ongoing runs. In 714 validation decisions taken while hot, just 149 next-five blocks sustained that pace. The process model's paired AUC gain was +.056 [−.011, +.132] and its Brier worsened from .169 to .182. On the comparable next-close continuation it lost .040 AUC. **Withhold the continuation alert.** [Descriptive relationships](phase-relationships.csv) · [Decision results](RESULTS.md)
+
+**Exit.** Most of the average scoring gap disappeared at E, the first close outside hot. Shots and ixG were still above personal reference at E−1. Those values were observable then, but the identification of that close as the last one inside required the following appearance. Of 167 five-game pace-exit alerts, 144 were correct against an already high exit prevalence of 79.1%. The same proper-score deterioration as continuation applies to its complementary outcome. Exact next-close exits favored scoring alone, .935 versus .895 AUC. **Withhold the hot-exit alert.** [Exit offsets](phase-denominators.csv) · [Alert and calibration data](evaluation/forward/metrics.csv)
+
+## Cold Streak Indicators
+
+**Onset.** Two appearances before confirmation, shots averaged −0.108/GP [−0.162, −0.050] relative to the skater's reference (663 observed). Individual xG averaged −0.014/GP [−0.021, −0.005] on 644 observations, and PP time averaged −5.3 seconds/GP [−8.5, −2.2]. By the first breach the points gap was already −0.519. On the pilot's comparable early-cold label, adding process reduced AUC from .981 to .932 on 24 events in 947 issues. For the forward block it reduced AUC from .834 to .810 [paired gain −.038 to −.011], with a small AP gain and worse Brier. There were 173 correct alerts out of 654 for 531 event windows. **Withhold the cold-onset alert.** [Lead-in estimates](phase-relationships.csv) · [Results](RESULTS.md)
+
+Cold onset has a mathematical floor. A reference below 0.40 points/GP makes the event impossible even with zero future points. This applied to 3,739 of 6,778 issues. Three frozen process alerts fired on unreachable cases. On the 3,039 reachable issues alone, scoring AUC was .608 versus .601 for the process model. A high overall cold-onset AUC is particularly easy to misread here. [Reachability check](cold-onset-floor.csv)
+
+**Continuation.** Across 711 cold episodes and 2,065 confirmed appearances, the interior shot-rate change was lower than on the same skaters' neutral closes by 0.196 shots/GP [0.124, 0.271]. The individual-xG change was lower by 0.027/GP [0.017, 0.037]. The shot comparison covers 1,354 memberships in 471 episodes. PP time was lower by 6.2 seconds/GP [2.6, 10.1]. On 564 already-cold validation decisions, 165 future blocks sustained the low pace. Both scoring and process rounded to .601 AUC, paired interval [−.064, +.067]. Eighteen of 38 process alerts were correct. Exact next-close continuation also favored scoring alone, .823 versus .774. **Withhold the continuation alert.** [Interior comparisons](phase-relationships.csv) · [Decision results](RESULTS.md)
+
+**Exit.** The deficit narrowed on the first outside game. The shot-rate and ixG deficits persisted on average through the next two appearances even as the mean scoring gap returned to zero. On the five-game outcome, 86 of 108 exit alerts were correct against 70.7% exit prevalence. Brier worsened from .205 to .217. On the pilot next-close exit question, process lost .049 AUC [−.100, +.002]. **Withhold the cold-exit alert.** [Calibration and alert results](evaluation/forward/metrics.csv)
+
+## Two games on either side of observed exit
+
+Gaps are trailing five minus preceding 20. Counts in parentheses are the number of observed offsets for the points and shot columns; individual xG has its own denominator in the linked data. Short runs can place E−2 before confirmation. This table conditions on an observed exit. E−2 and E−1 are possible predictor closes, E identifies the exit at its close, and E+1/E+2 describe recovery.
+
+| Close | Hot points gap (n) | Hot shots gap | Hot ixG gap | Cold points gap (n) | Cold shots gap | Cold ixG gap |
+|---|---:|---:|---:|---:|---:|---:|
+| E−2 | +0.614 (814) | +0.274 | +0.040 | −0.539 (674) | −0.223 | −0.031 |
+| E−1 | +0.557 (814) | +0.259 | +0.037 | −0.491 (674) | −0.208 | −0.025 |
+| E | +0.150 (814) | +0.069 | +0.012 | −0.216 (674) | −0.131 | −0.012 |
+| E+1 | +0.050 (799) | +0.018 | +0.004 | −0.113 (659) | −0.108 | −0.011 |
+| E+2 | −0.045 (783) | −0.041 | −0.002 | +0.006 (642) | −0.056 | −0.005 |
+
+The full phase table includes each start offset, opening games capped at episode length, full and interior-only periods, last inside, first outside and each exit offset. Phase memberships may overlap. Predictive comparisons start from a unique official player-game in B or a unique original player-date in A. [Phase estimates with metric-specific counts and uncertainty](phase-relationships.csv)
+
+## Position, production and usage
+
+Forward hot-block onset improved over the short-window scoring benchmark among both forwards (.547 → .635, 589 events) and defensemen (.539 → .650, 266). It also improved descriptively among skaters with a reference below .50 points/GP (.556 → .653) and those at or above .50 (.502 → .610). The same comparison was .530 → .632 for materially changed usage and .557 → .645 for stable usage. Usage means a recent-versus-reference change of at least 60 seconds/GP on the PP or 120 total seconds/GP. This measures observed usage. Coaching decisions, linemates and PP-unit assignments lacked effective-time records. These slice estimates have smaller samples and offer no independent qualification. The table includes every task and reports support before suppressing sparse metrics. [Forward subgroup results](evaluation/forward/subgroups.csv) · [Same-label subgroups](evaluation/pilot/subgroups.csv)

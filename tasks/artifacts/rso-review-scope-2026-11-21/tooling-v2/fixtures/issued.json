@@ -1,0 +1,194 @@
+[
+  {
+    "revisionId": "fixture-rev-2026120101",
+    "playerId": 8470001,
+    "gameId": 2026120101,
+    "target": "SHOTS_ON_GOAL",
+    "method": "fixture-baseline",
+    "modelIdentity": {
+      "version": "forge-model-identity-v2",
+      "artifact": "no_fitted_artifact",
+      "codeVersion": "c0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0de",
+      "configurationHash": "0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f",
+      "artifactHash": "f9b6054f779983ff019fa21bdde968457cf6fe90579280523dc0ac6693c3e958"
+    },
+    "releasePin": "fixture0fixture0fixture0fixture0fixture0",
+    "cutoffAt": "2026-12-01T15:00:00Z",
+    "issuedAt": "2026-12-01T22:55:00Z",
+    "acknowledgedAt": "2026-12-01T23:00:05Z",
+    "scheduledAt": "2026-12-02T00:00:00Z",
+    "gameDate": "2026-12-01",
+    "horizon": 1,
+    "value": {
+      "conditionalMean": 2.8
+    }
+  },
+  {
+    "revisionId": "fixture-rev-2026120101",
+    "playerId": 8470002,
+    "gameId": 2026120101,
+    "target": "SHOTS_ON_GOAL",
+    "method": "fixture-baseline",
+    "modelIdentity": {
+      "version": "forge-model-identity-v2",
+      "artifact": "no_fitted_artifact",
+      "codeVersion": "c0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0de",
+      "configurationHash": "0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f",
+      "artifactHash": "f9b6054f779983ff019fa21bdde968457cf6fe90579280523dc0ac6693c3e958"
+    },
+    "releasePin": "fixture0fixture0fixture0fixture0fixture0",
+    "cutoffAt": "2026-12-01T15:00:00Z",
+    "issuedAt": "2026-12-01T22:55:00Z",
+    "acknowledgedAt": "2026-12-01T23:00:05Z",
+    "scheduledAt": "2026-12-02T00:00:00Z",
+    "gameDate": "2026-12-01",
+    "horizon": 1,
+    "value": {
+      "conditionalMean": 1.4
+    }
+  },
+  {
+    "revisionId": "fixture-rev-2026120102",
+    "playerId": 8470003,
+    "gameId": 2026120102,
+    "target": "SHOTS_ON_GOAL",
+    "method": "fixture-baseline",
+    "modelIdentity": {
+      "version": "forge-model-identity-v2",
+      "artifact": "no_fitted_artifact",
+      "codeVersion": "c0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0de",
+      "configurationHash": "0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f",
+      "artifactHash": "f9b6054f779983ff019fa21bdde968457cf6fe90579280523dc0ac6693c3e958"
+    },
+    "releasePin": "fixture0fixture0fixture0fixture0fixture0",
+    "cutoffAt": "2026-12-01T15:00:00Z",
+    "issuedAt": "2026-12-02T00:55:00Z",
+    "acknowledgedAt": "2026-12-02T01:00:07Z",
+    "scheduledAt": "2026-12-02T02:00:00Z",
+    "gameDate": "2026-12-01",
+    "horizon": 1,
+    "value": {
+      "conditionalMean": 2.1
+    }
+  },
+  {
+    "revisionId": "fixture-rev-2026120102",
+    "playerId": 8470004,
+    "gameId": 2026120102,
+    "target": "SHOTS_ON_GOAL",
+    "method": "fixture-baseline",
+    "modelIdentity": {
+      "version": "forge-model-identity-v2",
+      "artifact": "no_fitted_artifact",
+      "codeVersion": "c0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0de",
+      "configurationHash": "0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f",
+      "artifactHash": "f9b6054f779983ff019fa21bdde968457cf6fe90579280523dc0ac6693c3e958"
+    },
+    "releasePin": "fixture0fixture0fixture0fixture0fixture0",
+    "cutoffAt": "2026-12-01T15:00:00Z",
+    "issuedAt": "2026-12-02T00:55:00Z",
+    "acknowledgedAt": "2026-12-02T01:00:07Z",
+    "scheduledAt": "2026-12-02T02:00:00Z",
+    "gameDate": "2026-12-01",
+    "horizon": 1,
+    "value": {
+      "conditionalMean": 1.9
+    }
+  },
+  {
+    "revisionId": "fixture-rev-2026120101",
+    "playerId": 8470001,
+    "gameId": 2026120101,
+    "target": "GOALS",
+    "method": "fixture-baseline",
+    "modelIdentity": {
+      "version": "forge-model-identity-v2",
+      "artifact": "no_fitted_artifact",
+      "codeVersion": "c0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0de",
+      "configurationHash": "0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f",
+      "artifactHash": "f9b6054f779983ff019fa21bdde968457cf6fe90579280523dc0ac6693c3e958"
+    },
+    "releasePin": "fixture0fixture0fixture0fixture0fixture0",
+    "cutoffAt": "2026-12-01T15:00:00Z",
+    "issuedAt": "2026-12-01T22:55:00Z",
+    "acknowledgedAt": "2026-12-01T23:00:05Z",
+    "scheduledAt": "2026-12-02T00:00:00Z",
+    "gameDate": "2026-12-01",
+    "horizon": 1,
+    "value": {
+      "conditionalMean": 0.31
+    }
+  },
+  {
+    "revisionId": "fixture-rev-2026120101",
+    "playerId": 8470002,
+    "gameId": 2026120101,
+    "target": "GOALS",
+    "method": "fixture-baseline",
+    "modelIdentity": {
+      "version": "forge-model-identity-v2",
+      "artifact": "no_fitted_artifact",
+      "codeVersion": "c0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0de",
+      "configurationHash": "0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f",
+      "artifactHash": "f9b6054f779983ff019fa21bdde968457cf6fe90579280523dc0ac6693c3e958"
+    },
+    "releasePin": "fixture0fixture0fixture0fixture0fixture0",
+    "cutoffAt": "2026-12-01T15:00:00Z",
+    "issuedAt": "2026-12-01T22:55:00Z",
+    "acknowledgedAt": "2026-12-01T23:00:05Z",
+    "scheduledAt": "2026-12-02T00:00:00Z",
+    "gameDate": "2026-12-01",
+    "horizon": 1,
+    "value": {
+      "conditionalMean": 0.05
+    }
+  },
+  {
+    "revisionId": "fixture-rev-2026120102",
+    "playerId": 8470003,
+    "gameId": 2026120102,
+    "target": "GOALS",
+    "method": "fixture-baseline",
+    "modelIdentity": {
+      "version": "forge-model-identity-v2",
+      "artifact": "no_fitted_artifact",
+      "codeVersion": "c0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0de",
+      "configurationHash": "0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f",
+      "artifactHash": "f9b6054f779983ff019fa21bdde968457cf6fe90579280523dc0ac6693c3e958"
+    },
+    "releasePin": "fixture0fixture0fixture0fixture0fixture0",
+    "cutoffAt": "2026-12-01T15:00:00Z",
+    "issuedAt": "2026-12-02T00:55:00Z",
+    "acknowledgedAt": "2026-12-02T01:00:07Z",
+    "scheduledAt": "2026-12-02T02:00:00Z",
+    "gameDate": "2026-12-01",
+    "horizon": 1,
+    "value": {
+      "conditionalMean": 0.22
+    }
+  },
+  {
+    "revisionId": "fixture-rev-2026120102",
+    "playerId": 8470004,
+    "gameId": 2026120102,
+    "target": "GOALS",
+    "method": "fixture-baseline",
+    "modelIdentity": {
+      "version": "forge-model-identity-v2",
+      "artifact": "no_fitted_artifact",
+      "codeVersion": "c0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0dec0de",
+      "configurationHash": "0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f0c0f",
+      "artifactHash": "f9b6054f779983ff019fa21bdde968457cf6fe90579280523dc0ac6693c3e958"
+    },
+    "releasePin": "fixture0fixture0fixture0fixture0fixture0",
+    "cutoffAt": "2026-12-01T15:00:00Z",
+    "issuedAt": "2026-12-02T00:55:00Z",
+    "acknowledgedAt": "2026-12-02T01:00:07Z",
+    "scheduledAt": "2026-12-02T02:00:00Z",
+    "gameDate": "2026-12-01",
+    "horizon": 1,
+    "value": {
+      "conditionalMean": 0.12
+    }
+  }
+]

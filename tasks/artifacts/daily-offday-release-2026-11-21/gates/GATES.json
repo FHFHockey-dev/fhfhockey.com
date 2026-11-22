@@ -1,0 +1,12 @@
+{
+  "candidate": "096b78b622a72a8378b8f60c0c7704fc4e2fee41",
+  "base": "f47905d28718f6910d7acfa1471517c0235775de (origin/master at 17:3xZ Nov 21; candidate = base + e2f8c6bc9 + 096b78b62)",
+  "export": "git archive 096b78b62 into Chef scratchpad; web/node_modules symlinked from the octoberBranch checkout",
+  "ranAt": "2026-11-21T17:3xZ",
+  "vitest": {"files": ["__tests__/pages/api/v1/db/update-nst-gamelog.test.ts", "__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts", "lib/projections/verifiedForgeReleases.test.ts", "lib/routeRunner/*.test.ts"], "result": "7 files, 335 tests passed, exit 0", "log": "rc-vitest.log"},
+  "eslint": {"files": ["pages/api/v1/db/update-nst-gamelog.ts", "__tests__/pages/api/v1/db/update-nst-gamelog.test.ts", "lib/projections/verifiedForgeReleases.ts"], "result": "exit 0", "log": "rc-eslint.log"},
+  "typecheck": {"command": "npm run typecheck", "result": "exit 0", "log": "rc-tsc.log"},
+  "buildAdmission": {"env": "VERCEL_ENV=production VERCEL_GIT_COMMIT_SHA=096b78b6…", "closureSha256": "0446100e09f468bc061dbc7049ddc1fddec54237a617d7e63ca4835a66b48223", "action": "pass", "problems": []},
+  "cssModulePureCheck": "not applicable (no .module.scss in the diff)",
+  "notRun": ["full vitest suite", "next build (admission checked directly instead)"]
+}

@@ -787,18 +787,21 @@ async function upsertRollingPlayerMetricsBatch(
 ): Promise<void> {
   const { rankingRows, supportRows } =
     splitRollingUpsertBatchForDurableStorage(batch);
+  // Support is stored first. A shared revision distinguishes a complete
+  // pair from a support write whose matching rolling write did not commit.
+  const updatedAt = new Date().toISOString();
 
   if (supportRows.length > 0) {
     await postPostgrestUpsertWithAdaptiveSplit(
       rollingPlayerMetricSupportRestUrl,
-      supportRows as unknown as Array<Record<string, unknown>>,
+      supportRows.map((row) => ({ ...row, updated_at: updatedAt })),
       "rolling_player_metric_support_payloads"
     );
   }
 
   await postPostgrestUpsertWithAdaptiveSplit(
     rollingPlayerMetricsRestUrl,
-    rankingRows,
+    rankingRows.map((row) => ({ ...row, updated_at: updatedAt })),
     "rolling_player_game_metrics"
   );
 }

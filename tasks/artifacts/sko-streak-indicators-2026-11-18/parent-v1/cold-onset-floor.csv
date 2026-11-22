@@ -1,0 +1,3 @@
+group,issues,players,events,scoring_alerts,process_alerts,scoring_auc,scoring_ap,challenger_auc,challenger_ap
+below_floor,3739,369,0,0,3,,,,
+reachable,3039,347,531,624,651,0.608227,0.250233,0.601151,0.270560

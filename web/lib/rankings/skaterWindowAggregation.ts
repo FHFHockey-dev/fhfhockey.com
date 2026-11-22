@@ -19,6 +19,7 @@ export type RollingPlayerGameMetricRow =
      * rows written before the L6 writer: unknown, never zero.
      */
     windowCountSupport?: RollingWindowCountSupport | null;
+    windowCountSupportUpdatedAt?: string | null;
   };
 
 export type SkaterProductionWindow = "season" | "last5" | "last10" | "last20";

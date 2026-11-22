@@ -1,0 +1,27 @@
+{
+  "candidate": "b37a0180d106412ede28cf7b6e5d73c89ffdae7e",
+  "base": "2236ecb7c235a5cd6426c260e6b12c56742d6e61",
+  "migration": "20261121190000",
+  "name": "sync_tweet_review_sources_keep_delivery_time",
+  "sha256": "963955d3331df80b44bdc018e151696732a092376d272bf93c611d9941a56893",
+  "ledger_rows": 1,
+  "stored_statements_match": true,
+  "body_matches": true,
+  "effective_rpc": {
+    "prosecdef": false,
+    "provolatile": "v",
+    "lanname": "sql",
+    "ret": "void",
+    "proconfig": [
+      "search_path=\"\""
+    ],
+    "proargnames": [
+      "p_rows"
+    ],
+    "anon": false,
+    "authenticated": false,
+    "service_role": true,
+    "unexpected_grant": false
+  },
+  "verified_at": "2026-11-21T20:16:51.636839+00:00"
+}

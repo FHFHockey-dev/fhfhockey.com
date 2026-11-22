@@ -8,6 +8,7 @@ import {
   RankingsNotCompleteError,
   type SkaterCompositeBuildRequest,
 } from "lib/rankings/skaterCompositeWriter";
+import { RankingDispatchConflict, withManualRankingDispatch } from "lib/rankings/publicationDispatchLedger";
 import { RankingPublicationTableMissingError } from "lib/rankings/rankingPublications";
 import type { ContextualRankingPeerGroupType } from "lib/rankings/rankingCalculator";
 import type {
@@ -157,7 +158,12 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     }
     const published = dryRun
       ? null
-      : await publishSkaterCompositeRatingRows(req.supabase, built);
+      : await withManualRankingDispatch(req.supabase, {
+          mode: "manual_composites", season: request.season, strength: request.strength,
+          touchesPublishedScope: request.peerGroupType === "all_skaters" && request.window === "season",
+          dates: [built.snapshotDate, ...built.rows.map(row => row.snapshot_date)],
+          knownPrewriteFailure: error => error instanceof RankingsNotCompleteError,
+        }, () => publishSkaterCompositeRatingRows(req.supabase, built));
     const incomplete = published?.marked === true && published.status !== "complete";
     const rowsUpserted = published?.rowsUpserted ?? 0;
 
@@ -179,6 +185,7 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     });
   } catch (error) {
     if (
+      error instanceof RankingDispatchConflict ||
       error instanceof RankingsNotCompleteError ||
       error instanceof RankingPublicationTableMissingError
     ) {

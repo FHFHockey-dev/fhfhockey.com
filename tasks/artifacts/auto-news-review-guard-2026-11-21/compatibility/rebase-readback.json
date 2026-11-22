@@ -1,0 +1,44 @@
+{
+  "candidate": "54a1cf2c4ad2fe74be644606767b814f518b0567",
+  "origin_master": "096b78b622a72a8378b8f60c0c7704fc4e2fee41",
+  "previous_proof_candidate": "5c51ad0d9b8f7dd004c380bb1f48a6716f4f2981",
+  "prior_proof_sha256": "6bd5dc38f63542c8cde5884a6880eb6ffbdeca6829fc51d8682d13fa55427a04",
+  "identical_release_patch_sha256": "15aea0e93ebf4999fddca836febec8ea1262437c66d4502df741766a3ba7fb49",
+  "migration_sha256": "963955d3331df80b44bdc018e151696732a092376d272bf93c611d9941a56893",
+  "production": {
+    "id": "dpl_2psc7uGM4UhXgEFHwmhrVx8GA3G1",
+    "project": "fhfhockey",
+    "target": "production",
+    "ready": "READY",
+    "state": "READY",
+    "sha": "096b78b622a72a8378b8f60c0c7704fc4e2fee41",
+    "gitRef": "master",
+    "alias": [
+      "fhfhockey.com"
+    ]
+  },
+  "production_deployments_for_candidate": 0,
+  "supabase": {
+    "project": "fyhftlxokyjtpndbkfse",
+    "query": "SELECT clock_timestamp() AS observed_at, to_regclass('public.tweet_pattern_review_items')::text AS queue_table, (SELECT max(version) FROM supabase_migrations.schema_migrations) AS latest_hosted_version, COALESCE((SELECT jsonb_agg(jsonb_build_object('version', version,'name', name) ORDER BY version) FROM supabase_migrations.schema_migrations WHERE version IN ('20261121190000','20261121173000') OR name ILIKE '%sync_tweet_review_sources%'), '[]'::jsonb) AS matching_migrations, COALESCE((SELECT jsonb_agg(jsonb_build_object('signature', p.oid::regprocedure::text, 'security_definer', p.prosecdef, 'grants', p.proacl::text, 'definition', pg_get_functiondef(p.oid))) FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname = 'sync_tweet_review_sources_v1'), '[]'::jsonb) AS public_rpc_overloads",
+    "readback": {
+      "observed_at": "2026-11-21 19:40:09.325801+00",
+      "queue_table": "tweet_pattern_review_items",
+      "latest_hosted_version": "20261120140104",
+      "matching_migrations": [],
+      "public_rpc_overloads": []
+    }
+  },
+  "local_tests": {
+    "source": "git archive of candidate; inert service configuration",
+    "passed": 104,
+    "failed": 0,
+    "pending": 0,
+    "files": {
+      "web/components/NewsFeed/NewsCard.test.tsx": 55,
+      "web/lib/homepageNewsCompatibility.test.tsx": 46,
+      "web/lib/newsReviewBoundary.test.ts": 3
+    }
+  },
+  "contention": "Reused exact fixture result. SQL, caller, harness imports, SDK lockfile, and all five release-path blobs match the original proof candidate."
+}

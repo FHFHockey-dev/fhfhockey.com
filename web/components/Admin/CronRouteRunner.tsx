@@ -11,6 +11,7 @@ import {
 
 import supabase from "lib/supabase";
 
+import styles from "./CronRouteRunner.module.scss";
 import { validateAdminRoutePath } from "./adminRoutePath";
 
 const CLIENT_TIMEOUT_MS = 300_000;
@@ -38,11 +39,10 @@ function formatBody(text: string) {
   }
 }
 
+// Field surface, label and outline come from the /db page's field rule.
 const inputSx = {
-  backgroundColor: "#202020",
-  borderRadius: "4px",
-  "& .MuiInputBase-input, & .MuiInputLabel-root, & .MuiSelect-icon": {
-    color: "#fff"
+  "& .MuiSelect-icon": {
+    color: "inherit"
   }
 };
 
@@ -158,14 +158,7 @@ export default function CronRouteRunner() {
   }
 
   return (
-    <Card
-      sx={{
-        border: "5px solid #ffb300",
-        borderRadius: "8px",
-        background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-        color: "#fff"
-      }}
-    >
+    <Card>
       <CardContent>
         <Typography gutterBottom variant="h5" component="div">
           RUN ANY ROUTE
@@ -194,6 +187,7 @@ export default function CronRouteRunner() {
           value={method}
           onChange={(e) => setMethod(e.target.value as HttpMethod)}
           disabled={running}
+          SelectProps={{ MenuProps: { PaperProps: { className: styles.menuPaper } } }}
           sx={{ ...inputSx, minWidth: 120 }}
         >
           <MenuItem value="GET">GET</MenuItem>
@@ -248,7 +242,7 @@ export default function CronRouteRunner() {
         <Button size="small" onClick={run} disabled={running}>
           {running ? "Running…" : "Run"}
         </Button>
-        <Button size="small" onClick={cancel} disabled={!running}>
+        <Button size="small" onClick={cancel} disabled={!running} data-control-variant="danger">
           Cancel
         </Button>
       </CardActions>

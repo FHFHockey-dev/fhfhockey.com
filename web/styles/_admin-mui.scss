@@ -1,0 +1,133 @@
+@use "styles/vars" as v;
+
+// MUI controls on the FHFH control rules, for admin pages still built with MUI
+// (/db, /db/upsert-projections). Include inside the page's root class; every
+// selector goes through MUI's stable class names, never the hashed .css-… ones.
+// Fields: fhfh-styles §9.6 (32px, 6px corners, grey label in the notch).
+// Buttons: §9.4 (2px ring, 12% tint, blue Train One labels, 32px; disabled 50%;
+// data-control-variant="danger" = red ring).
+@mixin admin-mui-controls {
+  // FormControl covers TextField and FormControl + Select alike.
+  :global(.MuiFormControl-root) {
+    :global(.MuiInputLabel-root) {
+      color: v.$text-secondary;
+      font-family: v.$font-family-primary;
+    }
+
+    :global(.MuiInputLabel-root.Mui-focused) {
+      color: v.$primary-color;
+    }
+
+    :global(.MuiOutlinedInput-root) {
+      border-radius: v.$radius-control;
+      background: v.$background-dark;
+      color: v.$text-primary;
+      font-family: v.$font-family-primary;
+    }
+
+    :global(.MuiOutlinedInput-notchedOutline) {
+      border-color: v.$border-secondary;
+    }
+
+    :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline),
+    :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+      border-color: v.$primary-color;
+    }
+
+    // 32px fields ($control-height-sm): 20px line + 6px padding top and bottom.
+    :global(.MuiInputBase-inputSizeSmall) {
+      padding: 6px 12px;
+      font-size: 14px;
+      line-height: 20px;
+      height: 20px;
+    }
+
+    :global(.MuiInputLabel-sizeSmall:not(.MuiInputLabel-shrink)) {
+      font-size: 14px;
+      transform: translate(12px, 6px) scale(1);
+    }
+
+    :global(.MuiInputBase-input::placeholder) {
+      color: v.$text-secondary;
+      opacity: 0.7;
+    }
+  }
+
+  :global(.MuiButton-root) {
+    min-height: v.$control-height-sm;
+    padding: 0 12px;
+    border-radius: v.$radius-control;
+    box-shadow: none;
+    line-height: 1.2;
+    white-space: nowrap;
+    @include v.button-tint;
+  }
+
+  // Keyboard focus: the §9.4 ring (2px primary, 2px offset) on buttons and fields.
+  :global(.MuiButton-root.Mui-focusVisible),
+  :global(.MuiOutlinedInput-root.Mui-focused) {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+
+  // MUI's ripple paints a pale oval over the label on focus and click; the ring is enough.
+  :global(.MuiButton-root .MuiTouchRipple-root) {
+    display: none;
+  }
+
+  :global(.MuiButton-root.Mui-disabled) {
+    border-color: v.$primary-color;
+    background: v.$button-tint;
+    color: v.$primary-color;
+    opacity: 0.5;
+  }
+
+  :global(.MuiButton-root[data-control-variant="danger"]),
+  :global(.MuiButton-root.Mui-disabled[data-control-variant="danger"]) {
+    border-color: rgba(v.$danger-color, 0.7);
+    background: rgba(v.$danger-color, 0.06);
+    color: v.$danger-color;
+
+    &:hover:not(:disabled) {
+      background: rgba(v.$danger-color, 0.12);
+    }
+  }
+
+  :global(.MuiCheckbox-root) {
+    color: v.$border-secondary;
+  }
+
+  :global(.MuiCheckbox-root.Mui-checked) {
+    color: v.$primary-color;
+  }
+
+  :global(.MuiSelect-icon) {
+    color: v.$text-secondary;
+  }
+}
+
+// MUI Select menus open in a portal outside the page root, so they take a class
+// through MenuProps.PaperProps.className; include this in that class.
+@mixin admin-mui-menu {
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+  color: v.$text-primary;
+
+  :global(.MuiMenuItem-root) {
+    min-height: v.$control-height-sm;
+    font-family: v.$font-family-primary;
+    font-size: 14px;
+  }
+
+  :global(.MuiMenuItem-root:hover),
+  :global(.MuiMenuItem-root.Mui-focusVisible) {
+    background: v.$button-tint;
+  }
+
+  :global(.MuiMenuItem-root.Mui-selected),
+  :global(.MuiMenuItem-root.Mui-selected:hover) {
+    background: v.$primary-color-opaque;
+    color: v.$color-white;
+  }
+}

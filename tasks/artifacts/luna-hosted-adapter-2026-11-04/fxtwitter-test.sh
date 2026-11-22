@@ -22,6 +22,7 @@ psql_local=("$pgbin/psql" -X -h "$tmp" -U fx_owner -d postgres -v ON_ERROR_STOP=
 sed -n '/^create or replace function public.tweet_intake_providers_touch()/,/^\$\$;/p' "$root/supabase/migrations/20261106200000_tweet_intake_providers.sql" | "${psql_local[@]}"
 sed '/^SET transaction_timeout = 0;$/d' "$schema" | "${psql_local[@]}" >/dev/null
 "${psql_local[@]}" -f "$root/supabase/migrations/20261121205959_luna_fxtwitter_receipts.sql"
+"${psql_local[@]}" -f "$root/supabase/migrations/20261122001000_luna_fxtwitter_empty_rollover.sql"
 if [[ ${2:-} == --run ]]; then
   shift 2
   export PGHOST="$tmp" PGUSER=fx_owner PGPORT=5432 PGDATABASE=postgres

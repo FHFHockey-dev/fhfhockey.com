@@ -1,0 +1,7 @@
+# Sko parent predictive evaluation
+- Scope: own development-only prediction datasets, interpretable evaluation and reproducible outputs within parent-v1. Lead owns freeze and product verdict.
+- Start: octoberBranch b561f4201. Reading pilot and determining the existing development data contract before any scoring. No external or protected data.
+- Next: agree frozen protocol, implement paired comparisons, verify outputs and hand off.
+- Freeze recorded by lead before model fitting. Implemented all six decisions per study, fixed L2, purged split, training threshold, player-cluster intervals, ablations and held-out row exports. Correcting float round-trip parsing to reproduce pilot directional ranks exactly. Canonical full-season game/process data from identity owner pending.
+- Completed A/B on 35,246 original and 47,224 official 2024–25 rows. All 36 published pilot rankings and counts replicated. B forward hot block-onset alone cleared the frozen development rules, +.092 AUC [.050,.129]. Actual chart-event A did not add value. Four focused tests passed against the official input and original pilot.
+- Lead's source audit identified outcome-linked pilot feature availability. Removed pilot-only fields for post-hoc B sensitivity (hot onset +.089 [.046,.126]); no change to selection. Stored the primary/comparator hot-onset parameters and verified all 6,778 probability/alert readbacks. No protected or external data opened. Lead owns synthesis and independent qualification remains pending.

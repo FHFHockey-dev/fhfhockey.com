@@ -17,6 +17,8 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -66,7 +68,9 @@ const MAX_EVENTS_KEPT = 5_000;
 // $border-secondary and $background-dark (SVG attributes cannot read SCSS).
 const SERIES = "#14a2d2";
 const AXIS_TEXT = "#aaaaaa";
-const GRID = "rgba(80, 80, 80, 0.45)";
+const GRID = "rgba(204, 204, 204, 0.1)"; // $chart-grid-color
+const SERIES_MUTED = "#166d8b"; // 60% $primary-color on the chart surface (ΔE 17 vs SERIES, ≥3:1)
+const REFERENCE = "#aaaaaa"; // $text-secondary: neutral average marker
 const TOOLTIP_BG = "#1a1d21";
 
 const CONTRACT_LABELS: Record<RouteRunnerContract, string> = {
@@ -386,11 +390,9 @@ function RunBuilder(props: {
               </details>
             )}
           </>
-        ) : (
-          <p className={styles.routeNotes}>
-            {parts ? `${parts.path} is not on the runner allowlist.` : "Pick a route above, or paste a URL below."}
-          </p>
-        )}
+        ) : parts ? (
+          <p className={styles.routeNotes}>{parts.path} is not on the runner allowlist.</p>
+        ) : null}
 
         <div className={styles.urlBar}>
           <div className={styles.option}>
@@ -483,15 +485,29 @@ function CopyTerminalButton({ events }: { events: RouteRunnerEventRow[] }) {
     const ok = await copyPlainText(events.map(terminalLine).join("\n"));
     setState(ok ? "copied" : "failed");
   }
+  const label = state === "copied" ? "Copied" : state === "failed" ? "Copy unavailable" : "Copy all";
+  // Icon button inside the terminal: the two-squares copy glyph, a check once copied.
   return (
     <button
       type="button"
-      className={styles.buttonSecondary}
+      className={styles.terminalCopy}
       onClick={() => void copyAll()}
       disabled={events.length === 0}
+      aria-label={label}
+      title={label}
       aria-live="polite"
+      data-state={state}
     >
-      {state === "copied" ? "Copied" : state === "failed" ? "Copy unavailable" : "Copy all"}
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+        {state === "copied" ? (
+          <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        ) : (
+          <>
+            <rect x="8.5" y="8.5" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+            <path d="M15.5 5.5V5a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 5v8A1.5 1.5 0 0 0 6 14.5h.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </>
+        )}
+      </svg>
     </button>
   );
 }
@@ -508,6 +524,7 @@ function Terminal({ events }: { events: RouteRunnerEventRow[] }) {
       ref={ref}
       role="log"
       aria-label="Route runner terminal"
+      tabIndex={0} // keyboard users can focus the log and scroll it
       className={styles.terminal}
       onScroll={(event) => {
         const element = event.currentTarget;
@@ -566,6 +583,7 @@ function JobDetail(props: {
     step: point.step,
     seconds: Math.round((point.durationMs ?? 0) / 100) / 10
   }));
+  const averageStepSeconds = averageStepMs != null ? Math.round(averageStepMs / 100) / 10 : null;
   const axis = { tick: { fill: AXIS_TEXT, fontSize: 11 }, stroke: GRID };
   const tooltipStyle = {
     contentStyle: { background: TOOLTIP_BG, border: `1px solid ${GRID}`, color: "#cccccc" },
@@ -665,7 +683,7 @@ function JobDetail(props: {
             <h3>Step duration (s)</h3>
             <div className={styles.chartBody}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={durationSeries} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                <BarChart data={durationSeries} margin={{ top: 8, right: 32, bottom: 0, left: 0 }}>
                   <CartesianGrid stroke={GRID} vertical={false} />
                   <XAxis dataKey="step" {...axis} />
                   <YAxis {...axis} width={40} />
@@ -675,7 +693,24 @@ function JobDetail(props: {
                     formatter={(value: number) => [`${value} s`, "duration"]}
                     labelFormatter={(step) => `step ${step}`}
                   />
-                  <Bar dataKey="seconds" fill={SERIES} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={false} />
+                  {/* Steps slower than average carry the accent; the rest sit in a muted step. */}
+                  <Bar dataKey="seconds" fill={SERIES_MUTED} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={false}>
+                    {durationSeries.map((point) => (
+                      <Cell
+                        key={point.step}
+                        fill={averageStepSeconds != null && point.seconds > averageStepSeconds ? SERIES : SERIES_MUTED}
+                      />
+                    ))}
+                  </Bar>
+                  {averageStepSeconds != null ? (
+                    <ReferenceLine
+                      y={averageStepSeconds}
+                      stroke={REFERENCE}
+                      strokeDasharray="4 4"
+                      ifOverflow="extendDomain"
+                      label={{ value: "avg", position: "right", fill: REFERENCE, fontSize: 11 }}
+                    />
+                  ) : null}
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -684,12 +719,12 @@ function JobDetail(props: {
 
         <div className={styles.terminalHead}>
           <h3>Live terminal</h3>
-          <div className={styles.terminalTools}>
-            <span className={styles.nextStep}>{events.length.toLocaleString()} lines</span>
-            <CopyTerminalButton events={events} />
-          </div>
+          <span className={styles.nextStep}>{events.length.toLocaleString()} lines</span>
         </div>
-        <Terminal events={events} />
+        <div className={styles.terminalFrame}>
+          <Terminal events={events} />
+          <CopyTerminalButton events={events} />
+        </div>
 
         <div className={styles.actions}>
           <button
@@ -805,6 +840,12 @@ function RouteRunner() {
       clearInterval(timer);
     };
   }, [loadJobs]);
+
+  // Open the most relevant job instead of an empty detail panel: an active one, else the newest.
+  useEffect(() => {
+    if (selectedId || jobs.length === 0) return;
+    setSelectedId((jobs.find((row) => isActiveStatus(row.status)) ?? jobs[0]).id);
+  }, [jobs, selectedId]);
 
   useEffect(() => {
     selectedRef.current = selectedId;
@@ -936,8 +977,11 @@ function RouteRunner() {
                         )}
                       </span>
                       <span className={styles.jobRowMeta}>
-                        {new Date(row.created_at).toLocaleString()} · {row.steps} steps ·{" "}
-                        {Number(row.rows_total).toLocaleString()} {readJobProgress(row.progress)?.rowsUnit ?? "rows"}
+                        <span>{new Date(row.created_at).toLocaleString()}</span>
+                        <span>
+                          {row.steps} {row.steps === 1 ? "step" : "steps"} · {Number(row.rows_total).toLocaleString()}{" "}
+                          {readJobProgress(row.progress)?.rowsUnit ?? "rows"}
+                        </span>
                       </span>
                     </button>
                   </li>

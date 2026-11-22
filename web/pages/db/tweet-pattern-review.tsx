@@ -1216,9 +1216,9 @@ const TweetPatternReview = () => {
       <Head>
         <title>Tweet Pattern Review | FHFH</title>
       </Head>
-      <div className={styles.page}>
+      <main className={styles.page}>
         {/* ── Page header ─────────────────────────────────────────────────── */}
-        <header className={styles.pageHeader}>
+        <div className={styles.pageHeader}>
           <h1>Tweet Pattern Review</h1>
           <Link href="/db/tweet-pattern-review?mode=trainer" className={styles.trainerLink}>
             Swipe trainer
@@ -1226,14 +1226,14 @@ const TweetPatternReview = () => {
           {statusMessage ? (
             <span className={styles.statusMessage}>{statusMessage}</span>
           ) : null}
-        </header>
+        </div>
 
         {/* ── Workspace ───────────────────────────────────────────────────── */}
         <div className={styles.workspace}>
           {/* ── Control bar ───────────────────────────────────────────────── */}
           <div className={sectionClass(styles.controlBar, "controls")}>
             {renderMobileSectionToggle("controls", "Controls")}
-            <div className={`${styles.controlField} ${styles.statusField}`}>
+            <label className={`${styles.controlField} ${styles.statusField}`}>
               <span>Status</span>
               <select
                 value={statusFilter}
@@ -1250,9 +1250,9 @@ const TweetPatternReview = () => {
                 <option value="ignored">Ignored</option>
                 <option value="all">All</option>
               </select>
-            </div>
+            </label>
 
-            <div className={`${styles.controlField} ${styles.sortField}`}>
+            <label className={`${styles.controlField} ${styles.sortField}`}>
               <span>Sort</span>
               <select
                 value={queueSort}
@@ -1267,9 +1267,9 @@ const TweetPatternReview = () => {
                 <option value="newest">Newest first</option>
                 <option value="oldest">Oldest first</option>
               </select>
-            </div>
+            </label>
 
-            <div className={`${styles.controlField} ${styles.queueField}`}>
+            <label className={`${styles.controlField} ${styles.queueField}`}>
               <span>Queue item</span>
               <select
                 value={selectedItemId}
@@ -1285,7 +1285,7 @@ const TweetPatternReview = () => {
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
 
             <button
               className={`${styles.btn} ${styles.navButtonPrev}`}
@@ -1310,9 +1310,6 @@ const TweetPatternReview = () => {
               {isSyncing ? "Syncing…" : "Sync queue"}
             </button>
 
-            <div className={styles.pendingBadge}>
-              <span className={styles.pendingCount}>{pendingCount}</span> pending
-            </div>
           </div>
 
           {/* ── Left column ─────────────────────────────────────────────── */}
@@ -1464,7 +1461,7 @@ const TweetPatternReview = () => {
 
                 {/* Queue browser */}
                 <div className={sectionClass(styles.queueBrowser, "queue")}>
-                  {renderMobileSectionToggle("queue", "Needs resolution")}
+                  {renderMobileSectionToggle("queue", `Needs resolution · ${pendingCount}`)}
                   <div className={styles.queueBrowserHeader}>
                     <div>
                       <span>Needs resolution</span>
@@ -1616,11 +1613,12 @@ const TweetPatternReview = () => {
                             <div className={styles.headerActions}>
                               <button
                                 className={styles.btn}
+                                aria-label={`New card from assignment ${index + 1}`}
                                 onClick={() =>
                                   applyAssignmentToNewsDraft(assignment)
                                 }
                               >
-                                New card from assignment
+                                New card
                               </button>
                               <button
                                 className={styles.btn}
@@ -1634,8 +1632,8 @@ const TweetPatternReview = () => {
 
                           <div className={styles.assignmentGrid}>
                             <div className={styles.fieldRow}>
-                              <div className={styles.formField}>
-                                <label>Category</label>
+                              <label className={styles.formField}>
+                                <span>Category</span>
                                 <input
                                   list="tweet-pattern-categories"
                                   value={assignment.category}
@@ -1650,9 +1648,9 @@ const TweetPatternReview = () => {
                                   }
                                   placeholder="INJURY, GOALIE START, LINE COMBINATION…"
                                 />
-                              </div>
-                              <div className={styles.formField}>
-                                <label>Subcategory</label>
+                              </label>
+                              <label className={styles.formField}>
+                                <span>Subcategory</span>
                                 <input
                                   list={`tweet-pattern-subcategories-${assignment.id}`}
                                   value={assignment.subcategory ?? ""}
@@ -1667,12 +1665,12 @@ const TweetPatternReview = () => {
                                   }
                                   placeholder="QUESTIONABLE, CONFIRMED STARTER…"
                                 />
-                              </div>
+                              </label>
                             </div>
 
                             <div className={styles.fieldRowSplit}>
-                              <div className={styles.formField}>
-                                <label>Player from roster</label>
+                              <label className={styles.formField}>
+                                <span>Player from roster</span>
                                 <select
                                   value={assignment.pendingPlayerId}
                                   onChange={(event) =>
@@ -1695,7 +1693,7 @@ const TweetPatternReview = () => {
                                     </option>
                                   ))}
                                 </select>
-                              </div>
+                              </label>
                               <button
                                 className={styles.btn}
                                 disabled={!assignment.pendingPlayerId}
@@ -1708,8 +1706,8 @@ const TweetPatternReview = () => {
                             </div>
 
                             <div className={styles.fieldRowSplit}>
-                              <div className={styles.formField}>
-                                <label>Manual player name</label>
+                              <label className={styles.formField}>
+                                <span>Manual player name</span>
                                 <input
                                   value={assignment.pendingPlayerName}
                                   onChange={(event) =>
@@ -1723,7 +1721,7 @@ const TweetPatternReview = () => {
                                   }
                                   placeholder="Player name or shorthand"
                                 />
-                              </div>
+                              </label>
                               <button
                                 className={styles.btn}
                                 disabled={!assignment.pendingPlayerName.trim()}
@@ -1771,8 +1769,8 @@ const TweetPatternReview = () => {
                               >
                                 Add selected text
                               </button>
-                              <div className={styles.formField}>
-                                <label>Manual evidence phrase</label>
+                              <label className={styles.formField}>
+                                <span>Manual evidence phrase</span>
                                 <input
                                   value={assignment.pendingHighlight}
                                   onChange={(event) =>
@@ -1786,7 +1784,7 @@ const TweetPatternReview = () => {
                                   }
                                   placeholder="Expected starter, day to day, PP1…"
                                 />
-                              </div>
+                              </label>
                               <button
                                 className={styles.btn}
                                 disabled={!assignment.pendingHighlight.trim()}
@@ -1829,6 +1827,7 @@ const TweetPatternReview = () => {
                             >
                               <label>Assignment notes</label>
                               <textarea
+                                aria-label="Assignment notes"
                                 rows={2}
                                 value={assignment.notes ?? ""}
                                 onChange={(event) =>
@@ -1921,8 +1920,14 @@ const TweetPatternReview = () => {
                         >
                           Start new card
                         </button>
-                        <a href="/news" target="_blank" rel="noreferrer">
-                          Open /news
+                        <a
+                          className={styles.btn}
+                          href="/news"
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label="Open /news (opens in a new tab)"
+                        >
+                          Open /news ↗
                         </a>
                       </div>
                     </div>
@@ -1930,8 +1935,8 @@ const TweetPatternReview = () => {
                     <div className={styles.composerGrid}>
                       <div className={styles.composerFormColumn}>
                         <div className={styles.fieldRow}>
-                          <div className={styles.formField}>
-                            <label>Headline</label>
+                          <label className={styles.formField}>
+                            <span>Headline</span>
                             <input
                               value={newsDraft.headline}
                               onChange={(event) =>
@@ -1942,9 +1947,9 @@ const TweetPatternReview = () => {
                               }
                               placeholder="Write the card headline"
                             />
-                          </div>
-                          <div className={styles.formField}>
-                            <label>Team</label>
+                          </label>
+                          <label className={styles.formField}>
+                            <span>Team</span>
                             <select
                               value={newsDraft.teamId}
                               onChange={(event) => {
@@ -1966,12 +1971,12 @@ const TweetPatternReview = () => {
                                 </option>
                               ))}
                             </select>
-                          </div>
+                          </label>
                         </div>
 
                         <div className={styles.fieldRow}>
-                          <div className={styles.formField}>
-                            <label>Category</label>
+                          <label className={styles.formField}>
+                            <span>Category</span>
                             <input
                               list="tweet-pattern-categories"
                               value={newsDraft.category}
@@ -1983,9 +1988,9 @@ const TweetPatternReview = () => {
                               }
                               placeholder="INJURY, RETURN, GOALIE START…"
                             />
-                          </div>
-                          <div className={styles.formField}>
-                            <label>Subcategory</label>
+                          </label>
+                          <label className={styles.formField}>
+                            <span>Subcategory</span>
                             <input
                               value={newsDraft.subcategory}
                               onChange={(event) =>
@@ -1996,7 +2001,7 @@ const TweetPatternReview = () => {
                               }
                               placeholder="QUESTIONABLE, PP1, TRADE…"
                             />
-                          </div>
+                          </label>
                         </div>
 
                         <div
@@ -2004,6 +2009,7 @@ const TweetPatternReview = () => {
                         >
                           <label>Blurb</label>
                           <textarea
+                            aria-label="Blurb"
                             rows={3}
                             value={newsDraft.blurb}
                             onChange={(event) =>
@@ -2017,8 +2023,8 @@ const TweetPatternReview = () => {
                         </div>
 
                         <div className={styles.fieldRowSplit}>
-                          <div className={styles.formField}>
-                            <label>Add player from roster</label>
+                          <label className={styles.formField}>
+                            <span>Add player from roster</span>
                             <select
                               value={newsDraft.pendingPlayerId}
                               onChange={(event) =>
@@ -2038,7 +2044,7 @@ const TweetPatternReview = () => {
                                 </option>
                               ))}
                             </select>
-                          </div>
+                          </label>
                           <button
                             className={styles.btn}
                             disabled={!newsDraft.pendingPlayerId}
@@ -2049,8 +2055,8 @@ const TweetPatternReview = () => {
                         </div>
 
                         <div className={styles.fieldRowSplit}>
-                          <div className={styles.formField}>
-                            <label>Manual player text</label>
+                          <label className={styles.formField}>
+                            <span>Manual player text</span>
                             <input
                               value={newsDraft.pendingPlayerName}
                               onChange={(event) =>
@@ -2061,7 +2067,7 @@ const TweetPatternReview = () => {
                               }
                               placeholder="Prospect, unsigned player, shorthand…"
                             />
-                          </div>
+                          </label>
                           <button
                             className={styles.btn}
                             disabled={!newsDraft.pendingPlayerName.trim()}
@@ -2124,8 +2130,8 @@ const TweetPatternReview = () => {
                             </div>
 
                             <div className={styles.fieldRowSplit}>
-                              <div className={styles.formField}>
-                                <label>Goalie from roster</label>
+                              <label className={styles.formField}>
+                                <span>Goalie from roster</span>
                                 <select
                                   value={newsDraft.pendingPlayerId}
                                   onChange={(event) =>
@@ -2148,7 +2154,7 @@ const TweetPatternReview = () => {
                                     </option>
                                   ))}
                                 </select>
-                              </div>
+                              </label>
                               <button
                                 className={styles.btn}
                                 disabled={
@@ -2162,8 +2168,8 @@ const TweetPatternReview = () => {
                             </div>
 
                             <div className={styles.fieldRow}>
-                              <div className={styles.formField}>
-                                <label>Goalie source URL</label>
+                              <label className={styles.formField}>
+                                <span>Goalie source URL</span>
                                 <input
                                   value={newsDraft.lineupGoalieSourceUrl}
                                   onChange={(event) =>
@@ -2174,9 +2180,9 @@ const TweetPatternReview = () => {
                                   }
                                   placeholder="Paste goalie confirmation source"
                                 />
-                              </div>
-                              <div className={styles.formField}>
-                                <label>Source label</label>
+                              </label>
+                              <label className={styles.formField}>
+                                <span>Source label</span>
                                 <input
                                   value={newsDraft.lineupGoalieSourceLabel}
                                   onChange={(event) =>
@@ -2188,12 +2194,12 @@ const TweetPatternReview = () => {
                                   }
                                   placeholder="Reporter or feed name"
                                 />
-                              </div>
+                              </label>
                             </div>
 
                             <div className={styles.fieldRowSplit}>
-                              <div className={styles.formField}>
-                                <label>Manual goalie text</label>
+                              <label className={styles.formField}>
+                                <span>Manual goalie text</span>
                                 <input
                                   value={newsDraft.pendingPlayerName}
                                   onChange={(event) =>
@@ -2207,7 +2213,7 @@ const TweetPatternReview = () => {
                                   }
                                   placeholder="Goalie name"
                                 />
-                              </div>
+                              </label>
                               <button
                                 className={styles.btn}
                                 disabled={
@@ -2222,22 +2228,6 @@ const TweetPatternReview = () => {
                           </div>
                         ) : null}
 
-                        <div className={styles.btnRow}>
-                          <button
-                            className={styles.btn}
-                            disabled={isSavingNews}
-                            onClick={() => void saveNewsCard("draft")}
-                          >
-                            {isSavingNews ? "Saving…" : "Save draft"}
-                          </button>
-                          <button
-                            className={styles.btnPrimary}
-                            disabled={isSavingNews}
-                            onClick={() => void saveNewsCard("published")}
-                          >
-                            {isSavingNews ? "Saving…" : "Publish card"}
-                          </button>
-                        </div>
                       </div>
 
                       <div className={styles.composerPreviewColumn}>
@@ -2379,6 +2369,22 @@ const TweetPatternReview = () => {
                         ) : null}
                       </div>
                     </div>
+                    <div className={`${styles.btnRow} ${styles.composerFooter}`}>
+                      <button
+                        className={styles.btn}
+                        disabled={isSavingNews}
+                        onClick={() => void saveNewsCard("draft")}
+                      >
+                        {isSavingNews ? "Saving…" : "Save draft"}
+                      </button>
+                      <button
+                        className={styles.btnPrimary}
+                        disabled={isSavingNews}
+                        onClick={() => void saveNewsCard("published")}
+                      >
+                        {isSavingNews ? "Saving…" : "Publish card"}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Keyword phrases */}
@@ -2395,8 +2401,8 @@ const TweetPatternReview = () => {
 
                     <div className={styles.keywordGrid}>
                       <div className={styles.fieldRow}>
-                        <div className={styles.formField}>
-                          <label>Phrase</label>
+                        <label className={styles.formField}>
+                          <span>Phrase</span>
                           <input
                             value={keywordDraft.phrase}
                             onChange={(event) =>
@@ -2407,9 +2413,9 @@ const TweetPatternReview = () => {
                             }
                             placeholder="Projected starter, no contact jersey, PP1…"
                           />
-                        </div>
-                        <div className={styles.formField}>
-                          <label>Category</label>
+                        </label>
+                        <label className={styles.formField}>
+                          <span>Category</span>
                           <input
                             value={keywordDraft.category}
                             onChange={(event) =>
@@ -2420,9 +2426,9 @@ const TweetPatternReview = () => {
                             }
                             placeholder="GOALIE START, INJURY…"
                           />
-                        </div>
-                        <div className={styles.formField}>
-                          <label>Subcategory</label>
+                        </label>
+                        <label className={styles.formField}>
+                          <span>Subcategory</span>
                           <input
                             value={keywordDraft.subcategory}
                             onChange={(event) =>
@@ -2433,7 +2439,7 @@ const TweetPatternReview = () => {
                             }
                             placeholder="QUESTIONABLE, EXPECTED STARTER…"
                           />
-                        </div>
+                        </label>
                       </div>
 
                       <div
@@ -2441,6 +2447,7 @@ const TweetPatternReview = () => {
                       >
                         <label>Notes</label>
                         <textarea
+                          aria-label="Notes"
                           rows={2}
                           value={keywordDraft.notes}
                           onChange={(event) =>
@@ -2487,7 +2494,7 @@ const TweetPatternReview = () => {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </>
   );
 };

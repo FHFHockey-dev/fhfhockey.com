@@ -1,0 +1,1 @@
+{"verdict":"STOP","attempts":1,"detail":{"verdict": "ambiguous_probe_failed", "reason": "fresh-connection probe never succeeded"},"note":"ambiguous: no retry; operator must inspect"}

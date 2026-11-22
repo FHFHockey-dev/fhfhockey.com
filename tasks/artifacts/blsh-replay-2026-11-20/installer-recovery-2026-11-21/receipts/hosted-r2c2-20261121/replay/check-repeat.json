@@ -1,0 +1,36 @@
+{
+ "mode": "repeat",
+ "pass": true,
+ "failed": [],
+ "checks": {
+  "jobs_unscheduled": true,
+  "native_http_200": true,
+  "context_http_200": true,
+  "native_sha": true,
+  "context_sha": true,
+  "fixture_partial": true,
+  "repeat_native_already_claimed": true,
+  "repeat_context_already_claimed": true,
+  "repeat_no_receipts": true,
+  "counts_identical_to_first": true
+ },
+ "nativeElapsedMs": 618,
+ "contextElapsedMs": 414,
+ "deploymentId": "dpl_DebFbbRByWvcVCdBTJc7FewDhu5w",
+ "liveRouteWithTestGrant": {
+  "http": 200,
+  "body": {
+   "state": "skipped",
+   "reason": "disabled"
+  }
+ },
+ "sandbox": {
+  "storage": 28,
+  "receipts": 2,
+  "nativeRuns": 1,
+  "contextRuns": 1,
+  "nativeObjects": 20,
+  "contextObjects": 8
+ },
+ "otherCronJobs": 81
+}

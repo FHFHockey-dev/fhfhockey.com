@@ -371,6 +371,7 @@ describe("Rankings publication completion markers", () => {
     sourceFreshness: [],
     unavailableMetrics: [],
     expectedEntities: 2,
+    expectedPlayerIds: [1, 2],
     ...overrides,
   });
 
@@ -381,6 +382,7 @@ describe("Rankings publication completion markers", () => {
     let rankingsCalls = 0;
     const client = {
       from: vi.fn((table: string) => ({
+        select: () => ({ match: () => ({ in: async () => ({ error: null, count: 2 * metricKeys.length }) }) }),
         upsert: vi.fn(async (rows: any[], upsertOptions: any) => {
           log.push({ table, rows, options: upsertOptions });
           if (table === "ranking_publications") {
@@ -447,6 +449,21 @@ describe("Rankings publication completion markers", () => {
   it("refuses a full publication before writing when a window is short of the source-coverage population", async () => {
     const { client, log } = fakeClient();
     await expect(publishEntityMetricRankingRows(client as any, built({ expectedEntities: 3 }))).rejects.toThrow("population is 3");
+    expect(log).toHaveLength(0);
+  });
+
+  it("refuses a same-sized substituted ID in a single metric before any write", async () => {
+    const { client, log } = fakeClient();
+    const rows = built().rows.map(row => row.window_size === 10 && row.metric_key === metricKeys[0] &&
+      row.entity_id === 2 ? { ...row, entity_id: 99 } : row);
+    await expect(publishEntityMetricRankingRows(client as any, built({ rows }))).rejects.toThrow(/player IDs differ/);
+    expect(log).toHaveLength(0);
+  });
+
+  it("refuses windows built at different cutoffs before any write", async () => {
+    const { client, log } = fakeClient();
+    const rows = [...rowsFor("season", 0), ...rowsFor("last_10", 10, "2026-11-13")];
+    await expect(publishEntityMetricRankingRows(client as any, built({ rows }))).rejects.toThrow(/different snapshot dates/);
     expect(log).toHaveLength(0);
   });
 

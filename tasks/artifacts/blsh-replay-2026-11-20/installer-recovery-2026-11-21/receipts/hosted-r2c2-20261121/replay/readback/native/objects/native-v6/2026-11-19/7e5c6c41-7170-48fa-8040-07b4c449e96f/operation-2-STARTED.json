@@ -1,0 +1,6 @@
+{
+  "operation": "admission:individual",
+  "url": "https://fyhftlxokyjtpndbkfse.supabase.co/rest/v1/rpc/nst_admit_attempt_v1",
+  "method": "POST",
+  "startedAtUTC": "2026-11-21T21:01:05.022Z"
+}

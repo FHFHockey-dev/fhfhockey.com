@@ -1,0 +1,892 @@
+{
+  "mode": "after",
+  "sources": {
+    "web/pages/index.tsx": "0e80037639dc6b1dd413f30b486a9e7ef319ba85facfa69f7485d58a1e33b3c3",
+    "web/components/ClientOnly/index.ts": "fa26147dd632a0ae64794f74d1fa089df472a6a76c3cebb77105c97f558225fb",
+    "web/styles/Home.module.scss": "82770f3d6096fc161063290e538eced7560381c86b9b4ffa87c1b6b10508a44a",
+    "web/components/TransactionTrends/TransactionTrends.tsx": "44c6ec28841e83b1bb42e46544eefe228b52cb06cc686abf13e7f455d1558dcb",
+    "web/components/ClientOnly/ClientOnly.tsx": "df5c3b687a15527768b6e3cf24daba4500dcf5d1804f94507bf326d927da6eea",
+    "web/components/ClientOnly/ClientOnly.module.scss": "c20a3c0371538d37a436d854fdc82e749b1c895de493d137d3b5e39fff60df98",
+    "web/components/TransactionTrends/TransactionTrends.module.scss": "ec9d3a57ee1f42ab3f84aa34a68f82dcde4e48740ee043c126dec2e131b61e7e",
+    "web/lib/transactions/ownershipTrendMetadata.ts": "790121331e4ea9181c74bc2fa42bbb6d97dfc8c28156b9963a8573fe830076a0",
+    "web/components/common/PanelStatus.tsx": "1f365a402f6329dc84baa7e66177409f7e64038ab7f60e4a223335fa47d69d40",
+    "web/components/TransactionTrends/OwnershipSparkline.tsx": "773b6924d06e41bd6a321b02a1ef7da7a53f9255d06fa5a96f0d0d300e180411",
+    "web/lib/dashboard/freshness.ts": "bbb7241d966eacd1e3f58fb93d6002e4e5376e45559c9e43099e93e191c17c13",
+    "web/lib/transactions/trendRequestCache.ts": "459725715f0b35a348d7172d11c5607dd5a362cf63ddb25ef69661178311c0d7",
+    "web/components/common/PanelStatus.module.scss": "2aed2b5843191f787c21fe3bfa53071c61ebdf3237763aed6b13e8d1933c9859",
+    "web/pages/api/v1/transactions/ownership-trends.ts": "c02150410394641b8e0a824c249ab73f9526969c1ce7dd91969c0512cbb9a87f",
+    "web/lib/cron/normalizeDependencyError.ts": "6bc3d9862f9d40f4a1be277b41f225266ee80af510afc2d484e92778fcb6830a",
+    "web/lib/cron/statsUpdateSafety.ts": "ac16e18554938eb3589c4698df98d8003a464e42bc86657b0d9b8f034e91c2fe",
+    "supabase/migrations/20261118162126_homepage_yahoo_ownership_page.sql": "cfab2ea584c3887028fbd7b6b0b36e48338181852b3794e50e2a7a2c168d1eaa"
+  },
+  "adapter": "local-postgres",
+  "base": "789713fb5bc12a2bb1c62ab6bea676d4c30cf6a6",
+  "fixedTime": "2026-11-18T12:00:00.000Z",
+  "samples": 5,
+  "api": {
+    "default": {
+      "url": "?metric=ownership&window=3&limit=10&offset=0",
+      "handlerMs": {
+        "n": 5,
+        "median": 74.35,
+        "min": 73.15,
+        "max": 102.09,
+        "samples": [
+          102.09,
+          78.7,
+          74.35,
+          73.15,
+          73.16
+        ]
+      },
+      "bytes": 15352,
+      "stages": {
+        "ownership-history": {
+          "queries": 5,
+          "rows": 4438,
+          "bytes": 2668581
+        },
+        "mapping": {
+          "queries": 9,
+          "rows": 2373,
+          "bytes": 142389
+        }
+      },
+      "summedQueryMs": {
+        "ownership-history": {
+          "n": 5,
+          "median": 41.14,
+          "min": 40.25,
+          "max": 44.07,
+          "samples": [
+            44.07,
+            43.33,
+            40.25,
+            40.67,
+            41.14
+          ]
+        },
+        "mapping": {
+          "n": 5,
+          "median": 4.29,
+          "min": 4.1,
+          "max": 7.05,
+          "samples": [
+            7.05,
+            4.28,
+            4.67,
+            4.1,
+            4.29
+          ]
+        }
+      },
+      "httpMs": {
+        "n": 5,
+        "median": 74.91,
+        "min": 73.48,
+        "max": 111.54,
+        "samples": [
+          111.54,
+          79.1,
+          74.91,
+          73.55,
+          73.48
+        ]
+      }
+    },
+    "position": {
+      "url": "?metric=ownership&window=3&limit=10&offset=0&pos=D",
+      "handlerMs": {
+        "n": 5,
+        "median": 9.15,
+        "min": 7.94,
+        "max": 10.27,
+        "samples": [
+          10.27,
+          9.8,
+          9.01,
+          9.15,
+          7.94
+        ]
+      },
+      "bytes": 15197,
+      "stages": {},
+      "summedQueryMs": {},
+      "httpMs": {
+        "n": 5,
+        "median": 9.56,
+        "min": 8.63,
+        "max": 10.98,
+        "samples": [
+          10.98,
+          10.62,
+          9.45,
+          9.56,
+          8.63
+        ]
+      }
+    },
+    "window": {
+      "url": "?metric=ownership&window=5&limit=10&offset=0&pos=D",
+      "handlerMs": {
+        "n": 5,
+        "median": 9.33,
+        "min": 8.32,
+        "max": 18.99,
+        "samples": [
+          18.99,
+          9.33,
+          9.71,
+          9.3,
+          8.32
+        ]
+      },
+      "bytes": 15237,
+      "stages": {},
+      "summedQueryMs": {},
+      "httpMs": {
+        "n": 5,
+        "median": 9.75,
+        "min": 8.75,
+        "max": 19.49,
+        "samples": [
+          19.49,
+          9.75,
+          10.19,
+          9.67,
+          8.75
+        ]
+      }
+    },
+    "page2": {
+      "url": "?metric=ownership&window=5&limit=10&offset=10&pos=D",
+      "handlerMs": {
+        "n": 5,
+        "median": 8.37,
+        "min": 7.93,
+        "max": 9.48,
+        "samples": [
+          9.48,
+          9.44,
+          8.35,
+          8.37,
+          7.93
+        ]
+      },
+      "bytes": 13744,
+      "stages": {},
+      "summedQueryMs": {},
+      "httpMs": {
+        "n": 5,
+        "median": 8.96,
+        "min": 8.42,
+        "max": 10.08,
+        "samples": [
+          10.08,
+          9.81,
+          8.96,
+          8.75,
+          8.42
+        ]
+      }
+    },
+    "adp": {
+      "url": "?metric=adp&window=3&limit=10&offset=0",
+      "handlerMs": {
+        "n": 5,
+        "median": 39.29,
+        "min": 38.01,
+        "max": 45.84,
+        "samples": [
+          45.84,
+          39.29,
+          40.54,
+          38.82,
+          38.01
+        ]
+      },
+      "bytes": 15344,
+      "stages": {
+        "player-metadata": {
+          "queries": 5,
+          "rows": 4438,
+          "bytes": 1242769
+        },
+        "adp-history": {
+          "queries": 5,
+          "rows": 4410,
+          "bytes": 446820
+        },
+        "mapping": {
+          "queries": 9,
+          "rows": 2373,
+          "bytes": 142389
+        }
+      },
+      "summedQueryMs": {
+        "player-metadata": {
+          "n": 5,
+          "median": 13.36,
+          "min": 13,
+          "max": 14.95,
+          "samples": [
+            14.95,
+            13.3,
+            14.6,
+            13,
+            13.36
+          ]
+        },
+        "adp-history": {
+          "n": 5,
+          "median": 6.62,
+          "min": 6.48,
+          "max": 7.01,
+          "samples": [
+            7.01,
+            6.62,
+            6.8,
+            6.57,
+            6.48
+          ]
+        },
+        "mapping": {
+          "n": 5,
+          "median": 4.22,
+          "min": 4.08,
+          "max": 5.02,
+          "samples": [
+            5.02,
+            4.08,
+            4.14,
+            4.49,
+            4.22
+          ]
+        }
+      },
+      "httpMs": {
+        "n": 5,
+        "median": 40.16,
+        "min": 38.27,
+        "max": 47.03,
+        "samples": [
+          47.03,
+          40.16,
+          40.79,
+          40.14,
+          38.27
+        ]
+      }
+    },
+    "missingSeason": {
+      "url": "?metric=ownership&window=3&limit=10&offset=0&season=1900",
+      "handlerMs": {
+        "n": 5,
+        "median": 73.25,
+        "min": 72.37,
+        "max": 76.47,
+        "samples": [
+          76.44,
+          73.25,
+          72.83,
+          72.37,
+          76.47
+        ]
+      },
+      "bytes": 15351,
+      "stages": {
+        "ownership-history": {
+          "queries": 6,
+          "rows": 4438,
+          "bytes": 2668583
+        },
+        "mapping": {
+          "queries": 9,
+          "rows": 2373,
+          "bytes": 142389
+        }
+      },
+      "summedQueryMs": {
+        "ownership-history": {
+          "n": 5,
+          "median": 41.52,
+          "min": 40.62,
+          "max": 42.81,
+          "samples": [
+            42.81,
+            41.52,
+            40.62,
+            41.21,
+            42.11
+          ]
+        },
+        "mapping": {
+          "n": 5,
+          "median": 4.78,
+          "min": 4,
+          "max": 4.97,
+          "samples": [
+            4.97,
+            4.78,
+            4,
+            4.96,
+            4.75
+          ]
+        }
+      },
+      "httpMs": {
+        "n": 5,
+        "median": 73.7,
+        "min": 72.7,
+        "max": 76.9,
+        "samples": [
+          76.86,
+          73.7,
+          73.24,
+          72.7,
+          76.9
+        ]
+      }
+    },
+    "selected": {
+      "url": "?metric=ownership&window=3&limit=10&offset=0&playerIds=8420001%2C8420350&includeFlat=1",
+      "handlerMs": {
+        "n": 5,
+        "median": 9.94,
+        "min": 8.61,
+        "max": 11.16,
+        "samples": [
+          10.46,
+          9.94,
+          11.16,
+          8.61,
+          8.98
+        ]
+      },
+      "bytes": 16081,
+      "stages": {},
+      "summedQueryMs": {},
+      "httpMs": {
+        "n": 5,
+        "median": 10.28,
+        "min": 8.9,
+        "max": 11.85,
+        "samples": [
+          10.92,
+          10.28,
+          11.85,
+          8.9,
+          9.43
+        ]
+      }
+    }
+  },
+  "contracts": {
+    "default": {
+      "full": "d4c6ef0481f6140bc76a4d9d9e26f0ca19c03b496c3e4f16b8e738de3b19e304",
+      "sourceDate": "2026-11-17",
+      "mapped": 2373,
+      "unmapped": 2065,
+      "risers": 89,
+      "fallers": 200,
+      "originalFieldsDigest": "f7ab5fc697fcd22c6de4cec97d9329e6a5d1a8d90842aab5a0ded8ac1710fae1",
+      "fields": [
+        "fallers",
+        "generatedAt",
+        "mappedPlayerCount",
+        "metric",
+        "offset",
+        "page",
+        "pageSize",
+        "pos",
+        "requestedSeason",
+        "risers",
+        "seasonFallbackApplied",
+        "selectedPlayers",
+        "sourceDate",
+        "success",
+        "totalFallers",
+        "totalRisers",
+        "unmappedPlayerCount",
+        "windowDays"
+      ],
+      "rowFields": [
+        "delta",
+        "deltaPct",
+        "displayPosition",
+        "eligiblePositions",
+        "headshot",
+        "latest",
+        "movementEndDate",
+        "movementStartDate",
+        "name",
+        "playerId",
+        "playerKey",
+        "previous",
+        "sparkline",
+        "teamAbbrev",
+        "teamFullName",
+        "uniformNumber"
+      ]
+    },
+    "position": {
+      "full": "623c8b680d4b09ba4ebca632516d66c43dc39710676b06db884862b59ca8b12e",
+      "sourceDate": "2026-11-17",
+      "mapped": 2373,
+      "unmapped": 2065,
+      "risers": 18,
+      "fallers": 40,
+      "originalFieldsDigest": "21f7a45f7d293ccd04fe57227fa8e2529a049b43c7010fbd2c3145b466838db9",
+      "fields": [
+        "fallers",
+        "generatedAt",
+        "mappedPlayerCount",
+        "metric",
+        "offset",
+        "page",
+        "pageSize",
+        "pos",
+        "requestedSeason",
+        "risers",
+        "seasonFallbackApplied",
+        "selectedPlayers",
+        "sourceDate",
+        "success",
+        "totalFallers",
+        "totalRisers",
+        "unmappedPlayerCount",
+        "windowDays"
+      ],
+      "rowFields": [
+        "delta",
+        "deltaPct",
+        "displayPosition",
+        "eligiblePositions",
+        "headshot",
+        "latest",
+        "movementEndDate",
+        "movementStartDate",
+        "name",
+        "playerId",
+        "playerKey",
+        "previous",
+        "sparkline",
+        "teamAbbrev",
+        "teamFullName",
+        "uniformNumber"
+      ]
+    },
+    "window": {
+      "full": "1b9a9da93200cb6a320073eaee251e8982ec4d75f4e65b7ec6991dddd99d1018",
+      "sourceDate": "2026-11-17",
+      "mapped": 2373,
+      "unmapped": 2065,
+      "risers": 18,
+      "fallers": 40,
+      "originalFieldsDigest": "84449a0364045fe19a99fc505d31d79491a1043a1329ead5484e04ff19f32753",
+      "fields": [
+        "fallers",
+        "generatedAt",
+        "mappedPlayerCount",
+        "metric",
+        "offset",
+        "page",
+        "pageSize",
+        "pos",
+        "requestedSeason",
+        "risers",
+        "seasonFallbackApplied",
+        "selectedPlayers",
+        "sourceDate",
+        "success",
+        "totalFallers",
+        "totalRisers",
+        "unmappedPlayerCount",
+        "windowDays"
+      ],
+      "rowFields": [
+        "delta",
+        "deltaPct",
+        "displayPosition",
+        "eligiblePositions",
+        "headshot",
+        "latest",
+        "movementEndDate",
+        "movementStartDate",
+        "name",
+        "playerId",
+        "playerKey",
+        "previous",
+        "sparkline",
+        "teamAbbrev",
+        "teamFullName",
+        "uniformNumber"
+      ]
+    },
+    "page2": {
+      "full": "aa4a1cc89c3d06e3beec966c4f480aee3ed6027d4142be105c9239c8920ebce0",
+      "sourceDate": "2026-11-17",
+      "mapped": 2373,
+      "unmapped": 2065,
+      "risers": 18,
+      "fallers": 40,
+      "originalFieldsDigest": "d2e4f9d7a2504b9f64c60e2118d14c566d0f213f87584d918702c8b2be8b6e51",
+      "fields": [
+        "fallers",
+        "generatedAt",
+        "mappedPlayerCount",
+        "metric",
+        "offset",
+        "page",
+        "pageSize",
+        "pos",
+        "requestedSeason",
+        "risers",
+        "seasonFallbackApplied",
+        "selectedPlayers",
+        "sourceDate",
+        "success",
+        "totalFallers",
+        "totalRisers",
+        "unmappedPlayerCount",
+        "windowDays"
+      ],
+      "rowFields": [
+        "delta",
+        "deltaPct",
+        "displayPosition",
+        "eligiblePositions",
+        "headshot",
+        "latest",
+        "movementEndDate",
+        "movementStartDate",
+        "name",
+        "playerId",
+        "playerKey",
+        "previous",
+        "sparkline",
+        "teamAbbrev",
+        "teamFullName",
+        "uniformNumber"
+      ]
+    },
+    "adp": {
+      "full": "1058fefd1b90be2d0f7a1d03d43f67a1011d14004d2c9e781a74ec23563e3db7",
+      "sourceDate": "2026-11-17",
+      "mapped": 2373,
+      "unmapped": 2065,
+      "risers": 89,
+      "fallers": 200,
+      "originalFieldsDigest": "63e0d33c04692dfc965b7d1c38b47ea4a88a6af4124e064d1b5f5842de227e83",
+      "fields": [
+        "fallers",
+        "generatedAt",
+        "mappedPlayerCount",
+        "metric",
+        "offset",
+        "page",
+        "pageSize",
+        "pos",
+        "requestedSeason",
+        "risers",
+        "seasonFallbackApplied",
+        "selectedPlayers",
+        "sourceDate",
+        "success",
+        "totalFallers",
+        "totalRisers",
+        "unmappedPlayerCount",
+        "windowDays"
+      ],
+      "rowFields": [
+        "delta",
+        "deltaPct",
+        "displayPosition",
+        "eligiblePositions",
+        "headshot",
+        "latest",
+        "movementEndDate",
+        "movementStartDate",
+        "name",
+        "playerId",
+        "playerKey",
+        "previous",
+        "sparkline",
+        "teamAbbrev",
+        "teamFullName",
+        "uniformNumber"
+      ]
+    },
+    "missingSeason": {
+      "full": "8419438aa11f4946874cfaca9e02b910402cbe8508ce3ca6e026a58a8b33d250",
+      "sourceDate": "2026-11-17",
+      "mapped": 2373,
+      "unmapped": 2065,
+      "risers": 89,
+      "fallers": 200,
+      "originalFieldsDigest": "5d1ce2e5fc2d49021527892fbbbe7b9af6e4d0eb9d1b34513fb1d1160dbac6eb",
+      "fields": [
+        "fallers",
+        "generatedAt",
+        "mappedPlayerCount",
+        "metric",
+        "offset",
+        "page",
+        "pageSize",
+        "pos",
+        "requestedSeason",
+        "risers",
+        "seasonFallbackApplied",
+        "selectedPlayers",
+        "sourceDate",
+        "success",
+        "totalFallers",
+        "totalRisers",
+        "unmappedPlayerCount",
+        "windowDays"
+      ],
+      "rowFields": [
+        "delta",
+        "deltaPct",
+        "displayPosition",
+        "eligiblePositions",
+        "headshot",
+        "latest",
+        "movementEndDate",
+        "movementStartDate",
+        "name",
+        "playerId",
+        "playerKey",
+        "previous",
+        "sparkline",
+        "teamAbbrev",
+        "teamFullName",
+        "uniformNumber"
+      ]
+    },
+    "selected": {
+      "full": "0c9b5f7b615c62a1502c3a96b536e5b1bfbdbb3118a9902f4f7df786323dea2b",
+      "sourceDate": "2026-11-17",
+      "mapped": 2373,
+      "unmapped": 2065,
+      "risers": 89,
+      "fallers": 200,
+      "originalFieldsDigest": "7d07d49e40a3ff86a977c1bed2b1f82d10fb817a37b9a1aca306ed5ddcc96805",
+      "fields": [
+        "fallers",
+        "generatedAt",
+        "mappedPlayerCount",
+        "metric",
+        "offset",
+        "page",
+        "pageSize",
+        "pos",
+        "requestedSeason",
+        "risers",
+        "seasonFallbackApplied",
+        "selectedPlayers",
+        "sourceDate",
+        "success",
+        "totalFallers",
+        "totalRisers",
+        "unmappedPlayerCount",
+        "windowDays"
+      ],
+      "rowFields": [
+        "delta",
+        "deltaPct",
+        "displayPosition",
+        "eligiblePositions",
+        "headshot",
+        "latest",
+        "movementEndDate",
+        "movementStartDate",
+        "name",
+        "playerId",
+        "playerKey",
+        "previous",
+        "sparkline",
+        "teamAbbrev",
+        "teamFullName",
+        "uniformNumber"
+      ]
+    }
+  },
+  "browser": {
+    "engine": "148.0.7778.96",
+    "viewport": "1440x1000",
+    "samples": {
+      "default": {
+        "n": 5,
+        "median": 130.2,
+        "min": 121.7,
+        "max": 136.1,
+        "samples": [
+          136.1,
+          121.7,
+          130.2,
+          123.5,
+          130.4
+        ]
+      },
+      "position": {
+        "n": 5,
+        "median": 31.6,
+        "min": 30.7,
+        "max": 32.8,
+        "samples": [
+          30.7,
+          32.2,
+          31.1,
+          31.6,
+          32.8
+        ]
+      },
+      "window": {
+        "n": 5,
+        "median": 16.4,
+        "min": 16,
+        "max": 17.1,
+        "samples": [
+          16.2,
+          16,
+          16.4,
+          17.1,
+          16.5
+        ]
+      },
+      "page2": {
+        "n": 5,
+        "median": 16.3,
+        "min": 15.5,
+        "max": 16.6,
+        "samples": [
+          16.3,
+          16.4,
+          15.5,
+          16.3,
+          16.6
+        ]
+      },
+      "clientReturn": {
+        "n": 5,
+        "median": 7.1,
+        "min": 6.9,
+        "max": 7.4,
+        "samples": [
+          7.1,
+          7.4,
+          6.9,
+          7.1,
+          7
+        ]
+      },
+      "adp": {
+        "n": 5,
+        "median": 58.8,
+        "min": 58.4,
+        "max": 59.2,
+        "samples": [
+          58.7,
+          58.4,
+          59.2,
+          58.8,
+          58.9
+        ]
+      }
+    },
+    "requests": {
+      "default": {
+        "requests": [
+          "?window=3&metric=ownership&limit=10&offset=0"
+        ],
+        "stages": {
+          "ownership-history": {
+            "queries": 5,
+            "rows": 4438,
+            "bytes": 2668581
+          },
+          "mapping": {
+            "queries": 9,
+            "rows": 2373,
+            "bytes": 142389
+          }
+        },
+        "responseBytes": 15352
+      },
+      "position": {
+        "requests": [
+          "?window=3&metric=ownership&limit=10&offset=0&pos=D"
+        ],
+        "stages": {},
+        "responseBytes": 15197
+      },
+      "window": {
+        "requests": [
+          "?window=5&metric=ownership&limit=10&offset=0&pos=D"
+        ],
+        "stages": {},
+        "responseBytes": 15237
+      },
+      "page2": {
+        "requests": [
+          "?window=5&metric=ownership&limit=10&offset=10&pos=D"
+        ],
+        "stages": {},
+        "responseBytes": 13744
+      },
+      "clientReturn": {
+        "requests": [],
+        "stages": {},
+        "responseBytes": 0
+      },
+      "adp": {
+        "requests": [
+          "?window=3&metric=adp&limit=10&offset=0"
+        ],
+        "stages": {
+          "player-metadata": {
+            "queries": 5,
+            "rows": 4438,
+            "bytes": 1242769
+          },
+          "adp-history": {
+            "queries": 5,
+            "rows": 4410,
+            "bytes": 446820
+          },
+          "mapping": {
+            "queries": 9,
+            "rows": 2373,
+            "bytes": 142389
+          }
+        },
+        "responseBytes": 15344
+      }
+    },
+    "externalRequests": [],
+    "pageErrors": [],
+    "delayedResponseCheck": {
+      "loadingRows": 0,
+      "loadingSourceDates": 0,
+      "loadingStaleNotices": 0,
+      "restoredRows": 20,
+      "latePosition": "G",
+      "selectedPositionAfterLateResponse": "D",
+      "requests": [
+        "?window=5&metric=ownership&limit=10&offset=0&pos=G"
+      ]
+    },
+    "mobileCheck": {
+      "viewport": 390,
+      "sectionLeft": 8,
+      "sectionRight": 382,
+      "lastColumnRight": 368,
+      "rows": 10,
+      "unlinked": 5,
+      "selected": "fallers",
+      "staleBannerAt22UTC": true,
+      "additionalRequests": 0
+    }
+  }
+}

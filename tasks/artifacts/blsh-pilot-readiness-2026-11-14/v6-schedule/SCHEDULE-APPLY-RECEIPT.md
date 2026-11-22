@@ -66,3 +66,7 @@ To check part B, read `cron.job_run_details`, `net._http_response` and the Verce
 select cron.unschedule(jobid) from cron.job where jobname in ('blsh-native-capture','blsh-native-capture-backup','blsh-native-capture-watchdog','blsh-native-capture-watchdog-assert');
 drop function fhfh_internal.invoke_blsh_endpoint(text);
 ```
+
+## Part B result (2026-11-19, logs only)
+
+At 12:05Z and 12:20Z: 200 `{"success":true,"skipped":"disabled","sourceDate":"2026-11-18"}`. On 11-17, 11-18 and 11-19, all four jobs report `succeeded`. Switch off, runs 0. Private output: `partB-read.out` in `OUTDIR`.

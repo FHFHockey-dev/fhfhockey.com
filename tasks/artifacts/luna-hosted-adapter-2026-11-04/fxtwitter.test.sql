@@ -38,6 +38,20 @@ create function pg_temp.add_policy(purge_at timestamptz) returns uuid language s
  values('10000000-0000-4000-8000-000000000001','fx-worker','{"reporter":"Reporter","desk":"Desk"}',
  clock_timestamp()-interval '50 min',least(clock_timestamp()+interval '9 min',purge_at),purge_at,5,1000000000) returning id
 $$;
+create function pg_temp.successor(parent_id uuid default '10000000-0000-4000-8000-000000000001', cap bigint default 1000000000) returns uuid language sql as $$
+ insert into luna_fxtwitter.policy(id,worker_approval_id,accounts,starts_at,expires_at,purge_after,max_receipts,cap_nano_usd,previous_policy_id)
+ values(gen_random_uuid(),'successor-'||gen_random_uuid(),'{"reporter":"Reporter"}',now(),now()+interval '30 min',now()+interval '2 hours',2,cap,parent_id)
+ returning id
+$$;
+create function pg_temp.expect_closed_slot() returns void language plpgsql as $$
+begin
+ begin perform pg_temp.successor();
+ exception when raise_exception then
+  if sqlerrm='previous FX capture requires an empty retirement' then return; end if;
+  raise;
+ end;
+ raise exception 'another FX pilot was admitted';
+end $$;
 begin;
 insert into public.tweet_intake_providers(source_key,provider) values('reporter','fxtwitter'),('desk','ifttt');
 select pg_temp.add_policy(clock_timestamp()+interval '3 seconds');
@@ -146,6 +160,7 @@ select pg_temp.check_it(not exists(select 1 from luna_hosted.jobs) and not exist
  and (select canonical_url='https://x.com/reporter/status/7' from luna_fxtwitter.source_references where post_id='7')
  and (select stopped and not enabled and prior_exposure_nano_usd=234000000 from luna_hosted.policy)
  and (select request_id='fx-req-1' and state='settled' and charge_nano_usd=23 and total_exposure_nano_usd=234000000 from luna_fxtwitter.retirements),'scoped content deletion, URLs, exposure and provider request preserved');
+select pg_temp.expect_closed_slot(); -- Retired after paid dispatch.
 rollback;
 
 -- A real empty previously approved legacy pilot can retire and rotate without
@@ -157,7 +172,7 @@ insert into luna_hosted.policy(approval_id,starts_at,expires_at,max_calls,cap_na
 select 'legacy-worker',starts_at,expires_at,1,1000000000,322000000 from luna_capture.policy;
 insert into luna_retention.plan(capture_policy_id,worker_approval_id,purge_after)
 select id,'legacy-worker',starts_at+interval '7 days' from luna_capture.policy;
-select pg_temp.add_policy(clock_timestamp()+interval '1 hour');
+select pg_temp.add_policy(clock_timestamp()+interval '2 seconds');
 do $$ begin
  begin perform luna_fxtwitter.prepare_worker_for_owner(id) from luna_fxtwitter.policy; raise exception 'missing rollover guard';
  exception when others then if sqlerrm<>'prior pilot reconciliation required' then raise; end if; end;
@@ -166,6 +181,51 @@ select pg_temp.check_it(luna_retention.purge_due(id)->>'status'='purged','old ow
 select luna_fxtwitter.prepare_worker_for_owner(id) from luna_fxtwitter.policy;
 select pg_temp.check_it((select stopped and not enabled from luna_capture.policy) and (select count(*)=1 from luna_retention.retirement)
  and (select approval_id='fx-worker' and not stopped and not enabled and prior_exposure_nano_usd=322000000 from luna_hosted.policy),'retired pilot rollover and prior exposure');
+-- Exercise the expired, captured, never-enrolled FxTwitter path with actual
+-- retirement and worker RPCs. Carry unspent historical exposure into the one caller.
+insert into public.tweet_intake_providers(source_key,provider) values('reporter','fxtwitter');
+update luna_fxtwitter.policy set enabled=true;
+select pg_temp.send('Reporter',s,s) from (select pg_temp.status_for('11','Reporter','Retained source') s) t;
+update luna_fxtwitter.policy set enabled=false,stopped=true;
+select pg_temp.expect_closed_slot(); -- Stopped manually, private content still held.
+select pg_sleep(greatest(0,extract(epoch from purge_after-clock_timestamp())+0.015)) from luna_fxtwitter.policy;
+select pg_temp.check_it(public.luna_fxtwitter_purge_rpc(id)->>'status'='purged','empty dispatch retirement') from luna_fxtwitter.policy;
+savepoint low_cap;
+do $$ declare next_id uuid; begin
+ next_id:=pg_temp.successor(cap=>234000000);
+ begin perform luna_fxtwitter.prepare_worker_for_owner(next_id); raise exception 'low cap accepted';
+ exception when others then if sqlerrm<>'prior pilot reconciliation required' then raise; end if; end;
+end $$;
+rollback to low_cap;
+create temp table selected_successor as select pg_temp.successor() id;
+do $$ declare key_name text; begin
+ begin perform pg_temp.successor(); raise exception 'duplicate sibling accepted';
+ exception when unique_violation then
+  get stacked diagnostics key_name=constraint_name;
+  if key_name<>'luna_fx_one_successor' then raise; end if;
+ end;
+ begin perform pg_temp.successor(null); raise exception 'duplicate root accepted';
+ exception when unique_violation then
+  get stacked diagnostics key_name=constraint_name;
+  if key_name<>'luna_fx_one_successor' then raise; end if;
+ end;
+end $$;
+select luna_fxtwitter.prepare_worker_for_owner(id) from selected_successor;
+select pg_temp.check_it((select count(*)=2 from luna_fxtwitter.policy)
+ and (select count(*)=1 from luna_fxtwitter.policy where not stopped)
+ and exists(select 1 from selected_successor n join luna_fxtwitter.policy p using(id)
+     join luna_hosted.policy w on w.approval_id=p.worker_approval_id
+     where not w.enabled and not w.stopped and w.max_calls=1 and w.prior_exposure_nano_usd=322000000)
+ and (select count(*)=1 and min(post_id)='11' from luna_fxtwitter.source_references)
+ and (select count(*)=1 from luna_fxtwitter.empty_retired_workers)
+ and not exists(select 1 from luna_hosted.jobs) and not exists(select 1 from luna_hosted.attempts)
+ and not has_table_privilege('service_role','luna_fxtwitter.empty_retired_workers','select')
+ and not has_function_privilege('service_role','luna_fxtwitter.prepare_worker_for_owner(uuid)','execute'),
+ 'successor starts disabled, retains funding and provenance, enrollment stays private');
+do $$ begin
+ begin perform pg_temp.successor((select id from selected_successor)); raise exception 'open successor gained a child';
+ exception when others then if sqlerrm<>'previous FX capture requires an empty retirement' then raise; end if; end;
+end $$;
 rollback;
 
 -- Two real sessions race for the same first sighting. Observe the waiter before

@@ -1,0 +1,535 @@
+diff --git a/tasks/artifacts/blsh-replay-2026-11-20/hosted-r2/arm-replay-get-dated.sql b/tasks/artifacts/blsh-replay-2026-11-20/hosted-r2/arm-replay-get-dated.sql
+new file mode 100644
+index 000000000..526858e38
+--- /dev/null
++++ b/tasks/artifacts/blsh-replay-2026-11-20/hosted-r2/arm-replay-get-dated.sql
+@@ -0,0 +1,83 @@
++-- BLSH hosted fixture replay, recut R' (2026-11-21): a copy of the pinned arm-replay-get.sql that takes the run date as a parameter.
++-- Same dispatch, table, function and job names as the original (so disarm-replay-get.sql and readback-replay-get.sql apply
++-- unchanged). Only the date fuse differs: R' runs the replay on any real UTC day, because on the replay path alone the
++-- request-context date gate compares against the slate's logical ingress day 2026-11-20 (the live route keeps the real day).
++-- One Supabase Cron firing per stage, each a GET to its own route, dispatched exactly like the planned production BLSH job
++-- (base URL from Vault 'site_url', default https://fhfhockey.com; headers from fhfh_internal.require_cron_request_headers();
++-- 240 s timeout). Each job records its pg_net request id and unschedules itself; a later tick enqueues nothing.
++-- psql variables (all required):
++--   run_date          real UTC day of both firings, YYYY-MM-DD. Must be today (UTC) and within 2026-11-20..2026-11-26: the native
++--                     plan refuses the 2026-11-19 slate from 2026-11-27T00:00Z (8-day bound in nativeProcessCapturePreparation.ts).
++--   schedule_native   'M H D Mo *' on run_date, more than 1 minute from now.
++--   schedule_context  'M H D Mo *' on run_date, at least 2 minutes after native and no later than 23:50Z, so both stages and the
++--                     context's same-real-day checks finish before 00:00Z.
++-- e.g. psql ... -v run_date=2026-11-21 -v schedule_native='30 21 21 11 *' -v schedule_context='32 21 21 11 *' -f arm-replay-get-dated.sql
++\set ON_ERROR_STOP on
++begin;
++set local lock_timeout = '2s';
++set local blsh_replay_arm.run_date = :'run_date';
++set local blsh_replay_arm.schedule_native = :'schedule_native';
++set local blsh_replay_arm.schedule_context = :'schedule_context';
++do $$
++declare
++  v_text text := current_setting('blsh_replay_arm.run_date');
++  v_day date; v_native timestamptz; v_context timestamptz; v_fire timestamptz; v_m text[]; v_which text;
++begin
++  if to_regnamespace('blsh_replay') is null or to_regprocedure('fhfh_internal.require_cron_request_headers()') is null
++    or exists (select from cron.job where jobname like 'blsh-replay-%-20261119%')
++    or to_regclass('blsh_replay.replay_get_requests') is not null
++    or exists (select from blsh_replay.blsh_capture_runs) or exists (select from blsh_replay.receipts)
++    or coalesce(current_setting('cron.timezone', true), 'GMT') not in ('GMT', 'UTC')
++    then raise exception 'replay_get_preflight_failed'; end if;
++  if v_text !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then raise exception 'replay_get_run_date_invalid'; end if;
++  begin v_day := v_text::date; exception when others then raise exception 'replay_get_run_date_invalid'; end;
++  if v_day::text <> v_text or v_day <> (pg_catalog.now() at time zone 'UTC')::date
++    or v_day < date '2026-11-20' or v_day > date '2026-11-26' then raise exception 'replay_get_run_date_invalid'; end if;
++  foreach v_which in array array['native', 'context'] loop
++    v_m := pg_catalog.regexp_match(current_setting('blsh_replay_arm.schedule_' || v_which), '^([0-9]{1,2}) ([0-9]{1,2}) ([0-9]{1,2}) ([0-9]{1,2}) [*]$');
++    if v_m is null or v_m[1]::int > 59 or v_m[2]::int > 23 or v_m[3]::int <> extract(day from v_day)::int or v_m[4]::int <> extract(month from v_day)::int
++      then raise exception 'replay_get_schedule_invalid'; end if;
++    v_fire := (v_day + pg_catalog.make_time(v_m[2]::int, v_m[1]::int, 0)) at time zone 'UTC';
++    if v_which = 'native' then v_native := v_fire; else v_context := v_fire; end if;
++  end loop;
++  if v_native <= pg_catalog.now() + interval '1 minute' or v_context < v_native + interval '2 minutes'
++    or v_context > (v_day + time '23:50') at time zone 'UTC' then raise exception 'replay_get_schedule_invalid'; end if;
++  perform fhfh_internal.require_cron_request_headers();  -- refuses unless exactly one non-empty Vault cron_secret
++end $$;
++
++create table blsh_replay.replay_get_requests (
++  job_name text primary key check (job_name in ('blsh-replay-native-20261119', 'blsh-replay-context-20261119',
++    'blsh-replay-native-20261119-repeat', 'blsh-replay-context-20261119-repeat')),
++  jobid bigint not null,
++  request_id bigint not null,
++  fired_at timestamptz not null default clock_timestamp()
++);
++revoke all on blsh_replay.replay_get_requests from public;
++
++-- Runs as the scheduling user (postgres), like the production BLSH job. The bearer never appears in cron.job.command or the URL.
++create function blsh_replay.replay_get_fire(p_job text, p_path text) returns text
++language plpgsql set search_path = '' as $$
++declare request bigint; job bigint; base_url text;
++begin
++  if p_path not in ('/api/v1/db/blsh-replay-native', '/api/v1/db/blsh-replay-context') then raise exception 'replay_path_invalid'; end if;
++  perform pg_advisory_xact_lock(hashtext('blsh_replay_get_20261119'));
++  select jobid into job from cron.job where jobname = p_job;
++  if exists (select from blsh_replay.replay_get_requests where job_name = p_job) then
++    if job is not null then perform cron.unschedule(job); end if;
++    return 'already_fired';
++  end if;
++  select pg_catalog.min(ds.decrypted_secret) into base_url from vault.decrypted_secrets as ds where ds.name = 'site_url';
++  base_url := pg_catalog.rtrim(coalesce(nullif(pg_catalog.btrim(base_url), ''), 'https://fhfhockey.com'), '/');
++  request := net.http_get(url := base_url || p_path, headers := fhfh_internal.require_cron_request_headers(), timeout_milliseconds := 240000);
++  insert into blsh_replay.replay_get_requests (job_name, jobid, request_id) values (p_job, job, request);
++  perform cron.unschedule(job);
++  return 'fired ' || request;
++end $$;
++revoke all on function blsh_replay.replay_get_fire(text, text) from public;
++
++select cron.schedule('blsh-replay-native-20261119', :'schedule_native',
++  $job$select blsh_replay.replay_get_fire('blsh-replay-native-20261119', '/api/v1/db/blsh-replay-native')$job$);
++select cron.schedule('blsh-replay-context-20261119', :'schedule_context',
++  $job$select blsh_replay.replay_get_fire('blsh-replay-context-20261119', '/api/v1/db/blsh-replay-context')$job$);
++commit;
++select jobid, jobname, schedule, active, command from cron.job where jobname like 'blsh-replay-%-20261119%' order by jobname;
+diff --git a/tasks/artifacts/blsh-replay-2026-11-20/hosted-r2/arm-replay-get-repeat-dated.sql b/tasks/artifacts/blsh-replay-2026-11-20/hosted-r2/arm-replay-get-repeat-dated.sql
+new file mode 100644
+index 000000000..44e21e1af
+--- /dev/null
++++ b/tasks/artifacts/blsh-replay-2026-11-20/hosted-r2/arm-replay-get-repeat-dated.sql
+@@ -0,0 +1,46 @@
++-- The duplicate-trigger proof for recut R' (2026-11-21): a copy of the pinned arm-replay-get-repeat.sql that takes the run date
++-- as a parameter. The SAME two GETs once more, armed only after both stages produced runs and receipts.
++-- Expected: native and context already_claimed, every sandbox count unchanged, receiptWritten false for both.
++-- psql variables: run_date, schedule_native, schedule_context, with the same rules as arm-replay-get-dated.sql (run_date is today
++-- UTC within 2026-11-20..2026-11-26; both schedules on run_date, native more than 1 minute away, context at least 2 minutes after
++-- native and no later than 23:50Z). Same dispatch as arm-replay-get-dated.sql.
++\set ON_ERROR_STOP on
++begin;
++set local lock_timeout = '2s';
++set local blsh_replay_arm.run_date = :'run_date';
++set local blsh_replay_arm.schedule_native = :'schedule_native';
++set local blsh_replay_arm.schedule_context = :'schedule_context';
++do $$
++declare
++  v_text text := current_setting('blsh_replay_arm.run_date');
++  v_day date; v_native timestamptz; v_context timestamptz; v_fire timestamptz; v_m text[]; v_which text;
++begin
++  -- Checked on its own first: PL/pgSQL plans the whole condition below, so a missing table would otherwise surface as
++  -- 'relation does not exist' instead of this refusal (the pinned original refuses the same way, with that message).
++  if to_regclass('blsh_replay.replay_get_requests') is null then raise exception 'replay_repeat_preflight_failed'; end if;
++  if (select count(*) from blsh_replay.replay_get_requests where job_name in ('blsh-replay-native-20261119', 'blsh-replay-context-20261119')) <> 2
++    or exists (select from blsh_replay.replay_get_requests where job_name like '%-repeat')
++    or exists (select from cron.job where jobname like 'blsh-replay-%-20261119%')
++    or not exists (select from blsh_replay.blsh_capture_runs) or not exists (select from blsh_replay.blsh_context_runs)
++    or (select count(*) from blsh_replay.receipts) <> 2
++    then raise exception 'replay_repeat_preflight_failed'; end if;
++  if v_text !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then raise exception 'replay_get_run_date_invalid'; end if;
++  begin v_day := v_text::date; exception when others then raise exception 'replay_get_run_date_invalid'; end;
++  if v_day::text <> v_text or v_day <> (pg_catalog.now() at time zone 'UTC')::date
++    or v_day < date '2026-11-20' or v_day > date '2026-11-26' then raise exception 'replay_get_run_date_invalid'; end if;
++  foreach v_which in array array['native', 'context'] loop
++    v_m := pg_catalog.regexp_match(current_setting('blsh_replay_arm.schedule_' || v_which), '^([0-9]{1,2}) ([0-9]{1,2}) ([0-9]{1,2}) ([0-9]{1,2}) [*]$');
++    if v_m is null or v_m[1]::int > 59 or v_m[2]::int > 23 or v_m[3]::int <> extract(day from v_day)::int or v_m[4]::int <> extract(month from v_day)::int
++      then raise exception 'replay_get_schedule_invalid'; end if;
++    v_fire := (v_day + pg_catalog.make_time(v_m[2]::int, v_m[1]::int, 0)) at time zone 'UTC';
++    if v_which = 'native' then v_native := v_fire; else v_context := v_fire; end if;
++  end loop;
++  if v_native <= pg_catalog.now() + interval '1 minute' or v_context < v_native + interval '2 minutes'
++    or v_context > (v_day + time '23:50') at time zone 'UTC' then raise exception 'replay_get_schedule_invalid'; end if;
++end $$;
++select cron.schedule('blsh-replay-native-20261119-repeat', :'schedule_native',
++  $job$select blsh_replay.replay_get_fire('blsh-replay-native-20261119-repeat', '/api/v1/db/blsh-replay-native')$job$);
++select cron.schedule('blsh-replay-context-20261119-repeat', :'schedule_context',
++  $job$select blsh_replay.replay_get_fire('blsh-replay-context-20261119-repeat', '/api/v1/db/blsh-replay-context')$job$);
++commit;
++select jobid, jobname, schedule, active, command from cron.job where jobname like 'blsh-replay-%-20261119%' order by jobname;
+diff --git a/tasks/artifacts/blsh-replay-2026-11-20/hosted-r2/readback_export_dated.py b/tasks/artifacts/blsh-replay-2026-11-20/hosted-r2/readback_export_dated.py
+new file mode 100644
+index 000000000..2a8f4af32
+--- /dev/null
++++ b/tasks/artifacts/blsh-replay-2026-11-20/hosted-r2/readback_export_dated.py
+@@ -0,0 +1,32 @@
++"""Turn blsh_replay.export_v1('2026-11-19') output (one JSON document, read-only) into the export directories the held readers
++take, then the operator runs the v6 readback.ts over them (stage 1, stage 2 and the request-context reader).
++Recut R' copy of readback_export.py (2026-11-21): the one difference is RUN_DATE, the real UTC day the hosted replay ran (the same
++run_date given to arm-replay-get-dated.sql). It is written to context-pins.json as replayCaptureDay, the request-context reader's
++independent pin for a replay captured later than the slate's day + 1.
++Usage: psql -X -A -t -c "select blsh_replay.export_v1('2026-11-19')" > export.json
++       python3 -I readback_export_dated.py export.json OUT_DIR DEPLOYMENT_ID GIT_SHA RUN_DATE
++Writes OUT_DIR/{native,context}/{run.json,objects.json,objects/<path>} and OUT_DIR/{pins.json,context-pins.json}."""
++import base64, json, re, sys
++from pathlib import Path
++data, out = json.loads(Path(sys.argv[1]).read_text()), Path(sys.argv[2])
++deployment, sha, run_date = sys.argv[3], sys.argv[4], sys.argv[5]
++if not re.fullmatch(r"2026-11-2[0-6]", run_date):
++    raise SystemExit("RUN_DATE must be the replay's real UTC day, 2026-11-20..2026-11-26")
++for part in ("native", "context"):
++    block = data.get(part)
++    if not block: continue
++    d = out / part; (d / "objects").mkdir(parents=True, exist_ok=False)
++    (d / "run.json").write_text(json.dumps(block["run"]) + "\n")
++    (d / "objects.json").write_text(json.dumps([{k: v for k, v in o.items() if k != "b64"} for o in block["objects"]]) + "\n")
++    for o in block["objects"]:
++        assert ".." not in o["path"] and o["b64"] is not None, o["path"]
++        f = d / "objects" / o["path"]; f.parent.mkdir(parents=True, exist_ok=True); f.write_bytes(base64.b64decode(o["b64"]))
++if not data.get("native"):
++    raise SystemExit("no native run in the sandbox export")
++native = data["native"]["run"]
++(out / "pins.json").write_text(json.dumps({"sourceDate": native["source_date"], "runId": native["run_id"], "deploymentId": deployment, "gitCommitSha": sha}) + "\n")
++if data.get("context"):
++    c = data["context"]["run"]
++    (out / "context-pins.json").write_text(json.dumps({"sourceDate": native["source_date"], "nativeRunId": native["run_id"], "nativeManifestSHA256": native["manifest_sha256"],
++        "runId": c["run_id"], "manifestSHA256": c["manifest_sha256"], "deploymentId": deployment, "gitCommitSha": sha, "replayCaptureDay": run_date}) + "\n")
++print(json.dumps({"native": native["run_id"], "context": (data.get("context") or {}).get("run", {}).get("run_id")}))
+diff --git a/web/lib/blsh/nativeCaptureV6/requestContextHandler.test.ts b/web/lib/blsh/nativeCaptureV6/requestContextHandler.test.ts
+index 9a754af86..59f0b6025 100644
+--- a/web/lib/blsh/nativeCaptureV6/requestContextHandler.test.ts
++++ b/web/lib/blsh/nativeCaptureV6/requestContextHandler.test.ts
+@@ -6,7 +6,7 @@ import { join } from "node:path";
+ import type { NextApiRequest, NextApiResponse } from "next";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import route from "../../../pages/api/v1/db/blsh-request-context";
+-import { requestContextApprovalBytes } from "./requestContextHandler";
++import { createRequestContextHandler, requestContextApprovalBytes } from "./requestContextHandler";
+ import { prepareNativeProcessCapture } from "../../../scripts/blsh/nativeProcessCapturePreparation";
+ import { buildRequestFromContextV1, type RequestContextResult } from "./requestContext";
+ 
+@@ -24,15 +24,15 @@ const testKeys = generateKeyPairSync("ed25519");
+ const publicPEM = testKeys.publicKey.export({ type: "spki", format: "pem" }).toString();
+ let signed: { approval: Parameters<typeof requestContextApprovalBytes>[0]; signature: string } | undefined;
+ type Edits = (group: string, obs: Record<string, unknown>) => void;
+-function fixture(edit?: Edits) {
++function fixture(edit?: Edits, day = DATE) {
+   const groups = ["individual", "onIce"] as const;
+   const plan = prepareNativeProcessCapture({ seasonId: 20262027, date: D, plannedAtUTC: START, groups });
+   const entries = Array.from({ length: 19 }, () => ({ file: "fixture", bytes: 10, sha256: "b".repeat(64) }));
+-  const source = { claimedAtUTC: DATE + "T12:04:58.000003+00:00", closedAtUTC: DATE + "T12:06:01.000004+00:00",
++  const source = { claimedAtUTC: day + "T12:04:58.000003+00:00", closedAtUTC: day + "T12:06:01.000004+00:00",
+     individual: Buffer.alloc(0), onIce: Buffer.alloc(0), manifest: Buffer.alloc(0) };
+   for (const [index, group] of groups.entries()) {
+     const file = group + ".parser-input.html", bytes = 10, sha256 = "b".repeat(64);
+-    const retrievedAtUTC = DATE + (index ? "T12:05:45.003Z" : "T12:05:20.001Z");
++    const retrievedAtUTC = day + (index ? "T12:05:45.003Z" : "T12:05:20.001Z");
+     const obs = { status: "candidate_requires_adapter_and_source_review", operation: "nst:" + group, file, sha256, bytes, retrievedAtUTC,
+       retainedAtUTC: retrievedAtUTC, httpStatus: 200, finalUrl: plan.pages[index].url, redirected: false, TLSVerified: null, tlsEvidence: "pending_runtime_review",
+       representation: "client_redacted_parser_input", deploymentBinding: { deploymentId: "dpl_native", gitCommitSha, routeBundleSHA256: "7".repeat(64) },
+@@ -43,7 +43,7 @@ function fixture(edit?: Edits) {
+     entries[index ? 17 : 11] = { file, sha256, bytes };
+     entries[index ? 18 : 12] = { file: group + ".TRANSPORT-OBSERVATION.json", sha256: hash(observation), bytes: observation.length };
+   }
+-  source.manifest = json({ state: "packet_complete_pending_review", sourceDate: D, runId: nativeRunId, files: entries, completedAtUTC: DATE + "T12:06:00.981Z" });
++  source.manifest = json({ state: "packet_complete_pending_review", sourceDate: D, runId: nativeRunId, files: entries, completedAtUTC: day + "T12:06:00.981Z" });
+   const target = { sourceDate: D, nativeRunId, nativeManifestSHA256: hash(source.manifest) };
+   const approve = (override: Record<string, unknown> = {}) => {
+     const approval = { ...target, deploymentId, gitCommitSha, ...override };
+@@ -52,7 +52,7 @@ function fixture(edit?: Edits) {
+   };
+   approve();
+   const store = { source: vi.fn(async () => source), claim: vi.fn(async () => ({ claimed: true, runId })),
+-    readContext: vi.fn(async () => { vi.setSystemTime(END); return sample; }),
++    readContext: vi.fn(async () => { vi.setSystemTime(day + "T12:40:05.000Z"); return day === DATE ? sample : Buffer.from(sample.toString().replaceAll(DATE + "T", day + "T")); }),
+     putObject: vi.fn(async (_id: string, _d: string, _i: number, _name: string, _b: Buffer, _sha: string) => {}),
+     close: vi.fn(async () => {}) };
+   factory.mockReturnValue(store);
+@@ -253,3 +253,57 @@ describe("the one-date request/context POST", () => {
+     expect((await call()).body).toMatchObject({ state: "uncertain", reason: "failure_close_unacknowledged" });
+   });
+ });
++
++describe("the date gate on another real day (BLSH hosted replay seam)", () => {
++  const LATER = "2026-11-21", gate = { sourceDate: D, logicalIngressDay: DATE };
++  async function callWith(handler: ReturnType<typeof createRequestContextHandler>, params: Partial<NextApiRequest> = {}, grant: unknown = signed) {
++    const result = { statusCode: 0, body: {} as Record<string, unknown>, setHeader: vi.fn(), status(n: number) { this.statusCode = n; return this; },
++      json(value: Record<string, unknown>) { this.body = value; return this; } };
++    const request = Object.assign(Readable.from([json(grant ?? {})]), { method: "POST", query: {},
++      headers: { authorization: "Bearer fixture-secret", "content-type": "application/json" }, ...params });
++    await handler(request as unknown as NextApiRequest, result as unknown as NextApiResponse);
++    return result;
++  }
++  const replayHandler = (store: unknown, replayDateGate: typeof gate | null = gate) => createRequestContextHandler({
++    approvalPublicKeyPem: () => publicPEM, createStore: async () => store as never, ...(replayDateGate ? { replayDateGate } : {}) });
++
++  it("keeps the live route on the real ingress day: a valid Nov 19 grant on Nov 21 is outside_approved_date, with no I/O", async () => {
++    fixture(undefined, LATER); vi.setSystemTime(LATER + "T18:00:00.000Z");
++    expect((await call()).body).toEqual({ state: "skipped", reason: "outside_approved_date" });
++    expect(factory).not.toHaveBeenCalled();
++  });
++
++  it("lets only the pinned replay date pair pass the gate on a later real day; every other check stays on real time", async () => {
++    const f = fixture(undefined, LATER); vi.setSystemTime(LATER + "T12:40:00.000Z");
++    const result = await callWith(replayHandler(f.store));
++    expect(result.body).toMatchObject({ state: "packet_complete_pending_review", sourceDate: D, runId });
++    const resultFile = JSON.parse(f.store.putObject.mock.calls[6][4].toString());
++    expect(resultFile).toMatchObject({ asOfUTC: LATER + "T12:40:05.000Z", nativeRetrievedAtUTC: { individual: LATER + "T12:05:20.001Z", onIce: LATER + "T12:05:45.003Z" } });
++  });
++
++  it("refuses unauthorized, unapproved, mismatched and unpinned replay grants on a later real day", async () => {
++    const f = fixture(undefined, LATER); vi.setSystemTime(LATER + "T12:40:00.000Z");
++    const handler = replayHandler(f.store);
++    expect((await callWith(handler, { headers: { authorization: "Bearer other", "content-type": "application/json" } })).statusCode).toBe(403);
++    const other = generateKeyPairSync("ed25519");
++    expect((await callWith(handler, {}, { approval: signed!.approval, signature: sign(null, requestContextApprovalBytes(signed!.approval), other.privateKey).toString("base64") })).body.reason).toBe("approval_invalid");
++    expect((await callWith(handler, {}, { ...signed!, approval: { ...signed!.approval, nativeManifestSHA256: "0".repeat(64) } })).body.reason).toBe("approval_invalid");
++    f.approve({ deploymentId: "dpl_other" }); expect((await callWith(handler)).body.reason).toBe("approval_invalid");
++    f.approve({ sourceDate: "2026-11-18" }); expect((await callWith(handler)).body.reason).toBe("outside_approved_date");
++    f.approve({ sourceDate: LATER }); expect((await callWith(handler)).body.reason).toBe("outside_approved_date");
++    f.approve();
++    for (const pair of [{ sourceDate: D, logicalIngressDay: LATER }, { sourceDate: "2026-11-18", logicalIngressDay: "2026-11-19" }]) {
++      expect((await callWith(replayHandler(f.store, pair))).body.reason).toBe("outside_approved_date");
++    }
++    expect((await callWith(replayHandler(f.store, null))).body.reason).toBe("outside_approved_date");
++    expect(f.store.source).not.toHaveBeenCalled();
++  });
++
++  it("still requires the native run to be closed and claimed on the real ingress day", async () => {
++    const f = fixture(); vi.setSystemTime(LATER + "T12:40:00.000Z");
++    expect((await callWith(replayHandler(f.store))).body.reason).toBe("native_source_unverified");
++    vi.setSystemTime(START); const g = fixture(undefined, LATER); vi.setSystemTime(LATER + "T12:05:30.000Z");
++    expect((await callWith(replayHandler(g.store))).body.reason).toBe("native_source_unverified");
++    expect(f.store.claim).not.toHaveBeenCalled(); expect(g.store.claim).not.toHaveBeenCalled();
++  });
++});
+diff --git a/web/lib/blsh/nativeCaptureV6/requestContextHandler.ts b/web/lib/blsh/nativeCaptureV6/requestContextHandler.ts
+index ff7117e6e..1124a2790 100644
+--- a/web/lib/blsh/nativeCaptureV6/requestContextHandler.ts
++++ b/web/lib/blsh/nativeCaptureV6/requestContextHandler.ts
+@@ -165,10 +165,15 @@ function cronAuthorized(header: string | undefined) {
+ 
+ /** The two values the route takes from its deployment. The default reads the live environment; the BLSH replay route
+  * (lib/blsh/replay) injects an in-memory test key and a store bound to its private sandbox schema. Every check below is
+- * the same for both. */
++ * the same for both, except that the replay also pins one logical date pair for the date gate (replayDateGate). */
+ export interface RequestContextHandlerDeps {
+   approvalPublicKeyPem(): string | undefined;
+   createStore(serviceKey: string): Promise<RequestContextStore>;
++  /** Replay only; the live route has none. Constants, not a clock: when the signed source date equals sourceDate and
++   * logicalIngressDay is the day after it, the outside_approved_date gate compares against logicalIngressDay instead of the
++   * real ingress day. Nothing else reads it: authentication, the approval, the same-day and closure checks on the native
++   * run, the 12-hour deadline, the started-on-ingress-day check and every recorded timestamp stay on real time. */
++  replayDateGate?: Readonly<{ sourceDate: string; logicalIngressDay: string }>;
+ }
+ const LIVE_DEPS: RequestContextHandlerDeps = {
+   approvalPublicKeyPem: () => process.env.BLSH_REQUEST_CONTEXT_APPROVAL_PUBLIC_KEY,
+@@ -196,7 +201,12 @@ export function createRequestContextHandler(deps: RequestContextHandlerDeps) {
+     return res.status(403).json({ state: "refused", reason: "approval_invalid" });
+   }
+   const ingress = Date.now(), day = iso(ingress).slice(0, 10), D = target.sourceDate;
+-  if (day < PILOT_FENCE_FIRST_CAPTURE_DATE || day > SEASON_LAST_DATE || D < SEASON_FIRST_DATE || D !== iso(ingress - DAY_MS).slice(0, 10)) {
++  // The date gate alone may use the replay's pinned logical ingress day, and only for its own pinned source date.
++  const pinned = deps.replayDateGate;
++  const gateAt = pinned && D === pinned.sourceDate && pinned.logicalIngressDay === iso(Date.parse(D) + DAY_MS).slice(0, 10)
++    ? Date.parse(pinned.logicalIngressDay) : ingress;
++  const gateDay = iso(gateAt).slice(0, 10);
++  if (gateDay < PILOT_FENCE_FIRST_CAPTURE_DATE || gateDay > SEASON_LAST_DATE || D < SEASON_FIRST_DATE || D !== iso(gateAt - DAY_MS).slice(0, 10)) {
+     return res.status(200).json({ state: "skipped", reason: "outside_approved_date" });
+   }
+   const dateFrom = iso(Date.parse(D) - 28 * DAY_MS).slice(0, 10);
+diff --git a/web/lib/blsh/replay/hostedReplay.test.ts b/web/lib/blsh/replay/hostedReplay.test.ts
+index 8374e86ea..b5b869402 100644
+--- a/web/lib/blsh/replay/hostedReplay.test.ts
++++ b/web/lib/blsh/replay/hostedReplay.test.ts
+@@ -1,6 +1,6 @@
+ // @vitest-environment node
+ import { afterEach, describe, expect, it, vi } from "vitest";
+-import { createReplayFixtureAdapterV6, NO_SERVICE_KEY, REPLAY_MARK, sandboxContextTransport, sandboxWriterTransport } from "./hostedReplay";
++import { createReplayFixtureAdapterV6, NO_SERVICE_KEY, REPLAY_LOGICAL_INGRESS_DAY, REPLAY_MARK, REPLAY_SOURCE_DATE, sandboxContextTransport, sandboxWriterTransport } from "./hostedReplay";
+ 
+ const api = { url: "https://fyhftlxokyjtpndbkfse.supabase.co", anonKey: "anon-key", token: "sandbox-token" };
+ const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
+@@ -83,3 +83,11 @@ describe("BLSH replay fixture adapter", () => {
+     expect(values[1]).toMatchObject({ kind: "admission", source: REPLAY_MARK });
+   });
+ });
++
++describe("BLSH replay date pins", () => {
++  it("pins the context date gate to the slate's logical ingress day, the day after the source date", () => {
++    expect(REPLAY_SOURCE_DATE).toBe("2026-11-19");
++    expect(REPLAY_LOGICAL_INGRESS_DAY).toBe("2026-11-20");
++    expect(Date.parse(REPLAY_LOGICAL_INGRESS_DAY) - Date.parse(REPLAY_SOURCE_DATE)).toBe(86_400_000);
++  });
++});
+diff --git a/web/lib/blsh/replay/hostedReplay.ts b/web/lib/blsh/replay/hostedReplay.ts
+index 7e4a7467a..cd04fc6cd 100644
+--- a/web/lib/blsh/replay/hostedReplay.ts
++++ b/web/lib/blsh/replay/hostedReplay.ts
+@@ -4,7 +4,9 @@
+  * held ledger readers, inside one cron-authenticated request. Exactly four things are substituted:
+  *   1. input transport: a fixture adapter serves the hash-pinned frozen bytes; it opens no connection. Every transport and
+  *      admission record it produces says "replay-fixture", and its TLS facts are unauthorized placeholders;
+- *   2. the gate clock: only the native handler's window gate sees 2026-11-20T12:05:03Z (the slate's v6 window); all else is real time;
++ *   2. the two date gates: only the native handler's window gate sees 2026-11-20T12:05:03Z (the slate's v6 window), and only the
++ *      request-context handler's outside_approved_date gate compares against the logical ingress day 2026-11-20 (constants, no
++ *      clock). Auth, deadlines, same-day checks, eligibility and every timestamp are real time, so the replay can run on any day;
+  *   3. keys: the request-context approval is signed by an Ed25519 key generated in memory for this request only;
+  *   4. storage: both stores reach the private sandbox (Data API schema blsh_replay_api) with the sandbox token. The service-role
+  *      key is never read; the stores receive a placeholder string and the sandbox transports discard their auth headers.
+@@ -29,6 +31,8 @@ import { createRequestContextStore, type ContextTransport } from "../nativeCaptu
+ export const REPLAY_MARK = "replay-fixture";
+ export const REPLAY_SOURCE_DATE = "2026-11-19";
+ export const REPLAY_GATE_CLOCK_START = Date.parse("2026-11-20T12:05:03Z");
++/** The slate's logical ingress day (source date + 1): the request-context date gate's pinned comparison day on this path only. */
++export const REPLAY_LOGICAL_INGRESS_DAY = new Date(REPLAY_GATE_CLOCK_START).toISOString().slice(0, 10);
+ export const REPLAY_API_SCHEMA = "blsh_replay_api";
+ export const REPLAY_RECEIPT_KEYS = Object.freeze({ native: "hosted-replay-2026-11-19-native", context: "hosted-replay-2026-11-19-context" });
+ /** fixtures/FIXTURES.json of refs/rc/blsh-v6-replay-20261120 (Drive envelope f2525c71...): the only bytes the adapter serves. */
+@@ -192,7 +196,7 @@ function writeExport(dir: string, part: { run: Record<string, unknown>; objects:
+ }
+ 
+ async function heldReaders(exported: { native?: Parameters<typeof writeExport>[1]; context?: Parameters<typeof writeExport>[1] },
+-  pins: { sourceDate: string; deploymentId: string; gitCommitSha: string; nativeManifestSHA256?: string }) {
++  pins: { sourceDate: string; deploymentId: string; gitCommitSha: string; nativeManifestSHA256?: string; replayCaptureDay: string }) {
+   const root = mkdtempSync(join(tmpdir(), "blsh-replay-"));
+   const out: Record<string, unknown> = {};
+   try {
+@@ -204,7 +208,8 @@ async function heldReaders(exported: { native?: Parameters<typeof writeExport>[1
+     if (exported.context) {
+       writeExport(join(root, "context"), exported.context);
+       const contextPins = { sourceDate: pins.sourceDate, nativeRunId: String(exported.native.run.run_id), nativeManifestSHA256: String(pins.nativeManifestSHA256),
+-        runId: String(exported.context.run.run_id), manifestSHA256: String(exported.context.run.manifest_sha256), deploymentId: pins.deploymentId, gitCommitSha: pins.gitCommitSha };
++        runId: String(exported.context.run.run_id), manifestSHA256: String(exported.context.run.manifest_sha256), deploymentId: pins.deploymentId, gitCommitSha: pins.gitCommitSha,
++        replayCaptureDay: pins.replayCaptureDay };
+       try { out.context = { ok: true, receipt: readRequestContextV6Export(join(root, "context"), contextPins).receipt }; }
+       catch (error) { out.context = { ok: false, error: (error as Error).message?.slice(0, 200) }; }
+     }
+@@ -303,20 +308,27 @@ export async function runReplayContext(ctx: ReplayContext) {
+     const contextHandler = createRequestContextHandler({
+       approvalPublicKeyPem: () => publicKey.export({ type: "spki", format: "pem" }).toString().trim(),
+       createStore: async () => createRequestContextStore({ serviceKey: NO_SERVICE_KEY, transport: sandboxContextTransport(ctx.api) }),
++      replayDateGate: { sourceDate: REPLAY_SOURCE_DATE, logicalIngressDay: REPLAY_LOGICAL_INGRESS_DAY },
+     });
+     const tamperedGrant = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization, tampered));
++    // Refused before any I/O: a grant from a key this route does not hold, and a correctly signed grant for another date.
++    const otherKey = generateKeyPairSync("ed25519").privateKey;
++    const unapprovedGrant = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization,
++      Buffer.from(JSON.stringify({ approval, signature: sign(null, requestContextApprovalBytes(approval), otherKey).toString("base64") }))));
++    const mismatchedDateGrant = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization, grant({ ...approval, sourceDate: "2026-11-18" })));
+     // The live route with this test-key grant: no live key (skipped) or a different live key (approval_invalid); never I/O.
+     const liveRouteWithTestGrant = await invokeHandler(liveRequestContextHandler, rawJsonRequest(ctx.cronAuthorization, grant(approval)));
+     const valid = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization, grant(approval)));
+     mark("context");
+     const after = await exportSandbox(ctx.api);
+     const readers = await heldReaders({ native: after.native ?? undefined, context: after.context ?? undefined },
+-      { sourceDate: REPLAY_SOURCE_DATE, deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, nativeManifestSHA256: after.native?.run.manifest_sha256 ?? undefined });
++      { sourceDate: REPLAY_SOURCE_DATE, deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, nativeManifestSHA256: after.native?.run.manifest_sha256 ?? undefined,
++        replayCaptureDay: new Date(ctx.enteredAt).toISOString().slice(0, 10) });
+     mark("readers");
+-    return { context: { tamperedGrant, liveRouteWithTestGrant, grant: valid }, readers, summary: summarize(after) };
++    return { context: { tamperedGrant, unapprovedGrant, mismatchedDateGrant, liveRouteWithTestGrant, grant: valid }, readers, summary: summarize(after) };
+   });
+   const receipt = { version: "fhfh.blsh.hosted-replay-receipt.v1", stage: "context", label: REPLAY_MARK, sourceDate: REPLAY_SOURCE_DATE,
+-    deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, ...result, timings, ...outboundSummary(outbound) };
++    deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, logicalIngressDay: REPLAY_LOGICAL_INGRESS_DAY, ...result, timings, ...outboundSummary(outbound) };
+   const receiptWritten = await storeReceipt(ctx, REPLAY_RECEIPT_KEYS.context, receipt, result.summary.context !== null);
+   timings.total = Date.now() - ctx.enteredAt;
+   return { ...receipt, receiptWritten };
+diff --git a/web/scripts/blsh/readRequestContextV6.test.ts b/web/scripts/blsh/readRequestContextV6.test.ts
+index d92b07246..82d7ab04f 100644
+--- a/web/scripts/blsh/readRequestContextV6.test.ts
++++ b/web/scripts/blsh/readRequestContextV6.test.ts
+@@ -13,19 +13,22 @@ afterEach(() => { for (const dir of temps.splice(0)) rmSync(dir, { recursive: tr
+ const sourceDate = "2026-11-19", runId = "abcdefab-1234-4567-8abc-123456789abc", nativeRunId = "12345678-1234-4567-8abc-123456789abc";
+ const nativeManifestSHA256 = "9".repeat(64), deploymentId = "dpl_test", gitCommitSha = "a".repeat(40);
+ const identity = { runId, sourceDate, nativeRunId, nativeManifestSHA256 };
+-const claimedAtUTC = "2026-11-20T12:39:59.999999+00:00", asOfUTC = "2026-11-20T12:40:05.000Z";
+-const nativeRetrievedAtUTC = { individual: "2026-11-20T12:05:20.001Z", onIce: "2026-11-20T12:05:45.003Z" };
++const claimedAtUTC = "2026-11-20T12:39:59.999999+00:00", asOfUTC = "2026-11-20T12:40:05.000Z", asOfUTCDefault = asOfUTC;
++const nativeRetrievedAtUTC = { individual: "2026-11-20T12:05:20.001Z", onIce: "2026-11-20T12:05:45.003Z" }, nativeRetrievedDefault = nativeRetrievedAtUTC;
+ const hash = (b: Buffer) => createHash("sha256").update(new Uint8Array(b)).digest("hex");
+ const json = (v: unknown) => Buffer.from(JSON.stringify(v) + "\n");
+-type Change = { file?: (file: string, b: Buffer) => Buffer; result?: Record<string, unknown>; manifest?: Record<string, unknown> };
++type Change = { file?: (file: string, b: Buffer) => Buffer; result?: Record<string, unknown>; manifest?: Record<string, unknown>; day?: string };
+ 
+ function fixture(change: Change = {}) {
++  // Every recorded clock moved to another real day (a hosted replay run later than sourceDate + 1).
++  const at = (value: string) => change.day ? value.replaceAll("2026-11-20T", change.day + "T") : value;
++  const asOfUTC = at(asOfUTCDefault), nativeRetrievedAtUTC = { individual: at(nativeRetrievedDefault.individual), onIce: at(nativeRetrievedDefault.onIce) };
+   const dir = mkdtempSync(join(tmpdir(), "context-v6-readback-"));
+   temps.push(dir);
+   const prefix = ["request-context-v1", sourceDate, runId].join("/");
+   const fileDir = join(dir, "objects", prefix);
+   mkdirSync(fileDir, { recursive: true });
+-  const db = readFileSync(join(__dirname, "../../lib/blsh/nativeCaptureV6/__fixtures__/request-context-v1.sample.json"));
++  const db = Buffer.from(at(readFileSync(join(__dirname, "../../lib/blsh/nativeCaptureV6/__fixtures__/request-context-v1.sample.json")).toString()));
+   const context = JSON.parse(db.toString());
+   const projected = buildRequestFromContextV1(context, { capturedAtUTC: asOfUTC });
+   const files: Record<string, Buffer> = { "DB-CONTEXT.json": db, ...projected.rawFiles, "CURRENT-REQUEST.json": json(projected.request) };
+@@ -44,10 +47,10 @@ function fixture(change: Change = {}) {
+   emit("MANIFEST.json", json({ version: "fhfh.blsh.request-context-manifest.v1", ...identity, files: records, ...change.manifest }));
+   const pins = { ...identity, manifestSHA256: records[7].sha256, deploymentId, gitCommitSha };
+   const run = { run_id: runId, source_date: sourceDate, native_run_id: nativeRunId, native_manifest_sha256: nativeManifestSHA256,
+-    state: "packet_complete_pending_review", reason: null, claimed_at: claimedAtUTC, closed_at: "2026-11-20T12:40:05.000009+00:00",
++    state: "packet_complete_pending_review", reason: null, claimed_at: at(claimedAtUTC), closed_at: at("2026-11-20T12:40:05.000009+00:00"),
+     manifest_sha256: pins.manifestSHA256 };
+   const rows = records.map((r, i) => ({ ordinal: i + 1, path: prefix + "/" + r.file, bytes: r.bytes, sha256: r.sha256, run_id: runId,
+-    written_at: "2026-11-20T12:40:05.00000" + (i + 1) + "+00:00" }));
++    written_at: at("2026-11-20T12:40:05.00000" + (i + 1) + "+00:00") }));
+   function metadata() {
+     writeFileSync(join(dir, "run.json"), JSON.stringify(run));
+     writeFileSync(join(dir, "objects.json"), JSON.stringify(rows));
+@@ -135,3 +138,23 @@ describe("request context export readback", () => {
+     expect(fixture({ file: (file, b) => file === target ? Buffer.from([0xff]) : b }).read).toThrow();
+   });
+ });
++
++describe("request context export readback of a hosted replay run on a later real day", () => {
++  it("accepts it only with the independently pinned replay capture day, and echoes that pin", () => {
++    const f = fixture({ day: "2026-11-21" });
++    expect(f.read).toThrow("context_clock_mismatch");
++    const result = readRequestContextV6Export(f.dir, { ...f.pins, replayCaptureDay: "2026-11-21" });
++    expect(result.receipt).toMatchObject({ ...f.pins, replayCaptureDay: "2026-11-21", claimedAtUTC: "2026-11-21T12:39:59.999999+00:00" });
++    for (const replayCaptureDay of ["2026-11-20", "2026-11-22"]) {
++      expect(() => readRequestContextV6Export(f.dir, { ...f.pins, replayCaptureDay })).toThrow("context_clock_mismatch");
++    }
++    for (const replayCaptureDay of ["2026-11-19", "2026-11-31", "2026-11-21T00:00:00Z", "", "2027-07-01"]) {
++      expect(() => readRequestContextV6Export(f.dir, { ...f.pins, replayCaptureDay })).toThrow("context_date_invalid");
++    }
++  });
++  it("leaves a live export's receipt unchanged without the pin and accepts sourceDate + 1 as an explicit pin", () => {
++    const f = fixture();
++    expect(Object.keys(f.read().receipt)).not.toContain("replayCaptureDay");
++    expect(readRequestContextV6Export(f.dir, { ...f.pins, replayCaptureDay: "2026-11-20" }).receipt.replayCaptureDay).toBe("2026-11-20");
++  });
++});
+diff --git a/web/scripts/blsh/readRequestContextV6.ts b/web/scripts/blsh/readRequestContextV6.ts
+index 01e54debc..1b1b36339 100644
+--- a/web/scripts/blsh/readRequestContextV6.ts
++++ b/web/scripts/blsh/readRequestContextV6.ts
+@@ -11,6 +11,9 @@ import { PILOT_FENCE_FIRST_CAPTURE_DATE, SEASON_FIRST_DATE, SEASON_LAST_DATE } f
+ 
+ export type RequestContextV6Pins = NativeContextTarget & {
+   runId: string; manifestSHA256: string; deploymentId: string; gitCommitSha: string;
++  /** Hosted fixture replay only (lib/blsh/replay, or an operator reading a replay export): the real UTC day the replay ran,
++   * pinned from outside the export. Without it, as for every live packet, the capture day must be sourceDate + 1. */
++  replayCaptureDay?: string;
+ };
+ const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/, SHA = /^[0-9a-f]{64}$/;
+ const COMPLETE = "packet_complete_pending_review", DAY_MS = 86400000;
+@@ -44,12 +47,15 @@ function localFile(root: string, name: string, limit: number, expected?: number)
+ }
+ 
+ export function readRequestContextV6Export(contextExportDir: string, pins: RequestContextV6Pins) {
+-  const { sourceDate, nativeRunId, nativeManifestSHA256, runId, manifestSHA256, deploymentId, gitCommitSha } = pins;
++  const { sourceDate, nativeRunId, nativeManifestSHA256, runId, manifestSHA256, deploymentId, gitCommitSha, replayCaptureDay } = pins;
+   need(matches(sourceDate, /^\d{4}-\d\d-\d\d$/), "context_date_invalid");
+   const sourceMs = Date.parse(sourceDate + "T00:00:00Z");
+   need(Number.isFinite(sourceMs) && day(sourceMs) === sourceDate && sourceDate >= SEASON_FIRST_DATE, "context_date_invalid");
+   const nextDay = day(sourceMs + DAY_MS), dateFrom = day(sourceMs - 28 * DAY_MS);
+   need(nextDay >= PILOT_FENCE_FIRST_CAPTURE_DATE && nextDay <= SEASON_LAST_DATE, "context_date_invalid");
++  need(replayCaptureDay === undefined || (matches(replayCaptureDay, /^\d{4}-\d\d-\d\d$/) && day(Date.parse(replayCaptureDay + "T00:00:00Z")) === replayCaptureDay
++    && replayCaptureDay >= nextDay && replayCaptureDay <= SEASON_LAST_DATE), "context_date_invalid");
++  const captureDay = replayCaptureDay ?? nextDay;
+   need(matches(runId, UUID) && matches(nativeRunId, UUID) && matches(nativeManifestSHA256, SHA) && matches(manifestSHA256, SHA)
+     && matches(deploymentId, /^[A-Za-z0-9_-]{1,128}$/) && matches(gitCommitSha, /^[0-9a-f]{40}$/), "context_target_invalid");
+   const root = realpathSync(contextExportDir);
+@@ -97,7 +103,7 @@ export function readRequestContextV6Export(contextExportDir: string, pins: Reque
+   // PostgreSQL serializes these two original clocks in the statement's session time zone.
+   const snapshot = reviewedEvidenceTime(context.snapshotUTC), statement = reviewedEvidenceTime(context.statementUTC);
+   const captured = timestamp(asOfUTC);
+-  need(day(individual / 1000) === nextDay && day(claimed / 1000) === nextDay && individual <= onIce && onIce <= claimed
++  need(day(individual / 1000) === captureDay && day(claimed / 1000) === captureDay && individual <= onIce && onIce <= claimed
+     && claimed <= snapshot && snapshot <= statement && statement <= captured && captured <= timestamp(sorted[0].written_at)
+     && captured <= individual + 12 * 3600000000 && asOfUTC === new Date(captured / 1000).toISOString(), "context_clock_mismatch");
+   const projected = buildRequestFromContextV1(context, { capturedAtUTC: asOfUTC });
+@@ -116,5 +122,6 @@ export function readRequestContextV6Export(contextExportDir: string, pins: Reque
+     dateFrom, eventThroughDate: sourceDate, snapshotUTC: context.snapshotUTC, statementUTC: context.statementUTC,
+     status: "request_context_readback_pending_review" as const, state: COMPLETE, asOfUTC, claimedAtUTC, closedAtUTC, nativeRetrievedAtUTC,
+     independentlyAccepted: false as const, advancedAdmission: false as const, score: null,
++    ...(replayCaptureDay === undefined ? {} : { replayCaptureDay }),
+   } };
+ }

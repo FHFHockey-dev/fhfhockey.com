@@ -1,0 +1,32 @@
+# Independent Review & Rebase: Sustainability EFF-001 Release Candidate (2026-11-20)
+
+- **Scope:** Independently reviewed Neon's EFF-001 RC patch (`b6b37c6001af3e2e05e62be5f30430bcf6c1c894927009f18c9e5b6d771da9b4`), fixed two migration defects in isolation, and rebased/prepared the corrected EFF-001 patch for Claude's next compatible release on current `origin/master`.
+- **Where:**
+  - Canonical checkout preserved untouched: `/Users/tim/Code/fhfhockey.com` (`octoberBranch` @ `37b83b07c`)
+  - Current `origin/master` (live prod): **`3e360ae4c6bf2aecf10edda6df48a585f7f4b505`** (GitHub Deployments API `Production – fhfhockey` deployment `7947017537`, `state: "success"`, `2026-11-20T16:34:37Z`, `https://fhfhockey-o95npqh80-fhfhockeydevs-projects.vercel.app`)
+  - Latest applied prod migration (`fyhftlxokyjtpndbkfse`): `20261120140104_nst_explicit_scope_audit_lookup.sql`
+  - Rebased standalone EFF-001 on `3e360ae4c`: **`b8f6054ec6eb317dfcce6503d549cef9c9818559`** (tree `37327825f36392ecfbf231eb531102bdd5854119`, branch `chef/sustainability-eff001-3e360ae4c` in `/Users/tim/.gemini/antigravity/brain/6cb101b9-18f5-4aab-80d6-c6bb4d33b25c/scratch/eff001-on-3e360ae4c`)
+  - Combined onto Claude's currently prepared compatible candidate (`refs/rc/blsh-release-guard-a-20261120` = `eb7f9f97cbb4984783e5b08d9f4ffed2ee4d14e3`): **`534722014cd101f9099046e59176205dd15247a6`** (tree `b5dd6c769fe95b73cbb2360096ef1aceb6d318d6`, branch `chef/blsh-guard-eff001-20261120` in `/Users/tim/.gemini/antigravity/brain/6cb101b9-18f5-4aab-80d6-c6bb4d33b25c/scratch/eff001-on-eb7f9f97c`)
+  - Migration file: `supabase/migrations/20261120150000_sustainability_score_inputs_rpc.sql`, SHA-256 `a8c649328d1ef294e167b21833084875041f8363f77566d086a06f571e19b918`
+  - Handoff artifacts (`/Users/tim/.gemini/antigravity/brain/6cb101b9-18f5-4aab-80d6-c6bb4d33b25c/scratch/eff001-handoff-3e360ae4c/`):
+    - `eff001-on-3e360ae4c.patch` — SHA-256 `d6fdeb5ebe058b11feea08366ada37b63827fb01163091573163a2918260744e` (also verified `git apply --check` exit 0 on FORGE attribution RC `91f745191`)
+    - `eff001-on-3e360ae4c.bundle` — SHA-256 `d6469f06c754f16ad27ba0ce16e45d59bd4658d6ae9c296ae12090bc22baf6d1`
+    - `eff001-combined-eb7f9f97c.bundle` — SHA-256 `a509119283d6a28339dbaee41ee53ecbbdbc1977770ea3168bac8daea02980df`
+    - `rollback-20261120150000_sustainability_score_inputs_rpc.sql` — SHA-256 `eb9ad6b9974c642a04b5ec7cbebfc984332dfd44595a0204afe6d3cf90c05743`
+- **Verification completed (all on current `3e360ae4c`-based commits):**
+  - Zero file overlap with `3e360ae4c..eb7f9f97c` (FORGE guard + BLSH re-date/replay) and with `3e360ae4c..91f745191` (FORGE attribution fix).
+  - Migration order verified via real `supabase db push --dry-run` on disposable PG `15.1.1.19` seeded with prod's 163 applied migrations:
+    - `b8f6054ec`: 1 pending (`20261120150000_sustainability_score_inputs_rpc.sql`), exit 0.
+    - `534722014`: 2 pending in strict order (`20261120143000_blsh_official_pilot_redate_20261121.sql` [sha256 `ce14c532…7f7b`] → `20261120150000_sustainability_score_inputs_rpc.sql` [sha256 `a8c64932…b918`]), exit 0.
+  - FORGE producer closure unchanged:
+    - `b8f6054ec`: `d633c57257cfd34e78e2ed4680bbdb86ccc363374dddf0f6eb48db833c921be4` (matches `3e360ae4c`)
+    - `534722014`: `cdf87b73d436f83841e0af9d70fa1bd58df13236e2a1abdb74495eb912a43540` (matches `eb7f9f97c` / `b5a4debc5`)
+  - BLSH `SOURCE_PINS` intact on `534722014`: `reviewNativeV6Packet.mjs` `10/10`, `nativeProcessCaptureBootstrap.ts` `9/9`.
+  - Focused Vitest:
+    - `b8f6054ec`: 43/43 files, 281/281 tests passed.
+    - `534722014`: 50/50 files (Sustainability + BLSH replay/handler/official + FORGE writer guard/registry + cron) 439/439 tests passed, plus `requestContextHandler.test.ts` 28/28 passed.
+  - Typecheck (`npm run typecheck`, `tsc --noEmit`): `b8f6054ec` exit 0; `534722014` exit 0.
+  - Targeted ESLint on 6 changed TS files on `534722014`: 0 errors (1 pre-existing warning on `score.ts:930`); full `npm run lint` on `534722014`: 0 errors (69 pre-existing warnings, exit 0).
+  - Live read-only test of refined production readback SQL query against `fyhftlxokyjtpndbkfse`: executed cleanly on truncated `cron_job_audit.details->>'response'`, returning all 4 offsets (`0, 250, 500, 750`) + persisted coverage (`1000/1000`, `1000/1000`, `1000/1000`, `880/880`, `distinct_versions=1`, `PASS_REBUILT`), with explicit `PASS_NOOP_RETRY` verdict for proven `skipped=true, reason=source_already_processed` retries.
+- **Next step:** Present the exact migration-first approval batch (rollback target = immediately preceding live deployment, currently `3e360ae4c` / deployment `7947017537`, or the FORGE release if FORGE ships first) without deploying independently or delaying FORGE.
+- **Blockers / pending approvals:** Awaiting explicit TJ approval + Claude Chef (`local_23eb6989…`) release-batch scheduling.

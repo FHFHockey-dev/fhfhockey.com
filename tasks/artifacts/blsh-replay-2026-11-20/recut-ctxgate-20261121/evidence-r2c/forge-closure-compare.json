@@ -1,0 +1,17 @@
+{
+ "R2c": {
+  "sha": "c922514df647ca30ae5b64dfa0f0fd32a754aeb1",
+  "verified": true,
+  "closureSha256": "0446100e09f468bc061dbc7049ddc1fddec54237a617d7e63ca4835a66b48223",
+  "moduleCount": 243,
+  "findings": 0
+ },
+ "master": {
+  "sha": "b37a0180d106412ede28cf7b6e5d73c89ffdae7e",
+  "verified": true,
+  "closureSha256": "0446100e09f468bc061dbc7049ddc1fddec54237a617d7e63ca4835a66b48223",
+  "moduleCount": 243,
+  "findings": 0
+ },
+ "closuresEqual": true
+}

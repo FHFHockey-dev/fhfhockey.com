@@ -175,3 +175,9 @@ The NST local ledger lives at `tmpdir()/fhfhockey-nst-budget-<uid>`, so always s
   - 11-17 and 11-18 firings hit the pilot fence: 200 skip.
   - 11-19 12:05Z is part B: read the logs only.
   - Before enabling, the inventory entry and NST registration must land together (L7).
+
+## 2026-11-19 17:26Z
+- The 11-17 wake-up cron fired about 51.5 h late. The guard held: nothing was relayed and the operator stayed idle. **The 11-17 pilot did not run; A2–A4 have lapsed.**
+- v6 part B: **PASS** from the logs (200 skipped:disabled at 12:05Z and 12:20Z). Switch off, runs 0.
+- Next: TJ decides between enabling v6 (L7 landing first) and re-dating the v5 pilot (new candidate, re-review, laptop).
+- Lesson: a session-only CronCreate isn't reliable for a fixed slot.

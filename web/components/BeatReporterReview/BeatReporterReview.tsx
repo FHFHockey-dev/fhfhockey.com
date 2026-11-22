@@ -236,7 +236,7 @@ export default function BeatReporterReview() {
               {card.teams.slice(0, 5).map((team) => (
                 <li key={team.teamAbbrev}>
                   <span className={styles.teamAbbrev}>{team.teamAbbrev}</span>
-                  <span className={styles.bar}><span style={{ width: pct(team.share) }} /></span>
+                  <span className={`${styles.bar} ${card.suggestedTeams.includes(team.teamAbbrev) ? "" : styles.barMuted}`}><span style={{ width: pct(team.share) }} /></span>
                   <span className={styles.muted}>{team.count} · {pct(team.share)}</span>
                 </li>
               ))}

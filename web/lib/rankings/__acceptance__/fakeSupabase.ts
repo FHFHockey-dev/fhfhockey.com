@@ -28,7 +28,7 @@ export function createFakeSupabase(db: FakeDb) {
     let limitCount: number | null = null;
     db.calls.push({ table, filters });
 
-    function resolveRows() {
+    function resolveRows(paginate = true) {
       let rows = [...(db.tables[table] ?? [])].filter((row) =>
         filters.every(([method, key, value]) => {
           const field = row[key];
@@ -67,13 +67,33 @@ export function createFakeSupabase(db: FakeDb) {
           return 0;
         });
       }
+      if (!paginate) return rows;
       if (rangeFrom != null) rows = rows.slice(rangeFrom, (rangeTo ?? rows.length - 1) + 1);
       if (limitCount != null) rows = rows.slice(0, limitCount);
       return rows;
     }
 
     const query: Record<string, unknown> = {};
-    query.select = () => query;
+    let countRequested = false;
+    let head = false;
+    query.select = (_fields?: string, options?: { count?: string; head?: boolean }) => {
+      countRequested = options?.count === "exact";
+      head = options?.head === true;
+      return query;
+    };
+    query.match = (values: Record<string, unknown>) => {
+      for (const [key, value] of Object.entries(values)) filters.push(["eq", key, value]);
+      return query;
+    };
+    query.upsert = async (rows: Array<Record<string, unknown>>, options: { onConflict: string; count?: string }) => {
+      const keys = options.onConflict.split(",");
+      for (const row of rows) {
+        const stored = db.tables[table].find(other => keys.every(key => row[key] === other[key]));
+        if (stored) Object.assign(stored, row);
+        else db.tables[table].push({ ...row });
+      }
+      return { error: null, count: options.count === "exact" ? rows.length : null };
+    };
     for (const method of ["eq", "neq", "gte", "gt", "lte", "lt", "in", "is"]) {
       query[method] = (key: string, value: unknown) => {
         filters.push([method, key, value]);
@@ -105,7 +125,7 @@ export function createFakeSupabase(db: FakeDb) {
     query.then = (
       resolve: (value: { data: unknown; error: null }) => unknown,
       reject?: (reason: unknown) => unknown,
-    ) => Promise.resolve({ data: resolveRows(), error: null }).then(resolve, reject);
+    ) => Promise.resolve({ data: head ? null : resolveRows(), error: null, count: countRequested ? resolveRows(false).length : null }).then(resolve, reject);
     return query as any;
   }
   return { from };

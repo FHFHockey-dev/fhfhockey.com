@@ -1,0 +1,12 @@
+HTTP/2 200 
+cache-control: public, max-age=0, must-revalidate
+content-type: application/json; charset=utf-8
+date: Sat, 21 Nov 2026 18:15:33 GMT
+etag: "9io46mk62r83k"
+server: Vercel
+strict-transport-security: max-age=63072000
+x-matched-path: /api/v1/db/run-projection-v2
+x-vercel-cache: BYPASS
+x-vercel-id: cle1::iad1::cfpll-1795284823630-de503f37acb6
+content-length: 10496
+

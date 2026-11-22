@@ -1,0 +1,102 @@
+{
+  "summary": {
+    "rowsUpserted": 0,
+    "processedPlayers": 0,
+    "playersWithRows": 0,
+    "coverageWarnings": 0,
+    "suspiciousOutputWarnings": 0,
+    "unknownGameIds": 0,
+    "freshnessBlockers": 0,
+    "sourceTracking": {
+      "missingSources": {
+        "counts": 0,
+        "rates": 0,
+        "countsOi": 0,
+        "pp": 0,
+        "ppUnit": 0,
+        "line": 0,
+        "lineAssignment": 0,
+        "knownGameId": 0
+      },
+      "wgoFallbacks": {
+        "goals": 0,
+        "assists": 0,
+        "primary_assists": 0,
+        "secondary_assists": 0,
+        "shots": 0,
+        "hits": 0,
+        "blocks": 0,
+        "points": 0,
+        "ixg": 0
+      },
+      "rateReconstructions": {
+        "sog_per_60": 0,
+        "ixg_per_60": 0
+      },
+      "ixgPer60Sources": {
+        "counts_raw": 0,
+        "wgo_raw": 0,
+        "rate_reconstruction": 0,
+        "unavailable": 0
+      },
+      "toiSources": {
+        "counts": 0,
+        "counts_oi": 0,
+        "rates": 0,
+        "fallback": 0,
+        "wgo": 0,
+        "none": 0
+      },
+      "toiFallbackSeeds": {
+        "counts": 0,
+        "counts_oi": 0,
+        "wgo": 0,
+        "none": 0
+      },
+      "toiTrustTiers": {
+        "authoritative": 0,
+        "supplementary": 0,
+        "fallback": 0,
+        "none": 0
+      },
+      "toiWgoNormalizations": {
+        "minutes_to_seconds": 0,
+        "already_seconds": 0,
+        "missing": 0,
+        "invalid": 0
+      },
+      "toiSuspiciousReasons": {
+        "non_finite": 0,
+        "non_positive": 0,
+        "above_max_seconds": 0
+      }
+    },
+    "lastProcessedPlayerId": null,
+    "nextResumeFrom": null,
+    "abandonedPlayerCount": 0,
+    "identityRefusals": [],
+    "totalPlayersAfterResumeFilter": 0,
+    "remainingPlayerCount": 0,
+    "stoppedReason": "complete"
+  },
+  "queries": [
+    {
+      "table": "games",
+      "selected": "id",
+      "filters": {}
+    },
+    {
+      "table": "games",
+      "selected": "id, date, homeTeamId, awayTeamId, seasonId, type",
+      "filters": {}
+    },
+    {
+      "table": "wgo_skater_stats",
+      "selected": "player_id",
+      "filters": {
+        "date>=": "2026-11-20",
+        "date<=": "2026-11-20"
+      }
+    }
+  ]
+}

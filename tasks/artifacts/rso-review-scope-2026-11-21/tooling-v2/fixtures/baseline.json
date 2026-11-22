@@ -1,0 +1,142 @@
+{
+  "players": [
+    {
+      "playerId": 8470001,
+      "gameId": 2026120101,
+      "target": "SHOTS_ON_GOAL",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 20,
+      "seasonTotal": 52,
+      "positionGroup": "F"
+    },
+    {
+      "playerId": 8470002,
+      "gameId": 2026120101,
+      "target": "SHOTS_ON_GOAL",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 3,
+      "seasonTotal": 4,
+      "positionGroup": "D"
+    },
+    {
+      "playerId": 8470003,
+      "gameId": 2026120102,
+      "target": "SHOTS_ON_GOAL",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 15,
+      "seasonTotal": 30,
+      "positionGroup": "F"
+    },
+    {
+      "playerId": 8470004,
+      "gameId": 2026120102,
+      "target": "SHOTS_ON_GOAL",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 18,
+      "seasonTotal": 31,
+      "positionGroup": "F"
+    },
+    {
+      "playerId": 8470001,
+      "gameId": 2026120101,
+      "target": "GOALS",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 20,
+      "seasonTotal": 6,
+      "positionGroup": "F"
+    },
+    {
+      "playerId": 8470002,
+      "gameId": 2026120101,
+      "target": "GOALS",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 3,
+      "seasonTotal": 0,
+      "positionGroup": "D"
+    },
+    {
+      "playerId": 8470003,
+      "gameId": 2026120102,
+      "target": "GOALS",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 15,
+      "seasonTotal": 3,
+      "positionGroup": "F"
+    },
+    {
+      "playerId": 8470004,
+      "gameId": 2026120102,
+      "target": "GOALS",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 18,
+      "seasonTotal": 2,
+      "positionGroup": "F"
+    }
+  ],
+  "groups": [
+    {
+      "gameId": 2026120101,
+      "positionGroup": "F",
+      "target": "SHOTS_ON_GOAL",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 4000,
+      "seasonTotal": 7200
+    },
+    {
+      "gameId": 2026120101,
+      "positionGroup": "D",
+      "target": "SHOTS_ON_GOAL",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 2000,
+      "seasonTotal": 2500
+    },
+    {
+      "gameId": 2026120102,
+      "positionGroup": "F",
+      "target": "SHOTS_ON_GOAL",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 4000,
+      "seasonTotal": 7200
+    },
+    {
+      "gameId": 2026120102,
+      "positionGroup": "D",
+      "target": "SHOTS_ON_GOAL",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 2000,
+      "seasonTotal": 2500
+    },
+    {
+      "gameId": 2026120101,
+      "positionGroup": "F",
+      "target": "GOALS",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 4000,
+      "seasonTotal": 520
+    },
+    {
+      "gameId": 2026120101,
+      "positionGroup": "D",
+      "target": "GOALS",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 2000,
+      "seasonTotal": 100
+    },
+    {
+      "gameId": 2026120102,
+      "positionGroup": "F",
+      "target": "GOALS",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 4000,
+      "seasonTotal": 520
+    },
+    {
+      "gameId": 2026120102,
+      "positionGroup": "D",
+      "target": "GOALS",
+      "cutoffAt": "2026-12-01T15:00:00Z",
+      "gamesPlayed": 2000,
+      "seasonTotal": 100
+    }
+  ]
+}

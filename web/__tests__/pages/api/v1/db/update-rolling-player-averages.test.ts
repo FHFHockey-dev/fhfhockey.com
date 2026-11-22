@@ -177,6 +177,48 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
     expect(mainMock).not.toHaveBeenCalled();
   });
 
+  it("audits a terminal Rankings repair only for a complete one-date 5v5 write", async () => {
+    const url = "/api/v1/db/update-rolling-player-averages";
+    const query = {
+      startDate: "2026-11-15", endDate: "2026-11-15", season: "20262027",
+      executionProfile: "targeted_repair", strength: "5v5", ignoreOffSeason: "true",
+    };
+    const terminal = { stoppedReason: "complete", remainingPlayerCount: 0, abandonedPlayerCount: 0 };
+    vi.stubEnv("CRON_SECRET", "test-cron-secret");
+    try {
+      const cases = [
+        [{}, {}],
+        [{ maxPlayers: "25" }, {}],
+        [{ resumeFrom: "8478000" }, {}],
+        [{ dryRunUpsert: "true" }, {}],
+        [{ playerId: "8478000" }, {}],
+        [{ endDate: "2026-11-16" }, {}],
+        [{ strength: "ev" }, {}],
+        [{}, { stoppedReason: "runtime_budget", remainingPlayerCount: 1 }],
+        [{}, { abandonedPlayerCount: 1 }],
+      ] as const;
+      for (const [index, [params, result]] of cases.entries()) {
+        mainMock.mockResolvedValueOnce(createRollingRunSummary({ ...terminal, ...result }));
+        const res = createMockRes();
+        await protectedHandler({
+          method: "GET", headers: { authorization: "Bearer test-cron-secret" },
+          query: { ...query, ...params }, url,
+        } as any, res);
+        const audit = auditInsertMock.mock.calls.at(-1)?.[0];
+        if (index === 0) {
+          expect(res.body).toMatchObject({ rankingSourceDate: query.startDate, rankingSourceSeason: 20262027 });
+          expect(audit.details.responseOutcome).toMatchObject({
+            success: true, rankingSourceDate: query.startDate, rankingSourceSeason: 20262027,
+          });
+        } else {
+          expect(audit.details.responseOutcome).not.toHaveProperty("rankingSourceDate");
+        }
+      }
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("returns 405 for unsupported methods", async () => {
     const req: any = {
       method: "DELETE",

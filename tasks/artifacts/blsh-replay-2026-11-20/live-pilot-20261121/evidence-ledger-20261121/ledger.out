@@ -1,0 +1,20 @@
+max_version|20261121205959
+
+
+
+
+
+recent|20261120140104|nst_explicit_scope_audit_lookup|c30194db5fc56e8bae02fdaabcd552f464401419da401853c8fe0adef29e97f0
+recent|20261121184000|yahoo_players_with_trend_history|50b852eeb4d259637bd7314d20c7423ed318d05df2357d0ea9e635e9fe0990fb
+recent|20261121190000|sync_tweet_review_sources_keep_delivery_time|dc5e31264aac98e721542b6a3dbe3c578efb330daccb5d41ce91c49729519a26
+recent|20261121205959|luna_fxtwitter_receipts|3b2de2e434ac5ffa88815c21bf77bddc7f22b9e1dcc52ecdad1c36a6d7984126
+pilot_present|0
+capture_enabled|false
+job|404|blsh-native-capture|5 12 * * *|true
+job|405|blsh-native-capture-backup|20 12 * * *|true
+job|406|blsh-native-capture-watchdog|50 12 * * *|true
+job|407|blsh-native-capture-watchdog-assert|52 12 * * *|true
+job|408|forge-pregame-hosted-dispatch|* * * * *|false
+ERROR:  relation "public.forge_live_runs" does not exist
+LINE 1: select 'forge_live_open|'||count(*) from public.forge_live_r...
+                                                 ^

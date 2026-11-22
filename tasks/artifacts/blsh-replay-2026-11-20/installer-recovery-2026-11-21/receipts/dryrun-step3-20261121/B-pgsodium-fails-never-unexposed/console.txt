@@ -1,0 +1,20 @@
+19:43:54Z notify pgrst sent
+19:43:54Z exposed: The schema must be one of the following: public, storage, graphql_public, analytics, blsh_replay_api
+Legacy JWT secret (hidden input, not stored): 
+19:43:55Z token minted (23 h, role blsh_replay_api); the secret was held only by the minting process
+19:43:56Z kit probes exit 0
+Traceback (most recent call last):
+  File [35m"<string>"[0m, line [35m7[0m, in [35m<module>[0m
+    print(json.dumps({"probe": name, "who": who, "http": int(http), "code": [1;31md.get[0m("code"), "ok": ok, "expect": "406 PGRST106", "message": (d.get("message") or "")[:160]}))
+                                                                            [1;31m^^^^^[0m
+[1;35mAttributeError[0m: [35m'list' object has no attribute 'get'[0m
+Traceback (most recent call last):
+  File [35m"<string>"[0m, line [35m7[0m, in [35m<module>[0m
+    print(json.dumps({"probe": name, "who": who, "http": int(http), "code": [1;31md.get[0m("code"), "ok": ok, "expect": "406 PGRST106", "message": (d.get("message") or "")[:160]}))
+                                                                            [1;31m^^^^^[0m
+[1;35mAttributeError[0m: [35m'list' object has no attribute 'get'[0m
+19:43:56Z pgsodium probes failures: 2
+19:43:56Z FAIL: probes failed (kit exit 0, pgsodium failures 2) -> cleanup
+19:43:56Z no token in Vercel
+19:43:56Z ACTION FOR TJ: remove blsh_replay_api from Supabase → Data API → Exposed schemas now (keep the other four). Waiting up to 8s.
+19:44:04Z CLEANUP INCOMPLETE: still exposed (The schema must be one of the following: public, storage, graphql_public, analytics, blsh_replay_api). Sandbox NOT reset. Unexpose, then tell Chef to run reset.sql.

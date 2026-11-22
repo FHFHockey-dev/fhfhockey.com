@@ -6,7 +6,6 @@ import {
   Card,
   CardActions,
   CardContent,
-  CardMedia,
   Typography,
   TextField
 } from "@mui/material";
@@ -15,13 +14,14 @@ import { useAuth } from "contexts/AuthProviderContext";
 
 import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 
-import { TextBanner } from "components/Banner/Banner";
 import Container from "components/Layout/Container";
 import { type GameFinalityInput, resolveGameFinality } from "lib/games/gameFinality";
 import supabase, { doPOST } from "lib/supabase";
 import { useSnackbar } from "notistack";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import AdminPageGate from "components/Admin/AdminPageGate";
+import styles from "./db-index.module.scss";
+import { formatSeason } from "utils/stats/formatters";
 import CronRouteRunner from "components/Admin/CronRouteRunner";
 
 const NST_MANUAL_BACKFILL_DELAY_MS = 21_000;
@@ -757,35 +757,36 @@ function DatabasePage() {
   }, [isAdmin, season?.seasonId]);
 
   return (
-    <Container>
-      <TextBanner text="Supabase Database" />
+    <Container className={styles.page}>
+      <div className={styles.topbar}>
+        <div>
+          <span className={styles.eyebrow}>Admin · Database</span>
+          <h1>Supabase Database</h1>
+        </div>
+        <Link href="/db/runner" className={styles.topLink}>
+          Open the route runner
+        </Link>
+      </div>
 
       <Grid container spacing={2} alignItems="stretch">
         {/* Players / Rosters Table Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%", // Ensures the card fills the Grid item's height
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/playersTable.png" // Local image path
-              title="players table"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 PLAYERS / ROSTERS
               </Typography>
+              <p className={styles.cardFigure}>
+                <strong>{numPlayers.toLocaleString()}</strong> players
+              </p>
               <Typography variant="body2">
-                The table contains the data for {numPlayers} players. The
-                `players` and `rosters` tables will be updated simultaneously.
+                Updates the <code>players</code> and <code>rosters</code> tables together.
               </Typography>
             </CardContent>
             <CardActions>
@@ -797,30 +798,23 @@ function DatabasePage() {
         </Grid>
 
         {/* Seasons Table Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/seasonsTable.png" // Local image path
-              title="seasons table"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 SEASONS
               </Typography>
+              <p className={styles.cardFigure}>
+                <strong>{numSeasons.toLocaleString()}</strong> seasons
+              </p>
               <Typography variant="body2">
-                The table contains the data for {numSeasons} seasons. This card
-                updates the `seasons` table.
+                Updates the <code>seasons</code> table.
               </Typography>
             </CardContent>
             <CardActions>
@@ -832,30 +826,23 @@ function DatabasePage() {
         </Grid>
 
         {/* Teams Table Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/teamsTable.png" // Local image path
-              title="teams table"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 TEAMS
               </Typography>
+              <p className={styles.cardFigure}>
+                <strong>{numTeams.toLocaleString()}</strong> teams
+              </p>
               <Typography variant="body2">
-                The table contains the data for {numTeams} teams. This card
-                updates the `teams` & `team_season` tables.
+                Updates the <code>teams</code> and <code>team_season</code> tables.
               </Typography>
               <TextField
                 label="Season ID (optional)"
@@ -866,19 +853,6 @@ function DatabasePage() {
                 value={teamsSeasonIdInput}
                 onChange={(e) => setTeamsSeasonIdInput(e.target.value)}
                 placeholder="e.g. 20252026"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -890,30 +864,23 @@ function DatabasePage() {
         </Grid>
 
         {/* Games Table Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/gamesTable.png" // Local image path
-              title="games table"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 GAMES
               </Typography>
+              <p className={styles.cardFigure}>
+                <strong>{numGames.toLocaleString()}</strong> games in {season ? `the ${formatSeason(season.seasonId)}` : "this"} season
+              </p>
               <Typography variant="body2">
-                The table contains the data for {numGames} games in{" "}
-                {season?.seasonId} season. This card updates the `games` tables.
+                Updates the <code>games</code> table.
               </Typography>
               <TextField
                 label="Season ID (optional)"
@@ -924,19 +891,6 @@ function DatabasePage() {
                 value={gamesSeasonIdInput}
                 onChange={(e) => setGamesSeasonIdInput(e.target.value)}
                 placeholder="e.g. 20252026"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -948,23 +902,14 @@ function DatabasePage() {
         </Grid>
 
         {/* Stats Table Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/statsTable.png" // Local image path
-              title="stats table"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 STATS
@@ -983,23 +928,14 @@ function DatabasePage() {
         </Grid>
 
         {/* Power Play Timeframes Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/ppTimeframes.png" // Local image path
-              title="power play timeframes"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 PP TIMEFRAMES
@@ -1018,19 +954,6 @@ function DatabasePage() {
                 value={powerPlayInput}
                 onChange={(e) => setPowerPlayInput(e.target.value)}
                 placeholder="Enter game ID or 'all'"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -1042,23 +965,14 @@ function DatabasePage() {
         </Grid>
 
         {/* Line Combinations Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/linesTable.png" // Local image path
-              title="line combinations"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 LINE COMBOS
@@ -1076,23 +990,14 @@ function DatabasePage() {
         </Grid>
 
         {/* Shift Charts Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/shiftsTable.png" // Local image path
-              title="shift charts"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 SHIFT CHARTS
@@ -1110,19 +1015,6 @@ function DatabasePage() {
                 value={shiftChartsInput}
                 onChange={(e) => setShiftChartsInput(e.target.value)}
                 placeholder="Enter game ID or 'all'"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -1134,23 +1026,14 @@ function DatabasePage() {
         </Grid>
 
         {/* NST Team Stats Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/nstTables.png" // Replace with an appropriate image URL
-              title="NST Team Stats"
-            />
             <CardContent>
               <Typography gutterBottom variant="h5" component="div">
                 NST Team Stats
@@ -1162,7 +1045,7 @@ function DatabasePage() {
                 offseason gaps.
               </Typography>
               {pendingNstBackfill ? (
-                <Typography variant="body2" sx={{ mt: 1, color: "#07aae2" }}>
+                <Typography variant="body2" className={styles.pendingNote}>
                   Pending NST {pendingNstBackfill.mode} backfill:
                   {" "}
                   start={pendingNstBackfill.startDate}, cursor=
@@ -1179,19 +1062,6 @@ function DatabasePage() {
                 value={nstTeamStatsInput}
                 onChange={(e) => setNstTeamStatsInput(e.target.value)}
                 placeholder="YYYY-MM-DD or all"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                  }
-                }}
               />
               <TextField
                 label="Backward End Date (optional)"
@@ -1202,19 +1072,6 @@ function DatabasePage() {
                 value={nstTeamStatsEndDateInput}
                 onChange={(e) => setNstTeamStatsEndDateInput(e.target.value)}
                 placeholder="YYYY-MM-DD"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -1233,6 +1090,7 @@ function DatabasePage() {
                 Resume Pending
               </Button>
               <Button
+                data-control-variant="danger"
                 size="small"
                 onClick={cancelPendingNstBackfill}
                 disabled={!nstTeamStatsLoading && !pendingNstBackfill}
@@ -1244,30 +1102,21 @@ function DatabasePage() {
         </Grid>
 
         {/* Game Goal Projections Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/expectedGoals.png" // Replace with an appropriate image URL or local path
-              title="Game Goal Projections"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 GAME GOAL PROJECTIONS
               </Typography>
               <Typography variant="body2">
                 Update the legacy game-level projected goals and win odds for
-                all current games. This updates the `expected_goals` table.
+                all current games. This updates the <code>expected_goals</code> table.
               </Typography>
             </CardContent>
             <CardActions>
@@ -1279,24 +1128,14 @@ function DatabasePage() {
         </Grid>
 
         {/* Standings Details Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            {/* (Optional) If you have a relevant image, replace the path below; or omit CardMedia. */}
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/fhfPlaceholder.png"
-              title="standings details"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 STANDINGS DETAILS
@@ -1315,19 +1154,6 @@ function DatabasePage() {
                 value={standingsDetailsInput}
                 onChange={(e) => setStandingsDetailsInput(e.target.value)}
                 placeholder="e.g. 2025-02-10 or 'all'"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -1339,23 +1165,14 @@ function DatabasePage() {
         </Grid>
 
         {isAdmin && (
-          <Grid xs={12} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             <Card
               sx={{
-                border: "5px solid #ff6b6b",
-                borderRadius: "8px",
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-                color: "#fff"
               }}
             >
-              <CardMedia
-                sx={{ height: 140 }}
-                image="/pictures/fhfPlaceholder.png"
-                title="sKO predictions"
-              />
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography gutterBottom variant="h5" component="div">
                   sKO PREDICTIONS
@@ -1375,19 +1192,6 @@ function DatabasePage() {
                   value={skoAsOfInput}
                   onChange={(e) => setSkoAsOfInput(e.target.value)}
                   placeholder="2025-01-05"
-                  sx={{
-                    backgroundColor: "#202020",
-                    border: "1px solid #ff6b6b",
-                    borderRadius: "4px",
-                    "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                      {
-                        color: "#ff6b6b",
-                        fontWeight: "900",
-                        textTransform: "uppercase",
-                        backgroundColor: "#202020",
-                        margin: "1px"
-                      }
-                  }}
                 />
               </CardContent>
               <CardActions>
@@ -1405,25 +1209,16 @@ function DatabasePage() {
 
         {/* New Card/Button to link to the CSV Upsert Page */}
         {isAdmin && ( // Only show this card/link if user is admin
-          <Grid xs={12} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             {" "}
             {/* Adjust grid size as needed */}
             <Card
               sx={{
-                border: "5px solid #4caf50", // Different color for distinction
-                borderRadius: "8px",
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-                color: "#fff"
               }}
             >
-              <CardMedia
-                sx={{ height: 140 }}
-                image="/pictures/csvImportIcon.png" // Add a relevant icon/image
-                title="CSV Projection Importer"
-              />
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography gutterBottom variant="h5" component="div">
                   CSV PROJECTION IMPORTER
@@ -1452,24 +1247,10 @@ function DatabasePage() {
         {isAdmin && (
           <Grid xs={12}>
             <CronRouteRunner />
-            <Link href="/db/runner" passHref legacyBehavior>
-              <Button component="a" variant="contained" color="warning" sx={{ mt: 1 }}>
-                Long runs: open the route runner
-              </Button>
-            </Link>
           </Grid>
         )}
       </Grid>
 
-      <Button
-        onClick={async () => {
-          console.log("click clll");
-          const { data } = await supabase.from("goaliesGameStats").select("*");
-          console.log(data);
-        }}
-      >
-        Snackbar
-      </Button>
     </Container>
   );
 }

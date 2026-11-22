@@ -1,0 +1,4 @@
+execute_sql|postgres|t|t
+definer_dynamic_sql|execute_sql(text)|postgres
+service_role|f|f|t|
+fhfh_internal|postgres|f|0

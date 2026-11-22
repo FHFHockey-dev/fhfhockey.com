@@ -1,0 +1,90 @@
+{
+  "candidate": "f886ddac731ae825a12fab915848d2b5fd7d9b8c",
+  "tree": "09ef9bf0662e14cd80fa60cee25c70a988e5c748",
+  "verifiedWebFiles": 246,
+  "sourceHashes": {
+    "lib/projections/run-forge-projections.ts": "4e4ae7e352bfca0f19b25d484061654abe160cbff71274ab377c5af049222342",
+    "lib/projections/inputCapture.ts": "5018b675840b4f935ed77b27e4caa0b6105efa6a7afc24ceac6505317ea58d0a",
+    "lib/projections/pregameCapture/packet.ts": "bb4e372e574cf495dea3cf6c4522c808b4b55bf5ae9da1d3c252121259dc8918",
+    "lib/projections/queries/skater-queries.ts": "e7328505fa7cd1b08cd44e1df55a4b57de9ce0bf3219a6a7bb3f2bfb6544f7f2",
+    "package-lock.json": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378"
+  },
+  "image": "sha256:4203f88e88cc028b6bb78804c6d62ec6b117c31ce7be048b21621a4cc62067ff",
+  "runtime": {
+    "kernel": "6.18.57",
+    "arch": "x64",
+    "node": "v22.23.4",
+    "uid": 999,
+    "interfaces": [
+      "lo"
+    ],
+    "ipv4Routes": 0,
+    "dockerNetwork": "none"
+  },
+  "gameId": 2026020336,
+  "captureLabel": "83750b4abd672399113659b96c279a1ddaeb425b",
+  "input": {
+    "rawSha256": "3a76caf5e5ad1485d3638ae13b8a2a432dd7578703ea09a188608029ff4d4a9b",
+    "canonicalSha256": "bf9041ca164e2cef73ee984237560caab82181892ad2b62e85fa0b34c0822d56",
+    "bytes": 187301,
+    "recordedReads": 187
+  },
+  "clock": {
+    "anchor": "2026-11-17T22:44:23.933Z",
+    "statedCutoff": "2026-11-17T22:44:22.933000Z",
+    "start": "2026-11-18T00:00:00+00:00",
+    "elapsedTimeAdvances": true
+  },
+  "observer": {
+    "originalSha256": "5018b675840b4f935ed77b27e4caa0b6105efa6a7afc24ceac6505317ea58d0a",
+    "instrumentedSha256": "69f2a7f1c224ca8e2b0a4414d448c60c55417c7ad77a9713eab562816f37f809",
+    "markerMatches": 1
+  },
+  "environment": {
+    "restoredKeys": [
+      "FORGE_SKATER_MODEL_MODE",
+      "NHL_XG_MODEL_VERSION",
+      "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION",
+      "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION",
+      "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES",
+      "STARTER_BOARD_COMPUTE_ENABLED",
+      "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED",
+      "START_CHART_GAME_REVISIONS"
+    ],
+    "requiredKeys": [
+      "FORGE_RESERVE_PASS_ENABLED",
+      "FORGE_SKATER_MODEL_MODE",
+      "NHL_XG_MODEL_VERSION",
+      "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION",
+      "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION",
+      "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES",
+      "STARTER_BOARD_COMPUTE_ENABLED",
+      "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED",
+      "START_CHART_GAME_REVISIONS"
+    ],
+    "missingKeys": [
+      "FORGE_RESERVE_PASS_ENABLED"
+    ],
+    "recordedHash": "884e5e477245be45cc6097a7fc793ceef3fc9ef94c8dff23c89100d2ae80ccf6",
+    "candidateHash": "f8e07238dc47400aecc8168af7c16c8490926cc60d61aa60741e5fadc76f0386"
+  },
+  "status": "blocked_missing_model_metadata",
+  "error": "FORGE pregame packet code or model environment mismatch.",
+  "matchedReads": 0,
+  "unmatchedRequest": null,
+  "calculationStarted": false,
+  "projectionWrites": 0,
+  "execution": {
+    "command": "cd /workspace/scratch/forge-preflight/historical-replay && bash run.sh > receipt.json 2> run.stderr",
+    "exitCode": 20,
+    "gate": "computeForgePregamePublication model-environment hash comparison",
+    "candidateSourceLine": 720,
+    "queryMisses": 0,
+    "queriesConsumed": 0,
+    "computeScopeGateReached": false,
+    "calculationEntered": false,
+    "syntheticInputsUsed": false,
+    "recordedComputeSettingRestoredBeforeImport": true
+  },
+  "evidenceArchiveSha256": "e7d3d48f950e6daf0ecd2170eec81f33423b722269b0be0560d9073a28568abb"
+}

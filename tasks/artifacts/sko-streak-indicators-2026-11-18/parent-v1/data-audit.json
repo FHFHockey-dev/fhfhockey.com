@@ -1,0 +1,50 @@
+{
+  "pilot_rows_reconciled": 35246,
+  "pilot_gaps_with_intervening_gp": 0,
+  "pilot_ordinal_resets": 549,
+  "nst_unmatched_regular_date_rows_outside_wgo_cohort": 128,
+  "nst_unmatched_ids": [
+    8458828,
+    8484121
+  ],
+  "raw_nst_match": 47135,
+  "nst_individual_gate_pass": 47003,
+  "nst_pilot_count_gate_pass": 35087,
+  "nst_pilot_onice_gate_pass": 35116,
+  "pilot_materialized_at": [
+    "2025-09-26 08:00:00.050318+00:00"
+  ],
+  "game_rows": 47224,
+  "players": 920,
+  "official_games": 1312,
+  "season": 20242025,
+  "short_team_sheets": 8,
+  "uncertain_continuity_resets": 19,
+  "team_changes": 107,
+  "state_counts": {
+    "neutral": 23692,
+    "unavailable": 19066,
+    "hot": 2401,
+    "cold": 2065
+  },
+  "episodes": 1601,
+  "phase_memberships": 29779,
+  "raw_support": {
+    "team_id": 47224,
+    "shots": 47224,
+    "goals": 47224,
+    "assists": 47224,
+    "toi_per_game": 47224,
+    "es_toi_per_game": 47224,
+    "pp_toi": 47224,
+    "total_primary_assists": 47224,
+    "total_secondary_assists": 47224,
+    "missed_shots": 35246,
+    "nst_ixg": 47003,
+    "nst_toi": 47003,
+    "nst_icf": 35087,
+    "nst_hdcf": 35087,
+    "nst_oi_gf": 35116,
+    "nst_oi_sf": 35116
+  }
+}

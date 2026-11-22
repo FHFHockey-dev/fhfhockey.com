@@ -312,7 +312,7 @@ const PlayerAliasesReview = () => {
                 <div><p className={styles.eyebrow}>Work queue</p><h2>{pendingNames.length} names to review</h2></div>
               </div>
               <ol className={styles.queueList}>
-                {pendingNames.map((name) => <li key={name.id} className={name.id === selectedUnresolvedId ? styles.current : undefined}><button type="button" onClick={() => selectName(name)}>{name.raw_name}<span>{name.team_abbreviation}{getReviewTargetLabel(name) ? ` · ${getReviewTargetLabel(name)}` : ""}{name.metadata?.identityResolved ? " · identity saved" : ""}</span></button></li>)}
+                {pendingNames.map((name) => <li key={name.id} className={name.id === selectedUnresolvedId ? styles.current : undefined}><button type="button" onClick={() => selectName(name)}>{name.raw_name}<span>{[name.team_abbreviation, getReviewTargetLabel(name), name.metadata?.identityResolved ? "identity saved" : null].filter(Boolean).join(" · ")}</span></button></li>)}
               </ol>
               {resolvedNames.length ? <p className={styles.resolvedSummary}>✓ {resolvedNames.length} resolved in this queue</p> : null}
             </aside>
@@ -349,6 +349,17 @@ const PlayerAliasesReview = () => {
               />
             </label>}
 
+            <div className={styles.decisionRow}>
+            <section className={styles.reviewNotes} aria-label="Review notes">
+              <span className={styles.reviewNotesLabel}>Review notes</span>
+              {selectedUnresolved.review ? <p>Source date: {selectedUnresolved.review.sourceDate ?? "unknown"} · season: {selectedUnresolved.review.seasonId ?? "unknown"} · recorded team: {selectedUnresolved.team_abbreviation ?? selectedUnresolved.team_id ?? "unknown"}. {selectedUnresolved.review.scopeMessage} {selectedUnresolved.review.preferenceReason}</p> : <p>Current team labels are shown for reference; they do not establish membership at the source date.</p>}
+              {inferredOccurrence && <p>Assignment applies only to the highlighted mention.</p>}
+              {unverifiedSuggestions.length > 0 && <p>Suggested players without verified membership at the source time · {unverifiedSuggestions.join(", ")}</p>}
+              {occurrenceMode && !inferredOccurrence && !splitMode && <p>This surname has multiple identities. Assign this occurrence only; no blanket surname alias will be learned.</p>}
+              {selectedUnresolved.metadata?.reviewKind && <p>Review reason: {selectedUnresolved.metadata.reviewKind.replace(/_/g, " ")}.</p>}
+              {selectedUnresolved.metadata?.reviewKind === "invalid_extraction" && <p>This may contain several players or non-player text. <a href="/db/tweet-pattern-review">Review tweet parsing</a> before creating an alias.</p>}
+            </section>
+            <div className={styles.decisionColumn}>
             <label className={styles.field}>
               {inferredOccurrence ? "Search suggested players" : "Search all players by name or NHL ID"}
               <input value={playerSearch} onChange={(event) => setPlayerSearch(event.target.value)} />
@@ -362,12 +373,6 @@ const PlayerAliasesReview = () => {
             {!inferredOccurrence && playerSearch.trim() && unlinkedProspects.filter((player) => player.canonical_name.toLowerCase().includes(playerSearch.trim().toLowerCase())).slice(0, 20).map((player) => (
               <p key={player.id}>{player.canonical_name} — verified prospect; NHL ID is not linked yet. Enter an NHL ID above to verify the link.</p>
             ))}
-            {selectedUnresolved.review ? <p>Source date: {selectedUnresolved.review.sourceDate ?? "unknown"} · season: {selectedUnresolved.review.seasonId ?? "unknown"} · recorded team: {selectedUnresolved.team_abbreviation ?? selectedUnresolved.team_id ?? "unknown"}. {selectedUnresolved.review.scopeMessage} {selectedUnresolved.review.preferenceReason}</p> : <p>Current team labels are shown for reference; they do not establish membership at the source date.</p>}
-            {inferredOccurrence && <p>Assignment applies only to the highlighted mention.</p>}
-            {unverifiedSuggestions.length > 0 && <p>Suggested players without verified membership at the source time · {unverifiedSuggestions.join(", ")}</p>}
-            {occurrenceMode && !inferredOccurrence && !splitMode && <p>This surname has multiple identities. Assign this occurrence only; no blanket surname alias will be learned.</p>}
-            {selectedUnresolved.metadata?.reviewKind && <p>Review reason: {selectedUnresolved.metadata.reviewKind.replace(/_/g, " ")}.</p>}
-            {selectedUnresolved.metadata?.reviewKind === "invalid_extraction" && <p>This may contain several players or non-player text. <a href="/db/tweet-pattern-review">Review tweet parsing</a> before creating an alias.</p>}
             {!splitMode && <label className={styles.field}>
               Match player
               <select
@@ -387,14 +392,15 @@ const PlayerAliasesReview = () => {
               </select>
             </label>}
 
-            {!splitMode && !occurrenceMode && membershipReviewEnabled && <label>
+            {!splitMode && !occurrenceMode && membershipReviewEnabled && <label className={styles.field}>
               Verified NHL camp roster URL (optional)
               <input type="url" value={membershipSourceUrl} onChange={(event) => setMembershipSourceUrl(event.target.value)} />
               <span>Supply an NHL.com source only after verifying this player belongs to the reported team’s camp. Saving records camp membership for 30 days and preserves historical rosters.</span>
             </label>}
 
-            <div style={{ display: "flex", gap: 12 }}>
+            <div className={styles.actionRow}>
               {!splitMode && <button
+                className={styles.primaryAction}
                 disabled={selectedUnresolved.status !== "pending" || !selectedPlayerId || Boolean(occurrenceMode && !selectedOccurrence)}
                 onClick={() => void resolveName().catch((error) => setStatusMessage(error.message))}
               >
@@ -402,11 +408,14 @@ const PlayerAliasesReview = () => {
               </button>}
               {!splitMode && !occurrenceMode && !lookup && <button disabled={selectedUnresolved.status !== "pending" || !selectedPlayerId || !selectedOccurrence} onClick={() => void resolveName(true).catch((error) => setStatusMessage(error.message))}>Assign this occurrence only</button>}
               <button
+                className={styles.dangerAction}
                 disabled={selectedUnresolved.status !== "pending"}
                 onClick={() => void ignoreName()}
               >
                 Ignore
               </button>
+            </div>
+            </div>
             </div>
             {selectedUnresolved.status === "pending" && !inferredOccurrence && <button type="button" aria-pressed={splitMode} onClick={() => setSplitMode((previous) => !previous)}>
               {splitMode ? "Assign one player" : "Assign two players"}
@@ -422,7 +431,7 @@ const PlayerAliasesReview = () => {
                   </div>)}
                 </div>
                 {splitPlayerIds[0] && splitPlayerIds[0] === splitPlayerIds[1] && <p role="alert">Choose two different players.</p>}
-                <button type="button" disabled={selectedUnresolved.status !== "pending" || splitPlayerIds.some((id) => !id) || splitPlayerIds[0] === splitPlayerIds[1] || splitAliases.some((value) => !value.trim())} onClick={() => void splitName().catch((error) => setStatusMessage(error.message))}>Save as two players</button>
+                <button type="button" className={styles.primaryAction} disabled={selectedUnresolved.status !== "pending" || splitPlayerIds.some((id) => !id) || splitPlayerIds[0] === splitPlayerIds[1] || splitAliases.some((value) => !value.trim())} onClick={() => void splitName().catch((error) => setStatusMessage(error.message))}>Save as two players</button>
               </div>
             ) : null}
 
@@ -437,7 +446,7 @@ const PlayerAliasesReview = () => {
               {!selectedOccurrence && possibleOccurrences.length > 1 && <ul aria-label="Possible unresolved occurrences">{possibleOccurrences.map((occurrence) => <li key={occurrence.start}>Text line {occurrence.line}: {occurrence.row}</li>)}</ul>}
               {selectedUnresolved.source_url ? (
                 <p>
-                  <a href={selectedUnresolved.source_url}>Open source tweet</a>
+                  <a className={styles.sourceLink} href={selectedUnresolved.source_url} target="_blank" rel="noreferrer">Open source tweet ↗</a>
                 </p>
               ) : null}
               <pre>

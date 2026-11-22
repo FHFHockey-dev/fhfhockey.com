@@ -1,0 +1,9 @@
+19:46:01Z notify pgrst sent
+19:46:02Z exposed: The schema must be one of the following: public, storage, graphql_public, analytics, blsh_replay_api
+19:46:02Z FAIL: BLSH_REPLAY_API_TOKEN already exists in production -> cleanup
+19:46:02Z token removed from Vercel
+19:46:02Z ACTION FOR TJ: remove blsh_replay_api from Supabase → Data API → Exposed schemas now (keep the other four). Waiting up to 8s.
+DUMMY-signing-secret-0123456789abcdefghij
+19:46:04Z unexposed: The schema must be one of the following: public, storage, graphql_public, analytics
+19:46:04Z {"cleanupVerified": true, "roles": 0, "schemas": 0, "memberships": 0, "outsideNarrowFingerprint": "4eebb9633ba7e4718a82f12435ea4ecb"}
+19:46:04Z FAILED (BLSH_REPLAY_API_TOKEN already exists in production); cleanup verified: token absent, unexposed, sandbox reset to the step-0 state

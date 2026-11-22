@@ -1,5 +1,11 @@
 # BLSH v6: L7 sign-off and signer-custody steps (copy-paste)
 
+> **Dated correction, 2026-11-21 23:02Z (BLSH Chef, owner of these docs per the pilot addendum §7). Where this file differs, this note wins:**
+> - **Review ref for G1 (A1, A4, A5):** use **`refs/rc/blsh-pilot-redate-20261122`** (`16f5c46030a8d619b8be153bb79cbbf9f1e9baa2`) in place of `refs/rc/blsh-release-20261120` (lines 27, 85 and 93). Once its merge onto actual master exists, review that merge instead: X `b5e18f49078addde4bda3e5679e5602f8ed58393` (ref `refs/rc/blsh-pilot-redate-20261122-x`), the merge onto master `523ba0108` that now exists. A3's merge step is then a no-op.
+> - **A2 expectation changes.** The scanner, `cronAuditCoverage.ts` and `cron-schedule.md` parts of L7 already shipped (in `cda345c4f`, now on master). Against master `523ba0108`, the registration diff is **4 files, 48 insertions and 3 deletions**: `nstClassification.ts` and its test, and `nstCoordination.ts` and its test. Their blobs equal `1a6e54239`. Checks 1 and 2 still apply. Confirm checks 3 and 4 on master.
+> - **B0** (line 110): `verify-approval-public-key.mjs` has the same blob (`13346cbb…`) at `refs/rc/blsh-release-20261120`, at the pilot ref and on master `523ba0108`, so the expected hash `6118ac84…` is unchanged.
+> - **Vault name** for the official envelope (set in CUSTODY.md, not in this file): **`blsh_official_grant_20261122`** (capture 2026-11-23, slate 2026-11-22).
+
 Written 2026-11-20. These steps work for any capture date; nothing in them names the window. Part A runs on the Mac, in a throwaway clone. Part B runs in the approved off-Mac signer environment, except B6, which TJ does in the Vercel dashboard and on the Mac.
 
 Nothing here pushes, deploys, arms, re-dates or writes to production. B6 stages two production environment variables and needs TJ's explicit approval at blocker 4. **What was run on 2026-11-20:**
