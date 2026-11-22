@@ -221,6 +221,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "November 22 master after October branch (#464), including the Rankings readiness writers. The verifier found no excluded projection inputs in the 243-module producer closure.",
   },
+  {
+    closureSha256: "af8b8d11e6d4b77f620d4d356b8ee6d504a5e2d4cf9e08bd975e15a1b80e8723",
+    commit: "16971845574240e139212e82a9b17ef12db66e34",
+    receipt: "tasks/artifacts/wgo-handoff-fix-2026-11-22/16971845574240e139212e82a9b17ef12db66e34.json",
+    receiptSha256: "656bc85abe908dbfa19efbfce21d82a0812b840b0abb974c11a6b0966b9bfbb5",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 22 standalone WGO readiness gate with row digests, on a9e08f854 (master with #464 and its 7ee3612e registration). The verifier found no excluded projection inputs in the 244-module producer closure.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
