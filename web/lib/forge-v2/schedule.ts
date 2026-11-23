@@ -1,30 +1,44 @@
 import { Affiliation, CONDITIONING, Horizon, HorizonEpisode, Instant, LockEpoch, Opportunity, ScheduleGame, TARGET_VERSION, assertId, assertSource, instant } from "./contracts";
 import { canonicalJson, targetKey } from "./identity";
 
-/** Input is the independently captured roster/IR/reserve feed, never boxscores. */
-export function resolveAffiliations(history: readonly Affiliation[], asOf: Instant) {
+/** Each player's latest affiliation known at `asOf` (first-seen order), or why none can be trusted. */
+export function latestAffiliations(history: readonly Affiliation[], asOf: Instant): Array<{ playerId: number; row: Affiliation | null; reason: "conflicting_affiliation" | "unverified_affiliation" | null }> {
   const cutoff = instant(asOf);
   const groups = new Map<number, Affiliation[]>();
-  const unresolved: Array<{ playerId: number; reason: string }> = [];
   for (const row of history) {
     assertId(row.playerId);
     if (instant(row.source.firstReceivedAt) > cutoff || instant(row.effectiveAt) > cutoff) continue;
     const rows = groups.get(row.playerId) ?? [];
     rows.push(row); groups.set(row.playerId, rows);
   }
-  const eligible: Affiliation[] = [];
+  const latest: ReturnType<typeof latestAffiliations> = [];
   for (const [playerId, rows] of groups) {
     rows.sort((a, b) => instant(b.effectiveAt) - instant(a.effectiveAt) || instant(b.source.firstReceivedAt) - instant(a.source.firstReceivedAt));
     const row = rows[0];
     const ties = rows.filter(other => other.effectiveAt === row.effectiveAt && other.source.firstReceivedAt === row.source.firstReceivedAt);
-    if (new Set(ties.map(canonicalJson)).size > 1) { unresolved.push({ playerId, reason: "conflicting_affiliation" }); continue; }
+    if (new Set(ties.map(canonicalJson)).size > 1) { latest.push({ playerId, row: null, reason: "conflicting_affiliation" }); continue; }
     try { assertSource(row.source, asOf); if (row.teamId !== null) assertId(row.teamId); }
-    catch { unresolved.push({ playerId, reason: "unverified_affiliation" }); continue; }
-    if (row.position === "G" || row.status === "assigned") continue;
+    catch { latest.push({ playerId, row: null, reason: "unverified_affiliation" }); continue; }
+    latest.push({ playerId, row, reason: null });
+  }
+  return latest;
+}
+
+/** Input is the independently captured roster/IR/reserve feed, never boxscores. The v2 skater product's defaults drop
+ * goalies and `assigned` players; `includeGoalies` (Full-NHL H1–H10) keeps goalies. Either way, every drop is listed in
+ * `outOfScope`. */
+export function resolveAffiliations(history: readonly Affiliation[], asOf: Instant, options: { includeGoalies?: boolean } = {}) {
+  const unresolved: Array<{ playerId: number; reason: string }> = [];
+  const outOfScope: Array<{ playerId: number; reason: "goalie_out_of_scope" | "assigned"; affiliation: Affiliation }> = [];
+  const eligible: Affiliation[] = [];
+  for (const { playerId, row, reason } of latestAffiliations(history, asOf)) {
+    if (!row) { unresolved.push({ playerId, reason: reason! }); continue; }
+    if (row.position === "G" && !options.includeGoalies) { outOfScope.push({ playerId, reason: "goalie_out_of_scope", affiliation: structuredClone(row) }); continue; }
+    if (row.status === "assigned") { outOfScope.push({ playerId, reason: "assigned", affiliation: structuredClone(row) }); continue; }
     if (row.teamId === null || row.position === "unknown" || row.status === "unresolved") { unresolved.push({ playerId, reason: "unresolved_affiliation" }); continue; }
     eligible.push(structuredClone(row));
   }
-  return { eligible: eligible.sort((a, b) => a.playerId - b.playerId), unresolved };
+  return { eligible: eligible.sort((a, b) => a.playerId - b.playerId), unresolved, outOfScope: outOfScope.sort((a, b) => a.playerId - b.playerId) };
 }
 
 export interface OpportunityPopulation {
@@ -34,14 +48,13 @@ export interface OpportunityPopulation {
   excludedGames: Array<{ gameId: number; reason: string; replacementGameId: number | null }>;
 }
 
-/** Supply all accepted schedule pages through season end; incomplete feeds stay explicit. */
-export function buildOpportunities(input: { affiliations: readonly Affiliation[]; schedule: readonly ScheduleGame[]; asOf: Instant; seasonId: number; scheduleComplete: boolean }): OpportunityPopulation {
-  const { eligible, unresolved } = resolveAffiliations(input.affiliations, input.asOf);
-  const cutoff = instant(input.asOf);
+/** Latest accepted version of each game at `asOf`: issuable regular-season games in start order, the rest with a reason. */
+export function resolveSchedule(schedule: readonly ScheduleGame[], asOf: Instant, seasonId: number): { games: ScheduleGame[]; excludedGames: OpportunityPopulation["excludedGames"] } {
+  const cutoff = instant(asOf);
   const versions = new Map<number, ScheduleGame[]>();
-  for (const game of input.schedule) {
+  for (const game of schedule) {
     assertId(game.gameId);
-    if (game.seasonId !== input.seasonId || instant(game.source.firstReceivedAt) > cutoff) continue;
+    if (game.seasonId !== seasonId || instant(game.source.firstReceivedAt) > cutoff) continue;
     const rows = versions.get(game.gameId) ?? []; rows.push(game); versions.set(game.gameId, rows);
   }
   const games: ScheduleGame[] = [];
@@ -52,7 +65,7 @@ export function buildOpportunities(input: { affiliations: readonly Affiliation[]
     let reason: string | null = null;
     const tied = rows.filter(row => row.source.firstReceivedAt === game.source.firstReceivedAt);
     if (new Set(tied.map(canonicalJson)).size > 1) reason = "conflicting_schedule";
-    try { assertSource(game.source, input.asOf); assertId(game.homeTeamId); assertId(game.awayTeamId); }
+    try { assertSource(game.source, asOf); assertId(game.homeTeamId); assertId(game.awayTeamId); }
     catch { reason = "unverified_schedule"; }
     if (!reason) {
       if (game.replacementGameId !== null) reason = "replaced_game";
@@ -66,6 +79,13 @@ export function buildOpportunities(input: { affiliations: readonly Affiliation[]
     else games.push(game);
   }
   games.sort((a, b) => instant(a.scheduledStartAt!) - instant(b.scheduledStartAt!) || a.gameId - b.gameId);
+  return { games, excludedGames };
+}
+
+/** Supply all accepted schedule pages through season end; incomplete feeds stay explicit. */
+export function buildOpportunities(input: { affiliations: readonly Affiliation[]; schedule: readonly ScheduleGame[]; asOf: Instant; seasonId: number; scheduleComplete: boolean }): OpportunityPopulation {
+  const { eligible, unresolved } = resolveAffiliations(input.affiliations, input.asOf);
+  const { games, excludedGames } = resolveSchedule(input.schedule, input.asOf, input.seasonId);
   const opportunities: Opportunity[] = [], shortfalls: OpportunityPopulation["shortfalls"] = [];
   for (const player of eligible) {
     const next = games.filter(game => game.homeTeamId === player.teamId || game.awayTeamId === player.teamId).slice(0, 10);

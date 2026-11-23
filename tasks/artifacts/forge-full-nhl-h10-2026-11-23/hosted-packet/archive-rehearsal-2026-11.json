@@ -1,0 +1,227 @@
+{
+  "version": "forge-h10-archive-rehearsal-v1",
+  "nights": 30,
+  "note": "night 1 real issuance on real data; nights 2..N replicate it with own ids, keys, sequences, cutoffs and receipts",
+  "night1": {
+    "ms": 296463,
+    "skaterComplete": true,
+    "goaliePublished": 720,
+    "players": 804,
+    "keys": 8040
+  },
+  "replication": {
+    "ms": 214399,
+    "month": "2026-11"
+  },
+  "database": {
+    "month": "2026-11",
+    "rows": {
+      "forge_v2_vintages": 219600,
+      "forge_v2_publication_receipts": 219600,
+      "forge_v2_goalie_vintages": 21600,
+      "forge_v2_goalie_publication_receipts": 21600,
+      "forge_v2_records": 444270
+    },
+    "partitions": [
+      {
+        "table": "forge_v2_vintages",
+        "totalBytes": 640286720,
+        "indexBytes": 103743488
+      },
+      {
+        "table": "forge_v2_publication_receipts",
+        "totalBytes": 107905024,
+        "indexBytes": 59228160
+      },
+      {
+        "table": "forge_v2_goalie_vintages",
+        "totalBytes": 51814400,
+        "indexBytes": 7528448
+      },
+      {
+        "table": "forge_v2_goalie_publication_receipts",
+        "totalBytes": 8749056,
+        "indexBytes": 3645440
+      },
+      {
+        "table": "forge_v2_records",
+        "totalBytes": 574464000,
+        "indexBytes": 191758336
+      }
+    ],
+    "totalBytes": 1383219200,
+    "indexBytes": 365903872,
+    "evidenceTableBytes": 32768
+  },
+  "archive": {
+    "exportMs": 9631,
+    "files": [
+      {
+        "table": "forge_v2_vintages",
+        "rows": 219600,
+        "rawBytes": 872124095,
+        "bytes": 60943109,
+        "sha256": "4c28527688cca88411b11b915c0dc5b6b2db8f46468acfffaa21a23e6d503bf1",
+        "rawSha256": "174467dbce6d6e25261f64471846996dfe92179b80ab4736761cb346821584b2"
+      },
+      {
+        "table": "forge_v2_publication_receipts",
+        "rows": 219600,
+        "rawBytes": 49111869,
+        "bytes": 17495296,
+        "sha256": "b7941a4ae3c5176d64182886cc561adafcacc9b5ecf74078fcaf0422faab836f",
+        "rawSha256": "d6fb1aa1e85d1cf2fb8a07c86bb92e6462004150dba240d7d78227fbc127cf3b"
+      },
+      {
+        "table": "forge_v2_goalie_vintages",
+        "rows": 21600,
+        "rawBytes": 59249051,
+        "bytes": 5069703,
+        "sha256": "2e1cb4753bb541994a260b0c560e7286f455aba3a1fec94532ac659753c28ede",
+        "rawSha256": "4effc4ab758670cd7befd570d4482e724f859eb3bf9b60a62eeac239257da1f0"
+      },
+      {
+        "table": "forge_v2_goalie_publication_receipts",
+        "rows": 21600,
+        "rawBytes": 4982052,
+        "bytes": 1719688,
+        "sha256": "7dc5a3b8dbb720e2341415c7f9290dda6c1df5a1efd8aa10a46e4f3976c05120",
+        "rawSha256": "0230ae5a3107dcdf51a6f9d65300b0f7cf2a4f024b51b86461aa16679966243a"
+      },
+      {
+        "table": "forge_v2_records",
+        "rows": 444270,
+        "rawBytes": 387051396,
+        "bytes": 30917242,
+        "sha256": "fc15027c2199849da9d039edebc713fa0aa47b0bb90b370a4dfbe79d2e331755",
+        "rawSha256": "418d28e32838cc24f5dfe07c1064475d968b62ada451ca8cf9475f6f5ec41040"
+      }
+    ],
+    "bytes": 116145038,
+    "rawBytes": 1372518463
+  },
+  "restore": {
+    "restoreMs": 61880,
+    "reconciled": true,
+    "digests": {
+      "forge_v2_vintages": {
+        "rows": 219600,
+        "digest": "908e2ecb99bf624e018894a16380f8ce3ad7cd758468f81535e0ae6a6b733a2c",
+        "keysDigest": "69e5735f03bf00541e5863fe2956e5b5772759c465cac291f98cf8963b8479bf"
+      },
+      "forge_v2_publication_receipts": {
+        "rows": 219600,
+        "digest": "39eb434b2e82bcf349365bb4cc869b7cf070a493e37e77ccfb6d9f4b08f90740",
+        "keysDigest": "69e5735f03bf00541e5863fe2956e5b5772759c465cac291f98cf8963b8479bf"
+      },
+      "forge_v2_goalie_vintages": {
+        "rows": 21600,
+        "digest": "f97b871b4d79cfd98bc740e61ed1cc05e13eb977654cd0460e5757d1579d0a2a",
+        "keysDigest": "42af751ecd4c6992b331fd1d4edb284104a4fe081b138f82e8767a180db85e91"
+      },
+      "forge_v2_goalie_publication_receipts": {
+        "rows": 21600,
+        "digest": "cd40836fc3957629108001fd314ae2627a67fa6df141700efa524e2894beab09",
+        "keysDigest": "42af751ecd4c6992b331fd1d4edb284104a4fe081b138f82e8767a180db85e91"
+      },
+      "forge_v2_records": {
+        "rows": 444270,
+        "digest": "8241b6296ce2ad6f67548664874b0542d17fb5c307522f534aa2bcbe744b7b8b",
+        "keysDigest": "c4680c2e64d8b7cdc429fcddc9cc90425317fde70d1f9a4da37cad917514a127"
+      }
+    },
+    "asOfLookup": {
+      "queries": 1192,
+      "found": 1192,
+      "sourceSha256": "40a6b4b1c4816519ef9536d5144b29105f83503bda5708f98cec1166d7947846",
+      "restoredSha256": "40a6b4b1c4816519ef9536d5144b29105f83503bda5708f98cec1166d7947846",
+      "identical": true
+    },
+    "backtest": {
+      "source": {
+        "month": "2026-11",
+        "targets": 7320,
+        "scored": 7320,
+        "missing": 0,
+        "horizons": [
+          {
+            "horizon": 1,
+            "n": 732,
+            "mae": 1.280234056,
+            "bias": -0.126649416
+          },
+          {
+            "horizon": 2,
+            "n": 732,
+            "mae": 1.303077334,
+            "bias": -0.188764087
+          },
+          {
+            "horizon": 3,
+            "n": 732,
+            "mae": 1.317472748,
+            "bias": -0.310884932
+          },
+          {
+            "horizon": 4,
+            "n": 732,
+            "mae": 1.28132198,
+            "bias": -0.163470603
+          },
+          {
+            "horizon": 5,
+            "n": 732,
+            "mae": 1.302186835,
+            "bias": -0.189099503
+          },
+          {
+            "horizon": 6,
+            "n": 732,
+            "mae": 1.307330826,
+            "bias": -0.19932249
+          },
+          {
+            "horizon": 7,
+            "n": 732,
+            "mae": 1.335238103,
+            "bias": -0.202495405
+          },
+          {
+            "horizon": 8,
+            "n": 732,
+            "mae": 1.342640241,
+            "bias": -0.208851443
+          },
+          {
+            "horizon": 9,
+            "n": 732,
+            "mae": 1.307068984,
+            "bias": -0.182871611
+          },
+          {
+            "horizon": 10,
+            "n": 732,
+            "mae": 1.294794504,
+            "bias": -0.18308461
+          }
+        ]
+      },
+      "sourceSha256": "6a58bf38e8ad590064f3b366918803ee140e8bc8cb6f954aff79d8c1aa632ce6",
+      "restoredSha256": "6a58bf38e8ad590064f3b366918803ee140e8bc8cb6f954aff79d8c1aa632ce6",
+      "identical": true
+    }
+  },
+  "afterDrop": {
+    "hotLookupFound": 0,
+    "manifest": [
+      {
+        "id": "forge-v2-archive:forge_v2_goalie_vintages:2026-11",
+        "storage_path": "forge-v2-archive/2026-11/forge_v2_goalie_vintages_2026_11.csv.gz",
+        "sha256": "2e1cb4753bb541994a260b0c560e7286f455aba3a1fec94532ac659753c28ede",
+        "vintages": 30
+      }
+    ],
+    "indexRows": 8040,
+    "archivesBytes": 2293760
+  }
+}

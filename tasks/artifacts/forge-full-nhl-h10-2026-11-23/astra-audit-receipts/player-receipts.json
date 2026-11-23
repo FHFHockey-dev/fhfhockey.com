@@ -1,0 +1,1122 @@
+{
+  "trace0": [
+    {
+      "fullName": "John Tavares",
+      "player_id": 8475166,
+      "game_id": 2026020381,
+      "team_id": 10,
+      "run_id": "0203c9b0-7dbc-4f8e-a0cc-000cb974bb13",
+      "run_clock": "2026-11-23 10:16:22.488514+00",
+      "row_clock": "2026-11-23 10:17:08.866885+00",
+      "last_write": "2026-11-23 10:17:08.787+00",
+      "cutoff": "2026-11-23T10:16:22.445Z",
+      "startTime": "2026-11-24 00:30:00+00",
+      "goals": "0.281",
+      "assists": "0.416",
+      "proj_hits": "1.057",
+      "proj_blocks": "0.504",
+      "away": {
+        "decay": {
+          "status": "unvalidated",
+          "applied": false,
+          "mean_ratio": null,
+          "uncertainty": "none",
+          "dispersion_ratio": null
+        },
+        "status": "active",
+        "version": "forge-time-away-v1",
+        "days_away": 2,
+        "line_basis": "last_active_games",
+        "last_game_date": "2026-11-21"
+      },
+      "select_keys": [
+        "source",
+        "es_role",
+        "pp_role",
+        "recency",
+        "role_rank",
+        "unit_tier",
+        "active_pool",
+        "source_rows",
+        "availability",
+        "shot_quality",
+        "small_sample",
+        "fallback_path",
+        "participation",
+        "rest_schedule",
+        "on_ice_context",
+        "pp_opportunity",
+        "role_scenarios",
+        "role_continuity",
+        "conversion_rates",
+        "season_bootstrap",
+        "teammate_context",
+        "trend_adjustment",
+        "assist_rate_scale",
+        "role_usage_bounds",
+        "same_day_evidence",
+        "evidence_cutoff_at",
+        "line_combo_recency",
+        "team_level_context",
+        "strength_accounting",
+        "participation_reason",
+        "opponent_goalie_context",
+        "production_conditioning",
+        "used_line_combo_fallback",
+        "participation_probability"
+      ]
+    },
+    {
+      "fullName": "Jake DeBrusk",
+      "player_id": 8478498,
+      "game_id": 2026020394,
+      "team_id": 23,
+      "run_id": "0ddc93e3-79fc-46f7-9416-72e838aec059",
+      "run_clock": "2026-11-23 10:23:34.978516+00",
+      "row_clock": "2026-11-23 10:23:51.892256+00",
+      "last_write": "2026-11-23 10:23:51.818+00",
+      "cutoff": "2026-11-23T10:30:29.467Z",
+      "startTime": "2026-11-26 00:30:00+00",
+      "goals": "0.303",
+      "assists": "0.323",
+      "proj_hits": "1.264",
+      "proj_blocks": "0.514",
+      "away": {
+        "decay": {
+          "status": "unvalidated",
+          "applied": false,
+          "mean_ratio": null,
+          "uncertainty": "none",
+          "dispersion_ratio": null
+        },
+        "status": "active",
+        "version": "forge-time-away-v1",
+        "days_away": 3,
+        "line_basis": "last_active_games",
+        "last_game_date": "2026-11-22"
+      },
+      "select_keys": [
+        "source",
+        "es_role",
+        "pp_role",
+        "recency",
+        "role_rank",
+        "unit_tier",
+        "active_pool",
+        "source_rows",
+        "availability",
+        "shot_quality",
+        "small_sample",
+        "fallback_path",
+        "participation",
+        "rest_schedule",
+        "on_ice_context",
+        "pp_opportunity",
+        "role_scenarios",
+        "role_continuity",
+        "conversion_rates",
+        "season_bootstrap",
+        "teammate_context",
+        "trend_adjustment",
+        "assist_rate_scale",
+        "role_usage_bounds",
+        "same_day_evidence",
+        "evidence_cutoff_at",
+        "line_combo_recency",
+        "team_level_context",
+        "strength_accounting",
+        "participation_reason",
+        "opponent_goalie_context",
+        "production_conditioning",
+        "used_line_combo_fallback",
+        "participation_probability"
+      ]
+    }
+  ],
+  "trace1": [
+    {
+      "fullName": "Cale Makar",
+      "player_id": 8480069,
+      "game_id": 2026020397,
+      "run": "0ddc93e3",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.225",
+      "a": "0.735",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 13,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-11-12"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020397,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7547,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-11-12",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Cale Makar",
+      "player_id": 8480069,
+      "game_id": 2026020408,
+      "run": "df4b39a8",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.188",
+      "a": "0.641",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 15,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-11-12"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020408,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7547,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-11-12",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Cale Makar",
+      "player_id": 8480069,
+      "game_id": 2026020425,
+      "run": "b8da5fb9",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.192",
+      "a": "0.618",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 16,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-11-12"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020425,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7547,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-11-12",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Dylan Larkin",
+      "player_id": 8477946,
+      "game_id": 2026020394,
+      "run": "0ddc93e3",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.302",
+      "a": "0.451",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 30,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-10-26"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020394,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7243,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-10-26",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Dylan Larkin",
+      "player_id": 8477946,
+      "game_id": 2026020407,
+      "run": "df4b39a8",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.278",
+      "a": "0.425",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 32,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-10-26"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020407,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7243,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-10-26",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Dylan Larkin",
+      "player_id": 8477946,
+      "game_id": 2026020417,
+      "run": "b8da5fb9",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.273",
+      "a": "0.387",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 33,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-10-26"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020417,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7243,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-10-26",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Ivan Demidov",
+      "player_id": 8484984,
+      "game_id": 2026020379,
+      "run": "0203c9b0",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.245",
+      "a": "0.368",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 51,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-10-03"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020379,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.6099,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-10-03",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Ivan Demidov",
+      "player_id": 8484984,
+      "game_id": 2026020397,
+      "run": "0ddc93e3",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.214",
+      "a": "0.336",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 53,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-10-03"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020397,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.6099,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-10-03",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Ivan Demidov",
+      "player_id": 8484984,
+      "game_id": 2026020415,
+      "run": "b8da5fb9",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.265",
+      "a": "0.370",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 56,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-10-03"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020415,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.6099,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-10-03",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Nathan MacKinnon",
+      "player_id": 8477492,
+      "game_id": 2026020397,
+      "run": "0ddc93e3",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.341",
+      "a": "0.686",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 13,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-11-12"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020397,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7443,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-11-12",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Nathan MacKinnon",
+      "player_id": 8477492,
+      "game_id": 2026020408,
+      "run": "df4b39a8",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.286",
+      "a": "0.602",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 15,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-11-12"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020408,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7443,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-11-12",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Nathan MacKinnon",
+      "player_id": 8477492,
+      "game_id": 2026020425,
+      "run": "b8da5fb9",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.292",
+      "a": "0.583",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 16,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-11-12"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020425,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7443,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-11-12",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Quinn Hughes",
+      "player_id": 8480800,
+      "game_id": 2026020384,
+      "run": "0203c9b0",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.141",
+      "a": "0.807",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "none",
+            "dispersion_ratio": null
+          },
+          "status": "active",
+          "version": "forge-time-away-v1",
+          "days_away": 4,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-11-19"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020384,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7608,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-11-19",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Quinn Hughes",
+      "player_id": 8480800,
+      "game_id": 2026020396,
+      "run": "0ddc93e3",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.139",
+      "a": "0.810",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "none",
+            "dispersion_ratio": null
+          },
+          "status": "active",
+          "version": "forge-time-away-v1",
+          "days_away": 6,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-11-19"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020396,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7608,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-11-19",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Quinn Hughes",
+      "player_id": 8480800,
+      "game_id": 2026020408,
+      "run": "df4b39a8",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.141",
+      "a": "0.823",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "none",
+            "dispersion_ratio": null
+          },
+          "status": "active",
+          "version": "forge-time-away-v1",
+          "days_away": 8,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-11-19"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020408,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7608,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-11-19",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    },
+    {
+      "fullName": "Quinn Hughes",
+      "player_id": 8480800,
+      "game_id": 2026020428,
+      "run": "f20889ee",
+      "reserve_reason": "not_in_lineup",
+      "g": "0.141",
+      "a": "0.747",
+      "uncertainty": {
+        "time_away": {
+          "decay": {
+            "status": "unvalidated",
+            "applied": false,
+            "mean_ratio": null,
+            "uncertainty": "widened_unquantified",
+            "dispersion_ratio": null
+          },
+          "status": "away",
+          "version": "forge-time-away-v1",
+          "days_away": 10,
+          "line_basis": "last_active_games",
+          "last_game_date": "2026-11-19"
+        },
+        "toi_basis": {
+          "es": "recent",
+          "pp": "recent"
+        },
+        "availability": {
+          "label": "not in projected lineup: participation unknown",
+          "state": "unknown",
+          "game_id": 2026020428,
+          "version": "forge-skater-coverage-v1",
+          "event_id": null,
+          "event_type": null,
+          "expected_for_game": null,
+          "line_conditioning": "if_plays",
+          "participation_qualified": false,
+          "participation_probability": null
+        },
+        "conditioning": "if_dressed",
+        "sample_weight": 0.7608,
+        "reserve_reason": "not_in_lineup",
+        "latest_metric_date": "2026-11-19",
+        "availability_event_id": null,
+        "excluded_from_team_totals": true,
+        "participation_probability": null
+      }
+    }
+  ],
+  "trace3": [
+    {
+      "id": "365d0704-fc92-46a6-9269-7b0a5fc7b146",
+      "game_id": 2026020359,
+      "run_id": "f55203dc-232f-4d78-9986-c2b85665a40e",
+      "input_snapshot_id": "517bd28a-099d-4c85-9663-bb24c685bfbf",
+      "decision_as_of": "2026-11-21 16:20:21.116+00",
+      "published_at": "2026-11-21 17:25:03.790086+00"
+    },
+    {
+      "id": "25d9dcd2-e05b-4de7-8ebc-d4b7b51ee5cf",
+      "game_id": 2026020308,
+      "run_id": "328a982a-247f-440f-b230-08882e50fcfa",
+      "input_snapshot_id": "01c8adc5-5301-4d56-b385-82b168af6272",
+      "decision_as_of": "2026-11-13 01:41:08.062+00",
+      "published_at": "2026-11-13 01:41:12.492771+00"
+    },
+    {
+      "id": "b903db11-9f97-4ded-83d7-efd9da66f452",
+      "game_id": 2026020001,
+      "run_id": "ab10333f-3f32-4466-8d0e-7a3b71e8f52d",
+      "input_snapshot_id": "010b8dbe-0e36-40a9-a823-9ab31354320c",
+      "decision_as_of": "2026-09-28 13:24:32.364+00",
+      "published_at": "2026-09-28 13:24:38.500864+00"
+    }
+  ],
+  "extra1": [
+    {
+      "run_id": "0203c9b0-7dbc-4f8e-a0cc-000cb974bb13",
+      "player_id": 8475166,
+      "game_id": 2026020381,
+      "feature": {
+        "rest": {
+          "rest_delta": 0,
+          "sample_weight": 1,
+          "team_rest_days": 2,
+          "toi_multiplier": 1.0096,
+          "opponent_rest_days": 2,
+          "goal_rate_multiplier": 0.9968,
+          "shot_rate_multiplier": 0.9982,
+          "assist_rate_multiplier": 0.9978
+        },
+        "role": "L2",
+        "trend": {
+          "n_eff": 3.863,
+          "value": 2.890791,
+          "applied": false,
+          "age_days": 1,
+          "ci_lower": 2.014656,
+          "ci_upper": 3.766926,
+          "selected": true,
+          "confidence": 0.4829,
+          "metric_key": "fantasy_score",
+          "multipliers": {
+            "goal_rate": 1,
+            "shot_rate": 1,
+            "assist_rate": 1,
+            "uncertainty_volatility": 1
+          },
+          "window_code": "l5",
+          "effect_state": "within_band_neutral",
+          "recency_class": "fresh",
+          "snapshot_date": "2026-11-22",
+          "signed_distance": 0,
+          "neutralized_by_recency": false
+        },
+        "source": "line_combination",
+        "recency": {
+          "latest_metric_date": "2026-11-21",
+          "recency_multiplier": 1,
+          "days_since_last_metric": 2,
+          "recency_multiplier_applied": false
+        },
+        "source_rows": {
+          "line_combination_game_id": 2026020364,
+          "line_combination_source_date": "2026-11-21"
+        },
+        "conditioning": "legacy_availability_adjusted"
+      }
+    },
+    {
+      "run_id": "0ddc93e3-79fc-46f7-9416-72e838aec059",
+      "player_id": 8478498,
+      "game_id": 2026020394,
+      "feature": {
+        "rest": {
+          "rest_delta": -0.3333,
+          "sample_weight": 1,
+          "team_rest_days": 3,
+          "toi_multiplier": 1.0176,
+          "opponent_rest_days": 4,
+          "goal_rate_multiplier": 0.9851,
+          "shot_rate_multiplier": 0.9832,
+          "assist_rate_multiplier": 0.9845
+        },
+        "role": "L1",
+        "trend": {
+          "n_eff": 3.863,
+          "value": 2.327515,
+          "applied": false,
+          "age_days": 16,
+          "ci_lower": 0.556127,
+          "ci_upper": 4.098902,
+          "selected": true,
+          "confidence": 0.1341,
+          "metric_key": "fantasy_score",
+          "multipliers": {
+            "goal_rate": 1,
+            "shot_rate": 1,
+            "assist_rate": 1,
+            "uncertainty_volatility": 1
+          },
+          "window_code": "l5",
+          "effect_state": "within_band_neutral",
+          "recency_class": "soft_stale",
+          "snapshot_date": "2026-11-09",
+          "signed_distance": 0,
+          "neutralized_by_recency": false
+        },
+        "source": "line_combination",
+        "recency": {
+          "latest_metric_date": "2026-11-22",
+          "recency_multiplier": 1,
+          "days_since_last_metric": 3,
+          "recency_multiplier_applied": false
+        },
+        "source_rows": {
+          "line_combination_game_id": 2026020377,
+          "line_combination_source_date": "2026-11-22"
+        },
+        "conditioning": "legacy_availability_adjusted"
+      }
+    }
+  ],
+  "extra2": [
+    {
+      "game_id": 2026020395,
+      "candidate": {
+        "rank": 1,
+        "goalie_id": 8479979,
+        "if_starts": {
+          "saves": 25.525,
+          "shutout_prob": 0.0487,
+          "goals_allowed": 3.012,
+          "shots_against": 28.537,
+          "modeled_save_pct": 0.8945,
+          "credited_win_prob": 0.446
+        },
+        "unconditional": {
+          "saves": 24.926,
+          "shutout_prob": 0.0475,
+          "goals_allowed": 2.941,
+          "shots_against": 27.866,
+          "credited_win_prob": 0.4357
+        },
+        "start_probability": 0.9765,
+        "start_probability_status": "uncalibrated_model",
+        "confirmation_evidence_ids": []
+      },
+      "clocks": {
+        "run_id": "0ddc93e3-79fc-46f7-9416-72e838aec059",
+        "issued_at": "2026-11-23T10:24:00.921Z",
+        "as_of_date": "2026-11-25",
+        "starter_labels": {
+          "source": "wgo_goalie_stats.games_started",
+          "known_games": 10,
+          "window_games": 10,
+          "unknown_games": 0
+        },
+        "information_cutoff_at": "2026-11-23T10:23:34.930Z"
+      }
+    }
+  ],
+  "actualrevs": [
+    {
+      "run_id": "a4f1818c-4ec5-4fcf-8a40-195da7b3d188",
+      "git_sha": "a5816ce6d1eeeba4b7213d1f66c96025f0b5818e",
+      "player_id": 8478498,
+      "team_id": 23,
+      "opponent_team_id": 3,
+      "game_id": 2026020310,
+      "horizon_games": 1,
+      "cutoff": "2026-11-09T10:30:35.560Z",
+      "run_created": "2026-11-09 10:30:35.619767+00",
+      "row_created": "2026-11-09 10:30:41.174475+00",
+      "last_write": "2026-11-09 10:30:41.09+00",
+      "goals": null,
+      "startTime": "2026-11-14 02:00:00+00",
+      "source_date": "2026-11-07"
+    },
+    {
+      "run_id": "4ce4afff-d09d-4093-9c17-24b68f454583",
+      "git_sha": "e1ab46318ec9c6797deb94ac1aa23d68f5672f26",
+      "player_id": 8478498,
+      "team_id": 23,
+      "opponent_team_id": 3,
+      "game_id": 2026020310,
+      "horizon_games": 1,
+      "cutoff": "2026-11-13T10:20:54.308Z",
+      "run_created": "2026-11-13 10:20:54.355375+00",
+      "row_created": "2026-11-13 10:21:08.222942+00",
+      "last_write": "2026-11-13 10:21:08.045+00",
+      "goals": "0.335",
+      "startTime": "2026-11-14 02:00:00+00",
+      "source_date": "2026-11-09"
+    }
+  ],
+  "larkpast": [],
+  "larkpastReserve": [
+    {
+      "game_id": 2026020367,
+      "team_id": 17,
+      "run_id": "ced8d73f-caaf-4d61-afd4-61492817f340",
+      "created_at": "2026-11-21 18:14:54.734697+00"
+    }
+  ]
+}
