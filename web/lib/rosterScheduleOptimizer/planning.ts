@@ -207,6 +207,14 @@ export function injuredOutWeek(snapshot: PlanningSnapshot, playerId: string, rea
   return { games: values.length, points: values.length && values.every(value => finite(value.points)) ? values.reduce((sum, value) => sum + value.points!, 0) : null,
     basis: bases.size > 1 ? "mixed" : values[0]?.basis ?? "none" };
 }
+/** True when his team is known and has no playable game left in the range. His schedule math stays a known 0, but that
+ * 0 is not his ability: no drop surface ranks or nominates him on it (Astra, 2026-11-23). An unknown team is not "no
+ * games", and an unknown value stays unknown (`playerValueKnown`). */
+export function noGamesLeft(snapshot: PlanningSnapshot, player: PlanningPlayer): boolean {
+  return !!player.teamAbbreviation && !snapshot.games.some(game => game.teamAbbreviation === player.teamAbbreviation
+    && ["scheduled", "live"].includes(game.status) && game.date >= snapshot.context.startDate
+    && game.date <= snapshot.context.endDate && eligibleGame(game, snapshot));
+}
 /** Per-player evidence gate (decisions 3, 47, 49; W1 P0 #27), shared by the planner, Best Fit, streaming and the DROP
  * chip: read from an evaluation of the roster (`valueUnknownPlayerIds`). A player is known only when every remaining
  * game of his in the range has a resolved, unconditional forecast whose scored stats are finite and approved for totals

@@ -1,6 +1,6 @@
 import { candidatePlanForSort, type CandidateComparison, type CandidatePlan } from "./candidatePlanMetrics";
 import { contributionLedger } from "./contributionLedger";
-import { playerValueKnown } from "./planning";
+import { noGamesLeft, playerValueKnown } from "./planning";
 import { dropContribution, dropEligible, reservedPlayerIds, retentionCaution, suggestedDrop, type RetentionCaution } from "./retention";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
@@ -57,7 +57,8 @@ export function lineupGapReport(snapshot: PlanningSnapshot, intent: PlanIntent, 
   // The shared retention policy (same eligibility and order as the planner and Best Fit swaps).
   const reserved = reservedPlayerIds(snapshot.roster);
   const eligible = snapshot.roster.map(row => players.get(row.playerId))
-    .filter((player): player is PlanningPlayer => !!player && dropEligible(player, intent, reserved));
+    // No games left is a known 0 for the schedule, not zero ability: he is neither suggested nor listed unprojected.
+    .filter((player): player is PlanningPlayer => !!player && dropEligible(player, intent, reserved) && !noGamesLeft(snapshot, player));
   // The shared evidence gate: an unknown player reads unprojected, never a games-ranked suggestion (decisions 3, 47).
   const { player: drop, unprojected: unknown } = suggestedDrop(eligible, player => playerValueKnown(baseline, player.id)
     ? dropContribution(snapshot.rules.scoring.mode, ledger.get(player.id)) : null);

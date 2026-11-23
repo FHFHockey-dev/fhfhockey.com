@@ -106,6 +106,8 @@ describe("FORGE reserve payload (full selected-horizon coverage)", () => {
     const free = new Set(teamed.filter(player => !owned.has(player.id)).slice(0, 815).map(player => player.id));
     const players = catalog.map(player => ({ ...player, eligibilityVerified: owned.has(player.id) || free.has(player.id),
       canDrop: owned.has(player.id) ? true : player.canDrop,
+      // A known low ownership, so the shared drop-safety cutoff (TJ, 2026-11-23) lets the roster be dropped.
+      ownership: owned.has(player.id) ? 5 : player.ownership,
       availability: free.has(player.id) ? "free_agent" as const : owned.has(player.id) ? "rostered" as const : "unknown" as const }));
     const { wire } = compactBridgeForecasts(built.forecasts, { players, games }, seasonId);
     const revisions = [...new Set(built.forecasts.map(row => row.revisionId))].sort();

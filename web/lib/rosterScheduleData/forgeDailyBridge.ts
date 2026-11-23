@@ -36,6 +36,8 @@ export const FORGE_DAILY_BRIDGE_BYTE_BUDGET = 2_500_000;
 export const FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET = 6_000_000;
 /** The same budget with the FORGE reserve pass on. */
 export const FORGE_RESERVE_EXPANDED_BYTE_BUDGET = FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET;
+/** Source run/game pairs named in the "reserve lines moved" note before it summarises the rest as a count. */
+const MOVED_RESERVE_SOURCES_LISTED = 12;
 /** Yahoo skater stats FORGE does not project: per-game season rates stand in, and the evidence says so. */
 export const FORGE_DAILY_BRIDGE_SEASON_RATED = ["PENALTY_MINUTES", "PLUS_MINUS", "SH_GOALS", "SH_ASSISTS", "SH_POINTS", "GAME_WINNING_GOALS", "FACEOFFS_WON", "FACEOFFS_LOST"] as const;
 /** Start-chance floors for speculative goalie news (TJ may tune these). Confirmed is 1 and ruled out is 0. */
@@ -496,11 +498,16 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const reserveSkaters = new Set<number>();
   // Reserve rows count only from the team's latest lineup run, so a player is either in that run's lineup or its reserve,
   // never both; a lineup line always wins.
-  const reserveRows = servingRows(inputs.reserves ?? []).filter(row => row.horizon_games === 1 && finite(row.player_id)
-    && finite(row.team_id) && row.as_of_date === teamLatestDate.get(row.team_id)
+  const admittedReserves = servingRows(inputs.reserves ?? []).filter(row => row.horizon_games === 1 && finite(row.player_id)
+    && finite(row.team_id)
     && (row.player_class === "skater" && row.conditioning === "if_dressed" || row.player_class === "goalie" && row.conditioning === "if_starts"));
+  const reserveRows = admittedReserves.filter(row => row.as_of_date === teamLatestDate.get(row.team_id));
   const reserveLatest = latest(reserveRows, row => `${row.player_class}:${row.player_id}`);
-  const exactReserve = latest(reserveRows, row => `${row.player_class}:${row.game_id}:${row.player_id}`);
+  // A game's own row comes from whichever admitted run projected that game (production runs today..+6, each its own
+  // as_of date), so an earlier game never borrows the furthest run's line for another game (Astra, 2026-11-23).
+  const exactReserve = latest(admittedReserves, row => `${row.player_class}:${row.game_id}:${row.player_id}`);
+  /** Player-games whose reserve line was moved from another game, by source run and game. */
+  const movedReserves = new Map<string, number>();
   /** What the accepted news for this game says about a reserve skater dressing. Only confirmed news settles it. */
   const skaterState = (game: PlanningGame, player: PlanningPlayer, reason: unknown): ReserveCode => {
     if (!inputs.goalieNews) return "skater:evidence_unavailable";
@@ -571,7 +578,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
           if (ownStats) { emitLineup(player, game, runs.get(own.run_id)!, ownStats, own); continue; }
         }
         const exact = exactReserve.get(`skater:${game.id}:${player.nhlId}`);
-        if (exact) {
+        if (exact && exact.team_id === player.nhlTeamId) {
           const line = reserveLine(exact);
           if (line) emitReserve(player, game, runs.get(exact.run_id)!, line, reserveState(game, player, exact));
           continue;
@@ -581,8 +588,13 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
         const scale = projectedAgainst && facing ? (1 + facing.goalsFor) / (1 + projectedAgainst.goalsFor) : 1;
         const rest = restScale(gameContext(reserve.game_id, reserve.team_id), gameContext(game.id, reserve.team_id));
         const tilt = tiltBetween(player, abbreviationById.get(reserve.opponent_team_id), game.opponent);
+        const before = forecasts.length;
         emitReserve(player, game, runs.get(reserve.run_id)!, scale === 1 && !rest && !tilt ? baseLine : retargetSkater(baseLine, scale, rest, tilt),
           reserveState(game, player, reserve));
+        if (forecasts.length > before) {
+          const source = `FORGE run ${reserve.run_id} game ${reserve.game_id}`;
+          movedReserves.set(source, (movedReserves.get(source) ?? 0) + 1);
+        }
       }
       if (forecasts.length > emitted) { reserveSkaters.add(player.nhlId!); reserveSkaterGames += forecasts.length - emitted; }
       if (!baseLine && rates && !playerRates) unratedSkaters.add(player.nhlId!);
@@ -836,6 +848,12 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     ...(withheldLinePlayers.size ? [`${withheldLinePlayers.size} players have no proven FORGE line because a newer run for their team cannot prove it excluded third-party fantasy projections; they get no forecast rather than a 0.`] : []),
     ...(inputs.reserves === undefined ? [] : inputs.reserves ? [`FORGE reserve lines: ${reserveSkaters.size} skaters outside FORGE's projected lineup carry an "if he dresses" line (${reserveSkaterGames} player-games); dressing counts only when accepted news confirms it, otherwise plans count 0 and say why.${reserveGoalieGames ? ` ${reserveGoalieGames} goalie-games use an "if he starts" line with an unknown start chance.` : ""}`]
       : ["FORGE reserve lines could not be read, so players outside FORGE's projected lineups have no \"if he dresses\" line."]),
+    ...(movedReserves.size && !reservesWithheld ? [(() => {
+      const sources = [...movedReserves].sort(([a], [b]) => a.localeCompare(b));
+      const shown = sources.slice(0, MOVED_RESERVE_SOURCES_LISTED).map(([source]) => source).join("; ");
+      const games = sources.reduce((sum, [, count]) => sum + count, 0);
+      return `FORGE reserve lines moved: ${games} player-games have no FORGE row for their own game, so each uses that player's latest reserve line, moved from ${shown}${sources.length > MOVED_RESERVE_SOURCES_LISTED ? ` and ${sources.length - MOVED_RESERVE_SOURCES_LISTED} more source games` : ""}.`;
+    })()] : []),
     ...(priors.size && missingPriors.size ? [`${missingPriors.size} opponents have no team-strength prior, so lines projected against or moved to them skip the opponent adjustment.`] : []),
     ...(reservesWithheld ? [`FORGE reserve lines for ${reservesWithheld} player-games were withheld because full coverage exceeds the planning transport budget, so players outside FORGE's projected lineups are not covered and a pickup search here is not complete; "no FORGE line" 0s are withheld with them.`] : []),
     ...(kept < forecasts.length ? [`Interim projections were trimmed to the first ${kept} of ${forecasts.length} player-games to fit the planning transport; later games stay schedule-only.`] : []),

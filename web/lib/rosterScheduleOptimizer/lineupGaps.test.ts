@@ -9,7 +9,7 @@ import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from 
 const intent: PlanIntent = { revision: 1, steps: [], protectedPlayerIds: [], excludedPlayerIds: [], goalieCoverage: "accept_risk", goalieWindow: "any", goalieSplit: "mon_thu", alternativeCount: 5 };
 const member = (id: string, team: string, positions: string[], availability: PlanningPlayer["availability"]): PlanningPlayer => ({
   id, nhlId: id.charCodeAt(0), nhlTeamId: team.charCodeAt(0), rosterRevision: `roster-${id}`, name: id.toUpperCase(), teamAbbreviation: team,
-  eligiblePositions: positions, playerClass: "skater", availability, eligibilityVerified: true, ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] });
+  eligiblePositions: positions, playerClass: "skater", availability, eligibilityVerified: true, ownership: availability === "rostered" ? 5 : null, canDrop: true, holdValue: null, reserveEligibility: [] });
 const perGame: Record<string, number> = { a: 1, b: 2, c: 1.5 };
 beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixtureRsoPolicy(["fixture"], ["pts"])));
 function snapshot(): PlanningSnapshot {
@@ -44,7 +44,7 @@ describe("lineup gap report", () => {
     expect(report.openSlots).toBe(2);
     // a starts only on 10-05 (b outscores him on 10-06), so he is the weakest droppable player.
     expect(report.bestDrop).toEqual({ playerId: "a", projectedPoints: 1, activeGames: 1, frees: [{ date: "2026-10-05", slot: "C", open: 1 }],
-      caution: { level: "unknown", ownership: null } });
+      caution: { level: "none", ownership: 5 } });
     expect(report.adds[0]).toMatchObject({ playerId: "c", dropsBest: false,
       fills: [{ date: "2026-10-05", slot: "D" }, { date: "2026-10-06", slot: "D" }], plan: { netPoints: 3, netAGP: 2 } });
   });

@@ -30,7 +30,7 @@ const fixtureId = (value: string) => [...value].reduce((id, char) => (id * 31 + 
 const hoursBefore = (iso: string, hours: number) => new Date(Date.parse(iso) - hours * 3600000).toISOString();
 const skater = (id: string, team: string, positions: string[], availability: PlanningPlayer["availability"] = "rostered"): PlanningPlayer => ({
   id, nhlId: fixtureId(id), nhlTeamId: fixtureId(team), rosterRevision: `roster-${id}-${team}`, name: id, teamAbbreviation: team,
-  eligiblePositions: positions, eligibilityVerified: true, playerClass: "skater", availability, ownership: null, canDrop: true,
+  eligiblePositions: positions, eligibilityVerified: true, playerClass: "skater", availability, ownership: availability === "rostered" ? 5 : null, canDrop: true,
   holdValue: null, reserveEligibility: [] });
 const matchups = (date: string, pairs: Array<[string, string]>): PlanningGame[] => pairs.flatMap(([home, away]) => [[home, away, true], [away, home, false]] as const)
   .map(([team, opponent, home]) => ({ id: `${team}-${date}`, scheduleRevision: `schedule-${team}-${date}`, date,

@@ -24,7 +24,7 @@ function fixture(): PlanningSnapshot {
   const players = ["a", "b", "c"].map((id, index) => ({ id, nhlId: index + 1, nhlTeamId: index + 1,
     rosterRevision: `roster-${id}`, name: id, teamAbbreviation: id.toUpperCase(), eligiblePositions: ["C"],
     eligibilityVerified: true, playerClass: "skater" as const, availability: id === "c" ? "free_agent" as const : "rostered" as const,
-    canDrop: true, ownership: null, holdValue: null, reserveEligibility: [] }));
+    canDrop: true, ownership: id === "c" ? null : 5, holdValue: null, reserveEligibility: [] }));
   const games = players.map(row => { const date = row.id === "c" ? "2026-10-05" : "2026-10-06";
     return { id: row.id, date, startsAt: `${date}T20:00:00Z`, scheduleRevision: `schedule-${row.id}`,
       teamAbbreviation: row.teamAbbreviation, opponent: "X", home: true, status: "scheduled" as const }; });

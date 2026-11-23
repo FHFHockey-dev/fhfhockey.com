@@ -39,7 +39,7 @@ const staleOwnership = (player: Pick<PlanningPlayer, "ownershipEvidence"> | unde
   const evidence = player?.ownershipEvidence;
   return evidence?.status === "stale" && typeof evidence.value === "number" && Number.isFinite(evidence.value) && evidence.observedOn ? evidence : null;
 };
-/** Caution is shown beside a drop, whatever the player's remaining games; it never ranks or filters on its own. */
+/** Caution is shown beside a drop, whatever the player's remaining games. It never ranks; the same cutoff gates automatic drops in `dropEligible`. */
 export function retentionCaution(player: Pick<PlanningPlayer, "ownership" | "ownershipEvidence"> | undefined): RetentionCaution {
   const ownership = knownOwnership(player);
   return { level: ownership === null ? staleOwnership(player) ? "stale" : "unknown" : ownership >= HIGH_DEMAND_OWNERSHIP_PCT ? "high_demand" : "none", ownership };
@@ -51,9 +51,14 @@ export function reservedPlayerIds(roster: Array<{ playerId: string; position: st
     ...prior.filter(step => step.type === "reserve").map(step => step.playerId)]);
 }
 
-/** Who may be offered as an automatic drop. Explicit manual choices are not gated here. */
+/** Who may be offered as an automatic drop: the one drop-safety policy for the DROP chip, Best Fit, the planner's add/drop
+ * search and Streaming (TJ, 2026-11-23). Protect and the high-ownership cutoff both hold; ownership must be a known, fresh
+ * reading below the cutoff, because missing ownership is unknown, not 0%, and is not enough to recommend a drop.
+ * Explicit manual choices are not gated here. */
 export function dropEligible(player: PlanningPlayer, intent: Pick<PlanIntent, "protectedPlayerIds">, reserved: ReadonlySet<string>) {
-  return player.canDrop === true && !intent.protectedPlayerIds.includes(player.id) && !reserved.has(player.id) && !providerListsOut(player);
+  const ownership = knownOwnership(player);
+  return player.canDrop === true && !intent.protectedPlayerIds.includes(player.id) && !reserved.has(player.id) && !providerListsOut(player)
+    && ownership !== null && ownership < HIGH_DEMAND_OWNERSHIP_PCT;
 }
 
 /** The contribution the drop order ranks on: projected points in points leagues, active games otherwise. */

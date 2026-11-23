@@ -40,7 +40,7 @@ function fixture() {
     players: ["a", "b", "c", "d"].map((id, index) => ({ id, nhlId: index + 1,
       name: id === "c" ? "Zulu schedule gain" : id === "d" ? "Alpha crowded date" : `Original ${id}`,
       teamAbbreviation: id.toUpperCase(), eligiblePositions: ["C"], eligibilityVerified: true, playerClass: "skater",
-      availability: index < 2 ? "rostered" : "free_agent", ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] })),
+      availability: index < 2 ? "rostered" : "free_agent", ownership: index < 2 ? 10 : null, canDrop: true, holdValue: null, reserveEligibility: [] })),
     roster: [{ playerId: "a", position: "active" }, { playerId: "b", position: "bench" }],
     // b has no game left: a known 0 in range on a complete schedule, so he can be the drop. Without forecasts a player
     // with games is unknown and never a proposed drop (decisions 3, 47).
