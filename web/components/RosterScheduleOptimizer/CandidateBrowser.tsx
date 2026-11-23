@@ -91,7 +91,7 @@ export default function CandidateBrowser({ emptyRoster = false, executionOptions
   const [requested, setRequested] = useState<{ snapshotId: string | null; ids: string[] }>({ snapshotId: null, ids: [] });
   const requestedIds = requested.snapshotId === (snapshot?.id ?? null) ? requested.ids : [];
   const compare = (id: string) => setRequested({ snapshotId: snapshot?.id ?? null, ids: [...new Set([...requestedIds, id])] });
-  const { metrics, loading, error } = useCandidateMetrics(snapshot, intent, requestedIds, executionOptions);
+  const { metrics, loading, error, retained } = useCandidateMetrics(snapshot, intent, requestedIds, executionOptions);
   const goalieBoost = metrics?.goalieBoost === true;
   // Discovery uses this render's clock; saved planning cutoffs remain immutable.
   const discoveryAsOf = Date.now();
@@ -198,6 +198,7 @@ export default function CandidateBrowser({ emptyRoster = false, executionOptions
     <div className={styles.candidateStatus}>
       {categories && <p className={styles.limitation}>Ranked by more starts. Each card shows the category gains and losses for the whole swap.</p>}
       {goalieBoost && <p className={styles.limitation}>Your goalie minimum may be missed, so goalies who add starts are listed first.</p>}
+      {retained && <p className={styles.limitation} role="status" aria-live="polite">Updating swaps for your protected players…</p>}
       {loading ? <p role="status" aria-live="polite">Comparing free agents…</p>
         : !hasEvaluatedFit && <p role="status">{emptyRoster ? "Add your roster to rank free agents for it." : noAddsRemain(snapshot) ? "No adds remain this period; adds return when the period resets." : "Rankings appear once projections and schedules load."}</p>}
       {error && <p aria-live="polite">{error}</p>}

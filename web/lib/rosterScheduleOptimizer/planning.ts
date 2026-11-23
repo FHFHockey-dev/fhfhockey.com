@@ -1324,10 +1324,14 @@ export function scheduleFits(snapshot: PlanningSnapshot, intent: PlanIntent, bas
     const key = `${player.teamAbbreviation}:${[...player.eligiblePositions].sort().join(",")}`;
     groups.set(key, [...(groups.get(key) ?? []), player]);
   }
-  const prepared = includeZero ? prepareEvaluation(snapshot) : null;
+  const ordered = [...groups].sort(([a], [b]) => a.localeCompare(b));
+  // Resolve forecasts once for the roster and every group's stand-in, not once per group: each resolution walks the
+  // whole catalog (~3,300 rows), which made this loop most of a plan's time. Only these players' rows are read below.
+  const prepared = prepareEvaluation(snapshot, includeZero ? undefined : new Set([...owned,
+    ...ordered.slice(0, maxGroups).map(([, group]) => [...group].sort((a, b) => a.id.localeCompare(b.id))[0].id)]));
   const fits: NonNullable<PlanningResult["scheduleFits"]> = [];
   let complete = true, timeLimitReached = false, workQuotaReached = false, groupsEvaluated = 0;
-  for (const [, group] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [, group] of ordered) {
     if (groupsEvaluated >= maxGroups) { complete = false; workQuotaReached = true; break; }
     if (budgetMs !== Infinity && Date.now() - started >= budgetMs) { complete = false; timeLimitReached = true; break; }
     groupsEvaluated++;
@@ -1335,9 +1339,8 @@ export function scheduleFits(snapshot: PlanningSnapshot, intent: PlanIntent, bas
     const player = candidates[0];
     const hypothetical = { ...snapshot, roster: [...snapshot.roster, { playerId: player.id, position: "bench" as const }],
       rules: { ...snapshot.rules, rosterSlots: { ...snapshot.rules.rosterSlots, BN: (snapshot.rules.rosterSlots.BN ?? 0) + 1 } } };
-    const evaluation = prepared
-      ? evaluatePreparedPlan({ ...prepared, snapshot: { ...prepared.snapshot, roster: hypothetical.roster, rules: hypothetical.rules } }, { ...intent, goalieCoverage: "accept_risk" }, "agp", [], false)
-      : evaluatePlan(hypothetical, { ...intent, goalieCoverage: "accept_risk" }, "agp", [], false);
+    const evaluation = evaluatePreparedPlan({ ...prepared, snapshot: { ...prepared.snapshot, roster: hypothetical.roster, rules: hypothetical.rules } },
+      { ...intent, goalieCoverage: "accept_risk" }, "agp", [], false);
     const addedGames = evaluation.activeGames - baseline.activeGames;
     if (addedGames < 0 || addedGames === 0 && !includeZero) continue;
     const dates = [...new Set(evaluation.assignments.map(row => row.date))].filter(date => evaluation.assignments.filter(row => row.date === date).length > baseline.assignments.filter(row => row.date === date).length);

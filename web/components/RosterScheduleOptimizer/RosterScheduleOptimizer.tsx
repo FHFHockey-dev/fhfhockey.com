@@ -113,6 +113,11 @@ export function acquisitionDetail(rules: LeagueRules, evidence?: PlanningSnapsho
   return evidence?.counter.used != null && evidence.period.containsHorizon
     ? `${allowance} · Week ${evidence.period.week}: ${evidence.counter.used} used (Yahoo)` : allowance;
 }
+/** What a planning snapshot's id covers: the workspace, except the protected list and intent revision, which only decide
+ * drops, and a manual edit's `asOf` stamp, which the current read replaces. A protection-only edit keeps the same snapshot
+ * identity, so its plan stays on screen while the quiet re-plan runs. */
+const planningIdentity = (workspace: PlanningWorkspace) => ({ ...workspace, context: { ...workspace.context, asOf: "" },
+  intent: { ...workspace.intent, revision: 0, protectedPlayerIds: [] } });
 function fingerprint(value: unknown) { let hash = 0; for (const char of JSON.stringify(value)) hash = (Math.imul(hash, 31) + char.charCodeAt(0)) | 0; return (hash >>> 0).toString(36); }
 export function grossAcquisitionGames(steps: PlanStep[], snapshot: PlanningSnapshot | null): number {
   if (!snapshot) return 0;
@@ -734,9 +739,9 @@ export default function RosterScheduleOptimizer() {
         return combined;
       }
       const retained = retainedScheduleSnapshot(workspace, { players: workspace.manualPlayers, games: [], forecasts: [], evidence: {} }, workspace.context.asOf);
-      return retained ? withCachedYahooEligibility({ ...retained, id: `${retained.id}:${fingerprint(workspace)}` }, yahooEligibility.receipt) : null;
+      return retained ? withCachedYahooEligibility({ ...retained, id: `${retained.id}:${fingerprint(planningIdentity(workspace))}` }, yahooEligibility.receipt) : null;
     }
-    return { id: `manual:${fingerprint(workspace)}`, context: workspace.context, players: workspace.manualPlayers,
+    return { id: `manual:${fingerprint(planningIdentity(workspace))}`, context: workspace.context, players: workspace.manualPlayers,
       roster: workspace.roster, games: [], forecasts: [], rules: workspace.rules,
       lockedAssignments: workspace.lockedAssignments ?? [], realized: workspace.realized, opponent: workspace.opponent, evidence: {} };
   }, [hydrated, workspace, supplemented, viewingSaved, account, yahooEligibility.receipt]);
@@ -756,11 +761,12 @@ export default function RosterScheduleOptimizer() {
     yahooPrincipalId: workspace.context.provider === "yahoo" && !planFromDate && !(accessOnlyLock && goalChangedWhileLocked) ? user?.id ?? null : null,
     refreshKey: JSON.stringify([accountKey, user?.id, viewingSaved, scheduleReadRevision?.contextKey === contextKey ? scheduleReadRevision.token : null]),
   };
-  const { result: rawResult, error: planningError, loading: planningLoading, displaySnapshot, data: currentData, healthyReserves } = useRosterPlanning(planningSnapshot, workspace.intent, executionOptions);
+  const { result: rawResult, error: planningError, loading: planningLoading, displaySnapshot, data: currentData, healthyReserves, retained: planRetained } = useRosterPlanning(planningSnapshot, workspace.intent, executionOptions);
   // Only this generation's admitted view reaches numeric/evidence consumers.
   // The original saved/provider snapshot remains available for preservation.
   const snapshot = useMemo(() => displaySnapshot ?? (planningSnapshot ? capacityPlanningSnapshot(planningSnapshot) : null), [displaySnapshot, planningSnapshot]);
-  const result = rawResult && rawResult.snapshotId === planningSnapshot?.id && rawResult.intentRevision === workspace.intent.revision ? rawResult : null;
+  // A protection-only edit keeps the previous plan (its own revision) on screen while the quiet re-plan runs.
+  const result = rawResult && rawResult.snapshotId === planningSnapshot?.id && (rawResult.intentRevision === workspace.intent.revision || planRetained) ? rawResult : null;
   const pointsGoalAvailable = result?.noMoveOutcome.recommendation?.eligible === true || hasKnownPointsComparison(result?.noMoveOutcome);
   // A viewed saved plan or a preservation hold locks the goal too; that lock is not a projection gap, so it says so.
   const goalReadOnly = !readOnlySaved || accessOnlyLock ? null : viewingSaved ? "Saved inputs are read-only. Continue manually to change the lineup goal."

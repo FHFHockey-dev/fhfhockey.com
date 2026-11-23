@@ -5,9 +5,9 @@ import { defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 import type { PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { CandidateComparison, CandidateDiagnostic } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 
-const fixture = vi.hoisted(() => ({ candidates: undefined as CandidateComparison[] | undefined, diagnostics: undefined as CandidateDiagnostic[] | undefined, goalieBoost: undefined as boolean | undefined }));
-vi.mock("hooks/useCandidateMetrics", () => ({ useCandidateMetrics: () => ({ metrics: fixture.candidates ? { candidates: fixture.candidates, diagnostics: fixture.diagnostics, goalieBoost: fixture.goalieBoost } : undefined, loading: false, error: null }) }));
-afterEach(() => { cleanup(); fixture.candidates = undefined; fixture.diagnostics = undefined; fixture.goalieBoost = undefined; vi.useRealTimers(); });
+const fixture = vi.hoisted(() => ({ candidates: undefined as CandidateComparison[] | undefined, diagnostics: undefined as CandidateDiagnostic[] | undefined, goalieBoost: undefined as boolean | undefined, retained: false }));
+vi.mock("hooks/useCandidateMetrics", () => ({ useCandidateMetrics: () => ({ metrics: fixture.candidates ? { candidates: fixture.candidates, diagnostics: fixture.diagnostics, goalieBoost: fixture.goalieBoost } : undefined, loading: false, error: null, retained: fixture.retained }) }));
+afterEach(() => { cleanup(); fixture.candidates = undefined; fixture.diagnostics = undefined; fixture.goalieBoost = undefined; fixture.retained = false; vi.useRealTimers(); });
 it("starts with individual cards and respects the selected result count when filtering and expanding", () => {
   const workspace = defaultWorkspace();
   const players: PlanningPlayer[] = Array.from({ length: 12 }, (_, index) => ({ id: String(index), nhlId: null, name: `Candidate ${index}`,
@@ -155,6 +155,15 @@ it("separates known, partly known and unusable input facts without granting waiv
 it("asks for a roster instead of the loading copy when the roster is empty", () => {
   render(<CandidateBrowser {...discoveryFixture()} emptyRoster />);
   expect(screen.getByRole("status").textContent).toBe("Add your roster to rank free agents for it.");
+});
+
+it("says swaps are updating while a protection-only edit keeps the previous rankings on screen (TJ, 2026-11-23)", () => {
+  const { unmount } = render(<CandidateBrowser {...discoveryFixture()} />);
+  expect(screen.queryByText("Updating swaps for your protected players…")).toBeNull();
+  unmount();
+  fixture.retained = true;
+  render(<CandidateBrowser {...discoveryFixture()} />);
+  expect(screen.getByText("Updating swaps for your protected players…").getAttribute("role")).toBe("status");
 });
 
 it("leaves unavailable comparisons unranked and names alphabetical browsing for either selected net sort", () => {

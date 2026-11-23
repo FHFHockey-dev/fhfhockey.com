@@ -164,3 +164,34 @@ describe("Yahoo confirmations lapse (TJ tab return, 2026-10-26)", () => {
     expect(MockWorker.instances).toHaveLength(3);
   });
 });
+
+it("keeps the previous plan on screen through a protection-only edit and hides swaps that drop the protected player", async () => {
+  vi.stubGlobal("Worker", MockWorker);
+  const swap = (id: string, drop: string) => ({ steps: [{ id, type: "add", playerId: id, dropPlayerId: drop }] });
+  const planned = { ...plan, alternatives: [swap("a", "keep"), swap("b", "safe")] } as unknown as PlanningResult;
+  const { result, rerender } = renderHook(({ selected }: { selected: PlanIntent }) => useRosterPlanning(snapshot, selected),
+    { initialProps: { selected: intent } });
+  await act(async () => MockWorker.instances[0].finish(planned));
+  const protectedIntent = { ...intent, revision: intent.revision + 1, protectedPlayerIds: ["keep"] };
+  rerender({ selected: protectedIntent });
+  // The quiet re-plan has started, but the page keeps the previous plan without the now-forbidden swap.
+  expect(MockWorker.instances).toHaveLength(2);
+  expect(result.current).toMatchObject({ loading: false, retained: true, error: null });
+  expect(result.current.result?.alternatives.map(row => row.steps[0].playerId)).toEqual(["b"]);
+  await act(async () => MockWorker.instances[1].finish({ ...planned, intentRevision: protectedIntent.revision, alternatives: [] } as PlanningResult));
+  expect(result.current).toMatchObject({ loading: false, retained: false });
+  expect(result.current.result?.intentRevision).toBe(protectedIntent.revision);
+});
+
+it("re-plans as before when a selected move drops the newly protected player or another intent field changes", async () => {
+  vi.stubGlobal("Worker", MockWorker);
+  const { result, rerender } = renderHook(({ selected }: { selected: PlanIntent }) => useRosterPlanning(snapshot, selected),
+    { initialProps: { selected: intent } });
+  await act(async () => MockWorker.instances[0].finish({ ...plan, alternatives: [] } as unknown as PlanningResult));
+  const step = { id: "s", type: "drop", playerId: "keep", at: "", effectiveAt: "", conditional: false } as PlanIntent["steps"][number];
+  for (const selected of [{ ...intent, revision: 9, protectedPlayerIds: ["keep"], steps: [step] },
+    { ...intent, revision: 10, protectedPlayerIds: ["keep"], alternativeCount: 20 as const }]) {
+    rerender({ selected });
+    expect(result.current).toMatchObject({ result: null, loading: true, retained: false });
+  }
+});
