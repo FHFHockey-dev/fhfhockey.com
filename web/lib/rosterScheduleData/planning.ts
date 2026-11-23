@@ -2,6 +2,7 @@ import { concurrentPages, loadPlanningInputs, pages, withinDeadline, PlanningPag
 import { admitConsumerGameRevisions, detailedParticipationBasisOf, RSO_ASSUMED_PARTICIPATION_POLICY, RSO_PARTICIPATION_OVERLAY_CONDITIONING,
   RSO_PARTICIPATION_OVERLAY_METHOD } from "lib/projections/consumerRevisionAdmission";
 import { currentRsoUsePolicy, issuedParticipationLineage, restrictRsoForecast, type RsoUsePolicyManifest } from "lib/player-forecasts/rsoUsePolicy";
+import { readYahooOwnership } from "./yahooOwnership";
 import { FORGE_BRIDGE_READ_BUDGET_MS, forgeBridgeTimingSummary, loadForgeDailyBridgeForecasts, type ForgeBridgeCapture, type ForgeBridgeTiming } from "./forgeDailyBridge";
 import type { BridgeRunProof } from "./bridgeForecastWire";
 import { fitLaterImpactScenario, laterImpactScenarioEnabled, loadLaterImpactScenario, planningBodyBytes } from "./laterImpactInputs";
@@ -333,20 +334,7 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     sources.ownership = evidence("not_requested", null, query.seasonId, ["Ownership context was not requested by this consumer."]);
   } else try {
     const ownershipDeadline = Math.min(deadline, Date.now() + 2000);
-    const ownership = await pages(() => db.from("yahoo_player_ownership_daily").select("player_key,player_id,ownership_pct,ownership_date,updated_at", { count: "exact" })
-      .eq("season_id", query.seasonId).gte("ownership_date", new Date(now.getTime() - 3 * 86400000).toISOString().slice(0, 10))
-      .order("ownership_date", { ascending: false }).order("player_key"), ownershipDeadline, 25000, row => [row.ownership_date, row.player_key]);
-    const mapping = await pages(() => db.from("yahoo_nhl_player_map_read").select("nhl_player_id,yahoo_player_id", { count: "exact" })
-      .order("nhl_player_id").order("yahoo_player_id"), ownershipDeadline, 25000, row => [row.nhl_player_id, row.yahoo_player_id]);
-    const nhlByYahoo = new Map<string, Set<number>>();
-    for (const row of mapping) nhlByYahoo.set(String(row.yahoo_player_id), new Set([...(nhlByYahoo.get(String(row.yahoo_player_id)) ?? []), Number(row.nhl_player_id)]));
-    const latest = new Map<number, Row>();
-    for (const row of ownership) {
-      const matches = nhlByYahoo.get(String(row.player_id));
-      if (matches?.size !== 1) continue;
-      const nhl = [...matches][0];
-      if (!latest.has(nhl)) latest.set(nhl, row);
-    }
+    const { latest, observedOn: ownershipObservedOn } = await readYahooOwnership(db, query.seasonId, now, ownershipDeadline);
     // A reported 0 is a real 0%; missing, empty, invalid or future rows stay unknown. Only a fresh (≤3-day) reading sets
     // `ownership`; an older one is kept as labelled last-known evidence, never as a fresh value or ranking input.
     for (const player of players) {
@@ -358,7 +346,7 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       if (observedAt >= now.getTime() - 3 * 86400000) player.ownership = value;
       else player.ownershipEvidence = { value, observedOn, provider: "yahoo", status: "stale" };
     }
-    sources.ownership = evidence("Yahoo daily ownership", ownership[0]?.updated_at ?? null, query.seasonId, ["Ownership is not league availability; missing or older than three days is unknown."]);
+    sources.ownership = evidence("Yahoo daily ownership", ownershipObservedOn, query.seasonId, ["Ownership is not league availability; missing or older than three days is unknown."]);
   } catch { sources.ownership = evidence("Yahoo daily ownership", null, query.seasonId, ["Ownership could not be verified."]); }
   // Line and PP deployment: one season- and date-bounded read of charted lineups, then one read of the PP units in each
   // team's newest charted game. It runs beside the box-score reads and settles to null on any failure (never unhandled).

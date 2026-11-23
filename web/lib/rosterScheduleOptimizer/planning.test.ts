@@ -34,7 +34,7 @@ const fixtureId = (value: string) => [...value].reduce((id, char) => (id * 31 + 
 const player = (id: string, team: string, availability: PlanningPlayer["availability"] = "rostered"): PlanningPlayer => ({
   id, nhlId: fixtureId(id), nhlTeamId: fixtureId(team), rosterRevision: `roster-${id}-${team}`,
   name: id, teamAbbreviation: team, eligiblePositions: ["C"], playerClass: "skater",
-  availability, eligibilityVerified: true, ownership: null, canDrop: true, holdValue: null, reserveEligibility: [],
+  availability, eligibilityVerified: true, ownership: 5, canDrop: true, holdValue: null, reserveEligibility: [],
 });
 const intent: PlanIntent = { revision: 3, steps: [], protectedPlayerIds: [], excludedPlayerIds: [], goalieCoverage: "accept_risk", goalieWindow: "any", goalieSplit: "mon_thu", alternativeCount: 5 };
 function issuedForecast(data: PlanningSnapshot, playerId: string, gameId: string, overrides: Partial<GameForecast> = {}): GameForecast {
@@ -2221,6 +2221,93 @@ describe("November 4 research regressions", () => {
   });
 });
 
+describe("no games left is not zero ability (Astra 2026-11-23; TJ drop safety 2026-11-23)", () => {
+  // a is healthy, 5% rostered and plays nothing in the range; b plays both days for 2 each; c (free agent) plays both
+  // days for 2. With a second C slot, adding c for idle a fills two empty starts: a concrete improving move.
+  const idle = (slots: Record<string, number> = { C: 2, BN: 1 }) => {
+    const data = snapshot();
+    data.games = data.games.filter(game => game.teamAbbreviation !== "A");
+    data.forecasts = data.forecasts.filter(row => row.playerId !== "a");
+    data.rules.rosterSlots = slots;
+    return data;
+  };
+  const drops = (plans: Array<{ steps: Array<{ dropPlayerId?: string }> }>) => [...new Set(plans.flatMap(plan => plan.steps
+    .flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : [])))];
+  const surfaces = (data: PlanningSnapshot, keep: PlanIntent = intent) => {
+    const bestFit = candidatePlanMetrics(data, keep).candidates.find(row => row.playerId === "c")!.plans;
+    return { chip: lineupGapReport(data, keep, evaluatePlan(data, keep, "outcome", [], false)), bestFit,
+      swaps: drops(bestFit), planned: drops(planRoster(data, keep, { maxSteps: 2 }).alternatives) };
+  };
+  const withA = (data: PlanningSnapshot, patch: Partial<PlanningPlayer>) => {
+    data.players = data.players.map(row => row.id === "a" ? { ...row, ...patch } : row);
+    return data;
+  };
+
+  it("keeps his schedule math a known 0 but never suggests him on the standalone DROP chip", () => {
+    const data = idle();
+    const baseline = evaluatePlan(data, intent, "outcome", [], false);
+    expect([(baseline.valueUnknownPlayerIds ?? []).includes("a"), baseline.assignments.some(row => row.playerId === "a")]).toEqual([false, false]);
+    const { chip } = surfaces(data);
+    expect(chip.bestDrop?.playerId).not.toBe("a");
+    // Not unknown either: no games is its own state, never listed as "unprojected".
+    expect(chip.unprojectedDrops).not.toContain("a");
+  });
+
+  it("lets a concrete Best Fit or planner move drop him when the whole swap improves the lineup", () => {
+    const { bestFit, swaps, planned } = surfaces(idle());
+    expect(swaps).toContain("a");
+    expect(planned).toContain("a");
+    const swap = bestFit.find(plan => plan.steps.some(step => step.dropPlayerId === "a"))!;
+    expect([swap.netAGP, swap.netPoints]).toEqual([2, 4]);
+  });
+
+  it.each<[string, (data: PlanningSnapshot) => PlanningSnapshot, PlanIntent]>([
+    ["Protected", data => data, { ...intent, protectedPlayerIds: ["a"] }],
+    ["highly rostered", data => withA(data, { ownership: 85 }), intent],
+    ["missing ownership", data => withA(data, { ownership: null }), intent],
+  ])("never drops him in the same move when he is %s", (_label, patch, keep) => {
+    const { swaps, planned, chip } = surfaces(patch(idle()), keep);
+    expect([swaps.includes("a"), planned.includes("a"), chip.bestDrop?.playerId === "a"]).toEqual([false, false, false]);
+  });
+
+  it("labels the points impact unknown when the incoming player has no usable projection", () => {
+    const data = idle();
+    data.forecasts = data.forecasts.filter(row => row.playerId !== "c");
+    const swap = surfaces(data).bestFit.find(plan => plan.steps.some(step => step.dropPlayerId === "a"));
+    expect(swap?.netPoints ?? null).toBeNull();
+  });
+
+  it("gains nothing from a swap that adds scheduled games but no usable starts", () => {
+    // One C slot that b already fills both days: c's games can't start, so the swap is net 0 and never recommended.
+    const data = idle({ C: 1, BN: 1 });
+    const swap = surfaces(data).bestFit.find(plan => plan.steps.some(step => step.dropPlayerId === "a"));
+    expect(swap ? [swap.netAGP, swap.netPoints] : [0, 0]).toEqual([0, 0]);
+    expect(planRoster(data, intent, { maxSteps: 2 }).selected.steps).toEqual([]);
+  });
+
+  it("still suggests a healthy, eligible player with games by his known points (valid drop control)", () => {
+    const { chip } = surfaces(snapshot());
+    expect(chip.bestDrop?.playerId).toBe("a");
+  });
+
+  it("keeps a day-to-day player counted and droppable, and an Out player never an automatic drop with his if-playing value kept", () => {
+    expect(surfaces(withA(snapshot(), { injury: { status: "DTD", label: "Day-to-Day", note: null } })).chip.bestDrop?.playerId).toBe("a");
+    const out = withA(snapshot(), { injury: { status: "O", label: "Out", note: null } });
+    const { chip, swaps, planned } = surfaces(out);
+    expect([chip.bestDrop?.playerId === "a", swaps.includes("a"), planned.includes("a")]).toEqual([false, false, false]);
+    // His gated lineup contribution is 0, but his own projection stays readable for display.
+    expect(injuredOutWeek(out, "a")).toEqual({ games: 2, points: 2, basis: "line" });
+  });
+
+  it("keeps a genuinely unknown value distinct from both zeros", () => {
+    const data = snapshot();
+    data.forecasts = data.forecasts.filter(row => row.playerId !== "a");
+    const { chip, swaps } = surfaces(data);
+    expect(chip.unprojectedDrops).toContain("a");
+    expect(swaps).not.toContain("a");
+  });
+});
+
 describe("one retention ordering across drop surfaces (R7)", () => {
   const withOwnership = (data: PlanningSnapshot, owned: Record<string, number | null>) => {
     data.players = data.players.map(row => row.id in owned ? { ...row, ownership: owned[row.id] } : row);
@@ -2229,7 +2316,7 @@ describe("one retention ordering across drop surfaces (R7)", () => {
   it("suggests nobody on the chip and proposes no drop without forecasts (decisions 3, 47)", () => {
     // No forecasts: every value is unknown. The chip suggests nobody and flags both, and no surface proposes dropping an
     // unknown player, not even ranked by active games (this supersedes the 2026-10-21 schedule-only drop order).
-    const data = withOwnership(snapshot(), { a: 5, b: 95 });
+    const data = withOwnership(snapshot(), { a: 5, b: 40 });
     data.forecasts = [];
     const report = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
     expect(report.bestDrop).toBeNull();
@@ -2260,7 +2347,8 @@ describe("one retention ordering across drop surfaces (R7)", () => {
         .map(row => issuedForecast(data, row.id, game.id, { stats: { pts: row.id === "c" ? 2 : 1 } })));
       return data;
     };
-    for (const [owned, kept] of [[{ a: 95, b: 5 }, "b"], [{ a: 5, b: 95 }, "a"]] as const) {
+    // Both under the drop-safety cutoff (TJ, 2026-11-23), so both are eligible and ownership breaks the tie.
+    for (const [owned, kept] of [[{ a: 40, b: 5 }, "b"], [{ a: 5, b: 40 }, "a"]] as const) {
       const data = equivalent(owned);
       const plans = candidatePlanMetrics(data, intent).candidates.find(row => row.playerId === "c")!.plans;
       const best = candidatePlanForSort(plans, "points")!;
@@ -2271,7 +2359,7 @@ describe("one retention ordering across drop surfaces (R7)", () => {
       expect(swaps[0].steps.find(step => step.dropPlayerId)?.dropPlayerId).toBe(kept);
     }
     // Unknown ownership on one side: no ownership tie-break and no tie note.
-    const data = equivalent({ a: null, b: 95 });
+    const data = equivalent({ a: null, b: 40 });
     const plans = candidatePlanMetrics(data, intent).candidates.find(row => row.playerId === "c")!.plans;
     expect(ownershipBrokeTie(plans, candidatePlanForSort(plans, "points")!)).toBe(false);
   });

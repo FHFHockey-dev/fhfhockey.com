@@ -40,7 +40,7 @@ const hoursBefore = (iso: string, hours: number) => new Date(Date.parse(iso) - h
 const skater = (id: string, team: string, positions: string[], availability: PlanningPlayer["availability"] = "rostered",
   extra: Partial<PlanningPlayer> = {}): PlanningPlayer => ({
   id, nhlId: fixtureId(id), nhlTeamId: fixtureId(team), rosterRevision: `roster-${id}-${team}`, name: id, teamAbbreviation: team,
-  eligiblePositions: positions, eligibilityVerified: true, playerClass: "skater", availability, ownership: null, canDrop: true,
+  eligiblePositions: positions, eligibilityVerified: true, playerClass: "skater", availability, ownership: availability === "rostered" ? 5 : null, canDrop: true,
   holdValue: null, reserveEligibility: [], ...extra });
 const goalie = (id: string, team: string, availability: PlanningPlayer["availability"] = "rostered", extra: Partial<PlanningPlayer> = {}) =>
   skater(id, team, ["G"], availability, { playerClass: "goalie", ...extra });
@@ -493,13 +493,15 @@ describe("RSO daily beta: manual/free acceptance packet", () => {
     const options = { maxSteps: 1, maxCandidates: 1, maxEvaluations: 200 };
     const drops = (plans: PlanEvaluation[]) => plans.flatMap(plan => plan.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : step.type === "drop" ? [step.playerId] : []));
 
-    it("has no automatic must-keep: a high-demand player is cautioned, not protected", () => {
+    it("has no automatic must-keep, yet a high-demand player is never an automatic drop (TJ, 2026-11-23)", () => {
       expect(defaultIntent().protectedPlayerIds).toEqual([]);
       expect(defaultWorkspace(new Date(MON_ASOF)).intent.protectedPlayerIds).toEqual([]);
       const data = contested();
       expect(retentionCaution(data.players.find(row => row.id === "g2"))).toEqual({ level: "high_demand", ownership: 92 });
       const result = planRoster(data, intent(), options);
-      expect(drops(result.alternatives)).toContain("g2");
+      // Not Protected, but the shared drop-safety cutoff keeps a 92%-rostered player out of every automatic drop.
+      expect(drops(result.alternatives)).not.toContain("g2");
+      expect(drops(planRoster({ ...data, players: data.players.map(row => row.id === "g2" ? { ...row, ownership: 12 } : row) }, intent(), options).alternatives)).toContain("g2");
     });
 
     it("a protection blocks drops but does not force a start", () => {

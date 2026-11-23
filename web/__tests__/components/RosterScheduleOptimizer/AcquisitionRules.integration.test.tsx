@@ -56,7 +56,7 @@ function fixture(provider: "manual" | "yahoo") {
   const players = ["a", "b", "c"].map((id, index) => ({ id, nhlId: index + 1, nhlTeamId: index + 1,
     rosterRevision: `fixture-roster-${id}`, name: id === "c" ? "Candidate schedule gain" : `Original ${id}`,
     teamAbbreviation: id.toUpperCase(), eligiblePositions: ["C"], eligibilityVerified: true, playerClass: "skater" as const,
-    availability: index < 2 ? "rostered" as const : "free_agent" as const, ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] }));
+    availability: index < 2 ? "rostered" as const : "free_agent" as const, ownership: index < 2 ? 5 : null, canDrop: true, holdValue: null, reserveEligibility: [] }));
   workspace.roster = [{ playerId: "a", position: "active" }, { playerId: "b", position: "bench" }];
   workspace.manualPlayers = players; workspace.intent.protectedPlayerIds = ["a"];
   workspace.rules = { ...workspace.rules, rosterSlots: { C: 1, BN: 1 }, acquisitionCost: provider === "yahoo" ? 2 : null,

@@ -1280,6 +1280,52 @@ describe("FORGE reserve lines in the bridge", () => {
     expect(limitations.some(text => text.startsWith("FORGE reserve lines: 1 skaters"))).toBe(true);
   });
 
+  describe("exact-game reserve rows (Astra 2026-11-23: MacKinnon, Makar, Quinn Hughes, Demidov)", () => {
+    // Production runs FORGE for today..+6, each its own as_of date: r3 is the 10-21 forward run, issued today. TOR's
+    // latest run date is then 10-21, yet r2 (10-19) holds s2's exact reserve row for game 1.
+    const forward = (reserves: Record<string, unknown>[]): ForgeDailyBridgeInputs => {
+      const base = reserveInputs({ reserves });
+      return { ...base, runs: [...base.runs, { run_id: "r3", as_of_date: "2026-10-21", created_at: "2026-10-19T13:00:00Z", git_sha: "ghi", external_input_proven: true }],
+        skaters: [...base.skaters, skater("r3", "2026-10-21", 2, 101, 10)] };
+    };
+    const s2Rows = (reserves: Record<string, unknown>[]) => {
+      const result = buildForgeDailyBridgeForecasts(forward(reserves), players, games, now, 20262027, policy);
+      return { rows: result.forecasts.filter(row => row.playerId === "s2").map(row => ({ game: row.gameId, run: row.revisionId.split(":").at(-1),
+        ifDresses: row.conditionalStats?.GOALS ?? null, goals: row.stats.GOALS, totals: row.allowedUses?.totals, code: reserveCodeOf(row) })),
+        limitations: result.limitations };
+    };
+    const exact1 = reserveSkater("r2", "2026-10-19", 1, 102, 10), exact2 = { ...reserveSkater("r3", "2026-10-21", 2, 102, 10), proj_goals_es: 0.3 };
+
+    it("uses each game's own admitted reserve row, not the latest run's line moved from another game", () => {
+      const { rows, limitations } = s2Rows([exact1, exact2]);
+      expect(rows).toEqual([
+        { game: "1", run: "r2", ifDresses: 0.2, goals: null, totals: false, code: "skater:no_lineup_evidence" },
+        { game: "2", run: "r3", ifDresses: 0.4, goals: null, totals: false, code: "skater:no_lineup_evidence" }]);
+      expect(limitations.some(text => text.startsWith("FORGE reserve lines moved"))).toBe(false);
+    });
+
+    it("moves a line only when the game has no exact row, and labels the move with its source run and game", () => {
+      const { rows, limitations } = s2Rows([exact2]);
+      // Game 1 has no row of its own: r3's game-2 line, still conditional ("if he dresses") and never counted.
+      expect(rows.map(row => [row.game, row.run, row.goals, row.totals, row.code])).toEqual([
+        ["1", "r3", null, false, "skater:no_lineup_evidence"], ["2", "r3", null, false, "skater:no_lineup_evidence"]]);
+      expect(rows[0].ifDresses).not.toBeNull();
+      expect(limitations).toContain("FORGE reserve lines moved: 1 player-games have no FORGE row for their own game, so each uses that player's latest reserve line, moved from FORGE run r3 game 2.");
+    });
+
+    it("never takes an exact reserve row issued while he was on another team", () => {
+      const { rows } = s2Rows([{ ...exact1, team_id: 8 }, exact2]);
+      expect(rows.find(row => row.game === "1")!.run).toBe("r3");
+    });
+
+    it("still lets a lineup line for the game win over any reserve row", () => {
+      const base = forward([exact1, exact2]);
+      const { forecasts } = buildForgeDailyBridgeForecasts({ ...base, skaters: [...base.skaters, skater("r2", "2026-10-19", 1, 102, 10)] }, players, games, now, 20262027, policy);
+      const game1 = forecasts.find(row => row.playerId === "s2" && row.gameId === "1")!;
+      expect([reserveCodeOf(game1), game1.revisionId.split(":").at(-1), (game1.stats.GOALS ?? 0) > 0]).toEqual([null, "r2", true]);
+    });
+  });
+
   it("settles dressing only on confirmed news for that game, and names every other state", () => {
     const state = (news: ReturnType<typeof lineupNews>[], extra: Partial<ForgeDailyBridgeInputs> = {}) => {
       const { forecasts } = buildForgeDailyBridgeForecasts(reserveInputs({ goalieNews: { assertions: news, conflicts: [] }, ...extra }), players, games, now, 20262027, policy);

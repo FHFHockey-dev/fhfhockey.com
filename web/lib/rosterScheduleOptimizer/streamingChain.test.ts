@@ -7,7 +7,7 @@ import { comparablePointsDelta } from "./pointsComparison";
 import { lineupGapReport } from "./lineupGaps";
 import { knownDropOrder } from "./retention";
 import { reconcileIntent } from "./reconciliation";
-import { buildStreamingChains, streamingChainSteps, type StreamingPlanWithAlternatives } from "./streamingChain";
+import { buildStreamingChains, STREAMING_NO_DROP, streamingChainSteps, type StreamingPlanWithAlternatives } from "./streamingChain";
 import { zonedMidnight } from "./planningDates";
 import { snapshotSchema } from "../in-season/workspaceSchema";
 import type { GameForecast, PlanIntent, PlanStep, PlanningPlayer, PlanningSnapshot, StreamingChain } from "./planningTypes";
@@ -43,7 +43,7 @@ function week(specs: Spec[], options: WeekOptions = {}): PlanningSnapshot {
     rosterRevision: `roster-${spec.id}`, name: `Synthetic ${spec.id}`, teamAbbreviation: spec.team,
     eligiblePositions: spec.positions ?? ["C"], eligibilityVerified: true, playerClass: spec.positions?.includes("G") ? "goalie" : "skater",
     availability: spec.rostered ? "rostered" : spec.waiverClearsAt ? "waivers" : "free_agent", canDrop: true,
-    ...(spec.waiverClearsAt ? { waiverClearsAt: spec.waiverClearsAt } : {}), ownership: null, holdValue: null,
+    ...(spec.waiverClearsAt ? { waiverClearsAt: spec.waiverClearsAt } : {}), ownership: spec.rostered ? 5 : null, holdValue: null,
     reserveEligibility: [], ...(spec.recentTotals ? { recentTotals: spec.recentTotals } : {}) }));
   const snapshot: PlanningSnapshot = { id: "streaming-week", context: { ...workspace.context, startDate: options.startDate ?? WEEK[0], endDate: WEEK[6], timeZone: ZONE, asOf },
     players, roster: specs.filter(spec => spec.rostered).map(spec => ({ playerId: spec.id, position: "active" as const })), games, forecasts: [],
@@ -106,6 +106,40 @@ describe("streaming chain", () => {
     expect(chain.steps.map(step => [step.at, step.conditional])).toEqual([
       ["2026-10-26T22:59:00.000Z", true], [zonedMidnight(WEEK[1], ZONE), true], [zonedMidnight(WEEK[3], ZONE), true], [zonedMidnight(WEEK[5], ZONE), true]]);
     expect(chain.steps.map(step => step.dependsOn)).toEqual([[], [chain.steps[0].id], [chain.steps[1].id], [chain.steps[2].id]]);
+  });
+
+  describe("drop safety on the same +7 move (TJ, 2026-11-23)", () => {
+    const withDrop = (patch: Partial<PlanningPlayer>) => {
+      const snapshot = week(tjWeek);
+      // core is a 90%-rostered starter, so the idle player is the only drop the safety policy could allow.
+      snapshot.players = snapshot.players.map(row => row.id === "drop" ? { ...row, ...patch } : row.id === "core" ? { ...row, ownership: 90 } : row);
+      return snapshot;
+    };
+    const dropsIdle = (plan: ReturnType<typeof legSummary>) => plan.chains.some(chain => chain.legs.some(leg => leg.dropPlayerId === "drop"));
+    it("keeps the +7 chain while the idle outgoing player is eligible (5% rostered)", () => {
+      expect(dropsIdle(legSummary(week(tjWeek)))).toBe(true);
+      expect(legSummary(withDrop({})).chains[0]).toMatchObject({ netGames: 7, addsUsed: 4 });
+    });
+    it.each([
+      ["Protected", (snapshot: PlanningSnapshot) => planRoster(snapshot, { ...intent(), protectedPlayerIds: ["drop"] }).streaming!, {}],
+      ["rostered in 85% of leagues", legSummary, { ownership: 85 }],
+      ["of unknown ownership", legSummary, { ownership: null }],
+    ] as const)("never drops him when he is %s, and says why", (_label, plan, patch) => {
+      const result = plan(withDrop(patch));
+      expect(dropsIdle(result)).toBe(false);
+      expect(result.limitations).toContain(STREAMING_NO_DROP);
+    });
+    it("labels the points impact unknown when streamers lack projections, never a verified gain", () => {
+      const snapshot = week(tjWeek);
+      snapshot.forecasts = snapshot.forecasts.filter(row => row.playerId === "core");
+      const plan = legSummary(snapshot);
+      expect(plan.chains.every(chain => chain.netPoints === null)).toBe(true);
+    });
+    it("gains nothing from streamers whose games can't start (no open slot)", () => {
+      const plan = legSummary(week(tjWeek, { slots: { C: 1, UTIL: 0, BN: 1 } }));
+      expect(plan.recommended).toBeNull();
+      expect(plan.chains.every(chain => chain.netGames <= 0)).toBe(true);
+    });
   });
 
   it("starts mid-week from the provider's remaining adds and skips past days", () => {

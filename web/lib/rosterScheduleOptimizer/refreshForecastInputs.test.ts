@@ -16,7 +16,7 @@ function fixture() {
   const players = ["CAR", "TOR", "NYR"].map((team, index) => ({ id: String(index + 1), nhlId: 1001 + index,
     nhlTeamId: index + 1, name: `Synthetic ${index + 1}`, teamAbbreviation: team, rosterRevision: `fixture-roster-${index + 1}`,
     playerClass: "skater" as const, eligiblePositions: ["C"], eligibilityVerified: true, availability: index === 2 ? "free_agent" as const : "rostered" as const,
-    canDrop: true, reserveEligibility: [], ownership: null, holdValue: null }));
+    canDrop: true, reserveEligibility: [], ownership: index === 2 ? null : 5, holdValue: null }));
   const games = players.map((player, index) => ({ id: String(index + 101), date: index === 2 ? "2026-10-12" : "2026-10-13",
     startsAt: index === 2 ? "2026-10-12T20:00:00Z" : "2026-10-13T20:00:00Z", teamAbbreviation: player.teamAbbreviation,
     opponent: "OTT", home: true, status: "scheduled" as const, scheduleRevision: "fixture-schedule" }));

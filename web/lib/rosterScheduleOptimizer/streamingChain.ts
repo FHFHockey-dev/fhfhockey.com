@@ -2,7 +2,7 @@ import { localDate, zonedMidnight } from "./planningDates";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import { acquisitionEffectiveAt } from "./planningTimeline";
-import { dropEligible, providerListsOut, reservedPlayerIds } from "./retention";
+import { dropEligible, HIGH_DEMAND_OWNERSHIP_PCT, providerListsOut, reservedPlayerIds } from "./retention";
 import { comparablePointsDelta, ratioCategoriesWorse } from "./pointsComparison";
 import { recentPointsPerGame } from "./recentForm";
 import type { PlanEvaluation, PlanIntent, PlanStep, PlanningGame, PlanningPlayer, PlanningSnapshot, StreamingChain, StreamingLeg, StreamingOption, StreamingPlan } from "./planningTypes";
@@ -94,6 +94,9 @@ function maxMatch(slots: string[], players: Elig[]) {
   return players.reduce((count, _, index) => count + (augment(index, new Array(slots.length).fill(false)) ? 1 : 0), 0);
 }
 
+/** Why a streaming plan has no drop: the shared drop-safety policy (TJ, 2026-11-23) found no eligible roster player. */
+export const STREAMING_NO_DROP = `No roster player is eligible to drop: each is Protected, listed Out, held in a reserve slot, rostered in at least ${HIGH_DEMAND_OWNERSHIP_PCT}% of leagues or of unknown ownership, or has no known contribution. Streaming chains need a drop candidate.`;
+
 export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWithAlternatives {
   const { snapshot, intent, baseline, dropOrder } = inputs;
   const plan: StreamingPlanWithAlternatives = { policyVersion: "rso-stream-v1", recommended: null, chains: [], limitations: [] };
@@ -180,7 +183,7 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWith
   const drops = snapshot.roster.flatMap(entry => players.get(entry.playerId) ?? [])
     .filter(player => dropOrder.has(player.id) && dropEligible(player, intent, reserved))
     .sort((a, b) => dropOrder.get(a.id)! - dropOrder.get(b.id)!);
-  if (!drops.length) { plan.limitations.push("No droppable roster player has a known contribution; streaming chains need a drop candidate."); return plan; }
+  if (!drops.length) { plan.limitations.push(STREAMING_NO_DROP); return plan; }
   const forms = new Map<string, number | null>();
   const recent = (player: PlanningPlayer) => {
     if (!forms.has(player.id)) forms.set(player.id, recentPointsPerGame(player, rules.scoring));

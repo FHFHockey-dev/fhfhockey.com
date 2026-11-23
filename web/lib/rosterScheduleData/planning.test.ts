@@ -87,6 +87,7 @@ function formDb(skaterRows: unknown[], goalieRows: unknown[], fail?: "wgo_skater
     fhfh_player_identities: [{ id: 7, nhl_player_id: 847001, canonical_name: "Skater", canonical_position: "L" }],
     teams: [{ id: 1, abbreviation: "TOR" }], rosters: [{ playerId: 847001, teamId: 1, created_at: membershipCreatedAt[0] }],
     yahoo_matchup_weeks: [], wgo_skater_stats: skaterRows, wgo_goalie_stats: goalieRows,
+    yahoo_game_keys: [{ game_key: "477", season: 2026, code: "nhl" }],
   };
   const db = { from: (table: string) => {
     let start = 0, end = Infinity;
@@ -160,11 +161,11 @@ describe("public RSO data boundary", () => {
     const scope = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10", timeZone: "America/New_York", mode: "calendar" as const, games: 1 };
     const now = new Date("2026-10-10T12:00:00Z");
     await loadGameExpectations(db as never, scope, now);
-    const optionalTables = ["yahoo_player_ownership_daily", "yahoo_nhl_player_map_read", "wgo_skater_stats", "wgo_goalie_stats", "lineCombinations", "powerPlayCombinations"];
+    const optionalTables = ["yahoo_game_keys", "yahoo_player_ownership_history", "yahoo_nhl_player_map_read", "wgo_skater_stats", "wgo_goalie_stats", "lineCombinations", "powerPlayCombinations"];
     expect(calls.filter(call => optionalTables.includes(call.table))).toEqual([]);
     calls.length = 0;
     const result = await loadPlanningData(db as never, scope, { now, forecastsEnabled: false });
-    expect(calls.some(call => call.table === "yahoo_player_ownership_daily")).toBe(true);
+    expect(calls.some(call => call.table === "yahoo_player_ownership_history")).toBe(true);
     expect(calls.some(call => call.table === "wgo_skater_stats")).toBe(true);
     expect(result.evidence.form?.source).not.toBe("not_requested");
   });
@@ -386,9 +387,9 @@ describe("public RSO data boundary", () => {
 
   it("keeps fresh ownership (0% included) as the value and a stale reading only as labelled last-known evidence (R7 W2)", async () => {
     const { db, tables } = formDb([], []);
-    tables.yahoo_nhl_player_map_read = [{ nhl_player_id: 847001, yahoo_player_id: 55 }];
+    tables.yahoo_nhl_player_map_read = [{ nhl_player_id: 847001, yahoo_player_id: "477.p.55" }];
     const read = async (ownership_pct: unknown, ownership_date: string) => {
-      tables.yahoo_player_ownership_daily = [{ player_key: "nhl.p.55", player_id: 55, ownership_pct, ownership_date, updated_at: "2026-10-10T06:00:00Z" }];
+      tables.yahoo_player_ownership_history = [{ player_key: "477.p.55", game_id: "477", ownership_pct, ownership_date }];
       return (await loadPlanningData(db as never, publicQuery, publicOptions)).players.find(row => row.nhlId === 847001)!;
     };
     expect(await read(0, "2026-10-09")).toMatchObject({ ownership: 0 });
@@ -402,6 +403,33 @@ describe("public RSO data boundary", () => {
       expect(player.ownership, `${value} ${date}`).toBeNull();
       expect(player.ownershipEvidence, `${value} ${date}`).toBeUndefined();
     }
+  });
+
+  it("reads the season's live Yahoo ownership history on the full player key, never the retired 2024-25 table (Astra 2026-11-23)", async () => {
+    const { db, tables, calls } = formDb([], []);
+    tables.yahoo_player_ownership_daily = [{ player_key: "nhl.p.55", player_id: 55, season_id: 20262027, ownership_pct: 70, ownership_date: "2026-10-09" }];
+    tables.yahoo_nhl_player_map_read = [{ nhl_player_id: 847001, yahoo_player_id: "477.p.55" }];
+    // Last season's key for the same Yahoo id must not stand in for this season's.
+    tables.yahoo_player_ownership_history = [{ player_key: "465.p.55", game_id: "465", ownership_pct: 90, ownership_date: "2026-10-09" }];
+    const read = async () => (await loadPlanningData(db as never, publicQuery, publicOptions)).players.find(row => row.nhlId === 847001)!;
+    expect((await read()).ownership).toBeNull();
+    tables.yahoo_player_ownership_history.push({ player_key: "477.p.55", game_id: "477", ownership_pct: 12, ownership_date: "2026-10-09" });
+    const result = await loadPlanningData(db as never, publicQuery, publicOptions);
+    expect(result.players.find(row => row.nhlId === 847001)).toMatchObject({ ownership: 12 });
+    expect(result.evidence.ownership).toMatchObject({ source: "Yahoo daily ownership", asOf: "2026-10-09" });
+    expect(calls.some(call => call.table === "yahoo_player_ownership_daily")).toBe(false);
+    expect(calls.filter(call => call.table === "yahoo_game_keys" && call.method === "eq").map(call => call.args))
+      .toEqual(expect.arrayContaining([["code", "nhl"], ["season", 2026]]));
+    expect(calls.find(call => call.table === "yahoo_player_ownership_history" && call.method === "eq")?.args).toEqual(["game_id", "477"]);
+    // Two keys for one NHL player, or none, leave him unknown; an unresolved Yahoo game leaves everyone unknown.
+    tables.yahoo_nhl_player_map_read.push({ nhl_player_id: 847001, yahoo_player_id: "477.p.56" },
+      { nhl_player_id: 847999, yahoo_player_id: "477.p.55" });
+    expect((await read()).ownership).toBeNull();
+    tables.yahoo_nhl_player_map_read = [{ nhl_player_id: 847001, yahoo_player_id: "477.p.55" }];
+    tables.yahoo_game_keys = [];
+    const missingGame = await loadPlanningData(db as never, publicQuery, publicOptions);
+    expect(missingGame.players.find(row => row.nhlId === 847001)?.ownership).toBeNull();
+    expect(missingGame.evidence.ownership.limitations).toContain("Ownership could not be verified.");
   });
 
   it("serves interim FORGE daily projections to RSO callers only, and never once native serving is selected", async () => {
@@ -894,7 +922,7 @@ describe("public RSO data boundary", () => {
     });
 
   it("preserves complete schedule planning when optional reads are incomplete", async () => {
-    for (const badTable of ["yahoo_player_ownership_daily", "yahoo_matchup_weeks", "wgo_skater_stats"]) {
+    for (const badTable of ["yahoo_player_ownership_history", "yahoo_matchup_weeks", "wgo_skater_stats"]) {
       const { db } = cappedInputs({ badTable, failure: "missing_count" });
       const result = await loadPlanningData(db as any, publicQuery, publicOptions);
       expect(result.games).toHaveLength(2);
@@ -979,7 +1007,7 @@ describe("public RSO data boundary", () => {
     expect(signal.aborted).toBe(true);
     expect(vi.getTimerCount()).toBe(0);
   });
-  it.each(["yahoo_player_ownership_daily", "player_forecast_source_observations"])(
+  it.each(["yahoo_player_ownership_history", "player_forecast_source_observations"])(
     "degrades a hung optional %s read within its deadline", async hangTable => {
       vi.useFakeTimers();
       vi.stubEnv("PLAYER_FORECAST_BASELINE_RELEASE_IDS", "11111111-1111-4111-8111-111111111111");
@@ -989,7 +1017,7 @@ describe("public RSO data boundary", () => {
       const result = await pending;
       expect(result.games).toHaveLength(2);
       expect(result.baselineSources).toEqual([]);
-      const source = hangTable === "yahoo_player_ownership_daily" ? "ownership" : "baselines";
+      const source = hangTable === "yahoo_player_ownership_history" ? "ownership" : "baselines";
       expect(result.evidence[source].limitations.length).toBeGreaterThan(0);
       const signal = calls.find(call => call.table === hangTable && call.method === "abortSignal")?.args[0] as AbortSignal;
       expect(signal.aborted).toBe(true);

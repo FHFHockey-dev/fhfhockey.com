@@ -60,7 +60,7 @@ const GOALIE_PERIOD_END = new Date(Date.parse(`${YAHOO_WEEK.end_date}T12:00:00Z`
 const fixtureId = (value: string) => [...value].reduce((id, char) => (id * 31 + char.charCodeAt(0)) % 100000000, 1) + 1;
 const skater = (id: string, team: string, availability: PlanningPlayer["availability"]): PlanningPlayer => ({
   id, nhlId: fixtureId(id), nhlTeamId: fixtureId(team), rosterRevision: `roster-${id}-${team}`, name: id, teamAbbreviation: team,
-  eligiblePositions: ["C"], playerClass: "skater", availability, eligibilityVerified: true, ownership: null, canDrop: true,
+  eligiblePositions: ["C"], playerClass: "skater", availability, eligibilityVerified: true, ownership: availability === "rostered" ? 5 : null, canDrop: true,
   holdValue: null, reserveEligibility: [] });
 const goalie = (id: string, team: string, availability: PlanningPlayer["availability"]): PlanningPlayer => ({
   ...skater(id, team, availability), eligiblePositions: ["G"], playerClass: "goalie" });
