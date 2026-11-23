@@ -235,6 +235,13 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     receiptSha256: "c4072ae14aac635df0a394d2f4d70836b40dcff95eda525b3df01cd53cffba3d",
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "November 22 RSO release candidate on ebfdf1cd2: the Detailed participation overlay plus the RSO identity fix (review catalog outside the closure, model identity v2 keyed to the closure). The verifier found no excluded projection inputs in the 244-module producer closure.",
+  },  {
+    closureSha256: "23af25d3f3f534d5e8ce09de44c916ed8ba778bd080395486ec4dfb2500f5b27",
+    commit: "88cef60ed9e12335fc68b8cf05ea65e57caf51b5",
+    receipt: "tasks/artifacts/forge-preflight-timeout-2026-11-23/88cef60ed9e12335fc68b8cf05ea65e57caf51b5.json",
+    receiptSha256: "a32accf8d4d928978b119a4417fbaec3d6694686ba1a77dee42008cb51528cb9",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 23 preflight-timeout fix on 699e90b7d: the pipeline's budget and child deadlines count from request arrival, the off-season gate is bounded at 5 s, and a late start records a retryable stop with no stage row. The verifier found no excluded projection inputs in the 244-module producer closure.",
   },
 ];
 
