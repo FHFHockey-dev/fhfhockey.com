@@ -197,20 +197,84 @@ describe("public RSO data boundary", () => {
     for (const use of ["assignment", "totals", "comparison", "conditionalTieBreak"] as const)
       expect(forecastAllows(restricted.forecasts[0], target, use)).toBe(false);
     expect(restricted.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", playerId: "7", targetKey: target, reasons: ["use_not_approved"] });
-    expect(calls.some(call => call.table === "forge_runs")).toBe(false);
+    // TJ 2026-11-21 supersedes P07's "no bridge after a denial": a denied row is not usable, so the interim bridge is
+    // consulted (it has no rows here, so the denied Detailed row is what remains).
+    expect(calls.some(call => call.table === "forge_runs")).toBe(true);
     const roundTrip = decodePlanningDataTransport(JSON.parse(JSON.stringify(encodePlanningDataTransport(restricted))));
     expect(roundTrip.forecastManifest).toEqual(restricted.forecastManifest);
     expect(roundTrip.forecasts).toEqual(restricted.forecasts);
     expect((await loadPlanningData(db as never, publicQuery, { ...options, consumer: "start_chart" })).forecasts).toEqual(shared.forecasts);
   });
 
-  describe("FORGE model identity (D3)", () => {
+  it("participation policy (TJ 2026-11-21): a page serving Daily points today still does under the empty catalog; a matching review serves Detailed instead", async () => {
+    const { db, tables, calls } = newsDb([]);
+    tables.fhfh_player_identities = [{ id: 7, nhl_player_id: 847001, canonical_name: "Skater", canonical_position: "L" }];
+    Object.assign(tables, {
+      forge_runs: [{ run_id: "run-b", as_of_date: "2026-10-09", created_at: "2026-10-09T15:00:00Z", git_sha: "abc" }],
+      forge_player_projections: [{ run_id: "run-b", as_of_date: "2026-10-09", horizon_games: 1, game_id: 2026020000, player_id: 847001, team_id: 1,
+        proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
+        proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
+      forge_goalie_projections: [], goalie_start_projections: [], player_forecast_source_observations: [provenSnapshotRow("run-b")] });
     const environment = { FORGE_SKATER_MODEL_MODE: "baseline", NHL_XG_MODEL_VERSION: null };
-    const rsoRead = async (modelIdentity?: unknown, revisionId = "issued-1") => {
+    const identity = forgeModelIdentity("c1".repeat(32), environment);
+    const issued = revision([]);
+    issued.payload.goalies = []; issued.payload.modelMode = "baseline";
+    (issued.payload.inputProvenance as Record<string, unknown>).modelIdentity = identity;
+    // A healthy skater in FORGE's projected lineup with no same-day news.
+    issued.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1",
+      proj_hits: 3, uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing" } },
+        availability: { version: "forge-skater-coverage-v1", game_id: 2026020001, state: "projected_lineup", line_conditioning: "if_plays",
+          expected_for_game: null, participation_probability: null, participation_qualified: false, label: "in projected lineup", event_type: null, event_id: null } } }];
+    db.rpc.mockReturnValue(rpcResponse({ data: [issued], error: null }));
+    const options = { ...publicOptions, forecastsEnabled: true, forgeDailyBridge: true,
+      source: { kind: "legacy" as const, reason: "native_not_activated" as const, environment: {} } };
+    // Empty catalog: the assumed Detailed row is admitted (read-time overlay sources are read) but denied, so the
+    // interim Daily bridge still serves this page.
+    const daily = await loadPlanningData(db as never, publicQuery, { ...options, consumer: "rso" });
+    expect(calls.some(call => call.table === "forge_roster_events")).toBe(true);
+    expect(daily.forecasts.map(row => row.revisionId)).toEqual(["forge-daily-bridge-v1:run-b"]);
+    expect(daily.forecastManifest?.rsoUsePolicy?.bridgeRevisionIds).toEqual(["forge-daily-bridge-v1:run-b"]);
+    expect(daily.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", playerId: "7", targetKey: "HITS", reasons: ["use_not_approved"] });
+    // A review of exactly the overlay scope (the lineage the review lane must name) makes the row usable: Detailed serves
+    // it, labelled assumed, and the bridge is not consulted.
+    const scope = { component: "forge-detailed-skater", modelMode: "baseline", codeVersion: "c1".repeat(32), configurationHash: identity.configurationHash,
+      artifactHash: identity.artifactHash, targetKey: "HITS", horizonGames: 1, conditioning: "rso_participation_overlay",
+      participationLineage: "forge-rso-participation-overlay-v1:skater" };
+    vi.spyOn(rsoPolicyModule, "currentRsoUsePolicy").mockReturnValue({ version: "rso-target-use-v1", revision: "fictional-overlay-review",
+      revokedReviewIds: [], reviews: [{ id: "fictional-overlay-hits", binding: scope, reviewedAt: "2026-01-01T00:00:00Z", expiresAt: "2100-01-01T00:00:00Z",
+        inputCutoffFrom: "2026-01-01T00:00:00Z", inputCutoffUntil: "2100-01-01T00:00:00Z",
+        allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
+        prospectiveEvidenceRef: "fictional-evidence", ownerApprovalRef: "fictional-approval" }] });
+    calls.length = 0;
+    const detailed = await loadPlanningData(db as never, publicQuery, { ...options, consumer: "rso" });
+    vi.restoreAllMocks();
+    expect(detailed.forecasts).toHaveLength(1);
+    expect(detailed.forecasts[0]).toMatchObject({ revisionId: "issued-1", appearanceProbability: 1, stats: { HITS: 3 }, conditionalStats: { HITS: 3 } });
+    expect(detailed.forecasts[0].rsoTargetBindings?.HITS).toMatchObject({ conditioning: "rso_participation_overlay",
+      participationLineage: "forge-rso-participation-overlay-v1:skater@issued-1" });
+    expect(forecastAllows(detailed.forecasts[0], "HITS", "totals")).toBe(true);
+    expect(detailed.forecasts[0].limitations.some(note => note.startsWith("Participation assumed, not confirmed"))).toBe(true);
+    expect(calls.some(call => call.table === "forge_runs")).toBe(false);
+    // The label survives the planning transport.
+    const roundTrip = decodePlanningDataTransport(JSON.parse(JSON.stringify(encodePlanningDataTransport(detailed))));
+    expect(roundTrip.forecasts).toEqual(detailed.forecasts);
+    // Other consumers keep decisions 3/47: unknown participation, nothing admitted.
+    db.rpc.mockReturnValue(rpcResponse({ data: [issued], error: null }));
+    const shared = await loadPlanningData(db as never, publicQuery, { ...options, forgeDailyBridge: false, consumer: "start_chart" });
+    expect(shared.forecasts).toEqual([]);
+    expect(shared.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", playerId: "7", reasons: ["missing_participation"] });
+  });
+
+  describe("FORGE model identity (D3, codeVersion = verified producer closure since 2026-11-21)", () => {
+    const environment = { FORGE_SKATER_MODEL_MODE: "baseline", NHL_XG_MODEL_VERSION: null };
+    // A fictional verified producer closure, another one, and two deploy SHAs of the same producer.
+    const CLOSURE = "c1".repeat(32), OTHER_CLOSURE = "c2".repeat(32), SHA_1 = "1".repeat(40), SHA_2 = "2".repeat(40);
+    let lastRead: Awaited<ReturnType<typeof loadPlanningData>> | null = null;
+    const rsoRead = async (modelIdentity?: unknown, revisionId = "issued-1", deploySha = SHA_1) => {
       const { db, tables } = newsDb([]);
       tables.fhfh_player_identities = [{ id: 7, nhl_player_id: 847001, canonical_name: "Skater", canonical_position: "L" }];
       const issued = { ...revision([]), id: revisionId };
-      issued.payload.goalies = []; issued.payload.modelMode = "baseline"; issued.payload.codeVersion = "sha-1";
+      issued.payload.goalies = []; issued.payload.modelMode = "baseline"; issued.payload.codeVersion = deploySha;
       issued.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1,
         as_of_date: "2026-10-10", run_id: "run-1", proj_hits: 3,
         uncertainty: { model: { skater_selection: scopedSkaterSelection(issued) } } }];
@@ -219,30 +283,38 @@ describe("public RSO data boundary", () => {
       const data = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forecastsEnabled: true, forgeDailyBridge: true,
         consumer: "rso", source: { kind: "legacy" as const, reason: "native_not_activated" as const, environment: {} } });
       expect(data.forecasts).toHaveLength(1);
+      lastRead = data;
       return data.forecasts[0];
     };
 
-    it("hashes the run's model environment canonically, binding the artifact to its code version", () => {
+    it("hashes the run's model environment canonically, binding the artifact to its producer closure", () => {
       const configurationHash = playerForecastSourcePayloadHash(environment);
-      const identity = forgeModelIdentity("sha-1", environment);
-      expect(identity).toEqual({ version: "forge-model-identity-v1", artifact: "no_fitted_artifact", configurationHash,
-        artifactHash: playerForecastSourcePayloadHash({ codeVersion: "sha-1", configurationHash }) });
-      expect(forgeModelIdentity("sha-1", { NHL_XG_MODEL_VERSION: null, FORGE_SKATER_MODEL_MODE: "baseline" })).toEqual(identity);
-      expect(forgeModelIdentity("sha-2", environment)).toMatchObject({ configurationHash });
-      expect(forgeModelIdentity("sha-2", environment).artifactHash).not.toBe(identity.artifactHash);
-      expect(forgeModelIdentity("sha-1", { ...environment, NHL_XG_MODEL_VERSION: "v2" }).configurationHash).not.toBe(configurationHash);
+      const identity = forgeModelIdentity(CLOSURE, environment);
+      expect(identity).toEqual({ version: "forge-model-identity-v2", artifact: "no_fitted_artifact", codeVersion: CLOSURE, configurationHash,
+        artifactHash: playerForecastSourcePayloadHash({ codeVersion: CLOSURE, configurationHash }) });
+      expect(forgeModelIdentity(CLOSURE, { NHL_XG_MODEL_VERSION: null, FORGE_SKATER_MODEL_MODE: "baseline" })).toEqual(identity);
+      expect(forgeModelIdentity(OTHER_CLOSURE, environment)).toMatchObject({ configurationHash });
+      expect(forgeModelIdentity(OTHER_CLOSURE, environment).artifactHash).not.toBe(identity.artifactHash);
+      expect(forgeModelIdentity(CLOSURE, { ...environment, NHL_XG_MODEL_VERSION: "v2" }).configurationHash).not.toBe(configurationHash);
+      // Unbuilt code has no closure, and a deploy SHA or label is never one: no code version, no artifact hash.
+      for (const closure of [null, SHA_1, "sha-1", CLOSURE.toUpperCase()]) {
+        expect(forgeModelIdentity(closure, environment), String(closure)).toEqual({ version: "forge-model-identity-v2",
+          artifact: "no_fitted_artifact", codeVersion: null, configurationHash, artifactHash: null });
+      }
     });
 
     it("binds a revision's declared hashes, and no review still allows no use", async () => {
-      const identity = forgeModelIdentity("sha-1", environment);
+      const identity = forgeModelIdentity(CLOSURE, environment);
       const forecast = await rsoRead(identity);
-      expect(forecast.rsoTargetBindings?.HITS).toMatchObject({ codeVersion: "sha-1", modelMode: "baseline",
+      expect(forecast.modelVersion).toBe(SHA_1);
+      expect(forecast.producerCodeVersion).toBe(CLOSURE);
+      expect(forecast.rsoTargetBindings?.HITS).toMatchObject({ codeVersion: CLOSURE, modelMode: "baseline",
         configurationHash: identity.configurationHash, artifactHash: identity.artifactHash, targetKey: "HITS", horizonGames: 1 });
       for (const use of ["assignment", "totals", "comparison", "conditionalTieBreak"] as const) expect(forecastAllows(forecast, "HITS", use)).toBe(false);
     });
 
     it("binds review to the stable participation method, so the next revision of that method is admitted (Astra F3)", async () => {
-      const identity = forgeModelIdentity("sha-1", environment);
+      const identity = forgeModelIdentity(CLOSURE, environment);
       const first = await rsoRead(identity);
       const binding = first.rsoTargetBindings!.HITS;
       expect(binding.participationLineage).toBe(issuedParticipationLineage("skater", first.revisionId));
@@ -261,21 +333,54 @@ describe("public RSO data boundary", () => {
           expect(forecastAllows(row, "HITS", "comparison")).toBe(true);
           expect(forecastAllows(row, "HITS", "assignment")).toBe(false);
         }
-        // A changed method (another model configuration) is not covered by the review.
-        const changed = await rsoRead(forgeModelIdentity("sha-1", { ...environment, NHL_XG_MODEL_VERSION: "v2" }), "issued-3");
+        // A later deploy of the same producer closure (such as the release that ships the review) is still covered, and
+        // the binding survives the planning transport.
+        const redeployed = await rsoRead(identity, "issued-4", SHA_2);
+        expect(redeployed.modelVersion).toBe(SHA_2);
+        expect(forecastAllows(redeployed, "HITS", "totals")).toBe(true);
+        // Through the real route: its response encoding and the client's decode keep the producer identity.
+        const load = vi.spyOn(planningModule, "loadPlanningData").mockResolvedValue(lastRead!);
+        const res: any = { statusCode: 200, body: undefined, setHeader: vi.fn(),
+          status(code: number) { this.statusCode = code; return this; }, json(body: unknown) { this.body = body; return this; } };
+        await planningHandler({ method: "GET", query: { seasonId: "20262027", startDate: "2026-10-10", endDate: "2026-10-10" } } as any, res);
+        load.mockRestore();
+        expect(res.statusCode).toBe(200);
+        const roundTrip = decodePlanningDataTransport(JSON.parse(JSON.stringify(res.body.data)));
+        expect(roundTrip.forecasts).toEqual(lastRead!.forecasts);
+        expect(roundTrip.forecasts[0].producerCodeVersion).toBe(CLOSURE);
+        // The client re-resolves the decoded snapshot through the contributions with the same catalog, at read time.
+        vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(publicOptions.now);
+        try {
+          const resolved = resolvePlanningContributions({ ...roundTrip, context: { ...publicQuery, asOf: publicOptions.now.toISOString() } },
+            { consumer: "rso", usePolicy: rsoPolicyModule.currentRsoUsePolicy() });
+          expect(resolved.forecasts).toHaveLength(1);
+          expect(resolved.forecasts[0].producerCodeVersion).toBe(CLOSURE);
+          expect(forecastAllows(resolved.forecasts[0], "HITS", "totals")).toBe(true);
+        } finally { vi.useRealTimers(); }
+        // A changed method (another model configuration) or another producer closure is not covered by the review.
+        const changed = await rsoRead(forgeModelIdentity(CLOSURE, { ...environment, NHL_XG_MODEL_VERSION: "v2" }), "issued-3");
         expect(forecastAllows(changed, "HITS", "totals")).toBe(false);
+        expect(forecastAllows(await rsoRead(forgeModelIdentity(OTHER_CLOSURE, environment), "issued-5"), "HITS", "totals")).toBe(false);
       } finally { spy.mockRestore(); }
     });
 
+    const configurationHash = playerForecastSourcePayloadHash(environment);
     it.each([
       ["an older revision without one", undefined],
-      ["an artifact hash for another code version", forgeModelIdentity("sha-other", environment)],
-      ["another identity version", { ...forgeModelIdentity("sha-1", environment), version: "forge-model-identity-v0" }],
-      ["a fitted-artifact claim", { ...forgeModelIdentity("sha-1", environment), artifact: "fitted" }],
-      ["a malformed configuration hash", { ...forgeModelIdentity("sha-1", environment), configurationHash: "not-a-hash" }],
-    ])("leaves both hashes unknown for %s", async (_label, modelIdentity) => {
+      // Rows issued before the fix: v1 hashed the deploy SHA in payload.codeVersion. Never reviewable.
+      ["a v1 identity keyed to the deploy SHA", { version: "forge-model-identity-v1", artifact: "no_fitted_artifact", configurationHash,
+        artifactHash: playerForecastSourcePayloadHash({ codeVersion: SHA_1, configurationHash }) }],
+      ["a build with no producer closure", forgeModelIdentity(null, environment)],
+      ["an artifact hash for another closure", { ...forgeModelIdentity(OTHER_CLOSURE, environment), codeVersion: CLOSURE }],
+      ["a deploy SHA as the code version", { ...forgeModelIdentity(CLOSURE, environment), codeVersion: SHA_1,
+        artifactHash: playerForecastSourcePayloadHash({ codeVersion: SHA_1, configurationHash }) }],
+      ["another identity version", { ...forgeModelIdentity(CLOSURE, environment), version: "forge-model-identity-v0" }],
+      ["a fitted-artifact claim", { ...forgeModelIdentity(CLOSURE, environment), artifact: "fitted" }],
+      ["a malformed configuration hash", { ...forgeModelIdentity(CLOSURE, environment), configurationHash: "not-a-hash" }],
+    ])("leaves the code version and both hashes unknown for %s", async (_label, modelIdentity) => {
       const forecast = await rsoRead(modelIdentity);
-      expect(forecast.rsoTargetBindings?.HITS).toMatchObject({ configurationHash: null, artifactHash: null });
+      expect(forecast.rsoTargetBindings?.HITS).toMatchObject({ codeVersion: "unknown", configurationHash: null, artifactHash: null });
+      expect(forecast.producerCodeVersion).toBeUndefined();
     });
   });
 
@@ -319,7 +424,7 @@ describe("public RSO data boundary", () => {
     expect(bridged.forecastManifest).toMatchObject({ issuedRevisionIds: ["forge-daily-bridge-v1:run-b"], forecastedOpportunities: 1 });
     expect(bridged.forecastManifest?.exclusionCounts.serving_disabled).toBeUndefined();
     expect(bridged.forecastManifest?.rsoUsePolicy?.bridgeRevisionIds).toEqual(["forge-daily-bridge-v1:run-b"]);
-    const resolved = resolvePlanningContributions({ ...bridged, context: { ...publicQuery, asOf: publicOptions.now.toISOString() } }, { consumer: "rso" });
+    const resolved = resolvePlanningContributions({ ...bridged, context: { ...publicQuery, asOf: publicOptions.now.toISOString() } }, { consumer: "rso", usePolicy: rsoPolicyModule.currentRsoUsePolicy() });
     // Loader output is serializable evidence; numeric authority is minted only by the current-read execution boundary.
     expect(forecastAllows(resolved.forecasts[0], "GOALS", "totals")).toBe(false);
     expect((await loadPlanningData(db as never, publicQuery, publicOptions)).forecasts).toEqual([]);

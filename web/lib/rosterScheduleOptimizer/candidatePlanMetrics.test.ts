@@ -9,7 +9,7 @@ import type { GameForecast, PlanIntent, PlanStep, PlanningSnapshot } from "./pla
 
 // Native fixture rows carry an explicit fictional review of their one scored target.
 // The production catalog stays empty; the denial case below removes the binding.
-const fixtureScope = { component: "fictional-candidates", modelMode: "synthetic", codeVersion: "fixture",
+const fixtureScope = { component: "fictional-candidates", modelMode: "synthetic", codeVersion: "f1".repeat(32),
   configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey: "GOALS", horizonGames: 1,
   conditioning: "synthetic-unconditional", participationLineage: "synthetic-only" };
 const fixturePolicy: rsoPolicy.RsoUsePolicy = { version: "rso-target-use-v1", revision: "fictional-candidate-reviews",
@@ -38,7 +38,7 @@ function fixture(): PlanningSnapshot {
     const game = games.find(game => game.id === row.id)!;
     return { playerId: row.id, gameId: game.id, stats: { GOALS: row.id === "a" ? 10 : row.id === "b" ? 1 : 2 },
       conditioning: "unconditional", sourceKind: "detailed", sourceWatermark: "fixture-only", cutoffAt: snapshot.context.asOf,
-      issuedAt: snapshot.context.asOf, expiresAt: game.startsAt, revisionId: `revision-${row.id}`, modelVersion: "fixture",
+      issuedAt: snapshot.context.asOf, expiresAt: game.startsAt, revisionId: `revision-${row.id}`, modelVersion: "fixture", producerCodeVersion: "f1".repeat(32),
       startProbability: null, confirmedStart: false, allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, limitations: [],
       rsoTargetBindings: { GOALS: { ...fixtureScope, cutoffAt: snapshot.context.asOf } },
       issuedContext: { version: "forge-issued-context-v1", playerId: row.id, gameId: game.id, nhlPlayerId: row.nhlId, teamId: row.nhlTeamId,

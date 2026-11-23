@@ -9,7 +9,8 @@ import { canEligibilityOccupySlot, normalizeEligibility } from "lib/rosterSchedu
 import { forecastAllows, gameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
 import type { ForecastDiscoveryExclusion, GameForecast, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
-import { admitConsumerGameRevisions } from "../consumerRevisionAdmission";
+import { admitConsumerGameRevisions, RSO_ASSUMED_PARTICIPATION_POLICY } from "../consumerRevisionAdmission";
+import { participationDisplay, type RsoParticipationBasis } from "../rsoParticipationNotes";
 import type { ForgeGameRevision } from "../gameRevisions";
 import { forgeEnv } from "../forgeEnvScope";
 import { starterBoardFlags, starterBoardScopeAllowed } from "../starterBoardFlags";
@@ -28,7 +29,26 @@ export type HostedRsoReader = {
   points: number | null; legalSlot: string | null; reason: string | null;
   /** Context only: confirmed exclusions of the game's revision that name no player. Never the asked player's reason. */
   gameExclusions?: string[];
+  /** Detailed only (TJ 2026-11-21): the row's participation basis, assumed or confirmed, and its latest availability changes. */
+  participation?: HostedRsoParticipation;
 };
+/** Compact for the live receipt (readers jsonb ≤ 4000 bytes): at most the last 5 changes, each [at, source id]. */
+export type HostedRsoParticipation = { basis: RsoParticipationBasis; conflict?: true; lineRoleChanged?: true;
+  changes: Array<[at: string, sourceId: string]> };
+export const HOSTED_PARTICIPATION_MAX_CHANGES = 5;
+const compactSource = (source: string) => {
+  const roster = /^roster event (\d+) \((\w+)\)$/.exec(source), news = /^accepted news (\S+) \(/.exec(source);
+  const appearance = /^official appearance \S+ \(wgo_skater_stats (\d+)\)$/.exec(source);
+  const id = roster ? `roster:${roster[1]}:${roster[2]}` : news ? `news:${news[1]}` : appearance ? `wgo:${appearance[1]}` : source;
+  return id.slice(0, 80);
+};
+/** The receipt form of a Detailed row's participation; undefined for a row the policy did not label. */
+export function hostedParticipation(row: Pick<GameForecast, "limitations">): HostedRsoParticipation | undefined {
+  const shown = participationDisplay(row);
+  if (!shown) return undefined;
+  return { basis: shown.basis, ...(shown.conflict ? { conflict: true as const } : {}), ...(shown.lineRoleChanged ? { lineRoleChanged: true as const } : {}),
+    changes: shown.changes.slice(-HOSTED_PARTICIPATION_MAX_CHANGES).map(change => [change.at.slice(0, 40), compactSource(change.source)]) };
+}
 const withheld = (reason: string, playerId: string | null = null, selectedRun: string | null = null,
   revisionId: string | null = null): HostedRsoReader => ({ reason, playerId, selectedRun, revisionId, points: null, legalSlot: null });
 
@@ -84,17 +104,21 @@ export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedR
     const snapshot: PlanningSnapshot = { id: HOSTED_RSO_CONTEXT, context: { provider: "manual", leagueId: HOSTED_RSO_CONTEXT, teamId: HOSTED_RSO_CONTEXT,
       ...query, asOf: evaluatedAt }, players: [player], games: [game], forecasts: [], rules, evidence: data.evidence,
       roster: [{ playerId: player.id, position: "active" }], lockedAssignments: [], opponent: null, realized: {} };
-    const score = (row: GameForecast, selectedRun: string): HostedRsoReader => {
-      const deny = (reason: string) => withheld(reason, player.id, selectedRun, row.revisionId);
+    const score = (row: GameForecast, selectedRun: string, detailed = false): HostedRsoReader => {
+      let deny = (reason: string): HostedRsoReader => withheld(reason, player.id, selectedRun, row.revisionId);
       const issued = row.issuedContext;
       if (!issued || issued.nhlPlayerId !== playerNhlId || issued.seasonId !== seasonId || issued.teamId !== player.nhlTeamId ||
           issued.rosterRevision !== player.rosterRevision || issued.scheduleRevision !== game.scheduleRevision ||
           issued.scheduledAt !== game.startsAt || issued.playerId !== player.id || issued.gameId !== game.id) return deny("identity_conflict");
       if (!row.expiresAt || !(Date.parse(row.expiresAt) > now.getTime())) return deny("stale_source");
+      // From here the row is this player's current row: the receipt says how its participation was settled, even if denied.
+      const participation = detailed ? hostedParticipation(row) : undefined;
+      if (participation) { const plain = deny; deny = reason => ({ ...plain(reason), participation }); }
       if (reserveParticipationUnknown(reserveCodeOf(row))) return deny("missing_participation");
       if (!Object.keys(weights).every(key => forecastAllows(row, key, "assignment") && forecastAllows(row, key, "totals") && forecastAllows(row, key, "comparison"))) return deny("use_not_approved");
       const points = gameForecastPoints({ ...snapshot, forecasts: [row] }, row).expected;
-      return points === null ? deny("missing_target") : { playerId: player.id, selectedRun, revisionId: row.revisionId, legalSlot: legalSlot.id, points, reason: null };
+      return points === null ? deny("missing_target") : { playerId: player.id, selectedRun, revisionId: row.revisionId, legalSlot: legalSlot.id, points,
+        reason: null, ...(participation ? { participation } : {}) };
     };
     const verdictRefusal = async () => {
       if (!options.verdictGate) return null;
@@ -140,10 +164,11 @@ export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedR
       if (revision.id !== revisionId || parseInstantMicros(revision.published_at) !== observed) return deny("publication_mismatch");
       if (revision.payload.codeVersion !== codeVersion) return deny("release_mismatch");
       const rows = data.forecasts.filter(row => row.gameId === game.id && row.playerId === player.id);
-      if (rows.length === 1 && rows[0].revisionId === revisionId && rows[0].modelVersion === codeVersion) return score(rows[0], claimId);
+      if (rows.length === 1 && rows[0].revisionId === revisionId && rows[0].modelVersion === codeVersion) return score(rows[0], claimId, true);
       if (rows.length) return deny("publication_mismatch");
       const exclusions: ForecastDiscoveryExclusion[] = [];
-      await admitConsumerGameRevisions(db, selected, data.players, sides, now, seasonId, {}, exclusions, deadline, calendar);
+      await admitConsumerGameRevisions(db, selected, data.players, sides, now, seasonId, {}, exclusions, deadline, calendar,
+        RSO_ASSUMED_PARTICIPATION_POLICY);
       const { reason, gameExclusions } = attributeDetailedExclusion(exclusions, data.forecastManifest?.exclusions ?? [], game.id, player.id);
       return gameExclusions.length ? { ...deny(reason), gameExclusions } : deny(reason);
     };

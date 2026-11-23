@@ -4,7 +4,7 @@
 // synthetic fixture; nothing reads Supabase, Yahoo or the network.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "lib/player-forecasts/rsoUsePolicy";
-import { bindFixtureForecast, fixtureRsoBindings, fixtureRsoPolicy } from "lib/player-forecasts/rsoUsePolicy.fixtures";
+import { bindFixtureForecast, fixtureRsoBound, fixtureRsoPolicy } from "lib/player-forecasts/rsoUsePolicy.fixtures";
 import { parseYahooBoardSettings } from "lib/integrations/yahoo/liveDraft";
 import { publicPlanningForecasts } from "lib/projections/consumerRevisionAdmission";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
@@ -77,7 +77,7 @@ function issuedForecast(data: PlanningSnapshot, playerId: string, gameId: string
   const expiresAt = new Date(Math.min(Date.parse(issuedAt) + 36 * 3600000, Date.parse(match.startsAt!))).toISOString();
   return { playerId, gameId, stats, conditioning: "unconditional", sourceKind: "detailed", sourceWatermark: "fixture-inputs",
     cutoffAt: issuedAt, issuedAt, expiresAt, modelVersion: "fixture-v1", revisionId: `r-${playerId}-${gameId}`,
-    rsoTargetBindings: fixtureRsoBindings("fixture-v1", issuedAt, Object.keys(stats)),
+    ...fixtureRsoBound("fixture-v1", issuedAt, Object.keys(stats)),
     issuedContext: { version: "forge-issued-context-v1", playerId, gameId, nhlPlayerId: member.nhlId!, teamId: member.nhlTeamId!,
       seasonId: SEASON, scheduledAt: match.startsAt!, scheduleRevision: match.scheduleRevision!, rosterRevision: member.rosterRevision!,
       observedAt: issuedAt, scheduleSourceUpdatedAt: issuedAt, scheduleFetchedAt: issuedAt, identityUpdatedAt: issuedAt,

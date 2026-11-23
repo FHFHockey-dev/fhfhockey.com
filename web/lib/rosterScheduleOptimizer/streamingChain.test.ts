@@ -13,7 +13,7 @@ import { snapshotSchema } from "../in-season/workspaceSchema";
 import type { GameForecast, PlanIntent, PlanStep, PlanningPlayer, PlanningSnapshot, StreamingChain } from "./planningTypes";
 
 // Synthetic teams and players only. One fictional review covers the single scored target.
-const fixtureScope = { component: "fictional-streams", modelMode: "synthetic", codeVersion: "fixture",
+const fixtureScope = { component: "fictional-streams", modelMode: "synthetic", codeVersion: "f1".repeat(32),
   configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey: "GOALS", horizonGames: 1,
   conditioning: "synthetic-unconditional", participationLineage: "synthetic-only" };
 const fixturePolicy: rsoPolicy.RsoUsePolicy = { version: "rso-target-use-v1", revision: "fictional-stream-reviews",
@@ -57,7 +57,7 @@ function week(specs: Spec[], options: WeekOptions = {}): PlanningSnapshot {
     const game = games.find(row => row.id === `${spec.team}-${day}`)!;
     return { playerId: spec.id, gameId: game.id, stats: { GOALS: spec.perGame }, conditioning: "unconditional", sourceKind: "detailed",
       sourceWatermark: "fixture-only", cutoffAt: "2026-10-25T12:00:00Z", issuedAt: "2026-10-25T12:00:00Z", expiresAt: game.startsAt,
-      revisionId: `revision-${spec.id}-${day}`, modelVersion: "fixture", startProbability: spec.startProbability ?? null, confirmedStart: false,
+      revisionId: `revision-${spec.id}-${day}`, modelVersion: "fixture", producerCodeVersion: "f1".repeat(32), startProbability: spec.startProbability ?? null, confirmedStart: false,
       allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, limitations: [],
       rsoTargetBindings: { GOALS: { ...fixtureScope, cutoffAt: "2026-10-25T12:00:00Z" } },
       issuedContext: { version: "forge-issued-context-v1", playerId: spec.id, gameId: game.id, nhlPlayerId: index + 1, teamId: index + 1,

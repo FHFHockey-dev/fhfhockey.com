@@ -1,5 +1,5 @@
 import type { ContributionAllowedUses, ContributionExclusion, ContributionParticipation, ContributionSource, AnyForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
-import type { RsoTargetUseBinding, RsoUsePolicyManifest } from "../player-forecasts/rsoUsePolicy";
+import type { RsoTargetUseBinding, RsoUsePolicyManifest } from "../player-forecasts/rsoUseResolver";
 import type { GameExpectationPowerPlayRole } from "../player-forecasts/gameExpectations";
 export type ForecastExclusionReason = ContributionExclusion | "canary_excluded" | "discovery_timeout"
   | "discovery_failed" | "incomplete_refresh" | "eligibility_unverified" | "game_mismatch"
@@ -99,6 +99,10 @@ export type GameForecast = {
   allowedUses?: ContributionAllowedUses;
   targetAllowedUses?: Record<string, ContributionAllowedUses>;
   rsoTargetBindings?: Record<string, RsoTargetUseBinding>;
+  /** The stable producer identity RSO reviews bind: the row's validated FORGE model identity `codeVersion`, the verified
+   * producer closure (TJ D3 as amended 2026-11-21). Unlike `modelVersion` (the deploy SHA), it survives deploys that leave
+   * the producer unchanged. Absent on rows issued before the fix, which are never reviewable. */
+  producerCodeVersion?: string;
   assignmentStats?: StatLine;
   sourceKind?: "detailed" | "baseline" | "blended";
   conditionalStats?: StatLine;

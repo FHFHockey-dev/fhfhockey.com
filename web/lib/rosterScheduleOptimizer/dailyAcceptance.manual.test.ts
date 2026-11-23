@@ -8,7 +8,7 @@
 // production review catalog stays empty; scenario (e) checks that path).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
-import { fixtureRsoBindings, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
+import { fixtureRsoBound, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import { evaluatePlan, planRoster } from "./planning";
@@ -95,7 +95,7 @@ function interimForecast(data: PlanningSnapshot, playerId: string, gameId: strin
   const issuedAt = hoursBefore(data.context.asOf, 2);
   return { playerId, gameId, stats, conditioning: "unconditional", sourceKind: "detailed", sourceWatermark: "interim-forge-bridge-fixture",
     cutoffAt: issuedAt, issuedAt, expiresAt: match.startsAt!, modelVersion: INTERIM_MODEL, revisionId: `interim-bridge:${playerId}:${gameId}`,
-    rsoTargetBindings: fixtureRsoBindings(INTERIM_MODEL, issuedAt, Object.keys(stats)),
+    ...fixtureRsoBound(INTERIM_MODEL, issuedAt, Object.keys(stats)),
     issuedContext: { version: "forge-issued-context-v1", playerId, gameId, nhlPlayerId: member.nhlId!, teamId: member.nhlTeamId!,
       seasonId: SEASON, scheduledAt: match.startsAt!, scheduleRevision: match.scheduleRevision!, rosterRevision: member.rosterRevision!,
       observedAt: issuedAt, scheduleSourceUpdatedAt: issuedAt, scheduleFetchedAt: issuedAt, identityUpdatedAt: issuedAt,

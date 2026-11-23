@@ -8,7 +8,7 @@ const reviewedTargets = ["pts", "made", "attempts", "GOALS", "ASSISTS", "SHOTS",
   "SAVES_GOALIE", "SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE", "GOALIE_MINUTES", "WINS_GOALIE", "SHUTOUTS_GOALIE",
   "saves", "shotsAgainst", "goalsAgainst", "minutes", "g", "h", "unused"];
 const fixtureBindings = Object.fromEntries(reviewedTargets.map(targetKey => [targetKey, {
-  component: "fictional-planner", modelMode: "synthetic", codeVersion: "fixture-v1",
+  component: "fictional-planner", modelMode: "synthetic", codeVersion: "f1".repeat(32),
   configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey, horizonGames: 1,
   conditioning: "synthetic-unconditional", participationLineage: "synthetic-only", cutoffAt: "2026-10-04T00:00:00Z",
 }]));
@@ -32,7 +32,7 @@ export function issuedForecast(data: PlanningSnapshot, playerId: string, gameId:
   const game = data.games.find(row => row.id === gameId && row.teamAbbreviation === member.teamAbbreviation)!;
   return { playerId, gameId, rsoTargetBindings: structuredClone(fixtureBindings), stats: { pts: playerId === "a" ? 1 : 2 }, conditioning: "unconditional",
     sourceKind: "detailed", sourceWatermark: "fixture-inputs", cutoffAt: "2026-10-04T00:00:00Z",
-    issuedAt: "2026-10-04T00:00:00Z", expiresAt: game.startsAt!, modelVersion: "fixture-v1", revisionId: "r",
+    issuedAt: "2026-10-04T00:00:00Z", expiresAt: game.startsAt!, modelVersion: "fixture-v1", producerCodeVersion: "f1".repeat(32), revisionId: "r",
     issuedContext: { version: "forge-issued-context-v1", playerId, gameId, nhlPlayerId: member.nhlId!,
       teamId: member.nhlTeamId!, seasonId: data.context.seasonId, scheduledAt: game.startsAt!,
       scheduleRevision: game.scheduleRevision!, rosterRevision: member.rosterRevision!, observedAt: "2026-10-04T00:00:00Z",

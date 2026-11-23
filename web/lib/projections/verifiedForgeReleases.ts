@@ -228,6 +228,13 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     receiptSha256: "656bc85abe908dbfa19efbfce21d82a0812b840b0abb974c11a6b0966b9bfbb5",
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "November 22 standalone WGO readiness gate with row digests, on a9e08f854 (master with #464 and its 7ee3612e registration). The verifier found no excluded projection inputs in the 244-module producer closure.",
+  },  {
+    closureSha256: "3611475f4de94896916aaf394dcbb23b004097a85ed6914f743056db6e3b74ad",
+    commit: "24cbe90af57046e1c7ef456102e508abbafa0d3b",
+    receipt: "tasks/artifacts/rso-release-candidate-2026-11-22/24cbe90af57046e1c7ef456102e508abbafa0d3b.json",
+    receiptSha256: "c4072ae14aac635df0a394d2f4d70836b40dcff95eda525b3df01cd53cffba3d",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 22 RSO release candidate on ebfdf1cd2: the Detailed participation overlay plus the RSO identity fix (review catalog outside the closure, model identity v2 keyed to the closure). The verifier found no excluded projection inputs in the 244-module producer closure.",
   },
 ];
 

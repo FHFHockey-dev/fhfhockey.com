@@ -243,7 +243,7 @@ describe("fresh RSO execution authority", () => {
   it.each([-5000, 5000])("uses server time for positive review admission and clears all output when it expires during compute (skew %s)", async skew => {
     const { snapshot, body, intent } = fixture();
     vi.setSystemTime(new Date(Date.parse(now) + skew)); snapshot.context.asOf = new Date().toISOString();
-    const binding = { component: "synthetic-only", modelMode: "baseline", codeVersion: "reviewed-test",
+    const binding = { component: "synthetic-only", modelMode: "baseline", codeVersion: "e1".repeat(32),
       configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey: "GOALS", horizonGames: 1,
       conditioning: "conditional_playing", participationLineage: "fixture", cutoffAt: now };
     const { cutoffAt: _, ...scope } = binding;
@@ -252,7 +252,7 @@ describe("fresh RSO execution authority", () => {
       inputCutoffUntil: "2026-10-23T00:00:00Z", allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
       prospectiveEvidenceRef: "fictional-evidence", ownerApprovalRef: "fictional-approval" }] };
     vi.spyOn(policyModule, "currentRsoUsePolicy").mockReturnValue(policy);
-    body.data.forecasts = [{ ...snapshot.forecasts[0], revisionId: "native", modelVersion: binding.codeVersion,
+    body.data.forecasts = [{ ...snapshot.forecasts[0], revisionId: "native", modelVersion: "1".repeat(40), producerCodeVersion: binding.codeVersion,
       rsoTargetBindings: { GOALS: binding } }];
     body.data.forecastManifest!.issuedRevisionIds = ["native"]; body.data.forecastManifest!.rsoUsePolicy!.bridgeRevisionIds = [];
     body.bridgeForecasts.rows = [];

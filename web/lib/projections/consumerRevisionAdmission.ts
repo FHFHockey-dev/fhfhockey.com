@@ -3,6 +3,9 @@ import { calendarLeadDay, forecastCalendarPolicy, validForecastCalendarPolicy, t
 import { boardGoalieForecast, boardSkaterForecast, completeBoardSkaterStatsFromProjection } from "./starterBoardScoring";
 import { forgeRosterRevision, forgeScheduleRevision, type ForgeIssuedContextV1 } from "./issuedContext";
 import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "./acceptedNews";
+import { applyRsoParticipationOverlay, INJURY_EVENTS, loadRsoParticipationSources, type RsoParticipationSources } from "./rsoParticipationOverlay";
+import { DETAILED_PARTICIPATION_CONFLICT_NOTE, DETAILED_PARTICIPATION_LINE_ROLE_NOTE, DETAILED_PARTICIPATION_NOTES, overlayChangeNote,
+  type RsoParticipationBasis } from "./rsoParticipationNotes";
 import type { ForgeGameRevision } from "./gameRevisions";
 import { withinDeadline } from "lib/rosterScheduleData/planningInputs";
 import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
@@ -15,6 +18,29 @@ export type AdmittedConsumerSource = {
   source: { kind: "skater" | "goalie"; row: Row };
 };
 const numberOrNull = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
+
+/**
+ * TJ's Detailed RSO participation policy (2026-11-21, amends decisions 3 and 47 for Detailed RSO only). A skater on his
+ * team's issued active roster with no active injury or confirmed exclusion is assumed to play; an active injury is assumed
+ * out until a credible game-specific report confirms him back; confirmed scratches, suspensions and other exclusions
+ * override the healthy default. Possible returns, projected lines, PP roles and practice never confirm anything. Later
+ * changes are replayed at read time over the saved "if he plays" line (rsoParticipationOverlay.ts), each recorded as its
+ * own timestamped limitation; the issued row is never rewritten. Opt-in per consumer.
+ */
+export const RSO_ASSUMED_PARTICIPATION_POLICY = "rso-assumed-participation-v1" as const;
+export type DetailedParticipationPolicy = typeof RSO_ASSUMED_PARTICIPATION_POLICY;
+export type DetailedParticipationBasis = RsoParticipationBasis;
+/** Review scope of policy rows: the participation method a reviewed RSO use must name (decision D5 review lane). Defined
+ * with the resolver, which requires an `@issuance` for it as for every issued method. */
+export { RSO_PARTICIPATION_OVERLAY_METHOD } from "lib/player-forecasts/rsoUseResolver";
+export const RSO_PARTICIPATION_OVERLAY_CONDITIONING = "rso_participation_overlay";
+export { DETAILED_PARTICIPATION_CONFLICT_NOTE, DETAILED_PARTICIPATION_LINE_ROLE_NOTE, DETAILED_PARTICIPATION_NOTES,
+  detailedParticipationBasisOf, overlayChangeNote } from "./rsoParticipationNotes";
+/** Read-time inputs for the policy. `sources` null means they could not be read: policy rows are then withheld.
+ * `superseded` revisions have accepted news after their cutoff: their skater rows stay (the overlay applies the news),
+ * every other row of theirs is withdrawn as stale. */
+export type RsoParticipationContext = { sources: RsoParticipationSources | null; superseded: ReadonlySet<string> };
+
 const validCapturedTime = (value: unknown, observedAt: string) => value === null
   || typeof value === "string" && !acceptedNewsSupersedes(value, observedAt);
 
@@ -22,7 +48,8 @@ const validCapturedTime = (value: unknown, observedAt: string) => value === null
 export function publicPlanningForecasts(revisions: ForgeGameRevision[], players: PlanningPlayer[], games: PlanningGame[], now: Date,
   exclusions: Record<string, number> = {}, exclusionRows: ForecastDiscoveryExclusion[] = [], expectedSeasonId?: number,
   calendarPolicy: AnyForecastCalendarPolicy = forecastCalendarPolicy(),
-  admittedSources: Map<string, AdmittedConsumerSource> = new Map()): GameForecast[] {
+  admittedSources: Map<string, AdmittedConsumerSource> = new Map(),
+  rsoParticipation?: RsoParticipationContext): GameForecast[] {
   const excluded = (reason: ForecastExclusionReason, gameId: string, playerId?: string, targetKey?: string) => {
     exclusions[reason] = (exclusions[reason] ?? 0) + 1;
     if (exclusionRows.length < 15000) exclusionRows.push({ gameId, ...(playerId ? { playerId } : {}),
@@ -168,10 +195,37 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
       const stats = completeBoardSkaterStatsFromProjection(row);
       const prediction = boardSkaterForecast(stats, row.uncertainty, { gameId: row.game_id, teamId: row.team_id,
         playerId: row.player_id, horizonGames: row.horizon_games, cutoffAt, evidence: revision.payload.evidence });
-      // The shared skater model can be conditional-only. Do not assume participation = 1.
+      // The shared skater model can be conditional-only. Do not assume participation = 1, except under the opted-in
+      // Detailed RSO policy, which replays availability at read time over the saved line and labels every assumption.
+      if (rsoParticipation) {
+        const player = byNhl.get(row.player_id);
+        const target = currentGames.find(game => game.teamAbbreviation === player?.teamAbbreviation);
+        if (!rsoParticipation.sources) { excluded("incomplete_refresh", gameId, player?.id); continue; }
+        const line = prediction.conditional;
+        const overlay = line && target?.startsAt ? applyRsoParticipationOverlay({ coverage: row.uncertainty?.availability,
+          playerNhlId: row.player_id, teamId: row.team_id, gameId: row.game_id, gameDate: target.date, gameStartsAt: target.startsAt,
+          revisionCutoff: cutoffAt, sources: rsoParticipation.sources,
+          teamGameStarts: games.filter(game => game.teamAbbreviation === target.teamAbbreviation && game.startsAt).map(game => game.startsAt!) }) : null;
+        if (overlay && line) {
+          const playing = overlay.basis.endsWith("_playing");
+          const counted = Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value == null ? null : playing ? value : 0]));
+          emit({ kind: "skater", row }, row.player_id, row.team_id, row.game_id, counted, null, false, [...prediction.conflicts,
+            ...overlay.changes.map(overlayChangeNote), ...(overlay.conflict ? [DETAILED_PARTICIPATION_CONFLICT_NOTE] : []),
+            ...(overlay.lineRoleChanged ? [DETAILED_PARTICIPATION_LINE_ROLE_NOTE] : []), DETAILED_PARTICIPATION_NOTES[overlay.basis]],
+          line, playing ? 1 : 0);
+          continue;
+        }
+        // Without a replayable status, a revision that news has superseded is stale, as before.
+        if (rsoParticipation.superseded.has(revision.id)) { excluded("stale_source", gameId, player?.id); continue; }
+      }
       emit({ kind: "skater", row }, row.player_id, row.team_id, row.game_id, prediction.expected, null, false, prediction.conflicts,
         prediction.conditional, prediction.participationProbability,
         prediction.conditioning === "conditional_playing" ? "missing_participation" : "unsupported_conditioning");
+    }
+    // Goalie starts are not replayed: a revision superseded by news withdraws them until it is refreshed.
+    if (rsoParticipation?.superseded.has(revision.id)) {
+      if ((revision.payload.goalies ?? []).length) excluded("stale_source", gameId);
+      continue;
     }
     const goalieGroups = new Map<string, { gameId: number; teamId: number; candidates: Row[] }>();
     for (const row of revision.payload.goalies ?? []) {
@@ -211,7 +265,8 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
 export async function admitConsumerGameRevisions(db: SupabaseClient<any>, revisions: ForgeGameRevision[],
   players: PlanningPlayer[], games: PlanningGame[], now: Date, seasonId: number,
   exclusionCounts: Record<string, number> = {}, exclusionRows: ForecastDiscoveryExclusion[] = [],
-  deadline = Date.now() + 2000, calendarPolicy: ForecastCalendarPolicy = forecastCalendarPolicy()) {
+  deadline = Date.now() + 2000, calendarPolicy: ForecastCalendarPolicy = forecastCalendarPolicy(),
+  participationPolicy?: DetailedParticipationPolicy) {
   const limitations: string[] = [];
   const recordExclusion = (gameId: string, reason: ForecastExclusionReason) => {
     exclusionCounts[reason] = (exclusionCounts[reason] ?? 0) + 1;
@@ -219,6 +274,7 @@ export async function admitConsumerGameRevisions(db: SupabaseClient<any>, revisi
   };
   let acceptedNewsRevision: string | null = null;
   let currentRevisions = revisions;
+  const superseded = new Set<string>();
   if (revisions.length) {
     try {
       const newsDeadline = Math.min(deadline, Date.now() + 2000);
@@ -227,18 +283,42 @@ export async function admitConsumerGameRevisions(db: SupabaseClient<any>, revisi
       currentRevisions = revisions.filter(revision => {
         const acceptedAt = news.latestAcceptedAt.get(revision.game_id);
         if (!acceptedAt || !acceptedNewsSupersedes(acceptedAt, revision.payload.inputCutoff ?? revision.decision_as_of)) return true;
+        // Under the RSO policy the overlay applies the news to skaters; only rows it cannot replay are withdrawn.
+        if (participationPolicy) { superseded.add(revision.id); return true; }
         recordExclusion(String(revision.game_id), "stale_source");
         return false;
       });
-      if (currentRevisions.length !== revisions.length) limitations.push("New accepted evidence supersedes some issued forecasts; affected decisions remain unresolved until refresh.");
+      if (currentRevisions.length !== revisions.length || superseded.size) limitations.push("New accepted evidence supersedes some issued forecasts; affected decisions remain unresolved until refresh.");
     } catch {
       currentRevisions = [];
       for (const id of new Set(revisions.map(row => String(row.game_id)))) recordExclusion(id, "incomplete_refresh");
       limitations.push("Accepted evidence freshness could not be verified; issued forecasts are temporarily unavailable.");
     }
   }
+  let rsoParticipation: RsoParticipationContext | undefined;
+  if (participationPolicy) {
+    let sources: RsoParticipationSources | null = null;
+    if (currentRevisions.length) {
+      try {
+        const overlayDeadline = Math.min(deadline, Date.now() + 4000);
+        // Only skaters this request can serve (its planning players), and appearances only for those the issued
+        // rows show injured: an appearance lifts nothing else.
+        const planned = new Set(players.map(player => player.nhlId));
+        const rows = currentRevisions.flatMap(revision => (revision.payload?.players ?? []) as Row[])
+          .filter(row => Number.isSafeInteger(row?.player_id) && planned.has(row.player_id));
+        const injured = rows.filter(row => INJURY_EVENTS.has(row.uncertainty?.availability?.event_type)
+          || row.uncertainty?.availability?.event_type === "RETURN");
+        sources = await withinDeadline(overlayDeadline, () => loadRsoParticipationSources(db, { gameIds: currentRevisions.map(row => row.game_id),
+          playerNhlIds: rows.map(row => row.player_id), appearancePlayerNhlIds: injured.map(row => row.player_id),
+          readAt: now.toISOString(), deadlineMs: overlayDeadline }));
+      } catch {
+        limitations.push("Current player availability could not be read; affected skater forecasts are temporarily unavailable.");
+      }
+    }
+    rsoParticipation = { sources, superseded };
+  }
   const admittedSources = new Map<string, AdmittedConsumerSource>();
   const forecasts = publicPlanningForecasts(currentRevisions, players, games, now, exclusionCounts, exclusionRows,
-    seasonId, calendarPolicy, admittedSources);
+    seasonId, calendarPolicy, admittedSources, rsoParticipation);
   return { forecasts, currentRevisions, acceptedNewsRevision, limitations, admittedSources: [...admittedSources.values()] };
 }

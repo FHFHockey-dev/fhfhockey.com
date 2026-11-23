@@ -103,6 +103,8 @@ const forecast = z.object({ playerId: id, gameId: id, stats: statLine,
   allowedUses: allowedUses.optional(), assignmentStats: statLine.optional(),
   targetAllowedUses: z.record(z.string().min(1).max(50), allowedUses).optional(),
   rsoTargetBindings: z.record(z.string().min(1).max(50), rsoTargetBinding).optional(),
+  // The stable producer identity RSO reviews bind (verified closure); optional, so saves from before it still parse.
+  producerCodeVersion: z.string().regex(/^[a-f0-9]{64}$/).optional(),
   sourceKind: z.enum(["detailed", "baseline", "blended"]).optional(),
   conditionalStats: statLine.optional(), tieBreakStats: statLine.optional(),
   appearanceProbability: z.number().finite().min(0).max(1).nullable().optional(),

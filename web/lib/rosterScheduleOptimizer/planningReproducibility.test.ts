@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
-import { bindFixtureForecast, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
+import { fixtureProducerCodeVersion, bindFixtureForecast, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
 
 import { planRoster, scheduleFits, evaluatePlan } from "./planning";
 import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
@@ -211,7 +211,7 @@ describe("planning search reproducibility", () => {
     snapshot.baselineSources = snapshot.baselineSources!.map(source => ({ ...source,
       cutoffAt: "2026-10-03T02:00:00Z", issuedAt: "2026-10-03T03:00:00Z" }));
     const target = profile === "goalie" ? "SAVES_GOALIE" : "GOALS";
-    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso" });
+    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso", usePolicy: rsoPolicy.currentRsoUsePolicy() });
     const row = resolved.forecasts[0];
     expect(row.stats[target]).not.toBeNull();
     expect(row.contributions?.[target].sourceKind).toBe("baseline");
@@ -220,7 +220,7 @@ describe("planning search reproducibility", () => {
     expect(row.cutoffAt).toBe("2026-10-03T02:00:00Z");
     expect(row.contributions?.[target].inputs?.participation?.cutoffAt).toBe("2026-10-03T00:00:00Z");
     const saved = JSON.parse(JSON.stringify(resolved));
-    expect(resolvePlanningContributions(saved, { consumer: "rso" }).forecasts).toEqual(resolved.forecasts);
+    expect(resolvePlanningContributions(saved, { consumer: "rso", usePolicy: rsoPolicy.currentRsoUsePolicy() }).forecasts).toEqual(resolved.forecasts);
   });
 
   it.each(["points", "goalie"] as const)("preserves native %s participation approval through baseline save/replay", profile => {
@@ -237,12 +237,12 @@ describe("planning search reproducibility", () => {
     }
     snapshot.baselineSources = snapshot.baselineSources!.map(source => ({ ...source,
       cutoffAt: "2026-10-03T02:00:00Z", issuedAt: "2026-10-03T03:00:00Z" }));
-    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso" });
+    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso", usePolicy: rsoPolicy.currentRsoUsePolicy() });
     const target = profile === "goalie" ? "SAVES_GOALIE" : "GOALS";
     expect(resolved.forecasts[0].stats[target]).toBeGreaterThan(0);
     expect(resolved.forecasts[0].revisionId).not.toBe(snapshot.forecasts[0].revisionId);
     const saved: PlanningSnapshot = JSON.parse(JSON.stringify(resolved));
-    const replayed = resolvePlanningContributions(saved, { consumer: "rso" });
+    const replayed = resolvePlanningContributions(saved, { consumer: "rso", usePolicy: rsoPolicy.currentRsoUsePolicy() });
     expect(replayed.forecasts).toEqual(resolved.forecasts);
     for (const provider of ["manual", "yahoo"] as const) {
       const context = { ...saved.context, provider };
@@ -262,7 +262,7 @@ describe("planning search reproducibility", () => {
         if (failure === "future_issuance") participation.issuedAt = "2026-10-04T01:00:00Z";
         if (failure === "expired_participation") participation.expiresAt = changed.context.asOf;
       }
-      const rejected = resolvePlanningContributions(changed, { consumer: "rso" });
+      const rejected = resolvePlanningContributions(changed, { consumer: "rso", usePolicy: rsoPolicy.currentRsoUsePolicy() });
       for (const row of rejected.forecasts) {
         expect(row.stats[target], failure).toBeNull();
         expect(row.contributions?.[target].allowedUses.comparison, failure).toBe(false);
@@ -291,7 +291,8 @@ describe("planning search reproducibility", () => {
     if (kind === "revoked_revision") saved.forecastManifest!.issuedRevisionIds = [];
     for (const row of saved.forecasts) {
       if (kind === "missing_binding") row.rsoTargetBindings = undefined;
-      if (kind === "changed_model") row.modelVersion = "unreviewed-model";
+      // The producer identity a review binds is the closure, not the deploy SHA in modelVersion.
+      if (kind === "changed_model") row.producerCodeVersion = fixtureProducerCodeVersion("unreviewed-model");
       for (const binding of Object.values(row.rsoTargetBindings ?? {})) {
         if (kind === "changed_artifact") binding.artifactHash = "c".repeat(64);
       }

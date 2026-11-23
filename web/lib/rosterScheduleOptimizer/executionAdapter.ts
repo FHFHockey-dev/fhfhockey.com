@@ -23,7 +23,7 @@ export async function executeRosterPlanning(snapshot: PlanningSnapshot, intent: 
     // The Yahoo confirmation window, not a public input, ends this plan: a public-only plan can stand in after it.
     const privateLapsesFirst = deadline !== null && deadline === privateDeadline && !publicDeadlines.some(value => value <= deadline);
     const evaluate = (current: PlanningSnapshot) => {
-      const resolved = resolvePlanningContributions(sanitizeForecastInputs(current), { consumer: "rso" });
+      const resolved = resolvePlanningContributions(sanitizeForecastInputs(current), { consumer: "rso", usePolicy: policy });
       const displaySnapshot = { ...resolved, forecasts: resolved.forecasts.map(row => {
         const numeric = Object.keys(row.stats).some(key => ["assignment", "totals", "comparison"]
           .some(use => forecastAllows(row, key, use as "assignment" | "totals" | "comparison")));

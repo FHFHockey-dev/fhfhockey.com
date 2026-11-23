@@ -55,6 +55,7 @@ const dataShape = z.object({ players: z.array(z.object({ id: z.string(), nhlId: 
   forecasts: rows(z.object({ playerId: z.string(), gameId: z.string(), revisionId: z.string(), stats: z.record(finite.nullable()),
     allowedUses: uses.optional(), appearanceProbability: finite.min(0).max(1).nullable().optional(),
     targetAllowedUses: z.record(uses).optional(), rsoTargetBindings: z.record(rsoTargetBinding).optional(),
+    producerCodeVersion: z.string().regex(/^[a-f0-9]{64}$/).optional(),
     powerPlayRole: powerPlayRole.optional(),
     startProbability: finite.min(0).max(1).nullable(), confirmedStart: z.boolean(), conditioning: z.literal("unconditional"),
     issuedAt: clock, cutoffAt: clock.optional(), expiresAt: clock.optional(), modelVersion: z.string().nullable(), limitations: strings,

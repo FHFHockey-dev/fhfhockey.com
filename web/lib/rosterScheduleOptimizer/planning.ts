@@ -1,5 +1,6 @@
 import { weightedAssignment } from "../projections/weightedAssignment";
 import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
+import { currentRsoUsePolicy } from "../player-forecasts/rsoUsePolicy";
 import { summarizeContributionCoverage, type ResolvedContribution } from "../player-forecasts/contributions";
 import { lineupPeriodAtDate, localDate, nextLocalMidnight, zonedMidnight } from "./planningDates";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
@@ -307,7 +308,7 @@ export function swapCategoryBreakdown(snapshot: PlanningSnapshot, baseline: Plan
 /** Candidate horizon totals are separate from incremental active-game capacity.
  * Use the same source validation, stat applicability and permissions as plans. */
 export function candidateHorizonPoints(input: PlanningSnapshot): Map<string, number | null> {
-  const snapshot = sanitizeForecastInputs(resolvePlanningContributions(sanitizeForecastInputs(input), { consumer: "rso" }));
+  const snapshot = sanitizeForecastInputs(resolvePlanningContributions(sanitizeForecastInputs(input), { consumer: "rso", usePolicy: currentRsoUsePolicy() }));
   const applicability = statApplicability(snapshot);
   const forecasts = new Map(snapshot.forecasts.map(row => [`${row.playerId}:${row.gameId}`, row]));
   const points = new Map<string, number | null>();
@@ -697,7 +698,7 @@ export function scheduleAdmissionProblem(snapshot: PlanningSnapshot): string | n
 }
 function prepareEvaluation(snapshot: PlanningSnapshot, playerIds?: ReadonlySet<string>) {
   // Scenario rows never reach the native contribution resolver or its serving policy.
-  snapshot = scenarioUse ? sanitizeForecastInputs(snapshot) : resolvePlanningContributions(sanitizeForecastInputs(snapshot), { consumer: "rso", playerIds });
+  snapshot = scenarioUse ? sanitizeForecastInputs(snapshot) : resolvePlanningContributions(sanitizeForecastInputs(snapshot), { consumer: "rso", playerIds, usePolicy: currentRsoUsePolicy() });
   const players = new Map(snapshot.players.map(player => [player.id, player]));
   const forecasts = new Map(snapshot.forecasts.filter(forecast => !forecast.expiresAt || Date.parse(forecast.expiresAt) > time(snapshot.context.asOf)).map(forecast => [`${forecast.playerId}:${forecast.gameId}`, forecast]));
   const applicability = statApplicability({ ...snapshot, forecasts: [...forecasts.values()] });
@@ -1458,7 +1459,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   snapshot = sanitizeForecastInputs(snapshot);
   const sourceSnapshot = snapshot;
   const relevantPlayerIds = new Set([...snapshot.roster.map(row => row.playerId), ...intent.steps.flatMap(step => [step.playerId, ...(step.dropPlayerId ? [step.dropPlayerId] : [])])]);
-  snapshot = resolvePlanningContributions(snapshot, { playerIds: relevantPlayerIds, consumer: "rso" });
+  snapshot = resolvePlanningContributions(snapshot, { playerIds: relevantPlayerIds, consumer: "rso", usePolicy: currentRsoUsePolicy() });
   const maxEvaluations = Math.max(3, options.maxEvaluations ?? defaultWorkQuotas(snapshot).evaluations);
   const beamWidth = Math.max(2, options.beamWidth ?? 8);
   const maxCandidates = Math.max(1, options.maxCandidates ?? 40);
@@ -1505,7 +1506,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
     // No-move starts counted so far, a known lower bound even while the lineup is not yet legal.
     player => noMoveAgp.assignments.filter(row => row.playerId === player.id).length);
   candidates.forEach(player => relevantPlayerIds.add(player.id));
-  snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds, consumer: "rso" });
+  snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds, consumer: "rso", usePolicy: currentRsoUsePolicy() });
   const limitations = new Set<string>();
   if (intent.objective !== "agp" && differenceOutcome) limitations.add(`Best projected points compares plans on their known part: ${unknownPlayers.length} player${unknownPlayers.length === 1 ? " has" : "s have"} unknown projections, so totals are incomplete, and a plan that changes their games is not ranked or recommended.`);
   else if (intent.objective === "outcome" && !outcomeEligible) limitations.add("Best projected points needs projections for your whole lineup; planning for most starts until then.");
@@ -1705,7 +1706,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
     ? { policyVersion: "rso-stream-v1" as const, recommended: null, chains: [], limitations: ["Search time limit reached before streaming chains were built."] }
     : buildStreamingChains({ snapshot: sourceSnapshot, intent, baseline, dropOrder, dueNow: latestEquivalentActionAt(sourceSnapshot),
       deadline: start + timeBudgetMs, evaluate: steps => evaluatePlan(sourceSnapshot, intent, objective, steps, false),
-      points: forecastPointsReader(resolvePlanningContributions(sourceSnapshot, { playerIds: streamingPool, consumer: "rso" })) });
+      points: forecastPointsReader(resolvePlanningContributions(sourceSnapshot, { playerIds: streamingPool, consumer: "rso", usePolicy: currentRsoUsePolicy() })) });
   const benchComplete = !benchBudget.workQuotaReached && !benchBudget.timeLimitReached;
   if (!benchComplete) limitations.add(benchBudget.timeLimitReached
     ? "Bench explanations reached the response time limit; unchecked scoring decisions remain unresolved."
