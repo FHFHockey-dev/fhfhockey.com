@@ -434,6 +434,96 @@ describe("public RSO data boundary", () => {
     expect((await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true })).forecasts).toEqual([]);
   });
 
+  describe("bridge read budget (2026-11-23: a slow FORGE read served Daily RSO no forecasts)", () => {
+    /** One proven run with one skater line; `slow` delays every read of that table by `delayMs` (fake timers). */
+    function bridgeDb(slow?: { table: string; delayMs: number }, extra: Partial<Parameters<typeof formDb>[3]> = {}, fail?: string) {
+      const result = formDb([], [], fail as never, { ...(slow ? { slowTable: slow.table, delayMs: slow.delayMs } : {}), ...extra });
+      Object.assign(result.tables, {
+        forge_runs: [{ run_id: "run-b", as_of_date: "2026-10-09", created_at: "2026-10-09T15:00:00Z", git_sha: "abc" }],
+        forge_player_projections: [{ run_id: "run-b", as_of_date: "2026-10-09", horizon_games: 1, game_id: 2026020000, player_id: 847001, team_id: 1,
+          proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
+          proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
+        forge_goalie_projections: [], goalie_start_projections: [], player_forecast_source_observations: [provenSnapshotRow("run-b")] });
+      return result;
+    }
+    /** Runs one RSO planning read under fake timers, advancing the clock until it settles; returns it and every console call. */
+    async function rsoRead(db: unknown, extraOptions: Record<string, unknown> = {}) {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+      vi.setSystemTime(new Date("2026-10-10T12:00:00Z"));
+      const logged = (["log", "info", "warn", "error"] as const).map(level => vi.spyOn(console, level).mockImplementation(() => undefined));
+      try {
+        type Settled = { value?: Awaited<ReturnType<typeof loadPlanningData>>; error?: unknown };
+        let settled = null as Settled | null;
+        const startedAt = Date.now();
+        loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, consumer: "rso", ...extraOptions })
+          .then(value => { settled = { value }; }, error => { settled = { error }; });
+        while (!settled && Date.now() - startedAt < 60000) await vi.advanceTimersByTimeAsync(250);
+        return { ...(settled as Settled | null ?? {}), elapsedMs: Date.now() - startedAt,
+          console: logged.flatMap(spy => spy.mock.calls.map(args => args.map(arg => typeof arg === "string" ? arg : JSON.stringify(arg)).join(" "))) };
+      } finally { for (const spy of logged) spy.mockRestore(); }
+    }
+
+    const served = (read: { value?: Awaited<ReturnType<typeof loadPlanningData>> }) => {
+      expect(read.value!.forecasts.map(row => `${row.gameId}:${row.revisionId}`)).toEqual(["2026020001:forge-daily-bridge-v1:run-b"]);
+      expect(read.value!.forecastManifest?.rsoUsePolicy?.bridgeRevisionIds).toEqual(["forge-daily-bridge-v1:run-b"]);
+    };
+    const logLine = (lines: string[]) => {
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toMatch(/^\[rso\/forge-bridge\] interim FORGE read failed /);
+      return JSON.parse(lines[0].replace(/^[^{]*/, ""));
+    };
+
+    // Before this change (989ee767c) the same 7 s skater read hit the fixed 6 s limit: 200, no forecasts, nothing logged.
+    it.each(["forge_player_projections", "player_forecast_source_observations", "forge_runs"])(
+      "serves every game when the required %s read is slow (7 s) but within planning's budget, and logs nothing", async table => {
+        const read = await rsoRead(bridgeDb({ table, delayMs: 7000 }).db, { retryBridgeReadFailure: true });
+        expect(read.error).toBeUndefined();
+        served(read);
+        expect(read.value!.evidence.forecasts.limitations).not.toContain("Interim FORGE projections could not be read; schedule planning remains available.");
+        expect(read.console).toEqual([]);
+      });
+
+    it.each(["forge_player_projections", "player_forecast_source_observations"])(
+      "throws the retryable error and logs the class and branch timings when the required %s read runs past its budget", async table => {
+        const read = await rsoRead(bridgeDb({ table, delayMs: 15000 }).db, { retryBridgeReadFailure: true });
+        expect(read.error).toBeInstanceOf(planningModule.ForgeBridgeReadUnavailableError);
+        expect(read.error).toMatchObject({ code: "forge_forecasts_unavailable", message: "Interim FORGE projections could not be read" });
+        // 10 s of the 20 s planning budget (6 s kept for ownership and recent form), not the whole 15 s read.
+        expect(read.elapsedMs).toBeLessThan(11000);
+        const line = logLine(read.console);
+        const slowest = table === "forge_player_projections" ? "skaters" : "proof";
+        expect(line).toMatchObject({ stage: "required_read", error: "deadline", code: null, readBudgetMs: 10000, retry: true, slowest });
+        expect(line.branchMs[slowest]).toBeGreaterThanOrEqual(9000);
+        // No row, run or player identity leaves in the log.
+        expect(read.console.join("\n")).not.toMatch(/run-b|847001|2026020000/);
+      });
+
+    it("logs a failed required read and keeps schedule-only for a caller that does not ask for the retryable error", async () => {
+      const read = await rsoRead(bridgeDb({ table: "forge_player_projections", delayMs: 15000 }).db);
+      expect(read.error).toBeUndefined();
+      expect(read.value!.forecasts).toEqual([]);
+      expect(read.value!.evidence.forecasts.limitations).toContain("Interim FORGE projections could not be read; schedule planning remains available.");
+      expect(logLine(read.console)).toMatchObject({ stage: "required_read", error: "deadline", retry: false, slowest: "skaters" });
+    });
+
+    it("answers a failed (not slow) required read with the retryable error too, logging its class but never its message", async () => {
+      const read = await rsoRead(bridgeDb(undefined, { errorCode: "57014" }, "forge_goalie_projections").db, { retryBridgeReadFailure: true });
+      expect(read.error).toBeInstanceOf(planningModule.ForgeBridgeReadUnavailableError);
+      expect(logLine(read.console)).toMatchObject({ stage: "required_read", error: "other", code: null, lateMs: null, retry: true });
+      expect(read.console.join("\n")).not.toContain("private database details");
+    });
+
+    it.each([["a stalled", { hangTable: "wgo_skater_stats_totals" }], ["a failed", { badTable: "nhl_team_data", failure: "late_error" }]] as const)(
+      "keeps optional reads optional: %s season-totals or team-priors read still serves every game, inside the optional 6 s", async (_label, extra) => {
+        const read = await rsoRead(bridgeDb(undefined, extra).db, { retryBridgeReadFailure: true });
+        expect(read.error).toBeUndefined();
+        served(read);
+        // The optional reads keep their own 6 s; the longer required budget never holds the answer for them.
+        expect(read.elapsedMs).toBeLessThan(6500);
+        expect(read.console).toEqual([]);
+      });
+  });
+
   it("VORP S3: with RSO_LATER_IMPACT_SCENARIO off (default) nothing changes; on, only a separate scenario rides beside identical data", async () => {
     const load = async () => {
       const { db, tables, calls } = formDb([], []);

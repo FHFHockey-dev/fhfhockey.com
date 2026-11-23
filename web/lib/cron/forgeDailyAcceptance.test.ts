@@ -110,6 +110,13 @@ describe("daily FORGE acceptance: other rejections", () => {
     const http = base("control");
     http.dailyRsoHttp = 500;
     rejected(http, "control", "daily_rso_http_200");
+    // The retryable answer Daily RSO now gives when FORGE's required reads fail (2026-11-23): rejected, never thrown.
+    const retryable = base("control");
+    retryable.dailyRsoHttp = 503;
+    retryable.dailyRso = { success: false, code: "forge_forecasts_unavailable", retryable: true,
+      error: "FORGE projections are temporarily unavailable; try again shortly. Your saved manual workspace is preserved." };
+    rejected(retryable, "control", "daily_rso_http_200");
+    rejected(retryable, "control", "daily_rso_covers_expected_under_run");
   });
   it("rejects off-day NST evidence outside the window, unverified, or with any request", () => {
     const late = base("offday");

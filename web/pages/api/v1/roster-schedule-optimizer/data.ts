@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { encodePlanningDataTransport, PlanningDataTransportLimitError } from "lib/rosterScheduleData/planningDataTransport";
 import { compactBridgeForecasts, fitBridgeWire, PLANNING_RESPONSE_BYTE_BUDGET, type BridgeRunProof } from "lib/rosterScheduleData/bridgeForecastWire";
 import serviceRoleClient from "lib/supabase/server";
-import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
+import { ForgeBridgeReadUnavailableError, loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { forecastSourceSummary, selectForecastServingSource } from "lib/player-forecasts/forecastServingSource";
 
 /** Public shared inputs. No league/account data or admin/research payloads. */
@@ -20,7 +20,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // One server-side source per request; RSO has no legacy forecasts, so every fallback serves none.
     const source = await selectForecastServingSource(serviceRoleClient, query.seasonId, now);
     let proofs: BridgeRunProof[] = [];
-    const data = await loadPlanningData(serviceRoleClient, query, { now, source, forgeDailyBridge: true, consumer: "rso", onBridgeRunProofs: served => { proofs = served; } });
+    const data = await loadPlanningData(serviceRoleClient, query, { now, source, forgeDailyBridge: true, consumer: "rso",
+      retryBridgeReadFailure: true, onBridgeRunProofs: served => { proofs = served; } });
     // A shared copy of native forecasts never outlives the selected catalog.
     const nativeMaxAge = source.kind === "native" ? Math.max(0, Math.min(300, Math.floor((Date.parse(source.expiresAt) - Date.now()) / 1000))) : null;
     res.setHeader("Cache-Control", nonce || data.forecastManifest?.rsoUsePolicy ? "private, no-store"
@@ -36,6 +37,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.json(body);
   } catch (error) {
     if (error instanceof PlanningDataTransportLimitError) return res.status(503).json({ success: false, code: "planning_range_too_large", error: error.message });
+    // FORGE's required reads failed (logged by planning): a retryable answer, never a 200 with no forecasts.
+    if (error instanceof ForgeBridgeReadUnavailableError) {
+      res.setHeader("Cache-Control", "no-store"); res.setHeader("Retry-After", "30");
+      return res.status(503).json({ success: false, code: error.code, retryable: true,
+        error: "FORGE projections are temporarily unavailable; try again shortly. Your saved manual workspace is preserved." });
+    }
     return res.status(503).json({ success: false, error: "Planning data is temporarily unavailable. Your saved manual workspace is preserved." });
   }
 }

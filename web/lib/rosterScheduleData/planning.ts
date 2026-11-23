@@ -2,7 +2,7 @@ import { concurrentPages, loadPlanningInputs, pages, withinDeadline, PlanningPag
 import { admitConsumerGameRevisions, detailedParticipationBasisOf, RSO_ASSUMED_PARTICIPATION_POLICY, RSO_PARTICIPATION_OVERLAY_CONDITIONING,
   RSO_PARTICIPATION_OVERLAY_METHOD } from "lib/projections/consumerRevisionAdmission";
 import { currentRsoUsePolicy, issuedParticipationLineage, restrictRsoForecast, type RsoUsePolicyManifest } from "lib/player-forecasts/rsoUsePolicy";
-import { loadForgeDailyBridgeForecasts, type ForgeBridgeCapture } from "./forgeDailyBridge";
+import { FORGE_BRIDGE_READ_BUDGET_MS, forgeBridgeTimingSummary, loadForgeDailyBridgeForecasts, type ForgeBridgeCapture, type ForgeBridgeTiming } from "./forgeDailyBridge";
 import type { BridgeRunProof } from "./bridgeForecastWire";
 import { fitLaterImpactScenario, laterImpactScenarioEnabled, loadLaterImpactScenario, planningBodyBytes } from "./laterImpactInputs";
 export { normalizePlanningGames } from "./planningInputs";
@@ -51,6 +51,15 @@ const RECENT_FORM_BUDGET_MS = 6000, RECENT_FORM_CONCURRENCY = 4;
 /** Deployment chips read every team's charted lineups over two weeks (about 8 games a team, 32 teams), then the PP units of
  * each team's newest one (5 per unit, with every skater who had PP time); both caps sit well above a full window. */
 const DEPLOYMENT_DAYS = 14, DEPLOYMENT_STALE_DAYS = 7, DEPLOYMENT_LINE_ROWS = 600, DEPLOYMENT_PP_ROWS_PER_GAME = 40;
+/** The interim FORGE bridge's required reads get up to 10 s while 6 s of planning's budget stays for ownership and recent
+ * form after them, and never less than the loader's own 6 s (or what is left). A normal read takes about 5 s. */
+const BRIDGE_READ_CAP_MS = 10000, BRIDGE_READ_RESERVE_MS = 6000;
+/** The interim FORGE bridge's required reads (runs, proof, skaters, goalies) failed: the caller should answer a retryable
+ * error, never a successful read with no forecasts. Carries no source detail. */
+export class ForgeBridgeReadUnavailableError extends Error {
+  readonly code = "forge_forecasts_unavailable";
+  constructor() { super("Interim FORGE projections could not be read"); }
+}
 /** Provider ownership percentage: a finite 0–100 number or plain numeric string; anything else is unknown, never 0. */
 const ownershipPct = (value: unknown) => {
   const parsed = typeof value === "string" && /^\d+(\.\d+)?$/.test(value) ? Number(value) : numberOrNull(value);
@@ -83,7 +92,9 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   /** RSO only: serve interim FORGE daily projections while native forecasts are not activated. */
   forgeDailyBridge?: boolean;
   /** Receives the served bridge runs' proofs for the response wire; never stored on PlanningData or a snapshot. */
-  onBridgeRunProofs?: (proofs: BridgeRunProof[]) => void } = {}): Promise<PlanningData> {
+  onBridgeRunProofs?: (proofs: BridgeRunProof[]) => void;
+  /** Throw ForgeBridgeReadUnavailableError when the bridge's required reads fail, instead of serving schedule-only. */
+  retryBridgeReadFailure?: boolean } = {}): Promise<PlanningData> {
   const now = options.now ?? new Date();
   const deadline = Math.min(options.deadlineMs ?? Infinity, Date.now() + 20000);
   const source = options.source ?? await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => selectForecastServingSource(db, query.seasonId, now, process.env, signal))
@@ -255,9 +266,12 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   // TJ 2026-11-21 (supersedes P07): admitted rows that are denied, unreviewed or out do not keep it off.
   if (options.forgeDailyBridge && source.kind === "legacy" && !forecasts.some(usable) && !baseline.sources.length
     && process.env.RSO_FORGE_DAILY_BRIDGE !== "off") {
+    const timing: ForgeBridgeTiming = { startedAt: {}, ms: {} };
+    const remaining = deadline - Date.now();
+    const readBudgetMs = Math.max(Math.min(FORGE_BRIDGE_READ_BUDGET_MS, remaining), Math.min(BRIDGE_READ_CAP_MS, remaining - BRIDGE_READ_RESERVE_MS));
     try {
-      const bridge = await (scenarioOn ? loadForgeDailyBridgeForecasts(db, players, games, now, query.seasonId, deadline, calendarPolicy, captured => { observation = captured; })
-        : loadForgeDailyBridgeForecasts(db, players, games, now, query.seasonId, deadline, calendarPolicy));
+      const bridge = await loadForgeDailyBridgeForecasts(db, players, games, now, query.seasonId, deadline, calendarPolicy,
+        scenarioOn ? captured => { observation = captured; } : undefined, timing, readBudgetMs);
       forecastProblems.push(...bridge.limitations);
       if (bridge.forecasts.length) {
         forecasts = bridge.forecasts; bridged = true;
@@ -271,7 +285,19 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
         if (disabled >= 0) forecastProblems.splice(disabled, 1);
         if (rsoUsePolicy) rsoUsePolicy.bridgeRevisionIds = [...new Set(forecasts.map(row => row.revisionId))].sort();
       }
-    } catch { forecastProblems.push("Interim FORGE projections could not be read; schedule planning remains available."); }
+    } catch (error) {
+      // A failure before the build is a required read (runs, proof, skaters, goalies); optional reads never throw.
+      const requiredRead = timing.startedAt.build === undefined;
+      // Fixed fields only: no error message, query text, row or ID leaves in the log.
+      console.warn("[rso/forge-bridge] interim FORGE read failed", JSON.stringify({
+        stage: requiredRead ? "required_read" : "build",
+        error: error instanceof PlanningReadDeadlineError ? "deadline" : error instanceof PlanningPageReadError ? "page_read" : "other",
+        code: error instanceof PlanningPageReadError ? error.code : null,
+        lateMs: error instanceof PlanningReadDeadlineError ? error.lateMs : null,
+        readBudgetMs, retry: requiredRead && !!options.retryBridgeReadFailure, ...forgeBridgeTimingSummary(timing) }));
+      if (requiredRead && options.retryBridgeReadFailure) throw new ForgeBridgeReadUnavailableError();
+      forecastProblems.push("Interim FORGE projections could not be read; schedule planning remains available.");
+    }
   }
   if (rsoUsePolicy && !bridged && forecasts.length) forecastProblems.push("Detailed target uses require an applicable reviewed scope; unapproved quality remains unavailable.");
   if (rolloutValid && (options.forecastsEnabled ?? starterBoardFlags().serving)) {

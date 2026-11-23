@@ -850,6 +850,11 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
 /** When each branch of one bridge load started and, once it settled, how long it took (ms). A branch with a start and no
  * duration was still running when the load ended. Filled by loadForgeDailyBridgeForecasts for the caller's diagnostics. */
 export type ForgeBridgeTiming = { startedAt: Record<string, number>; ms: Record<string, number> };
+/** Default limit for the required reads (runs, proof, skaters, goalies), from the load's start. */
+export const FORGE_BRIDGE_READ_BUDGET_MS = 6000;
+/** Optional reads (season totals, board evidence, team priors and the like) get this much from their own start, never
+ * past the required-read limit, so a longer required budget never holds a healthy answer for a stalled optional read. */
+export const FORGE_BRIDGE_OPTIONAL_READ_MS = 6000;
 /** Elapsed ms per branch (a running branch counts up to `now`), the branches still running, and the slowest branch. */
 export function forgeBridgeTimingSummary(timing: ForgeBridgeTiming, now = Date.now()) {
   const branchMs: Record<string, number> = {}, pending: string[] = [];
@@ -869,8 +874,10 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
   /** VORP S3 only (flag on): receives the admitted runs and their output rows as read; never changes the result. */
   capture?: (observation: ForgeBridgeCapture) => void,
   /** Filled with each branch's timing (each read, the proof, the board evidence and the build); never changes the result. */
-  timing: ForgeBridgeTiming = { startedAt: {}, ms: {} }): Promise<ForgeDailyBridgeResult> {
-  const readDeadline = Math.min(deadline, Date.now() + 6000);
+  timing: ForgeBridgeTiming = { startedAt: {}, ms: {} },
+  /** How long the required reads may take from now, never past `deadline`. */
+  readBudgetMs = FORGE_BRIDGE_READ_BUDGET_MS): Promise<ForgeDailyBridgeResult> {
+  const readDeadline = Math.min(deadline, Date.now() + readBudgetMs);
   const timed = <T>(branch: string, work: () => PromiseLike<T>): Promise<T> => {
     const startedAt = timing.startedAt[branch] = Date.now();
     return Promise.resolve().then(work).finally(() => { timing.ms[branch] = Date.now() - startedAt; });
@@ -908,6 +915,7 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
     .map(game => Number(game.id)).filter(Number.isSafeInteger))].slice(0, 500);
   const windowEnd = games.map(game => game.date).sort().at(-1) ?? to;
   const scheduleFrom = new Date(Date.parse(`${from}T12:00:00Z`) - 7 * DAY_MS).toISOString().slice(0, 10);
+  const optionalDeadline = Math.min(readDeadline, Date.now() + FORGE_BRIDGE_OPTIONAL_READ_MS);
   const [skaters, goalies, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed, reserves] = await Promise.all([
     timed("skaters", () => pages(() => db.from("forge_player_projections").select(SKATER_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
       .order("run_id").order("game_id").order("player_id"), readDeadline, 15000, row => [row.run_id, row.game_id, row.player_id])),
@@ -915,24 +923,24 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
       .order("run_id").order("game_id").order("goalie_id"), readDeadline, 2000, row => [row.run_id, row.game_id, row.goalie_id])),
     // Optional inputs: a failed read keeps the projections and says so in the evidence.
     timed("season_totals", () => pages(() => db.from("wgo_skater_stats_totals").select("player_id,season,games_played,goals,gw_goals,penalty_minutes,plus_minus,sh_goals,sh_assists,sh_points,total_fow,total_fol", { count: "exact" })
-      .in("season", [String(seasonId), previousSeason]).order("season").order("player_id"), readDeadline, 5000, row => [row.season, row.player_id])).catch(() => undefined),
-    timed("board_evidence", () => withinDeadline(readDeadline,
+      .in("season", [String(seasonId), previousSeason]).order("season").order("player_id"), optionalDeadline, 5000, row => [row.season, row.player_id])).catch(() => undefined),
+    timed("board_evidence", () => withinDeadline(optionalDeadline,
       signal => loadDailyBoardEvidence(upcomingGameIds, now.toISOString(), abortableReads(db, signal) as never))).catch(() => undefined),
     // "*" keeps the read valid before and after migration 129 (which adds nst_season); the reader checks the field.
     timed("team_priors", () => pages(() => db.from("nhl_team_data").select("*", { count: "exact" })
       .eq("season_id", seasonId).gte("date", from).lte("date", to).order("date", { ascending: false }).order("team_abbrev"),
-    readDeadline, 2000, row => [row.team_abbrev, row.date, row.xga, row.xga_per_game])).catch(() => undefined),
+    optionalDeadline, 2000, row => [row.team_abbrev, row.date, row.xga, row.xga_per_game])).catch(() => undefined),
     timed("last_season_teams", () => pages(() => db.from("nst_team_stats").select("team_abbreviation,season,situation,gp,xga,xgf", { count: "exact" })
-      .eq("season", Number(previousSeason)).eq("situation", "all").order("team_abbreviation"), readDeadline, 200, row => [row.team_abbreviation, row.season])).catch(() => undefined),
+      .eq("season", Number(previousSeason)).eq("situation", "all").order("team_abbreviation"), optionalDeadline, 200, row => [row.team_abbreviation, row.season])).catch(() => undefined),
     timed("team_games", () => pages(() => db.from("games").select("id,date,homeTeamId,awayTeamId", { count: "exact" }).gte("date", scheduleFrom).lte("date", windowEnd)
-      .order("date").order("id"), readDeadline, 3000)).catch(() => undefined),
+      .order("date").order("id"), optionalDeadline, 3000)).catch(() => undefined),
     // Optional until the opponent_skater_allowed_by_position view is applied; a failed read skips the tilt.
     timed("position_allowed", () => pages(() => db.from("opponent_skater_allowed_by_position").select("season_id,opponent,position_group,games,points,shots", { count: "exact" })
       .in("season_id", [seasonId, Number(previousSeason)]).order("season_id").order("opponent").order("position_group"),
-    readDeadline, 400, row => [row.season_id, row.opponent, row.position_group])).catch(() => undefined),
+    optionalDeadline, 400, row => [row.season_id, row.opponent, row.position_group])).catch(() => undefined),
     // Read only with the reserve pass on; a failed read leaves reserves without a line and says so.
     forgeReservePassEnabled() ? timed("reserves", () => pages(() => db.from("forge_reserve_projections").select(RESERVE_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
-      .order("run_id").order("game_id").order("player_id"), readDeadline, 15000, row => [row.run_id, row.game_id, row.player_id])).catch(() => null) : Promise.resolve(undefined),
+      .order("run_id").order("game_id").order("player_id"), optionalDeadline, 15000, row => [row.run_id, row.game_id, row.player_id])).catch(() => null) : Promise.resolve(undefined),
   ]);
   capture?.({ startedAt: captureStartedAt, completedAt: new Date().toISOString(), runs, skaters, goalies, reserves });
   return build({ runs: [...runs, ...withheld], skaters, goalies, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed, reserves });
