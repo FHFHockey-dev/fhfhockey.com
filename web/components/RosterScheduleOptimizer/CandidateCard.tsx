@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import { ownershipBrokeTie, type CandidateComparison, type CandidateDiagnostic, type CandidatePlan } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 import { categoryFormatter } from "lib/rosterScheduleOptimizer/categoryFormat";
-import { OWNERSHIP_TIE_NOTE, injuryDisplay, notCountedText, retentionCaution, retentionCautionText } from "lib/rosterScheduleOptimizer/retention";
+import { OWNERSHIP_TIE_NOTE, injuryDisplay, notCountedText, ownershipLabel, retentionCaution, retentionCautionText } from "lib/rosterScheduleOptimizer/retention";
 import type { InjuredOutWeek } from "lib/rosterScheduleOptimizer/planning";
 import type { PlanningPlayer, PlanningSnapshot, PlanStep } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { CanonicalSchedule } from "./canonicalSchedule";
 import Image from "next/image";
 import styles from "./CandidateCard.module.scss";
 
+const number1 = (value: number) => Number.isInteger(value) ? String(value) : value.toFixed(1);
 const signed = (value: number) => `${value > 0 ? "+" : ""}${Number.isInteger(value) ? value : value.toFixed(1)}`;
 const games = (value: number) => `${signed(value)} active game${Math.abs(value) === 1 ? "" : "s"}`;
 const ACQUIRABLE = ["free_agent", "manager_available", "waivers"];
@@ -45,7 +46,7 @@ function reasonFor(plan: CandidatePlan, categories: boolean, drops: number): str
 }
 
 export default function CandidateCard({ player, rank, plan, comparison, diagnostic, evaluationState = "completed", snapshot, categories, excluded,
-  select, add, selectPlan, canSelectPlan, selectPlanReasonId, manual, markAvailable, compare, calendar, upcomingGames, goalieBoost, players, injuredWeek,
+  select, add, selectPlan, canSelectPlan, selectPlanReasonId, manual, markAvailable, compare, calendar, upcomingGames, goalieBoost, players, injuredWeek, pointsPartial = false,
   nameOf = id => (players ?? snapshot?.players)?.find(row => row.id === id)?.name ?? id }: {
   player: PlanningPlayer; rank: number | null; calendar?: CanonicalSchedule; upcomingGames?: number | null; plan?: CandidatePlan; comparison?: CandidateComparison;
   snapshot: PlanningSnapshot | null; categories: boolean; excluded: boolean;
@@ -59,6 +60,8 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
   players?: PlanningPlayer[];
   /** His week when the provider lists him Out: shown greyed, never counted. */
   injuredWeek?: InjuredOutWeek | null;
+  /** Net Pts is counted on the projected part of the lineup only: some roster games have no projection (decision 132.1). */
+  pointsPartial?: boolean;
 }) {
   const tieNote = plan && comparison ? ownershipBrokeTie(comparison.plans, plan) : false;
   // TJ 2026-11-16: an Out free agent's week shows greyed and "not counted" (read from the display snapshot).
@@ -84,12 +87,16 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
   const deployment = player.deployment;
   const linesAsOf = deployment && `Lines as of ${dayLabel(deployment.asOf)}${deployment.stale ? " · may be out of date" : ""}`;
   const lastFive = boxScore(player), games = player.lastFive?.games ?? 0;
-  const number = (label: string, value: number | null | undefined) => <span>
+  // Unknown reads "unknown" and a known-part total reads "partial", never a verified gain (TJ 2026-11-23).
+  const number = (label: string, value: number | null | undefined, partial = false) => <span>
     <strong data-sign={value == null ? undefined : value > 0 ? "positive" : value < 0 ? "negative" : "zero"}
-      title={value == null ? "Not enough projection data yet" : undefined}>{value == null ? "—" : signed(value)}</strong>
-    <small>{label}</small>
+      title={value == null ? "Not enough projection data yet" : partial ? "Counted on projected players only; some of your roster's games have no projection" : undefined}>{value == null ? "unknown" : signed(value)}</strong>
+    <small>{label}{partial && value != null && <em className={styles.partial}> partial</em>}</small>
   </span>;
-  return <article className={styles.card} data-ranked={rank !== null} data-gain={Boolean(gain)} data-injured={Boolean(player.injury)} data-injury={injury ?? undefined} data-rso-candidate-id={player.id} aria-label={`${player.name} compared acquisition`}>
+  const textActions = (!(plan && selectPlan) && ACQUIRABLE.includes(player.availability))
+    || (!plan && evaluationState === "completed" && diagnostic?.status === "not_selected" && Boolean(compare))
+    || (manual && player.availability === "unknown");
+  return <article className={styles.card} data-ranked={rank !== null} data-gain={Boolean(gain)} data-injured={Boolean(player.injury)} data-injury={injury ?? undefined} data-form={formChip?.toLowerCase()} data-rso-candidate-id={player.id} aria-label={`${player.name} compared acquisition`}>
     {rank !== null && <span className={styles.rank} aria-label={`Result ${rank}`}>{rank}</span>}
     <div className={styles.body}>
       <div className={styles.top}>
@@ -102,8 +109,17 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
             {injury && <span className={styles.injuredChip} data-injury={injury} title={injuredText ?? `${player.injury!.label}: still counted. Check his status before adding.`}>{injury === "out" ? "not counted" : player.injury!.status}</span>}
             {badge && <span className={styles.badge}>{badge}</span>}
             {formChip && <span className={styles.form} data-form={formChip.toLowerCase()}>{formChip}</span>}
-            {deployment?.line && <span className={styles.chip} data-stale={deployment.stale} title={linesAsOf} aria-label={`${deployment.line}. ${linesAsOf}`}>{deployment.line}</span>}
-            {deployment?.powerPlayUnit && <span className={styles.chip} data-stale={deployment.stale} title={linesAsOf} aria-label={`PP${deployment.powerPlayUnit}. ${linesAsOf}`}>PP{deployment.powerPlayUnit}</span>}
+            {deployment && player.playerClass !== "goalie" && (() => {
+              // One shared line/PP chip (TJ 2026-11-23): tier colours run L1/PP1 green, L2 lime, L3/PP2 yellow, L4 orange,
+              // and coral when he is on no line (scratched or off the roster) or no power-play unit.
+              const lineTier = deployment.line ? Number(deployment.line.slice(1)) : 0, ppTier = deployment.powerPlayUnit === 1 ? 1 : deployment.powerPlayUnit === 2 ? 3 : 0;
+              const defense = deployment.line ? deployment.line.startsWith("D") : player.eligiblePositions.length > 0 && player.eligiblePositions.every(position => position === "D");
+              const lineSpoken = deployment.line ? `${defense ? "Pair" : "Line"} ${lineTier}` : `Not on a ${defense ? "pair" : "line"}`;
+              const ppSpoken = deployment.powerPlayUnit ? `PP${deployment.powerPlayUnit}` : "No power play";
+              return <span className={styles.deployChip} role="img" data-stale={deployment.stale} title={linesAsOf} aria-label={`${lineSpoken}, ${ppSpoken}. ${linesAsOf}`}>
+                <b data-tier={lineTier}>{deployment.line ?? (defense ? "D–" : "L–")}</b><b data-tier={ppTier}>{deployment.powerPlayUnit ? `PP${deployment.powerPlayUnit}` : "PP–"}</b>
+              </span>;
+            })()}
           </div>
           {drops.map(id => {
             const dropped = (players ?? snapshot?.players)?.find(row => row.id === id);
@@ -112,12 +128,23 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
               <button className={styles.name} onClick={() => select(id)}>{nameOf(id)}</button>
               {dropped && <small>{dropped.teamAbbreviation ?? "—"} · {positions(dropped)}</small>}
               {caution && <small className={styles.caution} data-caution={level}>{caution}</small>}
+              {(() => { const lost = plan?.dropped.find(row => row.playerId === id);
+                const points = lost?.lostPoints == null ? "points impact unknown" : `loses ${number1(lost.lostPoints)} pts${pointsPartial ? " (partial)" : ""}`;
+                const games = lost?.lostAGP == null ? "AGP impact unknown" : `${number1(lost.lostAGP)} AGP`;
+                return <small className={styles.dropFacts}>{ownershipLabel(dropped)} · {points} · {games}</small>; })()}
             </div>;
           })}
         </div>
         {plan && <div className={styles.metrics} aria-label="Net plan comparison">
-          {!categories && number("Net Pts", plan.netPoints)}
+          {!categories && number("Net Pts", plan.netPoints, pointsPartial)}
           {number("Net AGP", plan.netAGP)}
+        </div>}
+        {/* Text actions sit beside the name (TJ 2026-11-23), so the footer holds only the notes and Use this swap. */}
+        {textActions && <div className={styles.topActions}>
+          {!(plan && selectPlan) && ACQUIRABLE.includes(player.availability) && <button className={styles.textButton} onClick={() => add(player)}>Select add</button>}
+          {!plan && evaluationState === "completed" && diagnostic?.status === "not_selected" && compare
+            && <button className={styles.textButton} onClick={() => compare(player.id)}>Compare this player</button>}
+          {manual && player.availability === "unknown" && <button className={styles.textButton} onClick={() => markAvailable(player)}>Mark available</button>}
         </div>}
       </div>
       {dates.length > 0 && <div className={styles.schedule} role="group" aria-label={`${player.name} NHL schedule`}>
@@ -131,12 +158,13 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
           </span>;
         })}
       </div>}
-      {lastFive && <p className={styles.boxScore} title={`Totals over the last ${games} game${games === 1 ? "" : "s"} played`}
-        aria-label={`Last ${games} games played: ${lastFive.map(([label, value]) => `${value} ${label}`).join(", ")}`}>
-        <small>L{games} GP</small>{lastFive.map(([label, value]) => <span key={label}><b>{value}</b> {label}</span>)}
-      </p>}
       <div className={styles.footer}>
+        {/* The last-5 line shares the action row with the reasons (TJ 2026-11-23): one column beside the button. */}
         <div className={styles.notes}>
+          {lastFive && <p className={styles.boxScore} title={`Totals over the last ${games} game${games === 1 ? "" : "s"} played`}
+            aria-label={`Last ${games} games played: ${lastFive.map(([label, value]) => `${value} ${label}`).join(", ")}`}>
+            <small>L{games} GP</small>{lastFive.map(([label, value]) => <span key={label}><b>{value}</b> {label}</span>)}
+          </p>}
           {injury === "out" ? <p className={styles.reason} data-injury="out">{injuredWeek?.points != null && <s className={styles.excludedPoints}>{injuredWeek.points.toFixed(1)}</s>}
             {injuredText}</p>
             : plan && <p className={styles.reason}>{reasonFor(plan, categories, drops.length)}</p>}
@@ -154,11 +182,7 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
         {plan && selectPlan ? <button className={styles.action} disabled={!canSelectPlan || !selectionAvailable}
           aria-describedby={!canSelectPlan ? selectPlanReasonId : undefined}
           aria-label={`Use this swap: add ${player.name}${drops.length ? `, drop ${drops.map(nameOf).join(", ")}` : ""}`}
-          onClick={() => selectPlan(plan.steps)}>Use this swap</button>
-          : ACQUIRABLE.includes(player.availability) && <button className={styles.textButton} onClick={() => add(player)}>Select add</button>}
-        {!plan && evaluationState === "completed" && diagnostic?.status === "not_selected" && compare
-          && <button className={styles.textButton} onClick={() => compare(player.id)}>Compare this player</button>}
-        {manual && player.availability === "unknown" && <button className={styles.textButton} onClick={() => markAvailable(player)}>Mark available</button>}
+          onClick={() => selectPlan(plan.steps)}>Use this swap</button> : null}
       </div>
     </div>
   </article>;

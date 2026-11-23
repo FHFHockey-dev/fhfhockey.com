@@ -1,5 +1,5 @@
 import type { CurrentPlanningOptions } from "lib/rosterScheduleOptimizer/currentPlanningRead";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useCandidateMetrics } from "hooks/useCandidateMetrics";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { candidateAlternativeForSort, candidatePlanForSort, type CandidateComparison, type CandidateDiagnostic, type CandidatePlan } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
@@ -28,6 +28,11 @@ type Props = {
   rosterIds: Set<string>;
   /** No roster yet: one "add your roster" prompt instead of the loading copy. */
   emptyRoster?: boolean;
+  /** The current read's projections have arrived (the planning snapshot passed here never carries them for a manual roster). */
+  projectionsLoaded?: boolean;
+  /** Phones show the planner's alternatives count inside Filters (TJ 2026-11-23); the panel header keeps it on desktop. */
+  alternativeCount?: 5 | 10 | 20;
+  onAlternativeCount?: (count: 5 | 10 | 20) => void;
   snapshot: PlanningSnapshot | null;
   intent: PlanIntent;
   fits: PlanningResult["scheduleFits"];
@@ -71,7 +76,7 @@ export function noAddsRemain(snapshot: PlanningSnapshot | null) {
   return periods.length > 0 && periods.every(period => period.source !== "unknown" && period.remaining !== null && Math.floor(period.remaining / cost) < 1);
 }
 
-export default function CandidateBrowser({ emptyRoster = false, executionOptions, preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, selectPlanReasonId, markAvailable, injuredWeekOf }: Props) {
+export default function CandidateBrowser({ emptyRoster = false, projectionsLoaded, alternativeCount, onAlternativeCount, executionOptions, preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, selectPlanReasonId, markAvailable, injuredWeekOf }: Props) {
   const [view, setView] = useState<"team" | "all">("all");
   const [localQuery, setLocalQuery] = useState("");
   const query = searchQuery ?? localQuery;
@@ -93,6 +98,8 @@ export default function CandidateBrowser({ emptyRoster = false, executionOptions
   const compare = (id: string) => setRequested({ snapshotId: snapshot?.id ?? null, ids: [...new Set([...requestedIds, id])] });
   const { metrics, loading, error, retained } = useCandidateMetrics(snapshot, intent, requestedIds, executionOptions);
   const goalieBoost = metrics?.goalieBoost === true;
+  // Net Pts is a known-part total when the no-move lineup itself can't be priced in full (decision 132.1; TJ 2026-11-23).
+  const pointsPartial = !categories && metrics?.baseline != null && metrics.baseline.projectedPoints === null;
   // Discovery uses this render's clock; saved planning cutoffs remain immutable.
   const discoveryAsOf = Date.now();
   const candidates = useMemo(() => {
@@ -122,6 +129,11 @@ export default function CandidateBrowser({ emptyRoster = false, executionOptions
   const filtered = candidates.filter(({ player }) => (!team || player.teamAbbreviation === team)
     && (!position || normalizeEligibility(player.eligiblePositions).positions.includes(position as typeof positions[number]))
     && `${player.name} ${player.teamAbbreviation ?? ""}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+  // On phones Filters is a dropdown over the list: picking a team or position closes it (TJ 2026-11-23).
+  const filtersRef = useRef<HTMLDetailsElement>(null);
+  const closePhoneFilters = () => { if (filtersRef.current && window.matchMedia?.("(max-width: 640px)").matches) filtersRef.current.open = false; };
+  // Filters narrowing the list right now, for the phone badge.
+  const activeFilters = [query.trim(), team, position].filter(Boolean).length;
   const hasEvaluatedFit = filtered.some(item => item.activeGames !== null || item.activePoints !== null);
   const inputsToVerify = filtered.filter(row => !knownInputs(row)).length;
   // Plain-language reasons, shown once in the collapsed panel footer.
@@ -149,13 +161,13 @@ export default function CandidateBrowser({ emptyRoster = false, executionOptions
   const alternativeDrops = (plan: CandidatePlan) => plan.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []);
   const alternativeLine = (name: string, alternative: CandidatePlan) => <p className={styles.limitation} aria-label={`Alternative for ${name}`}>
     Alternative: {alternativeDrops(alternative).length ? `drop ${alternativeDrops(alternative).map(nameOf).join(", ")}` : "no drop"}
-    {!categories && ` · Net Pts ${signed(alternative.netPoints)}`} · Net AGP {signed(alternative.netAGP)}</p>;
+    {!categories && ` · Net Pts ${signed(alternative.netPoints)}${pointsPartial && alternative.netPoints !== null ? " (partial)" : ""}`} · Net AGP {signed(alternative.netAGP)}</p>;
   const row = ({ player, plan, alternative, comparison, diagnostic, upcomingGames }: Candidate, index: number, ranked = true) => <Fragment key={player.id}><CandidateCard
     player={player} rank={ranked ? index + 1 : null} calendar={calendar} upcomingGames={upcomingGames} plan={plan} comparison={comparison} snapshot={snapshot} categories={categories}
     diagnostic={diagnostic} evaluationState={loading ? "loading" : error ? "error" : !snapshot ? "no_snapshot" : "completed"}
     excluded={intent.excludedPlayerIds.includes(player.id)} nameOf={nameOf} players={players} goalieBoost={goalieBoost}
     select={select} add={add} selectPlan={selectPlan} canSelectPlan={canSelectPlan} selectPlanReasonId={selectPlanReasonId} manual={manual} markAvailable={markAvailable} compare={compare}
-    injuredWeek={injuredWeekOf?.(player.id)} />
+    injuredWeek={injuredWeekOf?.(player.id)} pointsPartial={pointsPartial} />
     {alternative && plan && (alternativeShown(plan, alternative, categories) ? alternativeLine(player.name, alternative)
       : <details className={cardStyles.otherDrop}><summary>Other drop</summary>{alternativeLine(player.name, alternative)}</details>)}</Fragment>;
   // A goalie minimum at risk lists goalie options that add expected starts first.
@@ -181,17 +193,18 @@ export default function CandidateBrowser({ emptyRoster = false, executionOptions
     {/* One toolbar (sort, then find & filter), then one slot for status lines, then the cards. */}
     <div className={styles.candidateToolbar}>
       {!categories && <div className={styles.candidateViews} role="group" aria-label="Sort recommendations">
-        <button aria-pressed={sort === "points"} onClick={() => setSort("points")}>By projected points</button>
-        <button aria-pressed={sort === "schedule"} onClick={() => setSort("schedule")}>By more starts</button>
+        <button aria-pressed={sort === "points"} onClick={() => setSort("points")}><span className={styles.headLong}>By projected points</span><span className={styles.headShort} aria-hidden="true">Points</span></button>
+        <button aria-pressed={sort === "schedule"} onClick={() => setSort("schedule")}><span className={styles.headLong}>By more starts</span><span className={styles.headShort} aria-hidden="true">Starts</span></button>
       </div>}
-      <details className={styles.candidateFilterDetails}><summary>Find & filter</summary><div className={styles.candidateFilters}>
+      <details ref={filtersRef} className={styles.candidateFilterDetails}><summary><span className={styles.headLong}>Find & filter</span><span className={styles.headShort} aria-hidden="true">Filters</span>{activeFilters > 0 && <b className={styles.filterCount}>{activeFilters}<span className={styles.scheduleSrOnly}> active</span></b>}</summary><div className={styles.candidateFilters}>
         <label className={styles.field}>Find candidate<input id="rso-candidate-search" type="search" value={query} onChange={event => { setQuery(event.target.value); resetExpansion(); }} /></label>
-        <label className={styles.field}>Team<select value={team} onChange={event => { setTeam(event.target.value); resetExpansion(); }}><option value="">All teams</option>{teams.map(value => <option key={value}>{value}</option>)}</select></label>
-        <label className={styles.field}>Position<select value={position} onChange={event => { setPosition(event.target.value); resetExpansion(); }}><option value="">All positions</option>{positions.map(value => <option key={value}>{value}</option>)}</select></label>
-        </div>
+        <label className={styles.field}>Team<select value={team} onChange={event => { setTeam(event.target.value); resetExpansion(); closePhoneFilters(); }}><option value="">All teams</option>{teams.map(value => <option key={value}>{value}</option>)}</select></label>
+        <label className={styles.field}>Position<select value={position} onChange={event => { setPosition(event.target.value); resetExpansion(); closePhoneFilters(); }}><option value="">All positions</option>{positions.map(value => <option key={value}>{value}</option>)}</select></label>
+        {alternativeCount && onAlternativeCount && <label className={`${styles.field} ${styles.phoneOnly}`}>Plans to compare<select value={alternativeCount} onChange={event => onAlternativeCount(Number(event.target.value) as 5 | 10 | 20)}><option value="5">5</option><option value="10">10</option><option value="20">20</option></select></label>}
         <div className={styles.candidateViews} role="group" aria-label="Candidate views">
           <button aria-pressed={view === "team"} onClick={() => setView("team")}>By Team</button>
           <button aria-pressed={view === "all"} onClick={() => setView("all")}>All players</button>
+        </div>
         </div>
       </details>
     </div>
@@ -200,7 +213,11 @@ export default function CandidateBrowser({ emptyRoster = false, executionOptions
       {goalieBoost && <p className={styles.limitation}>Your goalie minimum may be missed, so goalies who add starts are listed first.</p>}
       {retained && <p className={styles.limitation} role="status" aria-live="polite">Updating swaps for your protected players…</p>}
       {loading ? <p role="status" aria-live="polite">Comparing free agents…</p>
-        : !hasEvaluatedFit && <p role="status">{emptyRoster ? "Add your roster to rank free agents for it." : noAddsRemain(snapshot) ? "No adds remain this period; adds return when the period resets." : "Rankings appear once projections and schedules load."}</p>}
+        : !hasEvaluatedFit && <p role="status">{emptyRoster ? "Add your roster to rank free agents for it." : noAddsRemain(snapshot) ? "No adds remain this period; adds return when the period resets."
+          // After load, an empty ranking usually means nobody is available yet (a manual roster marks free agents itself).
+          : snapshot && (projectionsLoaded ?? snapshot.forecasts.length > 0) && !players.some(row => ["free_agent", "manager_available", "waivers"].includes(row.availability))
+            ? manual ? "No one is marked available yet. Mark available on a card, or import your Yahoo league." : "No available players came back from your league yet."
+            : "Rankings appear once projections and schedules load."}</p>}
       {error && <p aria-live="polite">{error}</p>}
     </div>
     {filtered.length === 0 ? <p>No candidates match these filters.</p> : view === "all" ? lists(filtered) : grouped.map(group => <details key={group.name} className={styles.alternative}><summary>{group.name} · {group.rows.length} players</summary>{lists(group.rows)}</details>)}

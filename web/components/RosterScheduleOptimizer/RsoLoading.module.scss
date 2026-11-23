@@ -7,5 +7,7 @@
 .panels { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: v.$space-sm; }
 .panel { min-width: 0; padding: v.$space-md; border: v.$border-subtle; border-radius: s.$radius-card; background: v.$draft-surface; }
 .row { height: 38px; margin-top: v.$space-sm; border-radius: s.$radius-small; background: v.$draft-surface-raised; }
-.navigation { position: fixed; z-index: 1000; top: v.$space-md; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: v.$space-sm v.$space-md; box-sizing: border-box; border: v.$border-subtle; border-left: 4px solid s.$accent; border-radius: s.$radius-small; background: v.$draft-surface; color: s.$ink-strong; font-family: v.$font-family-primary; pointer-events: none; }
+.navigation { position: fixed; z-index: 1000; top: v.$space-md; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: v.$space-sm v.$space-md v.$space-sm calc(#{v.$space-md} + 2px); box-sizing: border-box; border: v.$border-subtle; border-radius: 3px s.$radius-small s.$radius-small 3px; background: v.$draft-surface; color: s.$ink-strong; font-family: v.$font-family-primary; pointer-events: none; }
+// Canonical rail (fhfh-styles §2.7): laid over the 1px border so the accent never miters against the top edge.
+.navigation::before { content: ""; position: absolute; top: -1px; bottom: -1px; left: -1px; width: 3px; border-radius: 3px 0 0 3px; background: s.$accent; }
 @media (max-width: 700px) { .panels { grid-template-columns: 1fr; } .panel:nth-child(n + 2) { display: none; } }

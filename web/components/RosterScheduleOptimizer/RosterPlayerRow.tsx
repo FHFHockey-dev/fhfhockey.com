@@ -9,7 +9,7 @@ import Image from "next/image";
 import { getLocalTeamLogoPath, fallbackTeamLogo } from "lib/images";
 
 export default function RosterPlayerRow({ player, entry, contribution, nameOf, slot, protectedPlayer, manual,
-  select, protect, position, remove, children, dropCandidate = false, unprojected = false, unprojectedReason, injuredWeek }: {
+  select, protect, position, remove, children, dropCandidate = false, unprojected = false, unprojectedReason, injuredWeek, dropFacts }: {
   player: PlanningPlayer; entry: RosterEntry; contribution?: PlayerContribution; nameOf: (id: string) => string;
   slot?: string; protectedPlayer: boolean; manual: boolean; select: () => void; protect: () => void;
   position: (value: RosterEntry["position"]) => void; remove: () => void; children?: ReactNode;
@@ -21,6 +21,8 @@ export default function RosterPlayerRow({ player, entry, contribution, nameOf, s
   unprojectedReason?: string;
   /** An Out player's week, shown greyed and never counted (`injuredOutWeek` on the display snapshot). */
   injuredWeek?: InjuredOutWeek | null;
+  /** Drop safety (TJ 2026-11-23): fresh ownership (null when unknown), and remaining points and AGP in the legal lineup. */
+  dropFacts?: { ownership: string | null; detail: string } | null;
 }) {
   const caution = dropCandidate ? retentionCaution(player) : null;
   const cautionText = caution && retentionCautionText(caution);
@@ -33,7 +35,7 @@ export default function RosterPlayerRow({ player, entry, contribution, nameOf, s
       <Image src={getLocalTeamLogoPath(player.teamAbbreviation)} alt="" width={24} height={24} onError={event => { event.currentTarget.src = fallbackTeamLogo; }} />
       {/* Name on the first line; team, positions and the DROP / projection / reserve chips on the second, so a
           truncated name never hides a chip. The ownership caution is a marker whose text is its tooltip. */}
-      <span><span>{player.name}{injury && <Image className={styles.injuryIcon} src="/pictures/injured.png" alt={injury} title={injury} width={12} height={12} />}</span><small className={styles.playerMeta}><span>{player.teamAbbreviation ?? "—"} · {player.eligiblePositions.join("/") || "Positions unknown"}</span><span className={styles.playerChips}>{dropCandidate && <em className={styles.dropChip} title="Weakest droppable player this week">DROP</em>}{cautionText && <span className={styles.dropCaution} data-caution={caution!.level} title={cautionText}><span aria-hidden="true">{caution!.level === "high_demand" ? "!" : "?"}</span><span className={styles.scheduleSrOnly}>{cautionText}</span></span>}{kind === "out" && <em className={styles.injuredChip} data-injury="out" title={injuredText!}>OUT<span className={styles.scheduleSrOnly}>. {injuredText}</span></em>}{kind === "caution" && <em className={styles.injuredChip} data-injury="caution" title={`${player.injury!.label}: still counted. Check his status before games.`}>{player.injury!.status}</em>}{unprojected && <em className={styles.unprojectedChip} title={`${unprojectedReason ? `${unprojectedReason[0].toUpperCase()}${unprojectedReason.slice(1)}` : "No projection for this player's games"}; not ranked as a drop`}>no projection</em>}{entry.position !== "active" && entry.position !== "bench" && <em className={styles.reserveChip}>{entry.position}</em>}</span></small></span>
+      <span><span>{player.name}{injury && <Image className={styles.injuryIcon} src="/pictures/injured.png" alt={injury} title={injury} width={12} height={12} />}</span><small className={styles.playerMeta}><span>{player.teamAbbreviation ?? "—"} · {player.eligiblePositions.join("/") || "Positions unknown"}</span><span className={styles.playerChips}>{dropCandidate && <em className={styles.dropChip} title={`Weakest droppable player this week${dropFacts ? ` · ${dropFacts.detail}` : ""}`}>DROP</em>}{dropFacts?.ownership && <span className={styles.ownershipNote} title={dropFacts.detail}>{dropFacts.ownership.replace(/ owned$/, "")}<span className={styles.ownedWord}> owned</span></span>}{cautionText && <span className={styles.dropCaution} data-caution={caution!.level} title={cautionText}><span aria-hidden="true">{caution!.level === "high_demand" ? "!" : "?"}</span><span className={styles.scheduleSrOnly}>{cautionText}</span></span>}{kind === "out" && <em className={styles.injuredChip} data-injury="out" title={injuredText!}>OUT<span className={styles.scheduleSrOnly}>. {injuredText}</span></em>}{kind === "caution" && <em className={styles.injuredChip} data-injury="caution" title={`${player.injury!.label}: still counted. Check his status before games.`}>{player.injury!.status}</em>}{unprojected && <em className={styles.unprojectedChip} title={`${unprojectedReason ? `${unprojectedReason[0].toUpperCase()}${unprojectedReason.slice(1)}` : "No projection for this player's games"}; not ranked as a drop`}>no projection</em>}{entry.position !== "active" && entry.position !== "bench" && <em className={styles.reserveChip}>{entry.position}</em>}</span></small></span>
     </button>
     <RosterContribution name={player.name} contribution={contribution} nameOf={nameOf}
       excluded={kind === "out" && injuredWeek ? { points: injuredWeek.points, text: injuredText! } : undefined} />
@@ -51,7 +53,7 @@ export default function RosterPlayerRow({ player, entry, contribution, nameOf, s
           <option value="active">Active</option><option value="bench">Bench</option><option value="IR">IR</option><option value="IR+">IR+</option><option value="NA">NA</option>
         </select></label> : <span>Imported position: {entry.position}</span>}
         {children}
-        {manual && <button aria-label={`Remove ${player.name}`} onClick={remove}>Remove from roster</button>}
+        {manual && <button className={styles.removeButton} aria-label={`Remove ${player.name}`} onClick={remove}>Remove from roster</button>}
       </div>
     </details>
   </div>;

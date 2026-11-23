@@ -37,3 +37,19 @@ describe("StreamingItinerary empty state", () => {
     expect(screen.queryByRole("button", { name: /Review league rules/ })).toBeNull();
   });
 });
+
+describe("StreamingItinerary drop safety (TJ 2026-11-23)", () => {
+  afterEach(cleanup);
+  const step = { id: "s1", type: "add", playerId: "fa", dropPlayerId: "drop", at: "2026-11-09T12:00:00Z", effectiveAt: "2026-11-09T12:00:00Z", conditional: false, dependsOn: [] };
+  const leg = { spot: 0, step, actionDate: "2026-11-09", startDate: "2026-11-09", endDate: "2026-11-09", playerId: "fa", dropPlayerId: "drop",
+    games: 1, gameDates: ["2026-11-09"], points: 3, options: [] };
+  const chainPlan = { chains: [{ spots: 1, legs: [leg], steps: [step], evaluation: { goalie: { risk: false } }, netGames: 1, netPoints: 3, addsUsed: 1, addsAvailable: 2 }],
+    alternatives: [], limitations: [], recommended: 1 } as any;
+
+  it("states each drop's ownership, points and AGP left, and that chains rank on projections only", () => {
+    render(<StreamingItinerary {...props} plan={chainPlan} dropFacts={id => `${id === "drop" ? "Ownership 23%" : "?"} · 6.2 pts left · 2 AGP left`} />);
+    expect(screen.getByText("Drop drop: Ownership 23% · 6.2 pts left · 2 AGP left")).toBeTruthy();
+    expect(screen.getByText(/Ranked for each goal on projections only/)).toBeTruthy();
+    expect(screen.queryByText(/average of projected fantasy points/)).toBeNull();
+  });
+});

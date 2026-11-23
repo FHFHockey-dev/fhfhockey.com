@@ -66,7 +66,7 @@ it.each([6, 3])("shares one display budget across %i supported and unavailable p
   fireEvent.click(screen.getByRole("button", { name: /^Show more recommendations/ }));
   expect(ids()).toEqual(players.slice(0, 10).map(player => player.id));
   for (const article of screen.getAllByRole("article").slice(count)) {
-    expect(within(article).getByText("—", { selector: "strong" }).getAttribute("title")).toBe("Not enough projection data yet");
+    expect(within(article).getByText("unknown", { selector: "strong" }).getAttribute("title")).toBe("Not enough projection data yet");
   }
   if (count === 6) {
     expect(screen.getByLabelText("Result 10")).toBeTruthy();
@@ -164,6 +164,24 @@ it("says swaps are updating while a protection-only edit keeps the previous rank
   fixture.retained = true;
   render(<CandidateBrowser {...discoveryFixture()} />);
   expect(screen.getByText("Updating swaps for your protected players…").getAttribute("role")).toBe("status");
+});
+
+it("says nobody is marked available, not that rankings are loading, once projections have loaded (TJ 2026-11-23)", () => {
+  const props = discoveryFixture();
+  const loaded = { ...props.snapshot!, forecasts: [{ playerId: "alpha", gameId: "g1" }] } as unknown as PlanningSnapshot;
+  render(<CandidateBrowser {...props} snapshot={loaded} manual />);
+  expect(screen.getByRole("status").textContent).toBe("No one is marked available yet. Mark available on a card, or import your Yahoo league.");
+});
+
+it("closes the phone Filters dropdown after a team is picked, and keeps it open on desktop (TJ 2026-11-23)", () => {
+  for (const phone of [true, false]) {
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: phone && query.includes("max-width: 640px") }));
+    const { container, unmount } = render(<CandidateBrowser {...discoveryFixture()} />);
+    const details = container.querySelector("details")!; details.open = true;
+    fireEvent.change(screen.getByRole("combobox", { name: "Team" }), { target: { value: "AAA" } });
+    expect(details.open).toBe(!phone);
+    unmount(); vi.unstubAllGlobals();
+  }
 });
 
 it("leaves unavailable comparisons unranked and names alphabetical browsing for either selected net sort", () => {

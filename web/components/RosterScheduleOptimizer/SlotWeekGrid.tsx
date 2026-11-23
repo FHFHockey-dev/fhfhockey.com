@@ -229,9 +229,9 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
             <span className={styles.name}>{name}</span>
             <InjuryFlag player={player} />
             {assignment?.locked && <span className={styles.lock} title="Locked" aria-label="Locked">🔒</span>}
-            {mark && <span className={styles.start} data-out={mark.out ? "" : undefined} title={mark.text} aria-label={mark.text}>{mark.glyph}</span>}
           </span>
-          {game ? <span className={styles.opp}>{game.home ? `vs${game.opponent}` : `@${game.opponent}`}</span> : <span className={styles.noGameTag}>No game</span>}
+          {/* The start mark sits on the opponent line so a goalie's name gets the whole top line (TJ 2026-11-23). */}
+          {game ? <span className={styles.opp}>{game.home ? `vs${game.opponent}` : `@${game.opponent}`}{mark && <span className={styles.start} data-out={mark.out ? "" : undefined} title={mark.text} aria-label={mark.text}>{mark.glyph}</span>}</span> : <span className={styles.noGameTag}>No game</span>}
           {held && <NotCountedPoints player={player} value={held} />}
           {points && <ForecastPoints points={points} goalie={player.playerClass === "goalie"}
             tier={typeof points.expected === "number" ? tier(player.playerClass, points.expected) : undefined} />}

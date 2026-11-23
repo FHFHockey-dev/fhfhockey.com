@@ -32,6 +32,15 @@ describe("complete acquisition card presentation", () => {
     expect(screen.getByText("Recheck availability before adding")).toBeTruthy();
     expect(screen.queryByText("Recheck availability before claiming")).toBeNull();
   });
+  it("shows the dropped player's ownership and what the swap gives up, and labels a known-part Net Pts partial (TJ 2026-11-23)", () => {
+    const dropped: PlanningPlayer = { ...player, id: "drop", name: "Rostered Center", ownership: 23 };
+    const { rerender } = render(<CandidateCard {...props} players={[player, dropped]} />);
+    expect(screen.getByText("Ownership 23% · loses 3 pts · 1 AGP")).toBeTruthy();
+    expect(screen.queryByText("partial")).toBeNull();
+    rerender(<CandidateCard {...props} players={[player, dropped]} pointsPartial plan={{ ...plan, dropped: [{ playerId: "drop", lostAGP: null, lostPoints: null }] }} />);
+    expect(screen.getByText("Ownership 23% · points impact unknown · AGP impact unknown")).toBeTruthy();
+    expect(screen.getByText("partial")).toBeTruthy();
+  });
   it("describes the dropped player from the supplied player pool", () => {
     const dropped: PlanningPlayer = { ...player, id: "drop", name: "Rostered Center", teamAbbreviation: "BOS", eligiblePositions: ["C"] };
     render(<CandidateCard {...props} players={[player, dropped]} />);
@@ -61,7 +70,7 @@ describe("complete acquisition card presentation", () => {
   });
   it("shows a dash with a tooltip instead of zero for missing numbers and disables unsupported drop advice", () => {
     render(<CandidateCard {...props} plan={{ ...plan, netPoints: null }} />);
-    const dash = screen.getByText("—", { selector: "strong" });
+    const dash = screen.getByText("unknown", { selector: "strong" });
     expect(dash.getAttribute("title")).toBe("Not enough projection data yet");
     expect(screen.queryByText(/unavailable/)).toBeNull();
     expect((screen.getByRole("button", swap) as HTMLButtonElement).disabled).toBe(true);
@@ -125,8 +134,10 @@ describe("complete acquisition card presentation", () => {
     expect(footer.querySelector('[class*="notes"]')?.textContent).toContain("+1 active game, +4 projected points");
     expect(footer.querySelector("button")?.textContent).toBe("Use this swap");
     expect(card.querySelectorAll('[class*="boxScore"]')).toHaveLength(1);
-    // Moves, schedule (when dated), box score and footer are the only body rows.
-    expect([...card.querySelector('[class*="body"]')!.children].map(child => child.className.match(/(top|boxScore|footer)/)?.[1])).toEqual(["top", "boxScore", "footer"]);
+    // The box score leads the notes column beside the action (TJ 2026-11-23), so moves, schedule (when dated) and the
+    // footer are the only body rows.
+    expect(footer.querySelector('[class*="notes"] > [class*="boxScore"]:first-child')).not.toBeNull();
+    expect([...card.querySelector('[class*="body"]')!.children].map(child => child.className.match(/(top|boxScore|footer)/)?.[1])).toEqual(["top", "footer"]);
   });
 
   it("shows last-5 box-score totals for a skater, unknowns as a dash", () => {
@@ -147,20 +158,23 @@ describe("complete acquisition card presentation", () => {
     expect(screen.queryByLabelText(/^Last \d+ games played/)).toBeNull();
   });
 
-  it("shows line and PP chips with their date, mutes stale ones and shows nothing when unknown", () => {
+  it("shows one shared line/PP chip with tier colours and its date, dims stale ones and shows nothing when unknown", () => {
     const { unmount } = render(<CandidateCard {...props} player={{ ...player, deployment: { line: "L1", powerPlayUnit: 1, asOf: "2026-10-26", stale: false } }} />);
-    const line = screen.getByText("L1"), pp = screen.getByText("PP1");
-    expect(line.getAttribute("title")).toBe("Lines as of Oct 26");
-    expect(pp.getAttribute("aria-label")).toBe("PP1. Lines as of Oct 26");
-    expect(line.getAttribute("data-stale")).toBe("false");
+    const chip = screen.getByRole("img", { name: "Line 1, PP1. Lines as of Oct 26" });
+    expect(chip.getAttribute("title")).toBe("Lines as of Oct 26");
+    expect(chip.getAttribute("data-stale")).toBe("false");
+    expect([...chip.children].map(part => [part.textContent, part.getAttribute("data-tier")])).toEqual([["L1", "1"], ["PP1", "1"]]);
     unmount();
     const { unmount: second } = render(<CandidateCard {...props} player={{ ...player, deployment: { line: "D2", powerPlayUnit: null, asOf: "2026-10-12", stale: true } }} />);
-    expect(screen.getByText("D2").getAttribute("data-stale")).toBe("true");
-    expect(screen.getByText("D2").getAttribute("title")).toBe("Lines as of Oct 12 · may be out of date");
-    expect(screen.queryByText(/^PP\d$/)).toBeNull();
+    const stale = screen.getByRole("img", { name: "Pair 2, No power play. Lines as of Oct 12 · may be out of date" });
+    expect(stale.getAttribute("data-stale")).toBe("true");
+    expect([...stale.children].map(part => [part.textContent, part.getAttribute("data-tier")])).toEqual([["D2", "2"], ["PP–", "0"]]);
     second();
+    const { unmount: third } = render(<CandidateCard {...props} player={{ ...player, deployment: { line: null, powerPlayUnit: 2, asOf: "2026-10-26", stale: false } }} />);
+    expect([...screen.getByRole("img", { name: /^Not on a line, PP2\./ }).children].map(part => [part.textContent, part.getAttribute("data-tier")])).toEqual([["L–", "0"], ["PP2", "3"]]);
+    third();
     render(<CandidateCard {...props} />);
-    expect(screen.queryByText(/^(L|D|PP)\d$/)).toBeNull();
+    expect(screen.queryByRole("img", { name: /Lines as of/ })).toBeNull();
     expect(screen.queryByTitle(/Lines as of/)).toBeNull();
   });
 

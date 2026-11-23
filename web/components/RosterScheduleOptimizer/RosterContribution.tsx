@@ -26,7 +26,7 @@ export default function RosterContribution({ name, contribution, nameOf, exclude
     ["Remaining GP", row ? count(row.scheduledGames, row.knownScheduledGames) : "unknown"],
     ["AGP", row ? count(row.activeGames, row.knownActiveGames) : "unknown"],
     ["DUST/bench", row ? count(row.benchGames, row.knownBenchGames) : "unknown"],
-    ["Active points", row?.projectedPoints == null ? "unavailable" : row.projectedPoints.toLocaleString("en-US", { maximumFractionDigits: 3 })],
+    ["Active points", row?.projectedPoints == null ? "unavailable" : row.projectedPoints.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })],
   ];
   return <details className={styles.rosterContribution} aria-label={`${name} range contribution`}>
     <summary aria-label={`Review ${name} daily contribution evidence`}><span className={styles.contributionMetrics}>{metrics.map(([label, value]) =>
@@ -34,7 +34,7 @@ export default function RosterContribution({ name, contribution, nameOf, exclude
         : <span key={label} aria-label={`${label}: ${value}`}><span className={styles.contributionMetricLabel} title={label === "DUST/bench" ? "Evaluated bench games" : undefined}>{label === "DUST/bench" ? "DUST" : label}</span><strong>{compactValue(value)}</strong></span>
     )}</span></summary>
     <p>Remaining scheduled games while rostered, legal active assignments and evaluated bench games in the selected range. These do not confirm participation.</p>
-    <p>Projected active points: {row?.projectedPoints == null ? "unavailable" : row.projectedPoints.toLocaleString("en-US", { maximumFractionDigits: 3 })}. Excludes banked results.</p>
+    <p>Projected active points: {row?.projectedPoints == null ? "unavailable" : row.projectedPoints.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}. Excludes banked results.</p>
     {row ? <ul>{row.days.map(day => <li key={`${day.date}:${day.gameId ?? "none"}`}>
       <time dateTime={day.date}>{new Date(`${day.date}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}</time>
       {` · ${labels[day.state]}${day.slotId ? ` · ${day.slotId}` : ""}`}

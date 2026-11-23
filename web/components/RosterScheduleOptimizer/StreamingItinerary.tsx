@@ -53,11 +53,13 @@ function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, ch
  * `confirm` contains the relevant input questions beside the disabled reason. */
 const REVIEW_RULES = "Review League rules and scoring.";
 
-export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, confirm, onSelect, onReviewRules, defaultOpen = true }: {
+export default function StreamingItinerary({ dropFacts, plan, dates, from, through, today, nameOf, teamOf, selectDisabled, confirm, onSelect, onReviewRules, defaultOpen = true }: {
   plan: StreamingPlanWithAlternatives | undefined; dates: string[]; from?: string; through?: string; today: string; nameOf: (id: string) => string;
   teamOf: (id: string) => string | null; selectDisabled: string | null; confirm?: ReactNode; onSelect: (steps: PlanStep[]) => void;
   /** Opens the League rules panel when the empty state asks for a rules review. */
   onReviewRules?: () => void;
+  /** The drop-safety facts for a dropped player: ownership, points and AGP he still adds (TJ 2026-11-23). */
+  dropFacts?: (playerId: string) => string;
   /** Open state until the manager toggles it; their last choice (stored) wins. */
   defaultOpen?: boolean;
 }) {
@@ -128,6 +130,7 @@ export default function StreamingItinerary({ plan, dates, from, through, today, 
         return <div key={spot} className={styles.add}>
           <p><span className={styles.verb}>{label}ADD</span> {describe(playerId)} · DROP {describe(drop)}{leg.actionDate !== leg.startDate ? ` · claim ${dateLabel(leg.actionDate)}` : ""}{optionFor(index)?.waiverClearsOn ? ` · waiver claim, clears ${dateLabel(optionFor(index)!.waiverClearsOn!)}` : ""}</p>
           <small>{step.adds}/{chain.addsAvailable} adds · {signed(step.games)} AGP · {number(optionFor(index)?.points ?? leg.points)} proj FPts over {legGames(index)} game{legGames(index) === 1 ? "" : "s"}{optionFor(index)?.waiverClearsOn ? " · the claim may fail" : leg.step.conditional ? " · recheck availability" : ""}</small>
+          {dropFacts && <small className={styles.dropFacts}>Drop {nameOf(drop)}: {dropFacts(drop)}</small>}
           {leg.options.length > 1 && <ol className={styles.options} aria-label={`Options for ${dateLabel(leg.startDate)}`}>{leg.options.map(option =>
             <li key={option.playerId}><button aria-pressed={option.playerId === playerId} onClick={() => update({ overrides: { ...state.overrides, [index]: option.playerId } })}>
               <span>{describe(option.playerId)}</span>
@@ -139,6 +142,6 @@ export default function StreamingItinerary({ plan, dates, from, through, today, 
     {selectDisabled && <div className={styles.gate}><small id="rso-streaming-reason">{selectDisabled}</small>{confirm}</div>}
     <button className={styles.use} disabled={Boolean(selectDisabled)} aria-describedby={selectDisabled ? "rso-streaming-reason" : undefined}
       onClick={() => onSelect(streamingChainSteps(chain, state.overrides))}>Use this streaming plan</button>
-    <p className={styles.note}>Ranked by the average of projected fantasy points and fantasy points per game over the last 10 played games (the projection alone when there is no last 10), over the games each player would start.</p>
+    <p className={styles.note}>Ranked for each goal on projections only: projected fantasy points over the games each player would start, or active games added for most starts. Last-10 form is shown for reference and never ranks.</p>
   </>);
 }

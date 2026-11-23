@@ -22,6 +22,14 @@ describe("roster DROP chip retention caution (R7)", () => {
     row(0);
     expect(screen.queryByText(/Widely rostered|Ownership unknown/)).toBeNull();
   });
+  it("shows a drop-eligible player's fresh ownership, and his points and AGP left on the DROP chip (TJ 2026-11-23)", () => {
+    render(<RosterPlayerRow player={player(23)} entry={{ playerId: "p", position: "bench" }} nameOf={id => id} protectedPlayer={false} manual={false}
+      select={vi.fn()} protect={vi.fn()} position={vi.fn()} remove={vi.fn()} dropCandidate
+      dropFacts={{ ownership: "23% owned", detail: "Ownership 23% · 6.2 pts left · 2 AGP left" }} />);
+    const note = screen.getByTitle("Ownership 23% · 6.2 pts left · 2 AGP left", { exact: true });
+    expect(note.textContent).toBe("23% owned");
+    expect(screen.getByText("DROP").getAttribute("title")).toBe("Weakest droppable player this week · Ownership 23% · 6.2 pts left · 2 AGP left");
+  });
   it("flags an unprojected player instead of suggesting him as the drop", () => {
     row(95, false, true);
     expect(screen.getByText("no projection")).toBeTruthy();

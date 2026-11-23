@@ -3,9 +3,9 @@
 @use "styles/vars" as v;
 
 // Type: six sizes, two weights.
-$text-micro: 10px; // chip labels, grid counts, unit captions
-$text-xs: 11px; // secondary detail lines
-$text-sm: 12px; // controls and dense body text (v.$font-size-xs)
+$text-micro: 11px; // chip labels, grid counts, unit captions (fhfh-styles §8.4 footnote floor ≈ 11 px)
+$text-xs: 12px; // secondary detail lines
+$text-sm: 13px; // controls and dense body text (table cell text, §8.4: 12.5–14.7 px)
 $text-md: 14px; // panel body (v.$font-size-sm)
 $text-lg: 16px; // key values
 $text-xl: 20px; // headline numbers
@@ -26,3 +26,10 @@ $on-accent: v.$color-neutral-950;
 $good: v.$success-color;
 $warn: v.$warning-color;
 $bad: v.$color-coral-500;
+
+// Pressed toggle (fhfh-styles §9.4, TJ 2026-11-08): 40% primary fill, white text (9.7:1), 2px primary ring. Never white
+// or dark text on solid primary. Buttons are the other half of the rule: blue text on the 12% tint (v.button-tint).
+@mixin toggle-on { background: v.$primary-color-opaque; color: v.$color-white; box-shadow: inset 0 0 0 2px v.$primary-color; font-weight: $weight-bold; }
+// Action button (fhfh-styles §9.4): 2px primary ring, 12% blue tint, blue text (5.3:1); hover 20% tint. Font unchanged.
+@mixin house-button { border: 2px solid v.$primary-color; background: v.$button-tint; color: v.$primary-color;
+  &:hover:not(:disabled) { border-color: v.$primary-color; background: v.$button-tint-hover; } }
