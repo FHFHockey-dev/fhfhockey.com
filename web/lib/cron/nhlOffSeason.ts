@@ -10,6 +10,10 @@ import type { Database } from "lib/supabase/database-generated.types";
 // update-games (which keep running) record it.
 export const NHL_OFF_SEASON_GRACE_DAYS = 3;
 const WINDOW_CACHE_MS = 10 * 60 * 1000;
+// The season lookup is five small reads. A database stall must not hold a job
+// in this gate (2026-11-23 10:20Z: 159 s, then Vercel's 240 s kill): past this
+// bound the window is unknown and the job runs, as on any lookup failure.
+export const NHL_SEASON_WINDOW_TIMEOUT_MS = 5_000;
 const NHL_TIME_ZONE = "America/New_York";
 
 export type NhlSeasonSpan = {
@@ -139,8 +143,53 @@ export async function loadNhlSeasonWindow(
     );
     return resolveNhlSeasonWindow(spans, now);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { state: "unknown", today: nhlCalendarDate(now), reason: message };
+    return { state: "unknown", today: nhlCalendarDate(now), reason: lookupErrorReason(error) };
+  }
+}
+
+// A PostgrestError is a plain object, not an Error: String() of it is "[object Object]".
+function lookupErrorReason(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object") {
+    const { message, code } = error as { message?: unknown; code?: unknown };
+    if (typeof message === "string" && message) {
+      return typeof code === "string" && code ? `${message} (${code})` : message;
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return "unreadable lookup error";
+    }
+  }
+  return String(error);
+}
+
+async function boundedSeasonWindow(
+  loadWindow: () => Promise<NhlSeasonWindow>,
+  timeoutMs: number,
+): Promise<NhlSeasonWindow> {
+  const lookup = loadWindow();
+  // An abandoned lookup may still settle; its result goes nowhere.
+  lookup.catch(() => undefined);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<NhlSeasonWindow>((resolve) => {
+    timer = setTimeout(() => resolve({
+      state: "unknown",
+      today: nhlCalendarDate(new Date()),
+      reason: `season window lookup timed out after ${timeoutMs} ms`,
+    }), timeoutMs);
+  });
+  try {
+    return await Promise.race([
+      lookup.catch((error: unknown): NhlSeasonWindow => ({
+        state: "unknown",
+        today: nhlCalendarDate(new Date()),
+        reason: lookupErrorReason(error),
+      })),
+      timeout,
+    ]);
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -170,6 +219,11 @@ export function resetNhlSeasonWindowCache() {
 export const NHL_SEASONAL_GAME_DATA = "nhl_seasonal_game_data";
 export type CronClassification = typeof NHL_SEASONAL_GAME_DATA;
 export const CRON_CLASSIFICATION_KEY = Symbol.for("fhfh.cron.classification");
+// When the request entered this gate, stamped on it before the season lookup.
+// A route that budgets its own runtime counts from it, so a slow lookup is spent
+// from that budget. adminOnly's cron path and withCronJobAudit await nothing
+// before their handler, so behind them this is the request's arrival.
+export const GATE_ENTERED_AT_KEY = Symbol.for("fhfh.cron.gateEnteredAt");
 
 function ignoresOffSeason(req: NextApiRequest): boolean {
   const value = req.query?.ignoreOffSeason;
@@ -180,21 +234,24 @@ function ignoresOffSeason(req: NextApiRequest): boolean {
 /**
  * Skips an NHL game-data cron between seasons with a 200 "skipped" receipt.
  * Add `ignoreOffSeason=true` to run anyway. When the season dates cannot be
- * read, the job runs as before rather than being skipped on a guess.
+ * read within `timeoutMs` (default NHL_SEASON_WINDOW_TIMEOUT_MS), the job runs
+ * as before rather than being skipped on a guess.
  */
 export function withNhlOffSeasonSkip<
   Req extends NextApiRequest,
   Res extends NextApiResponse,
 >(
   handler: (req: Req, res: Res) => unknown,
-  options: { loadWindow?: () => Promise<NhlSeasonWindow> } = {},
+  options: { loadWindow?: () => Promise<NhlSeasonWindow>; timeoutMs?: number } = {},
 ): (req: Req, res: Res) => Promise<unknown> {
   const loadWindow = options.loadWindow ?? cachedNhlSeasonWindow;
+  const timeoutMs = options.timeoutMs ?? NHL_SEASON_WINDOW_TIMEOUT_MS;
   return async (req, res) => {
+    (req as unknown as Record<symbol, number>)[GATE_ENTERED_AT_KEY] = Date.now();
     (res as unknown as Record<symbol, CronClassification>)[CRON_CLASSIFICATION_KEY] =
       NHL_SEASONAL_GAME_DATA;
     if (!ignoresOffSeason(req)) {
-      const window = await loadWindow();
+      const window = await boundedSeasonWindow(loadWindow, timeoutMs);
       if (window.state === "unknown") {
         console.warn("[nhl-off-season] season window unavailable; running job", {
           reason: window.reason,
