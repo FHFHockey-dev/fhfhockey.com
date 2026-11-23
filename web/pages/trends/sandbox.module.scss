@@ -3,6 +3,7 @@
 
 .page {
   @include v.component-wrapper;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: v.$space-lg;
@@ -11,16 +12,33 @@
   background: v.$background-dark;
 }
 
+// Same pattern as /stats: hidden until keyboard focus, then a primary pill.
+.skipLink {
+  position: absolute;
+  top: v.$space-sm;
+  left: v.$space-sm;
+  z-index: v.$z-desktop-popover;
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$border-radius-sm;
+  background: v.$primary-color;
+  color: v.$text-on-primary;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:not(:focus) {
+    @include v.visually-hidden;
+  }
+}
+
 .topWorkspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.15fr) minmax(300px, 0.9fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.15fr);
   gap: v.$space-md;
   align-items: stretch;
 }
 
 .overviewCard,
-.controls,
-.summaryPanel {
+.controls {
   @include v.glass-panel;
   display: grid;
   gap: v.$space-sm;
@@ -28,17 +46,14 @@
   min-width: 0;
 }
 
+// Controls ends at its fields instead of matching the overview card's height.
+.controls {
+  align-self: start;
+}
+
 .overviewHeader {
   display: grid;
   gap: v.$space-xs;
-}
-
-.overviewEyebrow {
-  font-size: v.$font-size-xxs;
-  color: v.$primary-color;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  font-weight: 700;
 }
 
 .overviewTitleRow {
@@ -56,7 +71,6 @@
   color: v.$color-white;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  text-shadow: 0 0 14px rgba(v.$primary-color, 0.14);
 }
 
 .overviewDescription {
@@ -75,7 +89,7 @@
 
 .linkCard {
   display: grid;
-  gap: 0.35rem;
+  gap: v.$space-xs-plus;
   padding: v.$space-sm;
   border: 1px solid rgba(v.$border-secondary, 0.58);
   border-radius: v.$border-radius-md;
@@ -89,6 +103,12 @@
     border-color: rgba(v.$primary-color, 0.72);
     background: rgba(v.$primary-color, 0.1);
     transform: translateY(-1px);
+  }
+
+  // Inset ring: stays visible inside the phone scroll row's clip.
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: -2px;
   }
 }
 
@@ -106,46 +126,54 @@
   color: v.$text-secondary;
 }
 
+// Entity type toggle: same segmented rail as Focus metric (rules below).
 .entityTabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: v.$space-xs;
-}
-
-.entityTab,
-.entityTabActive {
-  border: 1px solid v.$border-secondary;
-  background: color.change(v.$background-dark, $alpha: 0.6);
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  padding: v.$space-xs v.$space-md;
-  border-radius: 999px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  transition: all 150ms ease;
-}
-
-.entityTabActive {
-  border-color: v.$primary-color;
-  color: v.$color-white;
-  background: rgba(v.$primary-color, 0.18);
-}
-
-.resetButton {
-  @include v.button-style;
-  background-color: transparent;
-  color: v.$text-primary;
-  border: 1px solid v.$border-secondary;
-  padding: v.$space-xs v.$space-md;
-  font-size: v.$font-size-xs;
-  border-radius: v.$border-radius-sm;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  &:hover:not(:disabled) {
-    color: v.$color-white;
-    border-color: v.$primary-color;
-    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.15);
+  // Skip-link target (tabIndex -1), not a control.
+  &:focus {
+    outline: none;
   }
+}
+
+// Quiet text button in the Controls header, so the readout leads.
+.resetButton {
+  flex: none;
+  min-height: v.$touch-target-inline;
+  padding: 0 v.$space-xxs;
+  border: 0;
+  border-radius: v.$radius-xs;
+  background: transparent;
+  color: v.$text-secondary;
+  font: inherit;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition:
+    color 150ms ease,
+    text-decoration-color 150ms ease;
+
+  &:hover {
+    color: v.$text-link;
+    text-decoration-color: currentColor;
+  }
+
+  @include v.focus-ring-desktop;
+}
+
+.resetConfirm {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  flex: none;
+  font-size: v.$font-size-sm;
+  color: v.$text-primary;
+}
+
+// The destructive choice reads as a warning, at rest and on hover.
+.resetButton.resetConfirmYes,
+.resetButton.resetConfirmYes:hover {
+  color: v.$warning-color;
 }
 
 .controls {
@@ -166,12 +194,15 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: v.$color-white;
+
+  // Script focus target after "Try again" (tabIndex -1), not a control.
+  &:focus {
+    outline: none;
+  }
 }
 
 .compactMeta {
   font-size: v.$font-size-xxs;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: v.$text-secondary;
 }
 
@@ -190,10 +221,8 @@
   label,
   span {
     font-size: v.$font-size-xs;
-    font-weight: 700;
+    font-weight: 600;
     color: v.$text-secondary;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
   input,
@@ -214,6 +243,43 @@
       box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
     }
   }
+}
+
+// The search box draws the field; the input and the selected player's
+// team · position tag share it, so the tag takes only its own width.
+.controlGroup .searchBox {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+  min-width: 0;
+  padding-right: v.$space-sm;
+  background: v.$background-dark;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  transition:
+    border 150ms ease,
+    box-shadow 150ms ease;
+
+  &:focus-within {
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+}
+
+.controlGroup .searchTag {
+  flex: none;
+  white-space: nowrap;
 }
 
 .readinessCopy {
@@ -242,7 +308,7 @@
   background: color.change(v.$background-dark, $alpha: 0.98);
   max-height: 12rem;
   overflow-y: auto;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
+  box-shadow: v.$shadow-popover;
   @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 6px);
 
   li + li {
@@ -273,56 +339,24 @@
 
 .positionTag {
   font-size: v.$font-size-xxs;
-  font-weight: 800;
+  font-weight: 600;
   color: v.$text-secondary;
 }
 
-.windowButtons {
-  display: flex;
-  gap: v.$space-xs;
-  flex-wrap: wrap;
-}
-
-.windowButton,
-.windowButtonActive {
-  border: 1px solid v.$border-secondary;
-  background: color.change(v.$background-dark, $alpha: 0.6);
+// Controls header readout: entity · window · snapshot date.
+.currentReadLine {
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+  text-align: right;
+  font-size: v.$font-size-sm;
+  line-height: 1.4;
   color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  padding: v.$space-xxs v.$space-sm;
-  border-radius: 999px;
-  transition: all 150ms ease;
 }
 
-.windowButtonActive {
-  border-color: v.$primary-color;
-  color: v.$color-white;
-  background: rgba(v.$primary-color, 0.2);
-}
-
-.bandWindowButtons {
-  display: flex;
-  gap: v.$space-xs;
-  flex-wrap: wrap;
-}
-
-.bandWindowButton,
-.bandWindowButtonActive {
-  border: 1px solid v.$border-secondary;
-  background: color.change(v.$background-dark, $alpha: 0.6);
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  padding: v.$space-xxs v.$space-sm;
-  border-radius: 999px;
-  transition: all 150ms ease;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.bandWindowButtonActive {
-  border-color: v.$primary-color;
-  color: v.$color-white;
-  background: rgba(v.$primary-color, 0.2);
+.currentReadEntity {
+  font-weight: 700;
+  color: v.$text-primary;
 }
 
 .summary {
@@ -338,8 +372,6 @@
     strong {
       font-size: v.$font-size-xxs;
       color: v.$text-secondary;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
 
     span {
@@ -361,6 +393,22 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: v.$space-md;
   align-items: stretch;
+}
+
+.sustainabilityWorkbenchSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+// One quiet line in the score panel when usual-level numbers are missing.
+.usualLevelNote {
+  margin: v.$space-sm 0 0;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+}
+
+// Single-panel rows in the chart-led order (the page gap spaces them).
+.correlationSection {
+  display: grid;
 }
 
 .surfaceSection {
@@ -395,8 +443,6 @@
 .surfaceCardMeta {
   font-size: v.$font-size-xs;
   color: v.$text-secondary;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 .meterBlock {
@@ -414,8 +460,6 @@
   grid-template-columns: repeat(3, 1fr);
   font-size: v.$font-size-xxs;
   color: v.$text-secondary;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 
   span:nth-child(2) {
     text-align: center;
@@ -431,22 +475,25 @@
   display: grid;
   grid-template-columns: 1fr 1.2fr 1fr;
   height: 18px;
-  border-radius: 999px;
+  border-radius: v.$radius-pill;
   overflow: hidden;
   background: rgba(v.$background-dark, 0.8);
   border: 1px solid rgba(v.$border-secondary, 0.7);
 }
 
+// Cold = blue, hot = red, matching the score, chart and slate state colours.
 .barometerColdZone {
-  background: rgba(v.$danger-color, 0.28);
+  background: rgba(v.$primary-color, 0.26);
 }
 
+// Diverging scale: cold blue, hot red, a neutral grey midpoint (On Pace /
+// within range is a state, not "good"; green stays for good/bad deltas).
 .barometerStableZone {
-  background: rgba(v.$success-color, 0.22);
+  background: rgba(v.$text-secondary, 0.22);
 }
 
 .barometerHotZone {
-  background: rgba(v.$primary-color, 0.26);
+  background: rgba(v.$danger-color, 0.28);
 }
 
 .barometerPointer {
@@ -475,10 +522,12 @@
   min-height: 84px;
   border-radius: v.$border-radius-lg;
   font-family: v.$font-family-numbers;
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: v.$font-size-xxl;
+  font-weight: 600;
   color: v.$color-white;
   background: rgba(v.$background-dark, 0.5);
+  // Hot/cold/on-pace recolour this hairline (.bandHot etc.); neutral otherwise.
+  border: 1px solid v.$border-soft;
 }
 
 .meterMeta,
@@ -489,14 +538,13 @@
 
   div {
     display: grid;
-    gap: 0.2rem;
+    gap: v.$space-xs;
   }
 
   strong {
-    font-size: v.$font-size-xxs;
+    font-size: v.$font-size-xs;
+    font-weight: 500;
     color: v.$text-secondary;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
   span {
@@ -506,39 +554,199 @@
   }
 }
 
-.metricList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+// Boxscore + Fantasy Correlation: "Metric vs fantasy" (4 stats) beside
+// "Per game" (5 stats); the groups stack on narrow screens.
+.correlationGroups {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: v.$space-sm;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 5fr);
+  gap: v.$space-lg;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: v.$space-md;
+  }
+
+  > div {
+    display: grid;
+    gap: v.$space-xs;
+    align-content: start;
+  }
+}
+
+.correlationGroupTitle {
+  margin: 0;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  color: v.$text-primary;
+}
+
+// Full-width panels: run the stats across instead of two half-empty columns.
+.detailGridWide {
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+
+  // Labels wrap to different heights; keep every value on one line across.
+  div {
+    grid-template-rows: 1fr auto;
+  }
+
+  strong {
+    align-self: end;
+  }
 }
 
 .metricShelfCard {
   grid-column: 1 / -1;
 }
 
-.metricRow {
-  padding: v.$space-sm;
-  border: 1px solid rgba(v.$border-secondary, 0.55);
-  border-radius: v.$border-radius-md;
-  background: rgba(v.$background-medium, 0.35);
+// Focus metric, Entity type and Window: the canonical segmented toggle
+// (fhfh-styles §9.5, GameGrid .modeToggle): one dark rail, quiet segments, the pressed one with the 40%
+// primary fill, white text and a 2px primary border. Nested radius: 6px
+// segments + 4px rail padding = 10px rail. Labels are short codes in the
+// GameGrid face, Train One caps (TJ; CSS case only, names keep "ixG"). The
+// rail scrolls sideways when it can't fit (phones, TJ).
+.metricPicker {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: v.$space-xs v.$space-sm;
+}
 
-  div {
-    display: grid;
-    gap: 0.25rem;
+.metricPickerLabel {
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  color: v.$text-secondary;
+}
+
+.metricChips,
+.entityTabs,
+.windowButtons,
+.chartSurfaceTabs {
+  display: flex;
+  align-self: start; // never stretched by the parent grid row
+  gap: v.$space-xxs;
+  width: max-content;
+  max-width: 100%;
+  padding: v.$space-xs;
+  border: v.$border-subtle;
+  border-radius: v.$radius-md;
+  background: v.$background-dark;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: v.$space-xs;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
   }
+}
 
-  strong {
+.metricChip,
+.entityTab,
+.entityTabActive,
+.windowButton,
+.windowButtonActive,
+.chartSurfaceTab,
+.chartSurfaceTabActive {
+  flex: 0 0 auto;
+  min-height: v.$touch-target-small;
+  padding: 0 v.$space-md;
+  border: 2px solid transparent;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-secondary;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.1);
     color: v.$color-white;
-    font-size: v.$font-size-sm;
   }
 
-  span {
-    color: v.$text-secondary;
-    font-size: v.$font-size-xs;
-    line-height: 1.45;
+  &[aria-pressed="true"],
+  &[aria-pressed="true"]:hover,
+  &[aria-selected="true"],
+  &[aria-selected="true"]:hover {
+    border-color: v.$primary-color;
+    background: v.$primary-color-opaque;
+    color: v.$color-white;
+  }
+
+  @include v.focus-ring-desktop;
+}
+
+.metricPickerNote {
+  grid-column: 2;
+  margin: 0;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+}
+
+.metricPickerNoteName {
+  color: v.$text-primary;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .metricPicker {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  // Phones: the Window and Entity type rails span their field with even
+  // segments (TJ).
+  .windowButtons,
+  .entityTabs,
+  .metricChips,
+  .chartSurfaceTabs {
+    width: 100%;
+  }
+
+  // Focus metric spreads to fill the rail when its codes fit (teams,
+  // goalies); when they don't (skaters), segments keep their size and the
+  // rail scrolls (TJ).
+  .metricChip {
+    flex: 1 0 auto;
+  }
+
+  .windowButton,
+  .windowButtonActive,
+  .entityTab,
+  .entityTabActive,
+  .chartSurfaceTab,
+  .chartSurfaceTabActive {
+    flex: 1 1 0;
+  }
+
+  .metricChip,
+  .entityTab,
+  .entityTabActive,
+  .windowButton,
+  .windowButtonActive,
+  .chartSurfaceTab,
+  .chartSurfaceTabActive {
+    min-height: v.$touch-target-min; // 44px phone tap target
+    padding: 0 v.$space-sm;
+  }
+
+
+  // 4px side padding lets the goalie codes fit at 390 (TJ).
+  .metricChip {
+    padding: 0 v.$space-xs;
+  }
+
+  .metricPickerNote {
+    grid-column: 1;
   }
 }
 
@@ -558,27 +766,46 @@
   gap: v.$space-xxs;
   min-height: 0;
   align-content: start;
-  min-height: 14rem;
 }
 
-.reasonCardPlaceholder {
-  opacity: 0.88;
-  border-style: dashed;
+// Static loading placeholder: label, value and sentence bars, no animation.
+.reasonSkeleton {
+  gap: v.$space-sm;
+
+  span {
+    display: block;
+    height: 0.75rem;
+    border-radius: v.$radius-xs;
+    background: rgba(v.$text-secondary, 0.12);
+  }
+
+  span:nth-child(1) {
+    width: 45%;
+  }
+
+  span:nth-child(2) {
+    width: 25%;
+    height: 1.75rem;
+  }
+
+  span:nth-child(3) {
+    width: 80%;
+  }
 }
 
+// Driver and metric names are content: plain face, sentence case.
 .reasonLabel {
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-sm;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-base;
+  font-weight: 600;
   color: v.$color-white;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 .reasonValue {
   color: v.$color-white;
-  font-size: 2rem;
+  font-size: v.$font-size-xxl;
   font-family: v.$font-family-numbers;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .reasonSentence {
@@ -590,7 +817,7 @@
 
 .reasonComparisonList {
   display: grid;
-  gap: 0.3rem;
+  gap: v.$space-xs;
   margin-top: v.$space-xs;
 }
 
@@ -599,7 +826,7 @@
   align-items: center;
   justify-content: space-between;
   gap: v.$space-sm;
-  padding-top: 0.3rem;
+  padding-top: v.$space-xs;
   border-top: 1px solid rgba(v.$border-secondary, 0.22);
 }
 
@@ -625,14 +852,21 @@
 .reasonComparisonDelta {
   font-size: v.$font-size-xxs;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .leaderboardGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: v.$space-md;
+}
+
+// Skaters have one state card: let it span the row and flow its players across.
+.leaderboardGridSingle {
+  grid-template-columns: minmax(0, 1fr);
+
+  .leaderboardList {
+    grid-template-columns: repeat(auto-fit, minmax(13.75rem, 1fr));
+  }
 }
 
 .leaderboardCard {
@@ -681,11 +915,23 @@
   }
 }
 
+.leaderboardRank {
+  min-width: 1ch;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+}
+
+.leaderboardName {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
 .bandSection {
   display: flex;
   flex-direction: column;
   gap: v.$space-sm;
-  margin-top: v.$space-md;
 }
 
 .bandWorkspace {
@@ -695,11 +941,23 @@
   align-items: stretch;
 }
 
+// No checkpoint rows: stack the note above the reasons and lay the reason
+// cards out across the full width instead of a tall side column.
+.bandWorkspaceStacked {
+  grid-template-columns: minmax(0, 1fr);
+
+  .reasonGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .bandWorkspacePanel,
 .reasonColumn {
   display: grid;
   gap: v.$space-sm;
   min-width: 0;
+  // The two columns share a stretched row; keep each one's content at the top.
+  align-content: start;
 }
 
 .bandHeader {
@@ -721,8 +979,6 @@
 .bandStatus {
   font-size: v.$font-size-xs;
   color: v.$text-secondary;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 .bandGrid {
@@ -758,12 +1014,10 @@
 }
 
 .bandMetric {
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-sm;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-base;
+  font-weight: 600;
   color: v.$color-white;
-  text-shadow: 0 0 12px rgba(v.$primary-color, 0.12);
 }
 
 .bandSnapshotRow {
@@ -775,13 +1029,11 @@
 
 .bandSnapshotLabel {
   font-size: v.$font-size-xxs;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: rgba(v.$text-secondary, 0.92);
 }
 
 .bandValue {
-  font-size: 2rem;
+  font-size: v.$font-size-xxl;
   font-weight: 700;
   color: v.$text-primary;
   font-family: v.$font-family-numbers;
@@ -792,20 +1044,18 @@
 .bandWindow {
   font-size: v.$font-size-xs;
   color: v.$text-secondary;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .bandWindow {
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: v.$space-xxs v.$space-sm;
+  border-radius: v.$radius-pill;
   background: rgba(v.$background-dark, 0.45);
   color: v.$primary-color;
 }
 
 .bandComparisonList {
   display: grid;
-  gap: 0.3rem;
+  gap: v.$space-xs;
   margin-top: v.$space-xs;
 }
 
@@ -814,7 +1064,7 @@
   align-items: center;
   justify-content: space-between;
   gap: v.$space-sm;
-  padding-top: 0.3rem;
+  padding-top: v.$space-xs;
   border-top: 1px solid rgba(v.$border-secondary, 0.22);
 }
 
@@ -840,8 +1090,6 @@
 .bandComparisonDelta {
   font-size: v.$font-size-xxs;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .bandComparisonDeltaPositive {
@@ -856,22 +1104,41 @@
   color: v.$text-secondary;
 }
 
+// State shows in the border colour only; no coloured glow.
 .bandHot {
   border-color: rgba(v.$danger-color, 0.6);
-  box-shadow: 0 8px 24px rgba(v.$danger-color, 0.15);
 }
 
 .bandCold {
   border-color: rgba(v.$primary-color, 0.6);
-  box-shadow: 0 8px 24px rgba(v.$primary-color, 0.2);
 }
 
 .bandNeutral {
-  border-color: rgba(v.$success-color, 0.45);
-  box-shadow: 0 8px 20px rgba(v.$success-color, 0.12);
+  border-color: rgba(v.$text-secondary, 0.45);
+}
+
+// The big score shows its state with a 2px rule instead of a glow.
+.meterScore.bandHot,
+.meterScore.bandCold,
+.meterScore.bandNeutral {
+  border-width: 2px;
+}
+
+// State-coloured digits, like the site's coloured rank digits.
+.meterScore.bandHot {
+  color: v.$danger-color;
+}
+
+.meterScore.bandCold {
+  color: v.$primary-color;
+}
+
+.meterScore.bandNeutral {
+  color: v.$text-primary;
 }
 
 .bandEmpty {
+  grid-column: 1 / -1;
   padding: v.$space-md;
   border: 1px dashed v.$border-secondary;
   border-radius: v.$border-radius-md;
@@ -881,37 +1148,33 @@
 }
 
 .bandChartSection {
-  margin-top: v.$space-lg;
   @include v.glass-panel;
-  padding: v.$space-md;
+  // Room between the chart labels and the panel border (TJ: was crowded at 16px).
+  padding: v.$space-lg;
   display: grid;
   gap: v.$space-sm;
 }
 
+// Chart view tabs: the shared segmented rail (rules with Focus metric);
+// right-aligned beside the Season Charts title on desktop.
 .chartSurfaceTabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: v.$space-xs;
   margin-left: auto;
 }
 
-.chartSurfaceTab,
-.chartSurfaceTabActive {
-  border: 1px solid v.$border-secondary;
-  background: color.change(v.$background-dark, $alpha: 0.6);
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  padding: v.$space-xxs v.$space-sm;
-  border-radius: 999px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  transition: all 150ms ease;
+// Phones show one-word labels (TJ); the full label stays in the
+// accessible name. Kept here so these win over the rule above.
+.tabLabelShort {
+  display: none;
+
+  @media (max-width: 720px) {
+    display: inline;
+  }
 }
 
-.chartSurfaceTabActive {
-  border-color: v.$primary-color;
-  color: v.$color-white;
-  background: rgba(v.$primary-color, 0.18);
+.tabLabelFull {
+  @media (max-width: 720px) {
+    @include v.visually-hidden;
+  }
 }
 
 .bandChart {
@@ -937,15 +1200,11 @@
 .bandChartMetric {
   font-size: v.$font-size-sm;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: v.$text-secondary;
 }
 
 .bandChartWindow {
   font-size: v.$font-size-xxs;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: rgba(v.$text-secondary, 0.8);
 }
 
@@ -953,7 +1212,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: v.$space-xxs;
   text-align: right;
 }
 
@@ -965,10 +1224,8 @@
 
 .bandChartLatestStatus {
   font-size: v.$font-size-xxs;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: v.$space-xxs v.$space-sm;
+  border-radius: v.$radius-pill;
 }
 
 .bandChartLatestHot {
@@ -982,16 +1239,14 @@
 }
 
 .bandChartLatestNeutral {
-  background: rgba(v.$success-color, 0.16);
-  color: v.$success-color;
+  background: rgba(v.$text-secondary, 0.16);
+  color: v.$text-primary;
 }
 
 .bandChartLatestRange,
 .bandChartLatestBaseline {
   font-size: v.$font-size-xxs;
   color: v.$text-secondary;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
 
 .bandChartMessage {
@@ -1004,12 +1259,19 @@
 }
 
 .bandChartError {
-  color: #f87171;
-  border-color: rgba(#f87171, 0.5);
+  color: v.$danger-color;
+  border-color: rgba(v.$danger-color, 0.5);
 }
 
 .bandChartWrapper {
   position: relative;
+
+  // Keyboard stop for reading games with the arrow keys.
+  &:focus-visible {
+    outline: 2px solid rgba(v.$primary-color, 0.5);
+    outline-offset: 2px;
+  }
+
   width: 100%;
   min-width: 0;
   min-height: 320px;
@@ -1066,11 +1328,9 @@
 }
 
 .bandChartAxisTextY {
-  text-transform: uppercase;
 }
 
 .bandChartAxisTextX {
-  text-transform: uppercase;
 }
 
 .bandChartDot {
@@ -1086,8 +1346,10 @@
   fill: rgba(v.$primary-color, 0.92);
 }
 
+// Within-range games match the white line; only out-of-range games carry
+// colour (TJ).
 .bandChartDotNeutral {
-  fill: rgba(v.$success-color, 0.88);
+  fill: v.$color-white;
 }
 
 .bandChartCrosshairX,
@@ -1113,7 +1375,7 @@
   border-radius: v.$border-radius-md;
   border: 1px solid rgba(v.$border-secondary, 0.8);
   background: rgba(v.$background-dark, 0.96);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+  box-shadow: v.$shadow-popover;
   pointer-events: none;
 }
 
@@ -1126,22 +1388,18 @@
 .bandChartTooltipMatchup {
   margin-top: 2px;
   font-size: v.$font-size-xxs;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: v.$text-secondary;
 }
 
 .bandChartTooltipGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 10px;
+  gap: v.$space-xs v.$space-sm;
   margin-top: 10px;
 
   span {
     font-size: v.$font-size-xxs;
     color: v.$text-secondary;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
   }
 
   strong {
@@ -1153,7 +1411,31 @@
 
 .error {
   font-size: v.$font-size-sm;
-  color: #f87171; // keep safe explicit error color
+  color: v.$danger-color;
+}
+
+.visuallyHidden {
+  @include v.visually-hidden;
+}
+
+// Page-level load error: approved left rule (rule width = left radius, no
+// other borders, so nothing miters) on a faint danger tint.
+.errorNotice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  margin: 0;
+  padding: v.$space-sm v.$space-md;
+  border-left: 4px solid v.$danger-color;
+  border-radius: 4px 6px 6px 4px;
+  background: rgba(v.$danger-color, 0.08);
+  font-size: v.$font-size-sm;
+  color: v.$text-primary;
+
+  p {
+    margin: 0;
+  }
 }
 
 .chartSection {
@@ -1173,6 +1455,12 @@
 }
 
 .chartWrapper {
+  // Keyboard stop for reading games with the arrow keys.
+  &:focus-visible {
+    outline: 2px solid rgba(v.$primary-color, 0.5);
+    outline-offset: 2px;
+  }
+
   display: flex;
   flex-direction: column;
   gap: v.$space-sm;
@@ -1184,20 +1472,27 @@
   justify-content: space-between;
   gap: v.$space-sm;
 
+  // Chart titles: blue Roboto Condensed caps with title tracking (TJ).
   h2 {
-    font-family: v.$font-family-accent, sans-serif;
+    font-family: v.$font-family-primary, sans-serif;
     font-size: v.$font-size-lg;
-    font-weight: 800;
+    font-weight: 600;
+    text-transform: uppercase;
     letter-spacing: 0.05em;
     margin: 0;
-    color: v.$color-white;
+    color: v.$primary-color;
   }
 
   span {
     font-size: v.$font-size-xs;
     color: v.$text-secondary;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  }
+
+  // Phones: the title alone heads the chart; the how-to line is dropped (TJ).
+  @media (max-width: 720px) {
+    span {
+      display: none;
+    }
   }
 }
 
@@ -1216,7 +1511,7 @@
 .chartWrapper :global(.x-axis line),
 .chartWrapper :global(.y-axis path),
 .chartWrapper :global(.y-axis line) {
-  stroke: rgba(148, 163, 184, 0.35);
+  stroke: rgba(v.$chart-tick-color, 0.35);
 }
 
 .chartWrapper :global(.rolling-line.focus-line) {
@@ -1228,11 +1523,54 @@
 }
 
 .chartWrapper :global(.baseline-line) {
-  stroke: rgba(148, 163, 184, 0.5);
+  stroke: rgba(v.$chart-tick-color, 0.5);
 }
 
 .chartWrapper :global(.streak-marker) {
   pointer-events: none;
+}
+
+// Streaks (pass 7): flat state tints under the data line, the barometer's
+// colours (hot = danger, cold = primary). The line and points carry the
+// data; the bands only mark where a streak ran.
+.chartWrapper :global(.streak.hot) {
+  fill: rgba(v.$danger-color, 0.14);
+}
+
+.chartWrapper :global(.streak.cold) {
+  fill: rgba(v.$primary-color, 0.14);
+}
+
+.chartWrapper :global(.streak-marker.hot) {
+  stroke: rgba(v.$danger-color, 0.7);
+}
+
+.chartWrapper :global(.streak-marker.cold) {
+  stroke: rgba(v.$primary-color, 0.7);
+}
+
+// Game points wear a surface ring so overlapping dots stay separable.
+.chartWrapper :global(.game-point) {
+  fill: v.$text-secondary;
+  stroke: v.$background-dark;
+}
+
+.chartWrapper :global(.game-point.hot) {
+  fill: v.$danger-color;
+}
+
+.chartWrapper :global(.game-point.cold) {
+  fill: v.$primary-color;
+}
+
+.chartWrapper :global(.crosshair-x),
+.chartWrapper :global(.crosshair-y) {
+  stroke: rgba(v.$chart-tick-color, 0.6);
+}
+
+.chartWrapper :global(.hover-point) {
+  fill: v.$color-white;
+  stroke: v.$background-dark;
 }
 
 .chartWrapper :global(.zoom-pane) {
@@ -1269,7 +1607,8 @@
     grid-template-columns: 1fr;
   }
 
-  .bandGrid {
+  .bandGrid,
+  .bandWorkspaceStacked .reasonGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1279,11 +1618,119 @@
     flex-direction: column;
   }
 
-  .linkGrid {
-    grid-template-columns: 1fr;
+  // "SUSTAINABILITY" is one unbreakable word; scale it so it fits a 320px phone.
+  .overviewTitle {
+    font-size: clamp(1.375rem, 7vw, 2rem);
   }
 
-  .bandGrid {
+  // Phones: 20px, between the old 16px and desktop's 24px, to keep chart width.
+  .bandChartSection {
+    padding: v.$mobile-space-lg;
+  }
+
+  // One frame on phones: the chart sits directly on the panel.
+  .bandChartWrapper {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  // Chart tabs get their own row under the title instead of stacking beside it.
+  .bandChartSection > .bandHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  // Section and card titles take the full width; their subtitle or count
+  // sits underneath instead of squeezing the title onto 2–3 lines.
+  .bandHeader,
+  .surfaceCardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: v.$space-xxs;
+  }
+
+  .chartSurfaceTabs {
+    margin-left: 0;
+  }
+
+  // The readout drops under the Controls title instead of wrapping mid-fact.
+  // Title and Reset share the first row; the readout takes its own line.
+  .controlsHeader:has(.currentReadLine) {
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: v.$space-xxs;
+  }
+
+  .currentReadLine {
+    order: 1;
+    flex-basis: 100%;
+    text-align: left;
+  }
+
+  // Phones: the three tool links become the bottom edge of the overview
+  // card, one row of borderless blue labels split by hairlines, like the
+  // homepage hero's bottom tool links (TJ). The row bleeds over the card's
+  // 1px border so its 2px blue frame (all four sides) replaces the card's
+  // edge along the cells (TJ); 16px bottom corners match the card.
+  .linkGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin: 0 (-(v.$space-md + 1px)) (-(v.$space-md + 1px));
+    overflow: hidden; // clips the edge cells' tint to the corners
+    border: 2px solid v.$primary-color; // closed frame, top included (TJ)
+    border-radius: 0 0 v.$radius-lg v.$radius-lg;
+  }
+
+  .linkCard,
+  .linkCard:hover {
+    align-content: center;
+    min-height: v.$touch-target-min; // 44px phone tap target
+    padding: v.$space-xs;
+    border: 0;
+    border-radius: 0;
+    background: v.$button-tint; // button rule: blue text on the 12% tint (TJ)
+    text-align: center;
+    transform: none;
+  }
+
+  .linkCard + .linkCard {
+    border-left: 1px solid rgba(v.$color-white, 0.09);
+  }
+
+  .linkCard:hover {
+    background: v.$button-tint-hover;
+  }
+
+  .linkCardLabel {
+    font-family: v.$font-family-primary, sans-serif;
+    // Narrow enough that "Underlying Stats" breaks onto two lines and
+    // "Starter Board" doesn't (TJ).
+    display: inline-block;
+    max-width: 9.4em;
+    font-size: v.$font-size-xxs;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    line-height: 1.2;
+    color: v.$primary-color;
+  }
+
+  .linkCardDescription {
+    display: none;
+  }
+
+  // The homepage hero's "goes somewhere" chevron; empty alt text so screen
+  // readers skip it.
+  .linkCardLabel::after {
+    content: "›" / "";
+    margin-left: v.$space-xxs;
+    font-family: v.$font-family-numbers;
+    font-size: v.$font-size-sm;
+    line-height: 1;
+  }
+
+  .bandGrid,
+  .bandWorkspaceStacked .reasonGrid {
     grid-template-columns: 1fr;
   }
 }

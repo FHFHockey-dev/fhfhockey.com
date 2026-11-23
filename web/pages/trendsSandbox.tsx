@@ -1,6 +1,13 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent
+} from "react";
 import * as d3 from "d3";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { useRouter } from "next/router";
 import type { StreakSegment, StreakType, TrendDataBundle } from "lib/trends/types";
 import {
@@ -79,9 +86,47 @@ type ScoreHistoryResponse = {
 
 type ChartSurfaceTab = "elasticity" | "metricStreaks" | "scoreStreaks";
 
-type PaddedReasonCard = ReturnType<typeof extractReasonHighlights>[number] & {
-  placeholder?: boolean;
+// Short labels for the Focus metric toggle (TJ). The full name stays in the
+// accessible name, the hover title and the note under the toggle. Keys repeat
+// across entity types (on_ice_sh_pct), so the map is per type.
+const METRIC_SHORT_LABELS: Record<SandboxEntityType, Record<string, string>> = {
+  skater: {
+    ixg_per_60: "ixG/60",
+    shots_per_60: "SOG/60",
+    pp_toi_pct: "PP%",
+    points_per_60_5v5: "Pts/60 5v5",
+    sh_pct: "S%",
+    on_ice_sh_pct: "oiSH%"
+  },
+  team: {
+    xgf_pct: "xGF%",
+    scf_pct: "SCF%",
+    hdcf_pct: "HDCF%",
+    on_ice_sh_pct: "SH%",
+    on_ice_sv_pct: "SV%",
+    pdo: "PDO"
+  },
+  goalie: {
+    save_pct: "SV%",
+    quality_starts_pct: "QS%",
+    goals_against_avg: "GAA",
+    shots_against_per_60: "SA/60",
+    saves: "SV",
+    shutouts: "SO"
+  }
 };
+
+// shortLabel is the one-line phone label (TJ); it is a word of the full
+// label, so the accessible name still contains what's on screen (2.5.3).
+const CHART_SURFACE_TABS: {
+  key: ChartSurfaceTab;
+  label: string;
+  shortLabel: string;
+}[] = [
+  { key: "elasticity", label: "Usual Range", shortLabel: "Range" },
+  { key: "metricStreaks", label: "Metric Streaks", shortLabel: "Metric" },
+  { key: "scoreStreaks", label: "Score Streaks", shortLabel: "Score" }
+];
 
 const REASON_TO_BAND_METRIC_KEY: Record<string, string> = {
   z_ixg60: "ixg_per_60",
@@ -114,7 +159,14 @@ type HistoryTrendBundle = {
 };
 
 const WINDOW_OPTIONS = ["l3", "l5", "l10", "l20"] as const;
-const DEFAULT_DATE = new Date().toISOString().slice(0, 10);
+// The visitor's own calendar date. A UTC date (toISOString) turned into
+// tomorrow from 7 PM Eastern, which has no scores yet.
+function todayLocalIsoDate() {
+  return format(new Date(), "yyyy-MM-dd");
+}
+// Pipeline and contract notes are for us while building; fans never see them.
+const SHOW_DEV_DIAGNOSTICS = process.env.NODE_ENV !== "production";
+const RESET_CONFIRM_MS = 5000;
 const MIN_SEARCH_LENGTH = 2;
 const BAROMETER_MIN = -3;
 const BAROMETER_MAX = 3;
@@ -374,12 +426,6 @@ function buildPlayerSubtitle(option: {
   return parts.length ? parts.join(" · ") : null;
 }
 
-function formatStateLabel(state: SandboxScoreRow["expectationState"]) {
-  if (state === "unavailable") return "Performance unavailable";
-  if (state === "overperforming") return "Overperforming";
-  if (state === "underperforming") return "Underperforming";
-  return "Stable";
-}
 
 function formatNumber(value: number | null | undefined, digits = 2) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
@@ -397,6 +443,8 @@ function formatPercentDelta(value: number | null | undefined, digits = 1) {
 }
 
 function scoreToneClass(state: SandboxScoreRow["expectationState"]) {
+  // No reading of hot/cold/on pace: no state colour (green read as "good").
+  if (state === "unavailable") return "";
   if (state === "overperforming") return styles.bandHot;
   if (state === "underperforming") return styles.bandCold;
   return styles.bandNeutral;
@@ -413,6 +461,44 @@ function comparisonDeltaTone(deltaPct: number | null | undefined) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+// Fans get plain copy; the server's own message (e.g. a database timeout) is
+// appended only in development (superstyle rule 9).
+function loadErrorCopy(fanCopy: string, error: unknown) {
+  const detail = error instanceof Error ? error.message : null;
+  return SHOW_DEV_DIAGNOSTICS && detail ? `${fanCopy} (${detail})` : fanCopy;
+}
+
+// Score components mix drivers (z_* z-scores) with model settings such as
+// extremeThreshold (5), which the lib would otherwise present as a driver
+// "running above baseline by 5.00 standard deviations".
+function driverComponents(
+  components: Record<string, unknown> | null | undefined
+): Record<string, unknown> | null {
+  if (!components) return null;
+  const entries = Object.entries(components);
+  const zScores = entries.filter(([key]) => key.startsWith("z_"));
+  if (zScores.length) return Object.fromEntries(zScores);
+  return Object.fromEntries(entries.filter(([key]) => key !== "extremeThreshold"));
+}
+
+// "EDM · L" → "EDM · LW": wingers read as LW/RW in the box tag and the
+// search results alike.
+function formatEntityTag(subtitle: string) {
+  return subtitle
+    .split(" · ")
+    .map((part) => (part === "L" ? "LW" : part === "R" ? "RW" : part))
+    .join(" · ");
+}
+
+// Tooltip opponent: "vs Hurricanes" rather than "vs CAR"; unknown codes
+// fall back to the abbreviation.
+function opponentName(abbreviation: string) {
+  return (
+    (teamsInfo as Record<string, { shortName?: string }>)[abbreviation]?.shortName ??
+    abbreviation
+  );
 }
 
 function getWindowLabel(windowCode: string) {
@@ -432,12 +518,12 @@ function getBarometerHelperCopy(state: SandboxScoreRow["expectationState"] | nul
     return "This process support index blends underlying skill and conversion signals. It does not measure observed performance against an expectation; over/underperformance is unavailable.";
   }
   if (state === "overperforming") {
-    return "Current form is running above the player's usual lane.";
+    return "Running above their usual range.";
   }
   if (state === "underperforming") {
-    return "Current form is sitting below the player's usual lane.";
+    return "Running below their usual range.";
   }
-  return "Current form is landing inside the player's usual lane.";
+  return "Inside their usual range.";
 }
 
 function buildStatusTrendBundle(args: {
@@ -456,7 +542,9 @@ function buildStatusTrendBundle(args: {
 }): HistoryTrendBundle {
   const parsed = args.rows
     .map((row) => {
-      const date = new Date(row.snapshotDate);
+      // parseISO reads "YYYY-MM-DD" as local midnight; new Date() read it as UTC,
+      // which showed every game a day early west of Greenwich.
+      const date = parseISO(row.snapshotDate);
       if (!Number.isFinite(row.value) || Number.isNaN(date.getTime())) {
         return null;
       }
@@ -591,7 +679,7 @@ function ElasticityBandChart({
   const parsed = useMemo(() => {
     return data
       .map((row) => {
-        const date = new Date(row.snapshotDate);
+        const date = parseISO(row.snapshotDate); // local date, not UTC midnight
         if (Number.isNaN(date.getTime())) return null;
         // Usual range = pre-window baseline predictive range (decision 33);
         // snapshots without one are left out rather than drawn as neutral.
@@ -636,12 +724,26 @@ function ElasticityBandChart({
   const [containerWidth, setContainerWidth] = useState<number>(960);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const chartHeight = 320;
+  // Phones: when the values span 5+ units the y ticks are whole steps, so the
+  // labels drop decimals (13 not 13.00) and the gutter narrows further.
+  const yValueSpan = useMemo(() => {
+    const values = parsed.flatMap((row) => [row.lower, row.upper, row.value]);
+    return values.length ? Math.max(...values) - Math.min(...values) : 0;
+  }, [parsed]);
+  const compactYAxis = containerWidth < 480 && yValueSpan >= 5;
   const margins = useMemo(
-    () => ({ top: 32, right: 24, bottom: 48, left: 64 }),
-    []
+    () => ({
+      top: 32,
+      right: containerWidth < 480 ? 12 : 24,
+      bottom: 48,
+      left: containerWidth < 480 ? (compactYAxis ? 32 : 36) : 64
+    }),
+    [compactYAxis, containerWidth]
   );
   const innerWidth = Math.max(containerWidth - margins.left - margins.right, 24);
   const innerHeight = Math.max(chartHeight - margins.top - margins.bottom, 24);
+
+  const hasChartFrame = !loading && !error && parsed.length > 0;
 
   useEffect(() => {
     const element = containerRef.current;
@@ -659,7 +761,9 @@ function ElasticityBandChart({
     const handleResize = () => updateWidth();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    // Re-measure once the chart frame exists: on first render it is still
+    // loading, so a mount-only effect left the 960px default (squeezed on phones).
+  }, [hasChartFrame]);
 
   const latest = parsed.at(-1) ?? null;
   const xTickFormatter = useMemo(() => {
@@ -740,6 +844,14 @@ function ElasticityBandChart({
         value: row.baseline as number
       }));
 
+    // About one date label per 70px so labels never collide on phones.
+    // d3's tick count is only a hint (a 6-week span can flip to weekly
+    // ticks), so thin the result to every nth tick.
+    const maxXTicks = Math.min(6, parsed.length, Math.max(2, Math.floor(innerWidth / 70)));
+    const rawXTicks = xScale.ticks(maxXTicks);
+    const xTickStep = Math.ceil(rawXTicks.length / maxXTicks);
+    const xTicks = rawXTicks.filter((_, index) => index % xTickStep === 0);
+
     return {
       xScale,
       yScale,
@@ -747,7 +859,7 @@ function ElasticityBandChart({
       linePath: lineGenerator(valueSeries) ?? "",
       baselinePath:
         baselineSeries.length >= 2 ? lineGenerator(baselineSeries) ?? "" : "",
-      xTicks: xScale.ticks(Math.min(6, parsed.length)),
+      xTicks,
       yTicks: yScale.ticks(6)
     };
   }, [parsed, innerHeight, innerWidth]);
@@ -757,6 +869,19 @@ function ElasticityBandChart({
       setHoveredIndex(null);
     }
   }, [hoveredIndex, parsed.length]);
+
+  // Desktop: two decimals. Phones: whole numbers for wide ranges, otherwise
+  // as many decimals as the tick step needs (at least one: 0.5, not 0.50).
+  const yTickStep =
+    geometry && geometry.yTicks.length > 1
+      ? Math.abs(geometry.yTicks[1] - geometry.yTicks[0])
+      : 1;
+  const yTickDecimals =
+    containerWidth >= 480
+      ? 2
+      : compactYAxis
+        ? 0
+        : Math.max(1, d3.precisionFixed(yTickStep));
 
   const hoveredPoint = hoveredIndex != null ? parsed[hoveredIndex] ?? null : null;
   const hoveredGeometry =
@@ -784,12 +909,61 @@ function ElasticityBandChart({
     setHoveredIndex(null);
   };
 
+  // Keyboard path to the same per-game details the mouse tooltip shows.
+  const handleChartKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!parsed.length) return;
+    const last = parsed.length - 1;
+    const current = hoveredIndex ?? last;
+    const next =
+      event.key === "ArrowRight"
+        ? Math.min(last, current + 1)
+        : event.key === "ArrowLeft"
+          ? Math.max(0, current - 1)
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? last
+              : event.key === "Escape"
+                ? null
+                : undefined;
+    if (next === undefined) return;
+    event.preventDefault();
+    setHoveredIndex(next);
+  };
+
+  const chartSummary = parsed.length
+    ? `${data[0]?.metricLabel ?? "Metric"} usual-range chart, ${parsed.length} games from ${format(
+        parsed[0].date,
+        "MMM d"
+      )} to ${format(parsed[parsed.length - 1].date, "MMM d, yyyy")}.` +
+      (latest
+        ? ` Latest ${latest.value.toFixed(2)}, usual range ${latest.lower.toFixed(
+            2
+          )} to ${latest.upper.toFixed(2)}.`
+        : "")
+    : "";
+  const hoveredAnnouncement = hoveredPoint
+    ? `${format(hoveredPoint.date, "MMM d, yyyy")}${
+        hoveredPoint.gameContext?.opponentAbbreviation
+          ? ` ${hoveredPoint.gameContext.homeRoad === "H" ? "vs" : "at"} ${opponentName(
+              hoveredPoint.gameContext.opponentAbbreviation
+            )}`
+          : ""
+      }: ${formatNumber(
+        hoveredPoint.value,
+        2
+      )}, usual range ${formatNumber(hoveredPoint.lower, 2)} to ${formatNumber(
+        hoveredPoint.upper,
+        2
+      )}.`
+    : "";
+
   const statusLabel =
     latest?.status === "hot"
       ? "Running Hot"
       : latest?.status === "cold"
         ? "Running Cold"
-        : "Within Band";
+        : "Within Usual Range";
 
   const statusValueClass =
     latest?.status === "hot"
@@ -803,10 +977,10 @@ function ElasticityBandChart({
       <div className={styles.bandChartHeader}>
         <div className={styles.bandChartTitleBlock}>
           <span className={styles.bandChartMetric}>
-            {data[0]?.metricLabel ?? "Elasticity Band"}
+            {data[0]?.metricLabel ?? "Usual Range"}
           </span>
           <span className={styles.bandChartWindow}>
-            Window {data[0]?.windowCode?.toUpperCase() ?? "—"}
+            {data[0]?.windowCode ? `${getWindowLabel(data[0].windowCode)} games` : "—"}
           </span>
         </div>
         <div className={styles.bandChartLatest}>
@@ -821,11 +995,11 @@ function ElasticityBandChart({
                 {statusLabel}
               </span>
               <span className={styles.bandChartLatestRange}>
-                Band {latest.lower.toFixed(2)} – {latest.upper.toFixed(2)}
+                Usual range {latest.lower.toFixed(2)} – {latest.upper.toFixed(2)}
               </span>
               {latest.baseline != null && (
                 <span className={styles.bandChartLatestBaseline}>
-                  Baseline {latest.baseline.toFixed(2)}
+                  Normal level {latest.baseline.toFixed(2)}
                 </span>
               )}
             </>
@@ -836,21 +1010,33 @@ function ElasticityBandChart({
       </div>
 
       {loading ? (
-        <div className={styles.bandChartMessage}>Loading band history…</div>
+        <div className={styles.bandChartMessage}>Loading usual-range history…</div>
       ) : error ? (
         <div className={`${styles.bandChartMessage} ${styles.bandChartError}`}>
           {error}
         </div>
       ) : !parsed.length ? (
         <div className={styles.bandChartMessage}>
-          No historical band data available yet.
+          No usual-range history for this selection yet.
         </div>
       ) : !geometry ? (
         <div className={styles.bandChartMessage}>
           Not enough room to render the band chart.
         </div>
       ) : (
-        <div ref={containerRef} className={styles.bandChartWrapper}>
+        <div
+          ref={containerRef}
+          className={styles.bandChartWrapper}
+          tabIndex={0}
+          role="group"
+          aria-label="Usual-range chart. Use the left and right arrow keys to read each game."
+          onKeyDown={handleChartKeyDown}
+          onFocus={() => setHoveredIndex((index) => index ?? parsed.length - 1)}
+          onBlur={() => setHoveredIndex(null)}
+        >
+          <span className={styles.visuallyHidden} aria-live="polite">
+            {hoveredAnnouncement}
+          </span>
           {hoveredPoint && hoveredGeometry ? (
             <div
               className={styles.bandChartTooltip}
@@ -865,11 +1051,10 @@ function ElasticityBandChart({
               <div className={styles.bandChartTooltipDate}>
                 {format(hoveredPoint.date, "MMM d, yyyy")}
               </div>
-              {hoveredPoint.gameContext?.teamAbbreviation ||
-              hoveredPoint.gameContext?.opponentAbbreviation ? (
+              {hoveredPoint.gameContext?.opponentAbbreviation ? (
                 <div className={styles.bandChartTooltipMatchup}>
-                  {hoveredPoint.gameContext?.homeRoad === "H" ? "vs" : "@"}{" "}
-                  {hoveredPoint.gameContext?.opponentAbbreviation ?? "—"}
+                  {hoveredPoint.gameContext.homeRoad === "H" ? "vs" : "@"}{" "}
+                  {opponentName(hoveredPoint.gameContext.opponentAbbreviation)}
                 </div>
               ) : null}
               <div className={styles.bandChartTooltipGrid}>
@@ -904,6 +1089,8 @@ function ElasticityBandChart({
           ) : null}
           <svg
             ref={svgRef}
+            role="img"
+            aria-label={chartSummary}
             className={styles.bandChartSvg}
             width="100%"
             height={chartHeight}
@@ -936,7 +1123,7 @@ function ElasticityBandChart({
                       dy="0.32em"
                       textAnchor="end"
                     >
-                      {tickValue.toFixed(2)}
+                      {tickValue.toFixed(yTickDecimals)}
                     </text>
                   </g>
                 );
@@ -1040,7 +1227,12 @@ function BrushableStreakChart({
 }: BrushableStreakChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const liveRef = useRef<HTMLSpanElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(960);
+  // The wrapper (and its ref) only renders once there are points, so the
+  // measuring effect re-runs when the chart appears; otherwise phones keep
+  // the 960px default and the viewBox shrinks every label to ~5px.
+  const hasPoints = data.chartPoints.length > 0;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1060,7 +1252,7 @@ function BrushableStreakChart({
 
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [hasPoints]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1073,12 +1265,17 @@ function BrushableStreakChart({
       return;
     }
 
-    const width = Math.max(containerWidth, 640);
-    const margin = { top: 24, right: 36, bottom: 36, left: 68 };
-    const focusHeight = 320;
-    const contextHeight = 80;
-    const gap = 28;
-    const innerWidth = Math.max(240, width - margin.left - margin.right);
+    // Draw at the real width so the viewBox never scales text down; phones
+    // get a shorter chart and slimmer gutters.
+    const isPhone = containerWidth < 480;
+    const width = Math.max(containerWidth, 280);
+    const margin = isPhone
+      ? { top: 16, right: 12, bottom: 28, left: 32 }
+      : { top: 24, right: 36, bottom: 36, left: 68 };
+    const focusHeight = isPhone ? 220 : 320;
+    const contextHeight = isPhone ? 56 : 80;
+    const gap = isPhone ? 20 : 28;
+    const innerWidth = Math.max(200, width - margin.left - margin.right);
     const svgWidth = innerWidth + margin.left + margin.right;
     const svgHeight =
       margin.top + focusHeight + gap + contextHeight + margin.bottom;
@@ -1159,14 +1356,21 @@ function BrushableStreakChart({
       .y((d) => y2(d.rollingAverage));
 
     const tickFormatter = d3.timeFormat("%b %d");
+    // About one date label per 70px; d3's count is only a hint, so thin the
+    // ticks it returns to every nth one.
+    const maxXTicks = Math.min(8, points.length, Math.max(2, Math.floor(innerWidth / 70)));
+    const thinTicks = (ticks: Date[]) => {
+      const step = Math.ceil(ticks.length / maxXTicks);
+      return ticks.filter((_, index) => index % step === 0);
+    };
     const focusXAxis = d3
       .axisBottom<Date>(x)
-      .ticks(Math.min(8, points.length))
+      .tickValues(thinTicks(x.ticks(maxXTicks)))
       .tickFormat((value) => tickFormatter(value as Date));
-    const focusYAxis = d3.axisLeft<number>(y).ticks(6);
+    const focusYAxis = d3.axisLeft<number>(y).ticks(isPhone ? 4 : 6);
     const contextXAxis = d3
       .axisBottom<Date>(x2)
-      .ticks(Math.min(8, points.length))
+      .tickValues(thinTicks(x2.ticks(maxXTicks)))
       .tickFormat((value) => tickFormatter(value as Date));
 
     const streakLayer = focus
@@ -1232,56 +1436,6 @@ function BrushableStreakChart({
       .attr("transform", `translate(0, ${contextHeight})`)
       .call(contextXAxis);
 
-    const streakGradientIds = new Map<string, string>();
-    data.streaks.forEach((segment) => {
-      const segmentPoints = points.slice(segment.startIndex, segment.endIndex + 1);
-      if (!segmentPoints.length) return;
-
-      const deviations = segmentPoints.map((point) => {
-        const delta =
-          segment.type === "hot"
-            ? point.rollingAverage - data.baseline
-            : data.baseline - point.rollingAverage;
-        return Math.max(0, delta);
-      });
-      const maxDeviation = Math.max(...deviations, 1e-6);
-      const gradientId = `streak-gradient-${svgId}-${segment.type}-${segment.startIndex}-${segment.endIndex}`;
-      const gradient = defs
-        .append("linearGradient")
-        .attr("id", gradientId)
-        .attr("x1", "0%")
-        .attr("x2", "100%")
-        .attr("y1", "0%")
-        .attr("y2", "0%");
-
-      const stops =
-        segmentPoints.length === 1
-          ? [
-              { offset: 0, opacity: 0.32 },
-              { offset: 1, opacity: 0.32 }
-            ]
-          : segmentPoints.map((point, index) => ({
-              offset: index / (segmentPoints.length - 1),
-              opacity: 0.18 + (deviations[index] / maxDeviation) * 0.62
-            }));
-
-      stops.forEach((stop) => {
-        gradient
-          .append("stop")
-          .attr("offset", `${(stop.offset * 100).toFixed(2)}%`)
-          .attr(
-            "stop-color",
-            segment.type === "hot" ? "rgb(242, 82, 33)" : "rgb(32, 168, 255)"
-          )
-          .attr("stop-opacity", Math.min(0.9, Math.max(0.16, stop.opacity)));
-      });
-
-      streakGradientIds.set(
-        `${segment.type}-${segment.startIndex}-${segment.endIndex}`,
-        gradientId
-      );
-    });
-
     const spacing = innerWidth / Math.max(points.length, 1);
     const offset = spacing * 0.45;
     const clampX = (value: number) =>
@@ -1294,17 +1448,9 @@ function BrushableStreakChart({
         (segment) => `${segment.type}-${segment.startIndex}-${segment.endIndex}`
       )
       .join("rect")
-      .attr("class", (segment) => `streak ${segment.type}`)
-      .attr("fill", (segment) => {
-        const gradientId = streakGradientIds.get(
-          `${segment.type}-${segment.startIndex}-${segment.endIndex}`
-        );
-        return gradientId
-          ? `url(#${gradientId})`
-          : segment.type === "hot"
-            ? "rgba(242, 82, 33, 0.35)"
-            : "rgba(32, 168, 255, 0.35)";
-      });
+      // Flat state tint from the stylesheet (hot = danger, cold = primary,
+      // like the barometer); no per-game gradient wash over the line.
+      .attr("class", (segment) => `streak ${segment.type}`);
 
     type MarkerDatum = {
       key: string;
@@ -1336,11 +1482,6 @@ function BrushableStreakChart({
         "class",
         (d) => `streak-marker ${d.type} ${d.isStart ? "start" : "end"}`
       )
-      .attr("stroke", (d) =>
-        d.type === "hot"
-          ? "rgba(242, 82, 33, 0.85)"
-          : "rgba(32, 168, 255, 0.85)"
-      )
       .attr("stroke-width", (d) => (d.isStart ? 1.5 : 1))
       .attr("stroke-dasharray", (d) => (d.isStart ? "4 2" : "4 3"));
 
@@ -1351,12 +1492,6 @@ function BrushableStreakChart({
       .attr("class", (point) => `game-point ${point.streakType}`)
       .attr("r", 4)
       .attr("stroke-width", 1)
-      .attr("stroke", "#0f172a")
-      .attr("fill", (point) => {
-        if (point.streakType === "hot") return "#f2542d";
-        if (point.streakType === "cold") return "#3ba7ff";
-        return "#a0aabf";
-      })
       .attr("opacity", (point) => {
         if (point.streakType === "neutral") return 0.65;
         return Math.min(1, 0.4 + point.streakLength * 0.12);
@@ -1392,7 +1527,6 @@ function BrushableStreakChart({
       .attr("class", "crosshair-x")
       .attr("y1", 0)
       .attr("y2", focusHeight)
-      .attr("stroke", "rgba(148,163,184,0.6)")
       .attr("stroke-width", 1)
       .attr("stroke-dasharray", "3 3")
       .style("opacity", 0);
@@ -1402,7 +1536,6 @@ function BrushableStreakChart({
       .attr("class", "crosshair-y")
       .attr("x1", 0)
       .attr("x2", innerWidth)
-      .attr("stroke", "rgba(148,163,184,0.6)")
       .attr("stroke-width", 1)
       .attr("stroke-dasharray", "3 3")
       .style("opacity", 0);
@@ -1411,8 +1544,6 @@ function BrushableStreakChart({
       .append("circle")
       .attr("class", "hover-point")
       .attr("r", 4.5)
-      .attr("fill", "#0ea5e9")
-      .attr("stroke", "#0f172a")
       .attr("stroke-width", 1)
       .style("opacity", 0);
 
@@ -1455,7 +1586,8 @@ function BrushableStreakChart({
         .attr("cx", (point) => clampX(x(point.date)))
         .attr("cy", (point) => y(point.points));
 
-      xAxisGroup.call(focusXAxis);
+      // Re-thin for the zoomed domain so the date labels follow the brush.
+      xAxisGroup.call(focusXAxis.tickValues(thinTicks(x.ticks(maxXTicks))));
       yAxisGroup.call(focusYAxis);
     };
 
@@ -1530,6 +1662,123 @@ function BrushableStreakChart({
         }
       });
 
+    // Shared by mouse hover and keyboard reading: crosshair, dot, tooltip, and
+    // (for the keyboard) a polite live-region line.
+    const describePoint = (point: HistoryChartPoint) =>
+      `${fmtFull(point.date)}: ${data.valueLabel} ${point.points.toFixed(2)}, ${
+        data.averageLabel
+      } ${point.rollingAverage.toFixed(2)}, ${data.baselineLabel} ${data.baseline.toFixed(2)}, streak ${
+        point.streakType === "neutral"
+          ? "neutral"
+          : `${point.streakType} ×${point.streakLength}`
+      }.`;
+
+    const showPoint = (
+      nearest: HistoryChartPoint,
+      crossX: number,
+      crossY: number | null,
+      tooltipLeft: number,
+      tooltipTop: number
+    ) => {
+      crosshairX.attr("x1", crossX).attr("x2", crossX).style("opacity", 1);
+      if (crossY == null) {
+        crosshairY.style("opacity", 0);
+      } else {
+        crosshairY.attr("y1", crossY).attr("y2", crossY).style("opacity", 1);
+      }
+
+      hoverDot
+        .attr("cx", x(nearest.date))
+        .attr("cy", y(nearest.points))
+        .style("opacity", 1);
+
+      const html = `
+          <div><strong>${fmtFull(nearest.date)}</strong></div>
+          <div>${data.valueLabel}: ${nearest.points.toFixed(2)}</div>
+          <div>${data.averageLabel}: ${nearest.rollingAverage.toFixed(2)}</div>
+          <div>${data.baselineLabel}: ${data.baseline.toFixed(2)}</div>
+          <div>Streak: ${
+            nearest.streakType === "neutral"
+              ? "neutral"
+              : `${nearest.streakType} ×${nearest.streakLength}`
+          }</div>`;
+
+      hover.html(html).style("opacity", "1");
+      hover.style("left", `${tooltipLeft}px`).style("top", `${tooltipTop}px`);
+    };
+
+    const hidePoint = () => {
+      crosshairX.style("opacity", 0);
+      crosshairY.style("opacity", 0);
+      hoverDot.style("opacity", 0);
+      hover.style("opacity", "0");
+    };
+
+    // Keyboard: ←/→/Home/End step through the games in the current zoom.
+    let keyboardIndex: number | null = null;
+    const visiblePoints = () => {
+      const [start, end] = x.domain();
+      return points.filter((point) => point.date >= start && point.date <= end);
+    };
+    const showKeyboardPoint = (index: number) => {
+      const visible = visiblePoints();
+      if (!visible.length) return;
+      keyboardIndex = Math.max(0, Math.min(visible.length - 1, index));
+      const point = visible[keyboardIndex];
+      const px = x(point.date);
+      showPoint(point, px, null, 0, 0);
+      // Place the tooltip from the dot's on-screen box: the SVG is scaled to fit
+      // its container, so SVG units are not CSS pixels.
+      const dot = hoverDot.node()?.getBoundingClientRect();
+      const box = containerRef.current?.getBoundingClientRect();
+      const tip = (hover.node() as HTMLDivElement | null)?.getBoundingClientRect();
+      if (dot && box) {
+        const tipWidth = tip?.width ?? 200;
+        const rightSide = dot.right - box.left + 14;
+        const left =
+          rightSide + tipWidth > box.width
+            ? dot.left - box.left - tipWidth - 14
+            : rightSide;
+        hover
+          .style("left", `${Math.max(8, left)}px`)
+          .style("top", `${dot.bottom - box.top + 12}px`);
+      }
+      if (liveRef.current) liveRef.current.textContent = describePoint(point);
+    };
+    const container = d3.select(containerRef.current);
+    container
+      .on("focus.chart", () => {
+        showKeyboardPoint(keyboardIndex ?? visiblePoints().length - 1);
+      })
+      .on("blur.chart", () => {
+        keyboardIndex = null;
+        hidePoint();
+        if (liveRef.current) liveRef.current.textContent = "";
+      })
+      .on("keydown.chart", (event: KeyboardEvent) => {
+        const last = visiblePoints().length - 1;
+        const current = keyboardIndex ?? last;
+        const next =
+          event.key === "ArrowRight"
+            ? current + 1
+            : event.key === "ArrowLeft"
+              ? current - 1
+              : event.key === "Home"
+                ? 0
+                : event.key === "End"
+                  ? last
+                  : null;
+        if (event.key === "Escape") {
+          event.preventDefault();
+          keyboardIndex = null;
+          hidePoint();
+          return;
+        }
+        if (next == null) return;
+        event.preventDefault();
+        showKeyboardPoint(next);
+      });
+
     const zoomPane = svg
       .append("rect")
       .attr("class", "zoom-pane")
@@ -1544,15 +1793,6 @@ function BrushableStreakChart({
         const clampedX = Math.max(0, Math.min(innerWidth, mx));
         const clampedY = Math.max(0, Math.min(focusHeight, my));
 
-        crosshairX
-          .attr("x1", clampedX)
-          .attr("x2", clampedX)
-          .style("opacity", 1);
-        crosshairY
-          .attr("y1", clampedY)
-          .attr("y2", clampedY)
-          .style("opacity", 1);
-
         const xm = x.invert(clampedX);
         const i = Math.max(1, Math.min(points.length - 1, bisectDate(points, xm)));
         const p0 = points[i - 1];
@@ -1563,35 +1803,13 @@ function BrushableStreakChart({
             ? p0
             : p1;
 
-        hoverDot
-          .attr("cx", x(nearest.date))
-          .attr("cy", y(nearest.points))
-          .style("opacity", 1);
-
-        const html = `
-          <div><strong>${fmtFull(nearest.date)}</strong></div>
-          <div>${data.valueLabel}: ${nearest.points.toFixed(2)}</div>
-          <div>${data.averageLabel}: ${nearest.rollingAverage.toFixed(2)}</div>
-          <div>${data.baselineLabel}: ${data.baseline.toFixed(2)}</div>
-          <div>Streak: ${
-            nearest.streakType === "neutral"
-              ? "neutral"
-              : `${nearest.streakType} ×${nearest.streakLength}`
-          }</div>`;
-
-        hover.html(html).style("opacity", "1");
         const [cx, cy] = d3.pointer(
           event,
           containerRef.current as HTMLDivElement
         );
-        hover.style("left", `${cx + 14}px`).style("top", `${cy + 12}px`);
+        showPoint(nearest, clampedX, clampedY, cx + 14, cy + 12);
       })
-      .on("mouseleave", () => {
-        crosshairX.style("opacity", 0);
-        crosshairY.style("opacity", 0);
-        hoverDot.style("opacity", 0);
-        hover.style("opacity", "0");
-      })
+      .on("mouseleave", hidePoint)
       .call(zoom)
       .on("mousedown.zoomCursor", function () {
         d3.select(this as SVGRectElement).style("cursor", "grabbing");
@@ -1610,6 +1828,7 @@ function BrushableStreakChart({
     }
 
     return () => {
+      container.on(".chart", null);
       svg.selectAll("*").remove();
     };
   }, [containerWidth, data]);
@@ -1618,17 +1837,33 @@ function BrushableStreakChart({
     return <div className={styles.chartPlaceholder}>{emptyMessage}</div>;
   }
 
+  const firstPoint = data.chartPoints[0];
+  const lastPoint = data.chartPoints[data.chartPoints.length - 1];
+  const chartSummary = `${data.title}: ${data.chartPoints.length} games from ${format(
+    firstPoint.date,
+    "MMM d"
+  )} to ${format(lastPoint.date, "MMM d, yyyy")}. Latest ${data.valueLabel} ${lastPoint.points.toFixed(
+    2
+  )}, ${data.averageLabel} ${lastPoint.rollingAverage.toFixed(2)}.`;
+
   return (
-    <div ref={containerRef} className={styles.chartWrapper}>
+    <div
+      ref={containerRef}
+      className={styles.chartWrapper}
+      tabIndex={0}
+      role="group"
+      aria-label={`${data.title}. Use the left and right arrow keys to read each game.`}
+    >
       <div className={styles.chartMeta}>
         <h2>{data.title}</h2>
         <span>{data.subtitle}</span>
       </div>
+      <span ref={liveRef} className={styles.visuallyHidden} aria-live="polite" />
       <svg
         ref={svgRef}
         className={styles.chartSvg}
         role="img"
-        aria-label={data.title}
+        aria-label={chartSummary}
       />
     </div>
   );
@@ -1637,21 +1872,61 @@ function BrushableStreakChart({
 export default function TrendsSandboxPage() {
   const router = useRouter();
   const hasHydratedQuery = useRef(false);
-  const skipNextEntityReset = useRef(false);
+  // Set in the render after the URL is read, so data fetches and the URL sync
+  // never run with the pre-hydration defaults (today's date) on a deep link.
+  const [queryHydrated, setQueryHydrated] = useState(false);
+  // "Try again" on the load-error notice bumps this to re-run the failed loads.
+  const [retryKey, setRetryKey] = useState(0);
+  const controlsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const activeEntityTabRef = useRef<HTMLButtonElement>(null);
+  const metricChipsRef = useRef<HTMLDivElement>(null);
+  // Only a user's entity-type switch clears the selection. The reset effect
+  // compares against the type it last saw; query hydration marks the type it
+  // set so that one switch keeps the deep-linked selection.
+  const previousEntityTypeRef = useRef<SandboxEntityType>("skater");
+  const hydratedEntityTypeRef = useRef<SandboxEntityType | null>(null);
   const [entityType, setEntityType] = useState<SandboxEntityType>("skater");
   const [chartSurfaceTab, setChartSurfaceTab] =
     useState<ChartSurfaceTab>("elasticity");
   const [searchQuery, setSearchQuery] = useState("");
+  // Reset clears the selected player too, so it asks once inline first.
+  const [confirmingReset, setConfirmingReset] = useState(false);
+  const resetButtonRef = useRef<HTMLButtonElement>(null);
+  const resetCancelRef = useRef<HTMLButtonElement>(null);
+  const resetConfirmRef = useRef<HTMLSpanElement>(null);
   const [searchResults, setSearchResults] = useState<EntityOption[]>([]);
   const [searching, setSearching] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<EntityOption | null>(null);
-  const [requestedDate, setRequestedDate] = useState(DEFAULT_DATE);
+  const selectedEntityName = selectedEntity?.name ?? null;
+  // Team and position shown inside the search box while it holds the selection.
+  const selectedEntityTag =
+    selectedEntity?.subtitle && searchQuery === selectedEntity.name
+      ? formatEntityTag(selectedEntity.subtitle)
+      : null;
+  const [requestedDate, setRequestedDate] = useState(todayLocalIsoDate);
   const [windowCode, setWindowCode] = useState<(typeof WINDOW_OPTIONS)[number]>(
     "l5"
   );
   const [selectedMetric, setSelectedMetric] = useState(
     SANDBOX_ENTITY_CONFIG.skater.metrics[0]?.key ?? "ixg_per_60"
   );
+  // Phones show the metric pills as one sideways-scrolling row; keep the
+  // pressed pill in view (deep links can select one past the edge). Only the
+  // row scrolls, never the page.
+  useEffect(() => {
+    const row = metricChipsRef.current;
+    if (!row || row.scrollWidth <= row.clientWidth) return;
+    const pressed = row.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (!pressed) return;
+    const rowBox = row.getBoundingClientRect();
+    const pillBox = pressed.getBoundingClientRect();
+    const inset = 4; // room for the focus ring at the clip edge
+    if (pillBox.left < rowBox.left + inset) {
+      row.scrollLeft -= rowBox.left + inset - pillBox.left;
+    } else if (pillBox.right > rowBox.right - inset) {
+      row.scrollLeft += pillBox.right - (rowBox.right - inset);
+    }
+  }, [selectedMetric]);
   const [scoreData, setScoreData] = useState<ScoresResponse | null>(null);
   const [bandData, setBandData] = useState<BandsResponse | null>(null);
   const [scoreLoading, setScoreLoading] = useState(false);
@@ -1667,6 +1942,9 @@ export default function TrendsSandboxPage() {
   const [skaterTrendError, setSkaterTrendError] = useState<string | null>(null);
 
   const entityConfig = SANDBOX_ENTITY_CONFIG[entityType];
+  const selectedMetricConfig = entityConfig.metrics.find(
+    (metric) => metric.key === selectedMetric
+  );
   const selectedEntityId = selectedEntity?.id ?? null;
   const initialMetricKey = entityConfig.metrics[0]?.key ?? "";
   const activeSeasonId = useMemo(() => {
@@ -1690,7 +1968,7 @@ export default function TrendsSandboxPage() {
     const nextDate =
       typeof query.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(query.date)
         ? query.date
-        : DEFAULT_DATE;
+        : todayLocalIsoDate();
     const nextWindowCode = parseWindowCodeQuery(query.windowCode) ?? "l5";
     const nextChartTab =
       parseChartSurfaceTabQuery(query.chartSurfaceTab) ?? "elasticity";
@@ -1704,7 +1982,8 @@ export default function TrendsSandboxPage() {
         : SANDBOX_ENTITY_CONFIG[nextEntityType].metrics[0]?.key ?? "ixg_per_60";
 
     hasHydratedQuery.current = true;
-    skipNextEntityReset.current = true;
+    setQueryHydrated(true);
+    hydratedEntityTypeRef.current = nextEntityType;
     setEntityType(nextEntityType);
     setRequestedDate(nextDate);
     setWindowCode(nextWindowCode);
@@ -1721,33 +2000,35 @@ export default function TrendsSandboxPage() {
       return;
     }
 
-    let cancelled = false;
+    // No cleanup cancel: the URL sync below calls router.replace right after
+    // hydration, which re-runs this effect's cleanup and used to discard the
+    // lookup. A selection the user made meanwhile still wins.
     supabase
       .from("players")
       .select("id, fullName, position, team_id, image_url")
       .eq("id", nextEntityId)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (cancelled || error || !data) return;
-        setSelectedEntity({
-          id: Number(data.id),
-          name: data.fullName ?? `Player ${nextEntityId}`,
-          subtitle: buildPlayerSubtitle({
-            teamId: data.team_id,
-            positionCode: data.position
-          }),
-          imageUrl: data.image_url ?? null
-        });
-        setSearchQuery(data.fullName ?? "");
+        if (error || !data) return;
+        const name = data.fullName ?? `Player ${nextEntityId}`;
+        setSelectedEntity(
+          (current) =>
+            current ?? {
+              id: Number(data.id),
+              name,
+              subtitle: buildPlayerSubtitle({
+                teamId: data.team_id,
+                positionCode: data.position
+              }),
+              imageUrl: data.image_url ?? null
+            }
+        );
+        setSearchQuery((current) => current || name);
       });
-
-    return () => {
-      cancelled = true;
-    };
   }, [router]);
 
   useEffect(() => {
-    if (!router.isReady || !hasHydratedQuery.current) return;
+    if (!router.isReady || !queryHydrated) return;
 
     const nextQuery: Record<string, string> = {
       entityType,
@@ -1795,6 +2076,7 @@ export default function TrendsSandboxPage() {
   }, [
     chartSurfaceTab,
     entityType,
+    queryHydrated,
     requestedDate,
     resolvedSeasonId,
     router,
@@ -1804,10 +2086,12 @@ export default function TrendsSandboxPage() {
   ]);
 
   useEffect(() => {
-    if (skipNextEntityReset.current) {
-      skipNextEntityReset.current = false;
-      return;
-    }
+    const previousEntityType = previousEntityTypeRef.current;
+    previousEntityTypeRef.current = entityType;
+    if (previousEntityType === entityType) return;
+    const hydratedEntityType = hydratedEntityTypeRef.current;
+    hydratedEntityTypeRef.current = null;
+    if (hydratedEntityType === entityType) return;
     setSearchQuery("");
     setSearchResults([]);
     setSelectedEntity(null);
@@ -1828,7 +2112,11 @@ export default function TrendsSandboxPage() {
       return;
     }
 
-    if (searchQuery.trim().length < MIN_SEARCH_LENGTH) {
+    // The box shows the selected player's name; that text isn't a new search.
+    if (
+      searchQuery.trim().length < MIN_SEARCH_LENGTH ||
+      searchQuery === selectedEntityName
+    ) {
       setSearchResults([]);
       return;
     }
@@ -1860,7 +2148,7 @@ export default function TrendsSandboxPage() {
       } catch (error: any) {
         if (!cancelled) {
           setSearchResults([]);
-          setErrorMessage(error?.message ?? "Unable to search right now.");
+          setErrorMessage(loadErrorCopy("Couldn't search players right now.", error));
         }
       } finally {
         if (!cancelled) setSearching(false);
@@ -1871,9 +2159,10 @@ export default function TrendsSandboxPage() {
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [entityType, searchQuery]);
+  }, [entityType, retryKey, searchQuery, selectedEntityName]);
 
   useEffect(() => {
+    if (!queryHydrated) return;
     let cancelled = false;
     setScoreLoading(true);
     setErrorMessage(null);
@@ -1903,7 +2192,7 @@ export default function TrendsSandboxPage() {
       .catch((error: any) => {
         if (!cancelled) {
           setScoreData(null);
-          setErrorMessage(error?.message ?? "Unable to load sustainability scores.");
+          setErrorMessage(loadErrorCopy("Couldn't load the readings right now.", error));
         }
       })
       .finally(() => {
@@ -1913,7 +2202,7 @@ export default function TrendsSandboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [entityType, requestedDate, selectedEntityId, windowCode]);
+  }, [entityType, queryHydrated, requestedDate, retryKey, selectedEntityId, windowCode]);
 
   useEffect(() => {
     if (entityType !== "skater" || selectedEntityId == null) {
@@ -1928,7 +2217,7 @@ export default function TrendsSandboxPage() {
     const seasonRange = getSeasonDateRangeFromSeasonId(seasonId);
     if (!seasonRange) {
       setSkaterTrendRows([]);
-      setSkaterTrendError("Unable to resolve the selected season window.");
+      setSkaterTrendError("Couldn't find the season for this date.");
       return;
     }
 
@@ -2081,7 +2370,7 @@ export default function TrendsSandboxPage() {
         if (cancelled) return;
         setSkaterTrendRows([]);
         setSkaterTrendError(
-          error?.message ?? "Unable to load full-season skater trend history."
+          loadErrorCopy("Couldn't load this skater's season history.", error)
         );
       })
       .finally(() => {
@@ -2129,7 +2418,7 @@ export default function TrendsSandboxPage() {
       .catch((error: any) => {
         if (!cancelled) {
           setBandData(null);
-          setBandError(error?.message ?? "Unable to load elasticity bands.");
+          setBandError(loadErrorCopy("Couldn't load the usual-range history.", error));
         }
       })
       .finally(() => {
@@ -2177,7 +2466,7 @@ export default function TrendsSandboxPage() {
         if (!cancelled) {
           setScoreHistoryData(null);
           setScoreHistoryError(
-            error?.message ?? "Unable to load sustainability score history."
+            loadErrorCopy("Couldn't load the score history.", error)
           );
         }
       })
@@ -2425,29 +2714,14 @@ export default function TrendsSandboxPage() {
   }, [scoreData]);
 
   const reasonHighlights = useMemo(
-    () => extractReasonHighlights(activeRow?.components, 5),
+    () => extractReasonHighlights(driverComponents(activeRow?.components), 5),
     [activeRow]
   );
 
-  const paddedReasonHighlights = useMemo<PaddedReasonCard[]>(() => {
-    const cards: PaddedReasonCard[] = [...reasonHighlights];
-    while (cards.length < 5) {
-      cards.push({
-        key: `placeholder-${cards.length + 1}`,
-        label: "Awaiting signal",
-        value: 0,
-        direction: "positive",
-        sentence: activeRow
-          ? "This slot will populate when another interpretable driver clears the surfacing threshold."
-          : "Select an entity to inspect the strongest inputs behind its sustainability read.",
-        placeholder: true
-      });
-    }
-    return cards;
-  }, [activeRow, reasonHighlights]);
 
+  // Only real drivers get a card; the empty state is one note, not filler cards.
   const reasonComparisonRows = useMemo(() => {
-    return paddedReasonHighlights.map((reason) => {
+    return reasonHighlights.map((reason) => {
       const mappedMetricKey = REASON_TO_BAND_METRIC_KEY[reason.key];
       const metricRow = mappedMetricKey ? bandRowsByMetricKey.get(mappedMetricKey) : null;
       return {
@@ -2461,7 +2735,22 @@ export default function TrendsSandboxPage() {
           ) ?? []
       };
     });
-  }, [bandRowsByMetricKey, paddedReasonHighlights]);
+  }, [bandRowsByMetricKey, reasonHighlights]);
+  // While a selection's scores load, Why This Reading shows its header with
+  // "Loading…" so the cards don't appear from nowhere.
+  const reasonsLoading =
+    selectedEntity != null && scoreLoading && reasonComparisonRows.length === 0;
+
+  // One empty-state voice for every panel: nothing picked, still loading, or
+  // picked with nothing to show (never "Select an entity" with a team chosen).
+  const entityNoun = entityType === "team" ? "team" : entityType === "goalie" ? "goalie" : "skater";
+  const entityNounPlural = `${entityNoun}s`;
+  const emptyCopy = (subject: string) =>
+    !selectedEntity
+      ? `Pick a ${entityNoun} to see ${subject}.`
+      : scoreLoading
+        ? "Loading…"
+        : `No reading for ${selectedEntity.name} on ${requestedDate}.`;
 
   const barometerPointer = useMemo(() => {
     const rawScore = activeRow?.rawScore;
@@ -2483,6 +2772,7 @@ export default function TrendsSandboxPage() {
       activeRow.expectedValue != null
     );
   }, [activeRow]);
+  const usualLevelMissing = Boolean(activeRow) && !hasUsualLevelData;
 
   const resetState = () => {
     setEntityType("skater");
@@ -2490,7 +2780,7 @@ export default function TrendsSandboxPage() {
     setSearchQuery("");
     setSearchResults([]);
     setSelectedEntity(null);
-    setRequestedDate(DEFAULT_DATE);
+    setRequestedDate(todayLocalIsoDate());
     setWindowCode("l5");
     setSelectedMetric(SANDBOX_ENTITY_CONFIG.skater.metrics[0]?.key ?? "ixg_per_60");
     setScoreData(null);
@@ -2504,38 +2794,69 @@ export default function TrendsSandboxPage() {
     setSkaterTrendLoading(false);
   };
 
+  // The confirm takes focus on No and closes itself after a few seconds.
+  useEffect(() => {
+    if (!confirmingReset) return;
+    resetCancelRef.current?.focus();
+    const timer = setTimeout(() => {
+      const hadFocus = resetConfirmRef.current?.contains(document.activeElement);
+      setConfirmingReset(false);
+      if (hadFocus) requestAnimationFrame(() => resetButtonRef.current?.focus());
+    }, RESET_CONFIRM_MS);
+    return () => clearTimeout(timer);
+  }, [confirmingReset]);
+
+  const closeResetConfirm = (confirmed: boolean) => {
+    if (confirmed) resetState();
+    setConfirmingReset(false);
+    // Return focus to Reset once it renders again.
+    requestAnimationFrame(() => resetButtonRef.current?.focus());
+  };
+
   return (
-    <div className={styles.page}>
+    <main className={styles.page}>
+      <a
+        href="#sandbox-entity-types"
+        className={styles.skipLink}
+        onClick={(event) => {
+          // Land on the selected entity tab; the href is the no-script fallback.
+          if (!activeEntityTabRef.current) return;
+          event.preventDefault();
+          activeEntityTabRef.current.focus();
+        }}
+      >
+        Skip to sandbox
+      </a>
       <section className={styles.topWorkspace}>
         <article className={styles.overviewCard}>
           <div className={styles.overviewHeader}>
-            <span className={styles.overviewEyebrow}>Workshop Pillar</span>
             <div className={styles.overviewTitleRow}>
               <div>
-                <h1 className={styles.overviewTitle}>Trends Sandbox</h1>
+                <h1 className={styles.overviewTitle}>Sustainability Sandbox</h1>
                 <p className={styles.overviewDescription}>
                   Read whether a team, skater, or goalie is running hotter or colder
                   than their usual level using rolling windows and baseline checks.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={resetState}
-                className={styles.resetButton}
-              >
-                Reset
-              </button>
             </div>
           </div>
 
-          <div className={styles.entityTabs}>
+          <div
+            id="sandbox-entity-types"
+            tabIndex={-1}
+            role="group"
+            aria-label="Entity type"
+            className={styles.entityTabs}
+          >
             {(["team", "skater", "goalie"] as const).map((type) => (
               <button
                 key={type}
+                ref={type === entityType ? activeEntityTabRef : undefined}
                 type="button"
                 className={
                   type === entityType ? styles.entityTabActive : styles.entityTab
                 }
+                aria-pressed={type === entityType}
                 onClick={() => setEntityType(type)}
               >
                 {SANDBOX_ENTITY_CONFIG[type].label}
@@ -2555,10 +2876,63 @@ export default function TrendsSandboxPage() {
 
         <section className={styles.controls}>
           <div className={styles.controlsHeader}>
-            <h2 className={styles.compactTitle}>Controls</h2>
-            <span className={styles.compactMeta}>
-              Pick the player, date, and time window
-            </span>
+            <h2
+              id="sandbox-controls"
+              ref={controlsHeadingRef}
+              tabIndex={-1}
+              className={styles.compactTitle}
+            >
+              Controls
+            </h2>
+            {/* What the controls below are reading right now. */}
+            <p className={styles.currentReadLine}>
+              <span className={styles.currentReadEntity}>
+                {selectedEntity?.name ?? entityConfig.label}
+              </span>
+              <span aria-hidden="true"> · </span>
+              <span>{getWindowLabel(windowCode)}</span>
+              <span aria-hidden="true"> · </span>
+              <span>
+                {scoreData?.snapshotDate ?? (scoreLoading ? "Loading…" : "No scores yet")}
+              </span>
+            </p>
+            {confirmingReset ? (
+              <span
+                ref={resetConfirmRef}
+                role="group"
+                aria-label="Reset all controls?"
+                className={styles.resetConfirm}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") closeResetConfirm(false);
+                }}
+              >
+                <span aria-hidden="true">Reset?</span>
+                <button
+                  type="button"
+                  className={`${styles.resetButton} ${styles.resetConfirmYes}`}
+                  onClick={() => closeResetConfirm(true)}
+                >
+                  Clear all
+                </button>
+                <button
+                  ref={resetCancelRef}
+                  type="button"
+                  className={styles.resetButton}
+                  onClick={() => closeResetConfirm(false)}
+                >
+                  No
+                </button>
+              </span>
+            ) : (
+              <button
+                ref={resetButtonRef}
+                type="button"
+                onClick={() => setConfirmingReset(true)}
+                className={styles.resetButton}
+              >
+                Reset
+              </button>
+            )}
           </div>
           <div className={styles.controlGrid}>
             <div className={styles.controlGroup}>
@@ -2572,8 +2946,12 @@ export default function TrendsSandboxPage() {
             </div>
 
             <div className={styles.controlGroup}>
-              <span>Window</span>
-              <div className={styles.windowButtons}>
+              <span id="sandbox-window-label">Window</span>
+              <div
+                className={styles.windowButtons}
+                role="group"
+                aria-labelledby="sandbox-window-label"
+              >
                 {WINDOW_OPTIONS.map((option) => (
                   <button
                     key={option}
@@ -2583,6 +2961,9 @@ export default function TrendsSandboxPage() {
                         ? styles.windowButtonActive
                         : styles.windowButton
                     }
+                    aria-pressed={option === windowCode}
+                    // Name starts with the visible "L5" (WCAG 2.5.3), then spells it out.
+                    aria-label={`${option.toUpperCase()} (${getWindowLabel(option).toLowerCase()} games)`}
                     onClick={() => setWindowCode(option)}
                   >
                     {option.toUpperCase()}
@@ -2617,16 +2998,24 @@ export default function TrendsSandboxPage() {
                 <label htmlFor="entity-search">
                   {entityType === "goalie" ? "Goalie" : "Skater"}
                 </label>
-                <input
-                  id="entity-search"
-                  type="search"
-                  placeholder={entityConfig.searchPlaceholder}
-                  value={searchQuery}
-                  onChange={(event) => {
-                    setSearchQuery(event.target.value);
-                    setErrorMessage(null);
-                  }}
-                />
+                <div className={styles.searchBox}>
+                  <input
+                    id="entity-search"
+                    type="search"
+                    placeholder={entityConfig.searchPlaceholder}
+                    value={searchQuery}
+                    aria-describedby={selectedEntityTag ? "entity-search-tag" : undefined}
+                    onChange={(event) => {
+                      setSearchQuery(event.target.value);
+                      setErrorMessage(null);
+                    }}
+                  />
+                  {selectedEntityTag ? (
+                    <span id="entity-search-tag" className={styles.searchTag}>
+                      {selectedEntityTag}
+                    </span>
+                  ) : null}
+                </div>
                 {searching && <span className={styles.status}>Searching…</span>}
                 {!searching && searchResults.length > 0 && (
                   <ul className={styles.playerResults}>
@@ -2643,7 +3032,7 @@ export default function TrendsSandboxPage() {
                           <span>{option.name}</span>
                           {option.subtitle ? (
                             <span className={styles.positionTag}>
-                              {option.subtitle}
+                              {formatEntityTag(option.subtitle)}
                             </span>
                           ) : null}
                         </button>
@@ -2654,67 +3043,68 @@ export default function TrendsSandboxPage() {
               </div>
             )}
 
-            <div className={styles.controlGroup}>
-              <label htmlFor="metric-select">Focus Metric</label>
-              <select
-                id="metric-select"
-                value={selectedMetric}
-                onChange={(event) => setSelectedMetric(event.target.value)}
-              >
-                {entityConfig.metrics.map((metric) => (
-                  <option key={metric.key} value={metric.key}>
-                    {metric.label}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
-        </section>
-
-        <section className={styles.summaryPanel}>
-          <div className={styles.controlsHeader}>
-            <h2 className={styles.compactTitle}>Current Read</h2>
-            <span className={styles.compactMeta}>Scope and data health</span>
-          </div>
-          <div className={styles.summary}>
-            <div>
-              <strong>Entity</strong>
-              <span>{selectedEntity?.name ?? entityConfig.label}</span>
+          {SHOW_DEV_DIAGNOSTICS && (
+            <div className={styles.summary}>
+              <div>
+                <strong>Rows Loaded</strong>
+                <span>{scoreLoading ? "Loading…" : scoreData?.totalRows ?? "0"}</span>
+              </div>
+              <div>
+                <strong>Entity Type</strong>
+                <span>{entityConfig.label}</span>
+              </div>
+              <div>
+                <strong>Contract Note</strong>
+                <span>{entityConfig.readinessCopy}</span>
+              </div>
             </div>
-            <div>
-              <strong>Date Used</strong>
-              <span>{scoreData?.snapshotDate ?? "—"}</span>
-            </div>
-            <div>
-              <strong>Window</strong>
-              <span>{getWindowLabel(windowCode)}</span>
-            </div>
-            <div>
-              <strong>Rows Loaded</strong>
-              <span>{scoreLoading ? "Loading…" : scoreData?.totalRows ?? "0"}</span>
-            </div>
-            <div>
-              <strong>Entity Type</strong>
-              <span>{entityConfig.label}</span>
-            </div>
-            <div>
-              <strong>Contract Note</strong>
-              <span>{entityConfig.readinessCopy}</span>
-            </div>
-          </div>
+          )}
         </section>
       </section>
 
-      {errorMessage && <p className={styles.error}>{errorMessage}</p>}
+      {/* Announces a retry in progress; empty otherwise, so it stays quiet. */}
+      <p className={styles.visuallyHidden} aria-live="polite">
+        {retryKey > 0 && scoreLoading ? "Reloading scores…" : ""}
+      </p>
+      {errorMessage && (
+        <div className={styles.errorNotice} role="alert">
+          <p>{errorMessage}</p>
+          <button
+            type="button"
+            className={styles.resetButton}
+            onClick={() => {
+              setErrorMessage(null);
+              setRetryKey((key) => key + 1);
+              // The notice (and this button) unmounts; keep focus on the controls.
+              controlsHeadingRef.current?.focus();
+            }}
+          >
+            Try again
+          </button>
+        </div>
+      )}
 
-      <section className={styles.sustainabilityWorkbench}>
+      {/* With a reading but no usual-level numbers, the score panel runs full
+          width and says so in one line instead of an empty half-width card. */}
+      <section
+        className={
+          usualLevelMissing
+            ? `${styles.sustainabilityWorkbench} ${styles.sustainabilityWorkbenchSingle}`
+            : styles.sustainabilityWorkbench
+        }
+      >
         <article className={styles.surfaceCard}>
           <div className={styles.surfaceCardHeader}>
             <h2 className={styles.surfaceCardTitle}>{activeRow?.expectationState === "unavailable" ? "Process Support Index" : "Form Barometer"}</h2>
             <span className={styles.surfaceCardMeta}>
               {activeRow
                 ? getBarometerLabel(activeRow.expectationState)
-                : "Awaiting selection"}
+                : !selectedEntity
+                  ? "Nothing picked"
+                  : scoreLoading
+                    ? "Loading"
+                    : "No reading"}
             </span>
           </div>
           {activeRow ? (
@@ -2748,85 +3138,420 @@ export default function TrendsSandboxPage() {
                 {formatNumber(activeRow.score, 2)}
               </div>
               <div className={styles.meterMeta}>
+                {/* "Performance unavailable" is said once, in the header and
+                    paragraph; the unavailable state shows only the raw index. */}
+                {activeRow.expectationState !== "unavailable" && (
+                  <div>
+                    <strong>Reading</strong>
+                    <span>{getBarometerLabel(activeRow.expectationState)}</span>
+                  </div>
+                )}
                 <div>
-                  <strong>Reading</strong>
-                  <span>{getBarometerLabel(activeRow.expectationState)}</span>
-                </div>
-                <div>
-                  <strong>{activeRow.expectationState === "unavailable" ? "Raw Process Index" : "Heat Check"}</strong>
+                  <strong>{activeRow.expectationState === "unavailable" ? "Raw index" : "Raw score"}</strong>
                   <span>{formatNumber(activeRow.rawScore, 2)}</span>
                 </div>
+                {activeRow.expectationState !== "unavailable" && (
+                  <>
+                    <div>
+                      <strong>Z-score</strong>
+                      <span>{formatNumber(activeRow.zScore, 2)}</span>
+                    </div>
+                    <div>
+                      <strong>Gap vs Usual</strong>
+                      <span>
+                        {activeRow.recentValue != null && activeRow.expectedValue != null
+                          ? formatDelta(activeRow.recentValue - activeRow.expectedValue, 2)
+                          : "—"}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className={styles.bandEmpty}>{emptyCopy("their form reading")}</div>
+          )}
+          {usualLevelMissing ? (
+            <p className={styles.usualLevelNote}>
+              Usual-level numbers aren&apos;t available for this reading yet.
+            </p>
+          ) : null}
+        </article>
+
+        {usualLevelMissing ? null : (
+          <article className={styles.surfaceCard}>
+            <div className={styles.surfaceCardHeader}>
+              <h2 className={styles.surfaceCardTitle}>Usual Level</h2>
+              <span className={styles.surfaceCardMeta}>Baseline averages</span>
+            </div>
+            {activeRow && hasUsualLevelData ? (
+              <div className={styles.detailGrid}>
                 <div>
-                  <strong>{activeRow.expectationState === "unavailable" ? "Performance comparison" : "Stability Score"}</strong>
-                  <span>{activeRow.expectationState === "unavailable" ? "Unavailable" : formatNumber(activeRow.zScore, 2)}</span>
+                  <strong>Normal Level</strong>
+                  <span>{formatNumber(activeRow.baselineValue, 2)}</span>
                 </div>
                 <div>
-                  <strong>Gap vs Usual</strong>
-                  <span>
-                    {activeRow.recentValue != null && activeRow.expectedValue != null
-                      ? formatDelta(activeRow.recentValue - activeRow.expectedValue, 2)
-                      : "—"}
+                  <strong>Current Window</strong>
+                  <span>{formatNumber(activeRow.recentValue, 2)}</span>
+                </div>
+                <div>
+                  <strong>Expected</strong>
+                  <span>{formatNumber(activeRow.expectedValue, 2)}</span>
+                </div>
+                <div>
+                  <strong>Window</strong>
+                  <span>{getWindowLabel(activeRow.windowCode)}</span>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.bandEmpty}>{emptyCopy("where they usually land")}</div>
+            )}
+          </article>
+        )}
+      </section>
+
+      <section className={styles.bandChartSection}>
+        <div className={styles.bandHeader}>
+          <h2>Season Charts</h2>
+          <div
+            className={styles.chartSurfaceTabs}
+            role="tablist"
+            aria-label="Chart view"
+            onKeyDown={(event) => {
+              // Arrow keys / Home / End move between tabs and select (APG tabs pattern).
+              const index = CHART_SURFACE_TABS.findIndex((tab) => tab.key === chartSurfaceTab);
+              const last = CHART_SURFACE_TABS.length - 1;
+              const next =
+                event.key === "ArrowRight"
+                  ? (index + 1) % CHART_SURFACE_TABS.length
+                  : event.key === "ArrowLeft"
+                    ? (index - 1 + CHART_SURFACE_TABS.length) % CHART_SURFACE_TABS.length
+                    : event.key === "Home"
+                      ? 0
+                      : event.key === "End"
+                        ? last
+                        : null;
+              if (next == null) return;
+              event.preventDefault();
+              const nextKey = CHART_SURFACE_TABS[next].key;
+              setChartSurfaceTab(nextKey);
+              document.getElementById(`chart-surface-tab-${nextKey}`)?.focus();
+            }}
+          >
+            {CHART_SURFACE_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                id={`chart-surface-tab-${tab.key}`}
+                type="button"
+                role="tab"
+                aria-selected={chartSurfaceTab === tab.key}
+                aria-controls="chart-surface-panel"
+                tabIndex={chartSurfaceTab === tab.key ? 0 : -1}
+                className={
+                  chartSurfaceTab === tab.key
+                    ? styles.chartSurfaceTabActive
+                    : styles.chartSurfaceTab
+                }
+                onClick={() => setChartSurfaceTab(tab.key)}
+              >
+                <span className={styles.tabLabelFull}>{tab.label}</span>
+                <span className={styles.tabLabelShort} aria-hidden="true">
+                  {tab.shortLabel}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Focus metric picker: chips, one pressed; the selected metric's
+            description reads underneath. */}
+        <div className={styles.metricPicker}>
+          <span id="focus-metric-label" className={styles.metricPickerLabel}>
+            Focus metric
+          </span>
+          <div
+            ref={metricChipsRef}
+            className={styles.metricChips}
+            role="group"
+            aria-labelledby="focus-metric-label"
+          >
+            {entityConfig.metrics.map((metric) => {
+              const shortLabel =
+                METRIC_SHORT_LABELS[entityType][metric.key] ?? metric.label;
+              const abbreviated = shortLabel !== metric.label;
+              return (
+                <button
+                  key={metric.key}
+                  type="button"
+                  className={styles.metricChip}
+                  aria-pressed={metric.key === selectedMetric}
+                  // Name starts with the visible text (WCAG 2.5.3), then the full name.
+                  aria-label={abbreviated ? `${shortLabel} (${metric.label})` : undefined}
+                  title={abbreviated ? metric.label : undefined}
+                  onClick={() => setSelectedMetric(metric.key)}
+                >
+                  {shortLabel}
+                </button>
+              );
+            })}
+          </div>
+          {selectedMetricConfig ? (
+            <p className={styles.metricPickerNote}>
+              <span className={styles.metricPickerNoteName}>
+                {selectedMetricConfig.label}
+              </span>
+              : {selectedMetricConfig.description}
+            </p>
+          ) : null}
+        </div>
+        <div
+          id="chart-surface-panel"
+          role="tabpanel"
+          aria-labelledby={`chart-surface-tab-${chartSurfaceTab}`}
+          className={styles.chartSurfacePanel}
+        >
+          {chartSurfaceTab === "elasticity" ? (
+            <ElasticityBandChart
+              data={filteredBandHistoryRows}
+              loading={bandLoading}
+              error={bandError}
+            />
+          ) : chartSurfaceTab === "metricStreaks" ? (
+            entityType === "skater" ? (
+              <BrushableStreakChart
+                data={metricHistoryBundle}
+                emptyMessage={
+                  skaterTrendLoading
+                    ? "Loading full-season metric history…"
+                    : skaterTrendError
+                      ? skaterTrendError
+                      : selectedEntity
+                        ? "No season metric history for this skater yet."
+                        : "Pick a skater to see their season metric history."
+                }
+              />
+            ) : bandLoading ? (
+              <div className={styles.chartPlaceholder}>Loading metric history…</div>
+            ) : bandError ? (
+              <div className={styles.chartPlaceholder}>{bandError}</div>
+            ) : (
+              <BrushableStreakChart
+                data={metricHistoryBundle}
+                emptyMessage={
+                  selectedEntity
+                    ? "No metric streak history for this selection yet."
+                    : `Pick a ${entityNoun} to see metric streaks.`
+                }
+              />
+            )
+          ) : entityType === "skater" ? (
+            <BrushableStreakChart
+              data={scoreHistoryBundle}
+              emptyMessage={
+                skaterTrendLoading
+                  ? "Loading full-season score history…"
+                  : skaterTrendError
+                    ? skaterTrendError
+                    : selectedEntity
+                      ? "No season score history for this skater yet."
+                      : "Pick a skater to see their season score history."
+              }
+            />
+          ) : scoreHistoryLoading ? (
+            <div className={styles.chartPlaceholder}>Loading score history…</div>
+          ) : scoreHistoryError ? (
+            <div className={styles.chartPlaceholder}>{scoreHistoryError}</div>
+          ) : (
+            <BrushableStreakChart
+              data={scoreHistoryBundle}
+              emptyMessage={
+                selectedEntity
+                  ? "No score history for this selection yet."
+                  : `Pick a ${entityNoun} to see score streaks.`
+              }
+            />
+          )}
+        </div>
+      </section>
+
+      {/* The whole section hides when it has nothing to show. */}
+      {(bandRows.length > 0 ||
+        bandError ||
+        reasonComparisonRows.length > 0 ||
+        reasonsLoading) && (
+        <section className={styles.bandSection}>
+          <div
+            className={`${styles.bandWorkspace} ${
+              bandRows.length === 0 ? styles.bandWorkspaceStacked : ""
+            }`}
+          >
+            {/* Checkpoints show only when there are rows (or an error to report);
+                otherwise Why This Reading leads the section and carries the
+                loading status. */}
+            {(bandRows.length > 0 || bandError) && (
+              <div className={styles.bandWorkspacePanel}>
+                <div className={styles.bandHeader}>
+                  <h2>Performance Checkpoints</h2>
+                  {bandLoading && <span className={styles.bandStatus}>Refreshing…</span>}
+                  {bandError && <span className={styles.error}>{bandError}</span>}
+                </div>
+                <div className={styles.bandGrid}>
+                  {bandRows.length > 0 ? (
+                    bandRows.map((row) => {
+                      const usual = readUsualRange(row.distribution);
+                      const statusClass =
+                        usual.status === "hot"
+                          ? styles.bandHot
+                          : usual.status === "cold"
+                            ? styles.bandCold
+                            : styles.bandNeutral;
+                      return (
+                        <button
+                          key={`${row.metricKey}-${row.windowCode}`}
+                          type="button"
+                          className={`${styles.bandCard} ${statusClass}`}
+                          onClick={() => setSelectedMetric(row.metricKey)}
+                        >
+                          <div className={styles.bandCardHeader}>
+                            <div className={styles.bandMetric}>{row.metricLabel}</div>
+                            <div className={styles.bandWindow}>
+                              {getWindowLabel(row.windowCode)}
+                            </div>
+                          </div>
+                          <div className={styles.bandSnapshotRow}>
+                            <span className={styles.bandSnapshotLabel}>Current Window</span>
+                            <span className={styles.bandValue}>
+                              {usual.range
+                                ? usual.range.observed.toFixed(2)
+                                : row.ewma != null
+                                  ? row.ewma.toFixed(2)
+                                  : "—"}
+                            </span>
+                          </div>
+                          {usual.range ? (
+                            <>
+                              <div className={styles.bandRange}>
+                                Usual range {usual.range.lower.toFixed(2)} –{" "}
+                                {usual.range.upper.toFixed(2)} (descriptive, from
+                                prior seasons; {usual.range.gamesCovered} of{" "}
+                                {usual.range.gamesInWindow} games)
+                              </div>
+                              <div className={styles.bandBaseline}>
+                                Normal level {usual.range.baseline.toFixed(2)}
+                              </div>
+                            </>
+                          ) : (
+                            <div className={styles.bandRange}>
+                              Usual range unavailable:{" "}
+                              {USUAL_RANGE_REASON_LABELS[usual.reason ?? ""] ??
+                                "unavailable"}
+                            </div>
+            )}
+                        <div className={styles.bandComparisonList}>
+                          {row.comparisons.map((comparison) => (
+                            <div
+                              key={`${row.metricKey}-${comparison.key}`}
+                              className={styles.bandComparisonRow}
+                            >
+                              <span className={styles.bandComparisonLabel}>
+                                {comparison.label}
+                              </span>
+                              <div className={styles.bandComparisonValues}>
+                                <span className={styles.bandComparisonValue}>
+                                  {formatNumber(comparison.value, 2)}
+                                </span>
+                                <span
+                                  className={`${styles.bandComparisonDelta} ${comparisonDeltaTone(
+                                    comparison.deltaPct
+                                  )}`}
+                                >
+                                  {formatPercentDelta(comparison.deltaPct, 1)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className={styles.bandEmpty}>
+                    {selectedEntity
+                      ? "No checkpoints for this selection yet."
+                      : `Pick a ${entityNoun} to see checkpoints.`}
+                  </div>
+                )}
+              </div>
+            </div>
+            )}
+
+            {/* Shown only when there are drivers to explain (or they're loading). */}
+            {(reasonComparisonRows.length > 0 || reasonsLoading) && (
+              <div className={styles.reasonColumn}>
+                <div className={styles.bandHeader}>
+                  <h2>Why This Reading</h2>
+                  <span className={styles.bandStatus}>
+                    {reasonsLoading || (bandLoading && bandRows.length === 0)
+                      ? "Loading…"
+                      : "The biggest drivers underneath it"}
                   </span>
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div className={styles.bandEmpty}>
-              Select an entity to load the form barometer.
-            </div>
-          )}
-        </article>
-
-        <article className={styles.surfaceCard}>
-          <div className={styles.surfaceCardHeader}>
-            <h2 className={styles.surfaceCardTitle}>Usual Level</h2>
-            <span className={styles.surfaceCardMeta}>Baseline averages</span>
-          </div>
-          {activeRow && hasUsualLevelData ? (
-            <div className={styles.detailGrid}>
-              <div>
-                <strong>Normal Level</strong>
-                <span>{formatNumber(activeRow.baselineValue, 2)}</span>
-              </div>
-              <div>
-                <strong>Current Window</strong>
-                <span>{formatNumber(activeRow.recentValue, 2)}</span>
-              </div>
-              <div>
-                <strong>Expected Lane</strong>
-                <span>{formatNumber(activeRow.expectedValue, 2)}</span>
-              </div>
-              <div>
-                <strong>Window</strong>
-                <span>{getWindowLabel(activeRow.windowCode)}</span>
-              </div>
-            </div>
-          ) : (
-            <div className={styles.bandEmpty}>
-              {activeRow
-                ? "The direct expected-lane fields are not populated for this row yet. Use the performance checkpoints below for the full rolling-average view."
-                : "This panel shows where the selected player usually lands versus the current window."}
-            </div>
-          )}
-        </article>
-
-        <article className={`${styles.surfaceCard} ${styles.metricShelfCard}`}>
-          <div className={styles.surfaceCardHeader}>
-            <h2 className={styles.surfaceCardTitle}>Metric Cards</h2>
-            <span className={styles.surfaceCardMeta}>{entityConfig.label}</span>
-          </div>
-          <ul className={styles.metricList}>
-            {entityConfig.metrics.map((metric) => (
-              <li key={metric.key} className={styles.metricRow}>
-                <div>
-                  <strong>{metric.label}</strong>
-                  <span>{metric.description}</span>
+                <div className={styles.reasonGrid}>
+                  {/* Faint placeholders reserve the space while scores load. */}
+                  {reasonsLoading &&
+                    [0, 1, 2].map((index) => (
+                      <div
+                        key={`skeleton-${index}`}
+                        className={`${styles.reasonCard} ${styles.reasonSkeleton}`}
+                        aria-hidden="true"
+                      >
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    ))}
+                  {reasonComparisonRows.map((reason) => (
+                    <div key={reason.key} className={styles.reasonCard}>
+                      <div className={styles.reasonLabel}>{reason.label}</div>
+                      <div className={styles.reasonValue}>{formatDelta(reason.value, 2)}</div>
+                      <p className={styles.reasonSentence}>{reason.sentence}</p>
+                      {/* Window comparisons show only when the bands supply them. */}
+                      {reason.comparisons.length > 0 && (
+                        <div className={styles.reasonComparisonList}>
+                          {reason.comparisons.map((comparison) => (
+                            <div
+                              key={`${reason.key}-${comparison.key}`}
+                              className={styles.reasonComparisonRow}
+                            >
+                              <span className={styles.reasonComparisonLabel}>
+                                {comparison.label}
+                              </span>
+                              <div className={styles.reasonComparisonValues}>
+                                <span className={styles.reasonComparisonValue}>
+                                  {formatNumber(comparison.value, 2)}
+                                </span>
+                                <span
+                                  className={`${styles.reasonComparisonDelta} ${comparisonDeltaTone(
+                                    comparison.deltaPct
+                                  )}`}
+                                >
+                                  {formatPercentDelta(comparison.deltaPct, 1)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              </li>
-            ))}
-          </ul>
-        </article>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
+      <section className={styles.correlationSection}>
         <article className={`${styles.surfaceCard} ${styles.metricShelfCard}`}>
           <div className={styles.surfaceCardHeader}>
             <h2 className={styles.surfaceCardTitle}>Boxscore + Fantasy Correlation</h2>
@@ -2837,62 +3562,73 @@ export default function TrendsSandboxPage() {
             </span>
           </div>
           {entityType !== "skater" ? (
-            <div className={styles.bandEmpty}>
-              This correlation view is intentionally skater-only. Goalie support is deferred to
-              its separate UI contract.
-            </div>
+            <div className={styles.bandEmpty}>Fantasy correlation covers skaters only.</div>
           ) : !selectedEntity ? (
             <div className={styles.bandEmpty}>
-              Select a skater to compare the focus metric with fantasy score and boxscore context.
+              Pick a skater to compare the focus metric with fantasy points and box-score stats.
             </div>
           ) : skaterCorrelationSummary ? (
             <>
-              <div className={styles.detailGrid}>
-                <div>
-                  <strong>{skaterCorrelationSummary.metricLabel} Avg</strong>
-                  <span>{formatNumber(skaterCorrelationSummary.xMean, 2)}</span>
+              <div className={styles.correlationGroups}>
+                <div role="group" aria-labelledby="correlation-metric-vs-fantasy">
+                  <h3 id="correlation-metric-vs-fantasy" className={styles.correlationGroupTitle}>
+                    Metric vs fantasy
+                  </h3>
+                  <div className={`${styles.detailGrid} ${styles.detailGridWide}`}>
+                    <div>
+                      <strong>{skaterCorrelationSummary.metricLabel} Avg</strong>
+                      <span>{formatNumber(skaterCorrelationSummary.xMean, 2)}</span>
+                    </div>
+                    <div>
+                      <strong>FHFH Fantasy Avg</strong>
+                      <span>{formatNumber(skaterCorrelationSummary.yMean, 2)}</span>
+                    </div>
+                    <div>
+                      <strong>Pearson r</strong>
+                      <span>
+                        {skaterCorrelationSummary.isFantasySelfCorrelation &&
+                        skaterCorrelationSummary.r != null
+                          ? "1.00 (same series)"
+                          : formatNumber(skaterCorrelationSummary.r, 2)}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>r²</strong>
+                      <span>
+                        {skaterCorrelationSummary.isFantasySelfCorrelation &&
+                        skaterCorrelationSummary.r2 != null
+                          ? "1.00 (same series)"
+                          : formatNumber(skaterCorrelationSummary.r2, 2)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <strong>Fantasy Score (FHFH default) Avg</strong>
-                  <span>{formatNumber(skaterCorrelationSummary.yMean, 2)}</span>
-                </div>
-                <div>
-                  <strong>Pearson r</strong>
-                  <span>
-                    {skaterCorrelationSummary.isFantasySelfCorrelation &&
-                    skaterCorrelationSummary.r != null
-                      ? "1.00 (same series)"
-                      : formatNumber(skaterCorrelationSummary.r, 2)}
-                  </span>
-                </div>
-                <div>
-                  <strong>r²</strong>
-                  <span>
-                    {skaterCorrelationSummary.isFantasySelfCorrelation &&
-                    skaterCorrelationSummary.r2 != null
-                      ? "1.00 (same series)"
-                      : formatNumber(skaterCorrelationSummary.r2, 2)}
-                  </span>
-                </div>
-                <div>
-                  <strong>Points / Game</strong>
-                  <span>{formatNumber(skaterCorrelationSummary.pointsPerGame, 2)}</span>
-                </div>
-                <div>
-                  <strong>Shots / Game</strong>
-                  <span>{formatNumber(skaterCorrelationSummary.shotsPerGame, 2)}</span>
-                </div>
-                <div>
-                  <strong>Hits / Game</strong>
-                  <span>{formatNumber(skaterCorrelationSummary.hitsPerGame, 2)}</span>
-                </div>
-                <div>
-                  <strong>Blocks / Game</strong>
-                  <span>{formatNumber(skaterCorrelationSummary.blocksPerGame, 2)}</span>
-                </div>
-                <div>
-                  <strong>PPP / Game</strong>
-                  <span>{formatNumber(skaterCorrelationSummary.ppPointsPerGame, 2)}</span>
+                <div role="group" aria-labelledby="correlation-per-game">
+                  <h3 id="correlation-per-game" className={styles.correlationGroupTitle}>
+                    Per game
+                  </h3>
+                  <div className={`${styles.detailGrid} ${styles.detailGridWide}`}>
+                    <div>
+                      <strong>Points / Game</strong>
+                      <span>{formatNumber(skaterCorrelationSummary.pointsPerGame, 2)}</span>
+                    </div>
+                    <div>
+                      <strong>Shots / Game</strong>
+                      <span>{formatNumber(skaterCorrelationSummary.shotsPerGame, 2)}</span>
+                    </div>
+                    <div>
+                      <strong>Hits / Game</strong>
+                      <span>{formatNumber(skaterCorrelationSummary.hitsPerGame, 2)}</span>
+                    </div>
+                    <div>
+                      <strong>Blocks / Game</strong>
+                      <span>{formatNumber(skaterCorrelationSummary.blocksPerGame, 2)}</span>
+                    </div>
+                    <div>
+                      <strong>PPP / Game</strong>
+                      <span>{formatNumber(skaterCorrelationSummary.ppPointsPerGame, 2)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               {skaterCorrelationSummary.sampleSize < 3 && (
@@ -2913,308 +3649,71 @@ export default function TrendsSandboxPage() {
         <div className={styles.bandHeader}>
           <h2>Slate Snapshot</h2>
           <span className={styles.bandStatus}>
-            {entityType === "skater" ? "Process support index; performance comparison unavailable" : "Quick leaders by current form reading"}
+            {entityType === "skater" ? "Ranked by process support index; performance comparison unavailable" : "Quick leaders by current form reading"}
           </span>
         </div>
-        <div className={styles.leaderboardGrid}>
+        <div
+          className={`${styles.leaderboardGrid} ${
+            entityType === "skater" ? styles.leaderboardGridSingle : ""
+          }`}
+        >
           {(entityType === "skater" ? ["unavailable"] as const : ["overperforming", "stable", "underperforming"] as const).map(
             (state) => (
-              <div key={state} className={styles.leaderboardCard}>
-                <div className={styles.leaderboardTitle}>
-                  {formatStateLabel(state)}
-                </div>
+              // Skaters have one state, already named in the section status, so
+              // their players sit directly under the heading without a card.
+              <div
+                key={state}
+                className={entityType === "skater" ? undefined : styles.leaderboardCard}
+              >
+                {entityType !== "skater" && (
+                  <div className={styles.leaderboardTitle}>
+                    {getBarometerLabel(state)}
+                  </div>
+                )}
                 {(leaderboard[state] ?? []).length > 0 ? (
                   <ul className={styles.leaderboardList}>
-                    {leaderboard[state].map((row) => (
+                    {leaderboard[state].map((row, _index, rows) => (
                       <li key={`${row.entityType}-${row.entityId}`} className={styles.leaderboardRow}>
                         <button
                           type="button"
                           className={styles.leaderboardButton}
-                          onClick={() =>
+                          onClick={() => {
                             setSelectedEntity({
                               id: row.entityId,
                               name: row.entityName,
                               subtitle: row.entitySubtitle,
                               imageUrl: null
-                            })
-                          }
+                            });
+                            if (row.entityType !== "team") setSearchQuery(row.entityName);
+                          }}
                         >
-                          <span>{row.entityName}</span>
+                          <span className={styles.leaderboardRank}>
+                            {/* Equal shown scores share a rank (1, 1, 1, 4). */}
+                            {rows.findIndex(
+                              (other) =>
+                                formatNumber(other.score, 1) === formatNumber(row.score, 1)
+                            ) + 1}
+                          </span>
+                          <span className={styles.leaderboardName}>{row.entityName}</span>
                           <span>{formatNumber(row.score, 1)}</span>
                         </button>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <div className={styles.bandEmpty}>No rows in this state.</div>
+                  <div className={styles.bandEmpty}>
+                    {scoreLoading
+                      ? "Loading…"
+                      : state === "unavailable"
+                        ? `No ${entityNounPlural} scored on ${requestedDate}.`
+                        : `No ${entityNounPlural} ${getBarometerLabel(state).toLowerCase()} on ${requestedDate}.`}
+                  </div>
                 )}
               </div>
             )
           )}
         </div>
       </section>
-
-      <section className={styles.bandSection}>
-        <div className={styles.bandWorkspace}>
-          <div className={styles.bandWorkspacePanel}>
-            <div className={styles.bandHeader}>
-              <h2>Performance Checkpoints</h2>
-              {bandLoading && <span className={styles.bandStatus}>Refreshing…</span>}
-              {bandError && <span className={styles.error}>{bandError}</span>}
-            </div>
-            <div className={styles.bandGrid}>
-              {bandRows.length > 0 ? (
-                bandRows.map((row) => {
-                  const usual = readUsualRange(row.distribution);
-                  const statusClass =
-                    usual.status === "hot"
-                      ? styles.bandHot
-                      : usual.status === "cold"
-                        ? styles.bandCold
-                        : styles.bandNeutral;
-                  return (
-                    <button
-                      key={`${row.metricKey}-${row.windowCode}`}
-                      type="button"
-                      className={`${styles.bandCard} ${statusClass}`}
-                      onClick={() => setSelectedMetric(row.metricKey)}
-                    >
-                      <div className={styles.bandCardHeader}>
-                        <div className={styles.bandMetric}>{row.metricLabel}</div>
-                        <div className={styles.bandWindow}>
-                          {getWindowLabel(row.windowCode)}
-                        </div>
-                      </div>
-                      <div className={styles.bandSnapshotRow}>
-                        <span className={styles.bandSnapshotLabel}>Current Window</span>
-                        <span className={styles.bandValue}>
-                          {usual.range
-                            ? usual.range.observed.toFixed(2)
-                            : row.ewma != null
-                              ? row.ewma.toFixed(2)
-                              : "—"}
-                        </span>
-                      </div>
-                      {usual.range ? (
-                        <>
-                          <div className={styles.bandRange}>
-                            Usual range {usual.range.lower.toFixed(2)} –{" "}
-                            {usual.range.upper.toFixed(2)} (descriptive, from
-                            prior seasons; {usual.range.gamesCovered} of{" "}
-                            {usual.range.gamesInWindow} games)
-                          </div>
-                          <div className={styles.bandBaseline}>
-                            Normal level {usual.range.baseline.toFixed(2)}
-                          </div>
-                        </>
-                      ) : (
-                        <div className={styles.bandRange}>
-                          Usual range unavailable:{" "}
-                          {USUAL_RANGE_REASON_LABELS[usual.reason ?? ""] ??
-                            "unavailable"}
-                        </div>
-                      )}
-                      <div className={styles.bandComparisonList}>
-                        {row.comparisons.map((comparison) => (
-                          <div
-                            key={`${row.metricKey}-${comparison.key}`}
-                            className={styles.bandComparisonRow}
-                          >
-                            <span className={styles.bandComparisonLabel}>
-                              {comparison.label}
-                            </span>
-                            <div className={styles.bandComparisonValues}>
-                              <span className={styles.bandComparisonValue}>
-                                {formatNumber(comparison.value, 2)}
-                              </span>
-                              <span
-                                className={`${styles.bandComparisonDelta} ${comparisonDeltaTone(
-                                  comparison.deltaPct
-                                )}`}
-                              >
-                                {formatPercentDelta(comparison.deltaPct, 1)}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </button>
-                  );
-                })
-              ) : (
-                <div className={styles.bandEmpty}>
-                  {selectedEntity
-                    ? "No band rows are available yet for the selected entity."
-                    : "Select an entity to load threshold bands."}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className={styles.reasonColumn}>
-            <div className={styles.bandHeader}>
-              <h2>Why This Reading</h2>
-              <span className={styles.bandStatus}>The biggest drivers underneath it</span>
-            </div>
-            <div className={styles.reasonGrid}>
-              {reasonComparisonRows.map((reason) => (
-                <div
-                  key={reason.key}
-                  className={`${styles.reasonCard} ${
-                    reason.placeholder ? styles.reasonCardPlaceholder : ""
-                  }`}
-                >
-                  <div className={styles.reasonLabel}>{reason.label}</div>
-                  <div className={styles.reasonValue}>
-                    {reason.placeholder ? "—" : formatDelta(reason.value, 2)}
-                  </div>
-                  <p className={styles.reasonSentence}>{reason.sentence}</p>
-                  <div className={styles.reasonComparisonList}>
-                    {(reason.comparisons.length > 0
-                      ? reason.comparisons
-                      : [
-                          { key: "l5", label: "L5 Avg", value: null, deltaPct: null },
-                          { key: "l10", label: "L10 Avg", value: null, deltaPct: null },
-                          { key: "l20", label: "L20 Avg", value: null, deltaPct: null },
-                          {
-                            key: "season",
-                            label: "Season Avg",
-                            value: null,
-                            deltaPct: null
-                          }
-                        ]
-                    ).map((comparison) => (
-                      <div
-                        key={`${reason.key}-${comparison.key}`}
-                        className={styles.reasonComparisonRow}
-                      >
-                        <span className={styles.reasonComparisonLabel}>
-                          {comparison.label}
-                        </span>
-                        <div className={styles.reasonComparisonValues}>
-                          <span className={styles.reasonComparisonValue}>
-                            {formatNumber(comparison.value, 2)}
-                          </span>
-                          <span
-                            className={`${styles.reasonComparisonDelta} ${comparisonDeltaTone(
-                              comparison.deltaPct
-                            )}`}
-                          >
-                            {formatPercentDelta(comparison.deltaPct, 1)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className={styles.bandChartSection}>
-        <div className={styles.bandHeader}>
-          <h2>Historical Chart Surface</h2>
-          <div className={styles.chartSurfaceTabs}>
-            <button
-              type="button"
-              className={
-                chartSurfaceTab === "elasticity"
-                  ? styles.chartSurfaceTabActive
-                  : styles.chartSurfaceTab
-              }
-              onClick={() => setChartSurfaceTab("elasticity")}
-            >
-              Elasticity
-            </button>
-            <button
-              type="button"
-              className={
-                chartSurfaceTab === "metricStreaks"
-                  ? styles.chartSurfaceTabActive
-                  : styles.chartSurfaceTab
-              }
-              onClick={() => setChartSurfaceTab("metricStreaks")}
-            >
-              Metric Streaks
-            </button>
-            <button
-              type="button"
-              className={
-                chartSurfaceTab === "scoreStreaks"
-                  ? styles.chartSurfaceTabActive
-                  : styles.chartSurfaceTab
-              }
-              onClick={() => setChartSurfaceTab("scoreStreaks")}
-            >
-              Score Streaks
-            </button>
-          </div>
-        </div>
-
-        {chartSurfaceTab === "elasticity" ? (
-          <ElasticityBandChart
-            data={filteredBandHistoryRows}
-            loading={bandLoading}
-            error={bandError}
-          />
-        ) : chartSurfaceTab === "metricStreaks" ? (
-          entityType === "skater" ? (
-            <BrushableStreakChart
-              data={metricHistoryBundle}
-              emptyMessage={
-                skaterTrendLoading
-                  ? "Loading full-season metric history…"
-                  : skaterTrendError
-                    ? skaterTrendError
-                    : selectedEntity
-                      ? "No full-season metric history is available for the selected skater yet."
-                      : "Select a skater to load full-season metric history."
-              }
-            />
-          ) : bandLoading ? (
-            <div className={styles.chartPlaceholder}>Loading metric history…</div>
-          ) : bandError ? (
-            <div className={styles.chartPlaceholder}>{bandError}</div>
-          ) : (
-            <BrushableStreakChart
-              data={metricHistoryBundle}
-              emptyMessage={
-                selectedEntity
-                  ? "No metric streak history is available for the selected entity yet."
-                  : "Select an entity to load metric streak history."
-              }
-            />
-          )
-        ) : entityType === "skater" ? (
-          <BrushableStreakChart
-            data={scoreHistoryBundle}
-            emptyMessage={
-              skaterTrendLoading
-                ? "Loading full-season score history…"
-                : skaterTrendError
-                  ? skaterTrendError
-                  : selectedEntity
-                    ? "No full-season score history is available for the selected skater yet."
-                    : "Select a skater to load full-season score history."
-            }
-          />
-        ) : scoreHistoryLoading ? (
-          <div className={styles.chartPlaceholder}>Loading score history…</div>
-        ) : scoreHistoryError ? (
-          <div className={styles.chartPlaceholder}>{scoreHistoryError}</div>
-        ) : (
-          <BrushableStreakChart
-            data={scoreHistoryBundle}
-            emptyMessage={
-              selectedEntity
-                ? "No sustainability score history is available for the selected entity yet."
-                : "Select an entity to load sustainability score history."
-            }
-          />
-        )}
-      </section>
-    </div>
+    </main>
   );
 }

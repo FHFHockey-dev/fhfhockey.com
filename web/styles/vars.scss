@@ -247,6 +247,11 @@ $shadow-panel:
 $shadow-panel-hover:
   0 24px 48px -28px rgba(0, 0, 0, 0.84),
   0 0 0 1px rgba(255, 255, 255, 0.05);
+// Floating surfaces over content: dropdown results, chart tooltips, popovers.
+// Replaces hand-written 0 16px 32px rgba(0,0,0,.35–.45) copies.
+$shadow-popover:
+  0 16px 32px rgba(0, 0, 0, 0.4),
+  0 0 0 1px rgba(255, 255, 255, 0.04);
 
 // Borders
 $border-primary: $color-grey-darker;
@@ -560,6 +565,20 @@ $z-desktop-toast: 650;
     background-clip: text;
     color: transparent;
   }
+}
+
+// Hide content visually but keep it for screen readers (live regions, labels).
+// Several modules define their own .visuallyHidden/.srOnly; new work uses this.
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @mixin focus-ring-desktop {

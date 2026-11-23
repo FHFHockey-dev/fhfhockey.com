@@ -1021,7 +1021,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               defers={[
                 "Full team strength, process vs results and schedule: Underlying Stats",
                 "Predictions vs actual and candlestick views: coming later",
-                "Experimental sustainability and elasticity tools: Trends Sandbox"
+                "Experimental sustainability and elasticity tools: Sustainability Sandbox"
               ]}
               surfaceLinks={TRENDS_SURFACE_LINKS.slice(0, 4)}
               // Player Search sits in the hero's side slot so the first row has no
@@ -1668,12 +1668,12 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
 
             <article className={styles.surfaceBridgeCard}>
               <span className={styles.surfaceBridgeLabel}>Experimental</span>
-              <h2 className={styles.panelTitle}>Sustainability Lab</h2>
+              <h2 className={styles.panelTitle}>Sustainability Sandbox</h2>
               <p className={styles.summaryBandCopy}>
                 Experimental sustainability and elasticity tools.
               </p>
               <Link href="/trendsSandbox" className={styles.surfaceLinkPill}>
-                Open Trends Sandbox
+                Open Sustainability Sandbox
               </Link>
             </article>
           </section>
