@@ -405,11 +405,15 @@ function buildBandHistoryComparisonLookup<
     value: number;
     ewma: number | null;
     distribution: Json;
+    metadata?: Json;
   }
 >(rows: TRow[]) {
   const grouped = new Map<string, number[]>();
 
   rows.forEach((row) => {
+    // A carried-forward day repeats its last game's window; counting it would
+    // turn "last 5 games" into "last 5 days".
+    if (parseJsonObject(row.metadata).carried_forward === true) return;
     const observed = observedBandValue(row);
     if (!Number.isFinite(observed)) return;
     const existing = grouped.get(row.metric_key) ?? [];
@@ -624,28 +628,10 @@ async function resolveUnifiedSnapshotDate(args: {
 
   const snapshotRows = (data ?? []) as unknown as SnapshotDateRow[];
 
-  if (snapshotRows[0]?.snapshot_date) {
-    return String(snapshotRows[0].snapshot_date);
-  }
-
-  const latest = await supabase
-    .from("entity_sustainability_scores_daily" as any)
-    .select("snapshot_date")
-    .eq("entity_type", args.entityType)
-    .eq("window_code", args.windowCode)
-    .order("snapshot_date", { ascending: false })
-    .limit(1);
-
-  if (latest.error) {
-    throw new Error(
-      `Failed to resolve latest ${args.entityType} snapshot date: ${latest.error.message}`
-    );
-  }
-
-  const latestSnapshotRows = (latest.data ?? []) as unknown as SnapshotDateRow[];
-
-  return latestSnapshotRows[0]?.snapshot_date
-    ? String(latestSnapshotRows[0].snapshot_date)
+  // Only a snapshot on or before the requested date: a date before the
+  // entity's first reading has none, never a later day's reading.
+  return snapshotRows[0]?.snapshot_date
+    ? String(snapshotRows[0].snapshot_date)
     : null;
 }
 
@@ -1267,7 +1253,10 @@ export async function fetchSandboxBands(args: {
       .eq("entity_id", args.entityId)
       .eq("metric_key", metricKey)
       .eq("window_code", windowCode)
-      .order("snapshot_date", { ascending: true })
+      .lte("snapshot_date", snapshotDate)
+      // Newest `limit` rows, put back in date order below: daily rows pass
+      // the limit within a season.
+      .order("snapshot_date", { ascending: false })
       .limit(limit),
     supabase
       .from("entity_sustainability_bands_daily" as any)
@@ -1296,11 +1285,14 @@ export async function fetchSandboxBands(args: {
     );
   }
 
+  const unifiedHistoryRows = [
+    ...((historyResult.data ?? []) as unknown as UnifiedBandRow[])
+  ].reverse();
   const playerIds = [
     ...((currentResult.data ?? []) as unknown as UnifiedBandRow[]).map((row) =>
       row.player_id != null ? Number(row.player_id) : null
     ),
-    ...((historyResult.data ?? []) as unknown as UnifiedBandRow[]).map((row) =>
+    ...unifiedHistoryRows.map((row) =>
       row.player_id != null ? Number(row.player_id) : null
     )
   ].filter((value): value is number => value != null);
@@ -1323,7 +1315,7 @@ export async function fetchSandboxBands(args: {
         historyComparisons: comparisonLookup.get(row.metric_key)
       })
     ),
-    historyRows: ((historyResult.data ?? []) as unknown as UnifiedBandRow[]).map((row) =>
+    historyRows: unifiedHistoryRows.map((row) =>
       normalizeUnifiedBandRow({
         row,
         player:
@@ -1436,7 +1428,9 @@ export async function fetchSandboxScoreHistory(args: {
     .eq("entity_id", args.entityId)
     .eq("window_code", windowCode)
     .lte("snapshot_date", snapshotDate)
-    .order("snapshot_date", { ascending: true })
+    // Newest `limit` rows, returned in date order: daily rows pass the limit
+    // within a season.
+    .order("snapshot_date", { ascending: false })
     .limit(limit);
 
   if (error) {
@@ -1445,7 +1439,8 @@ export async function fetchSandboxScoreHistory(args: {
     );
   }
 
-  const playerIds = ((data ?? []) as unknown as UnifiedScoreRow[])
+  const historyRows = [...((data ?? []) as unknown as UnifiedScoreRow[])].reverse();
+  const playerIds = historyRows
     .map((row) => (row.player_id != null ? Number(row.player_id) : null))
     .filter((value): value is number => value != null);
   const playersById = await fetchPlayersByIds(playerIds);
@@ -1455,7 +1450,7 @@ export async function fetchSandboxScoreHistory(args: {
     requestedDate,
     snapshotDate,
     windowCode,
-    rows: ((data ?? []) as unknown as UnifiedScoreRow[]).map((row) => {
+    rows: historyRows.map((row) => {
       const normalized = normalizeUnifiedScoreRow({
         row,
         player:

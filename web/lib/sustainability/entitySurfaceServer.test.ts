@@ -4,6 +4,7 @@ const fixtures = vi.hoisted(() => ({
   legacy: [] as Record<string, any>[],
   unified: [] as Record<string, any>[],
   bands: [] as Record<string, any>[],
+  unifiedBands: [] as Record<string, any>[],
 }));
 
 vi.mock("lib/supabase/server", () => ({
@@ -12,6 +13,7 @@ vi.mock("lib/supabase/server", () => ({
       let rows = table === "sustainability_scores" ? [...fixtures.legacy]
         : table === "entity_sustainability_scores_daily" ? [...fixtures.unified]
         : table === "sustainability_trend_bands" ? [...fixtures.bands]
+        : table === "entity_sustainability_bands_daily" ? [...fixtures.unifiedBands]
         : table === "players" || table === "player_baselines" || table === "wgo_skater_stats" ? [] : null;
       if (!rows) throw new Error(`Unexpected test table: ${table}`);
       const query: any = {
@@ -149,5 +151,46 @@ describe("sandbox score coverage (BC W1-9 A2)", () => {
     } as any);
     expect(payload.rows.map((row) => row.entityId)).toEqual([2]);
     expect(payload.selectedRow).toMatchObject({ entityId: 1, score: null, rawScore: null });
+  });
+});
+
+describe("unified band comparisons skip carried-forward days", () => {
+  const teamBand = (date: string, observed: number, carriedForward: boolean) => ({
+    snapshot_date: date, season_id: 20262027, entity_type: "team", entity_id: 22,
+    team_id: 22, player_id: null, metric_key: "xgf_pct", window_code: "l5",
+    baseline: 50, ewma: observed, value: observed, ci_lower: 45, ci_upper: 55,
+    z_score: 0, percentile: 50, exposure: 5, provenance: {},
+    distribution: { usualRange: {
+      basis: "pre_window_baseline_league_prior", interval: "central_80", validated: false,
+      family: "normal_league_residual", observed, lower: 45, upper: 55, baseline: 50,
+      upperTail: 0.5, lowerTail: 0.5, status: "neutral", count: 1, exposure: 1,
+      gamesInWindow: 5, gamesCovered: 5, baselineEvidence: 1, baselineSeasons: [20262027],
+    } },
+    metadata: { carried_forward: carriedForward, played_on_snapshot: !carriedForward },
+  });
+
+  beforeEach(() => {
+    // Newest first: the test client ignores order(), and the reader takes the latest date.
+    fixtures.unified = ["2026-11-22", "2026-11-21", "2026-11-20", "2026-11-19"].map((date) => ({
+      ...baseRow, snapshot_date: date, entity_type: "team", entity_id: 22, team_id: 22,
+      player_id: null, metric_scope: "overall", expectation_state: "stable",
+    }));
+    fixtures.unifiedBands = [
+      teamBand("2026-11-19", 40, false),
+      teamBand("2026-11-20", 40, true),
+      teamBand("2026-11-21", 50, false),
+      teamBand("2026-11-22", 60, false),
+    ];
+  });
+
+  it("averages game snapshots only, so an off day does not count as a game", async () => {
+    const payload = await fetchSandboxBands({
+      entityType: "team", entityId: 22, requestedDate: "2026-11-22",
+      windowCode: "l5", metricKey: "xgf_pct",
+    });
+    const row = payload.currentRows[0]!;
+    expect(payload.snapshotDate).toBe("2026-11-22");
+    expect(row.comparisons.find((c) => c.key === "season")?.value).toBe(50);
+    expect(payload.historyRows).toHaveLength(4);
   });
 });
