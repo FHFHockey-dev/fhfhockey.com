@@ -1,0 +1,15 @@
+ × __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > a database stall before the first stage (2026-11-23 10:20Z) > reproduction: a 159 s season read with a hung child still answers before the 240 s kill 11ms
+   → expected 387000 to be less than 240000
+ × __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > a database stall before the first stage (2026-11-23 10:20Z) > hands children deadlines counted from request arrival, not from the end of the gate 3ms
+   → expected '1792405419000' to be '1792405389000' // Object.is equality
+ × __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > a database stall before the first stage (2026-11-23 10:20Z) > records a retryable failure without touching stage state, and the next slot recovers with no kill receipt 4ms
+   → expected 200 to be 207 // Object.is equality
+ × __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > a database stall before the first stage (2026-11-23 10:20Z) > answers before the kill even when the database never answers in time 5ms
+   → expected 300000 to be 185000 // Object.is equality
+ × __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > a database stall before the first stage (2026-11-23 10:20Z) > hands a stage acquired after the start window straight back, unrun and with no attempt spent 4ms
+   → expected { Object (state, resumeRequired, ...) } to match object { …(5) }
+ × __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > a database stall before the first stage (2026-11-23 10:20Z) > off day: a stalled first slot writes nothing, and the next slot completes and passes strict acceptance 4ms
+   → expected { state: 'completed', …(5) } to match object { …(3) }
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ Test Files  1 failed (1)
+      Tests  6 failed | 115 passed (121)

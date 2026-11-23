@@ -39,8 +39,29 @@ const {
   wgoDefaults,
   wgoFrom,
   wgoDigestRpc,
-  digestOf
+  digestOf,
+  stall,
+  seasonsFrom,
+  stalledAuditInsert
 } = vi.hoisted(() => {
+  // A database stall (2026-11-23 10:20:12-10:23:09Z): until `stall.until`, the
+  // reads and writes named in `stall.on` wait; outside it they answer at once.
+  const stall = { until: 0, on: new Set<"seasons" | "state" | "rpc" | "audit">() };
+  const stalled = <T>(kind: "seasons" | "state" | "rpc" | "audit", run: () => T): T | Promise<T> =>
+    stall.on.has(kind) && Date.now() < stall.until
+      ? new Promise<void>((resolve) => setTimeout(resolve, stall.until - Date.now())).then(run)
+      : run();
+  // The off-season gate's season read; the statement errors once the stall releases.
+  const seasonsFrom = () => {
+    const query: any = {
+      select: () => query,
+      order: () => query,
+      limit: () => Promise.resolve(stalled("seasons", () => ({
+        data: null, error: { message: "canceling statement due to statement timeout", code: "57014", details: null, hint: null }
+      })))
+    };
+    return query;
+  };
   // In-memory projection_pipeline_state with the lease rules of
   // advance_projection_pipeline_state_v1 that the pipeline relies on.
   const pipelineStateRows = new Map<string, any>();
@@ -58,13 +79,14 @@ const {
         filters[column] = value;
         return query;
       },
-      maybeSingle: async () => ({ data: rows()[0] ?? null, error: null }),
+      maybeSingle: () => Promise.resolve(stalled("state", () => ({ data: rows()[0] ?? null, error: null }))),
       then: (resolve: any, reject: any) =>
-        Promise.resolve({ data: rows(), error: null }).then(resolve, reject)
+        Promise.resolve(stalled("state", () => ({ data: rows(), error: null }))).then(resolve, reject)
     };
     return query;
   };
   const pipelineStateRpc = vi.fn(async (_name: string, a: any) => {
+    if (stall.on.has("rpc") && Date.now() < stall.until) await stalled("rpc", () => undefined);
     const key = rowKey(a.p_pipeline_key, a.p_scope_key, a.p_operation_key);
     const current = pipelineStateRows.get(key);
     const fail = (message: string) => ({ data: null, error: { message } });
@@ -238,6 +260,7 @@ const {
     error: null
   }));
   const ppCombosSelectMock = vi.fn(() => ({ in: ppCombosInMock }));
+  const auditInsertMock = vi.fn().mockResolvedValue({ error: null });
   return {
     updateGamesMock: vi.fn(successResponder),
     updateTeamsMock: vi.fn(successResponder),
@@ -255,7 +278,7 @@ const {
     updateGoalieProjectionsV2Mock: vi.fn(successResponder),
     runProjectionV2Mock: vi.fn(successResponder),
     runProjectionAccuracyMock: vi.fn(successResponder),
-    auditInsertMock: vi.fn().mockResolvedValue({ error: null }),
+    auditInsertMock,
     gamesSelectMock,
     gamesGteMock,
     gamesLteMock,
@@ -271,7 +294,10 @@ const {
     wgoDefaults,
     wgoFrom,
     wgoDigestRpc,
-    digestOf
+    digestOf,
+    stall,
+    seasonsFrom,
+    stalledAuditInsert: (row: unknown) => stalled("audit", () => auditInsertMock(row))
   };
 });
 
@@ -287,7 +313,9 @@ vi.mock("lib/supabase/server", () => ({
   default: {
     from: vi.fn((table: string) =>
       table === "cron_job_audit"
-        ? { insert: auditInsertMock, select: () => wgoFrom("cron_job_audit").select() }
+        ? { insert: stalledAuditInsert, select: () => wgoFrom("cron_job_audit").select() }
+        : table === "seasons"
+          ? seasonsFrom()
         : table === "wgo_skater_stats"
           ? wgoFrom("wgo_skater_stats")
         : table === "games"
@@ -340,6 +368,7 @@ vi.mock("../../../../../pages/api/v1/db/run-projection-accuracy", () => ({
 
 import handler, { __testables, forgeProjectionDaysAhead } from "../../../../../pages/api/v1/db/run-rolling-forge-pipeline";
 import { readRollingForgeRunState, readRollingForgeStageKills, recordRollingForgeStageKill } from "lib/rollingForgePipelineRunState";
+import { evaluateDailyAcceptance, type DailyAcceptanceKind } from "lib/cron/forgeDailyAcceptance";
 
 function resetWgoFixture() {
   wgo.games = wgoDefaults.games;
@@ -386,6 +415,8 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     pipelineStateRows.clear();
     process.env.CRON_SECRET = "test-secret";
     resetWgoFixture();
+    stall.until = 0;
+    stall.on.clear();
   });
 
   it("returns 405 for unsupported methods", async () => {
@@ -1745,6 +1776,223 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         expect(next.body.failureSummary.terminalStop).toEqual({ code: "stage_handoff_unconfirmed", stageId: "projection_relationship_build" });
         expect(shiftChartsMock).toHaveBeenCalledTimes(1);
         expect(buildProjectionDerivedMock).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("a database stall before the first stage (2026-11-23 10:20Z)", () => {
+      // Monday's 10:20 call arrived at 10:20:29 while the database stalled until 10:23:09 (160 s later).
+      const ARRIVAL = "2026-10-19T10:20:29.000Z";
+      const arrival = Date.parse(ARRIVAL);
+      const beforeExecution = ["core_entity_freshness", "upstream_skater_sources", "contextual_builders",
+        "rolling_player_recompute", "projection_input_ingest", "projection_relationship_build", "projection_derived_build"];
+      const stallFor = (ms: number, kinds: Array<"seasons" | "state" | "rpc" | "audit">) => {
+        stall.until = arrival + ms;
+        kinds.forEach((kind) => stall.on.add(kind));
+      };
+      const killReceipts = () => [...pipelineStateRows.values()].filter((row) => row.operation_key.includes(":kill:"));
+      const stateSnapshot = () => JSON.stringify([...pipelineStateRows.entries()]);
+      const pipelineAuditRows = () => auditInsertMock.mock.calls.map((call: any[]) => call[0])
+        .filter((row: any) => row?.job_name === "run-rolling-forge-pipeline");
+      let warn: ReturnType<typeof vi.spyOn>;
+      const gateReasons = () => warn.mock.calls
+        .filter((call: any[]) => call[0] === "[nhl-off-season] season window unavailable; running job")
+        .map((call: any[]) => call[1].reason);
+
+      // Runs one scheduled invocation on fake time; returns its response and how long after arrival it answered.
+      const invokeOnFakeTime = async (at: string) => {
+        let answeredAt: number | null = null;
+        const pending = invokeScheduled(at).then((res) => { answeredAt = Date.now(); return res; });
+        for (let step = 0; step < 400 && answeredAt == null; step++) await vi.advanceTimersByTimeAsync(1_000);
+        const res = await pending;
+        return { res, answeredAfterMs: answeredAt! - Date.parse(at) };
+      };
+
+      // Strict acceptance over this scope's real stage rows. Every other input is a synthetic, passing
+      // stand-in (this route does not write them), so only the stage evidence decides the verdict here.
+      const RUN_ID = "0d9c5a52-6b7e-4f0e-9a51-2f6d0c1e7a33";
+      const GAMES = [2025021031, 2025021032];
+      const acceptance = (kind: DailyAcceptanceKind, extraRows: any[] = []) => evaluateDailyAcceptance({
+        scheduleRun: { gameWeek: [{ date: "2026-10-19", numberOfGames: GAMES.length, games: GAMES.map((id) => ({ id })) }] },
+        scheduleSource: { gameWeek: [{ date: "2026-10-18", ...(kind === "offday"
+          ? { numberOfGames: 0, games: [] } : { numberOfGames: 2, games: [{ id: 2025021023 }, { id: 2025021024 }] }) }] },
+        pipeline: [...pipelineStateRows.values(), ...extraRows]
+          .map((row) => ({ scope: row.scope_key, stage: row.operation_key, status: row.status })),
+        nst: [{ run_time: "2026-10-19T10:25:01+00:00", status: "success",
+          state: kind === "offday" ? "skipped_no_completed_games" : "attempts_finished_coverage_unverified",
+          verifiedOffDates: kind === "offday" ? ["2026-10-18"] : [], missingScheduleDates: [],
+          planned: kind === "offday" ? 0 : 20, networkAttempts: kind === "offday" ? 0 : 20 }],
+        runs: [{ run_id: RUN_ID, status: "succeeded", created_at: "2026-10-19T10:25:02+00:00", scope: { mode: "full_slate" } }],
+        playerRowKeys: GAMES.map((game_id) => ({ run_id: RUN_ID, game_id })),
+        startChart: { projectionRunId: RUN_ID, players: GAMES.map((game_id) => ({ row_key: `${RUN_ID}:${game_id}:8478402:1`, game_id })) },
+        dailyRso: { bridgeForecasts: { runs: [[`forge-daily-bridge-v1:${RUN_ID}`, "x"]],
+          rows: GAMES.map((game) => ["10028", String(game), 0, "t", {}]) } },
+        startChartHttp: 200, dailyRsoHttp: 200
+      }, "2026-10-19", "2026-10-18", kind);
+
+      beforeEach(() => {
+        // A second useFakeTimers call keeps the first call's faked set, so reinstall.
+        vi.useRealTimers();
+        vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+        warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      });
+      afterEach(() => {
+        warn.mockRestore();
+      });
+
+      it("reproduction: a 159 s season read with a hung child still answers before the 240 s kill", async () => {
+        beforeExecution.forEach((id) => seedStageRow(id, {}));
+        stallFor(159_000, ["seasons"]);
+        updateGoalieProjectionsV2Mock.mockImplementationOnce(() => new Promise<void>(() => undefined));
+
+        const { res, answeredAfterMs } = await invokeOnFakeTime(ARRIVAL);
+
+        // Before the fix: the gate waited out the stall and the 228 s child deadline started after it (387 s).
+        expect(answeredAfterMs).toBeLessThan(240_000);
+        expect(stageStatus(res, "projection_execution").steps[0]).toMatchObject({
+          id: "update-goalie-projections-v2", status: "failed", statusCode: 504, timedOut: true,
+          reason: expect.stringContaining(new Date(arrival + 228_000).toISOString())
+        });
+        expect(res.body.termination).toMatchObject({ reason: "retry_on_next_invocation", resumeRequired: true });
+        expect(res.body.finalAudit).toEqual({ owner: "withCronJobAudit", status: "persisted" });
+        // Before the fix the gate logged the PostgrestError as "[object Object]".
+        expect(gateReasons()).toEqual(["season window lookup timed out after 5000 ms"]);
+      });
+
+      it("hands children deadlines counted from request arrival, not from the end of the gate", async () => {
+        stallFor(30_000, ["seasons"]);
+
+        const { res } = await invokeOnFakeTime(ARRIVAL);
+
+        expect(res.statusCode).toBe(200);
+        expect(updateNstGamelogMock.mock.calls[0]?.[0]?.query.deadlineAt).toBe(String(arrival + 160_000));
+        expect(updateRollingPlayerAveragesMock.mock.calls[0]?.[0]?.query.deadlineAt).toBe(String(arrival + 220_000));
+        // Both children start 5 s after arrival, when the bounded gate gives up.
+        expect(Number(ingestProjectionInputsMock.mock.calls[0]?.[0]?.query.maxDurationMs)).toBeLessThanOrEqual(228_000 - 5_000 - 25_000);
+        expect(Number(runProjectionV2Mock.mock.calls[0]?.[0]?.query.maxDurationMs)).toBeLessThanOrEqual(180_000 - 5_000);
+        expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "complete" });
+      });
+
+      it("records a retryable failure without touching stage state, and the next slot recovers with no kill receipt", async () => {
+        beforeExecution.forEach((id) => seedStageRow(id, {}));
+        stallFor(160_000, ["seasons", "state", "rpc", "audit"]);
+        const before = stateSnapshot();
+
+        const { res, answeredAfterMs } = await invokeOnFakeTime(ARRIVAL);
+
+        expect(answeredAfterMs).toBeGreaterThanOrEqual(160_000);
+        expect(answeredAfterMs).toBeLessThan(240_000);
+        expect(res.statusCode).toBe(207);
+        expect(res.body.termination).toMatchObject({
+          state: "stopped_on_blocking_failure", resumeRequired: true, reason: "retry_on_next_invocation",
+          nextStageId: "projection_execution", stagesRun: 0,
+          detail: expect.stringContaining("160 s after the request arrived, past the stage's 90 s start window, so none was taken and no stage row was written")
+        });
+        expect(stageStatus(res, "projection_execution")).toMatchObject({ status: "pending" });
+        expect(stageStatus(res, "monitoring")).toMatchObject({ status: "pending" });
+        expect(res.body.failureSummary).toMatchObject({ failedStepCount: 0, terminalStop: null });
+        // The audit row lands once the database answers again, as a failure, before the kill.
+        expect(res.body.finalAudit).toEqual({ owner: "withCronJobAudit", status: "persisted" });
+        expect(pipelineAuditRows()).toHaveLength(1);
+        expect(pipelineAuditRows()[0]).toMatchObject({ status: "failure", details: { statusCode: 207 } });
+        expect(pipelineAuditRows()[0].details.response).toContain("so none was taken and no stage row was written");
+        expect(stateSnapshot()).toBe(before);
+        expect(pipelineStateRpc).not.toHaveBeenCalled();
+        expect(updateGoalieProjectionsV2Mock).not.toHaveBeenCalled();
+        expect(runProjectionV2Mock).not.toHaveBeenCalled();
+        expect(gateReasons()).toEqual(["season window lookup timed out after 5000 ms"]);
+
+        const next = await invokeOnFakeTime("2026-10-19T10:25:00.000Z");
+        expect(next.res.statusCode).toBe(200);
+        expect(next.res.body.termination).toMatchObject({ state: "completed", stagesRun: 3 });
+        expect(stageStatus(next.res, "projection_execution").reason ?? "").not.toContain("Retaken");
+        expect(killReceipts()).toHaveLength(0);
+        expect(updateGoalieProjectionsV2Mock).toHaveBeenCalledTimes(1);
+        expect(runProjectionV2Mock).toHaveBeenCalledTimes(2);
+        const verdict = acceptance("control");
+        expect(verdict.checks.pipeline_stages_complete).toBe(true);
+        expect(verdict.pass).toBe(true);
+        // Monday's shape for contrast: one kill receipt in the scope fails the strict evaluator.
+        const killRow = { scope_key: "daily_incremental:2026-10-19", operation_key: "projection_execution:kill:0123456789abcdef01234567", status: "complete" };
+        expect(acceptance("control", [killRow]).checks.pipeline_stages_complete).toBe(false);
+      });
+
+      it("answers before the kill even when the database never answers in time", async () => {
+        beforeExecution.forEach((id) => seedStageRow(id, {}));
+        stallFor(300_000, ["seasons", "state", "rpc", "audit"]);
+        const before = stateSnapshot();
+
+        const { res, answeredAfterMs } = await invokeOnFakeTime(ARRIVAL);
+
+        // The state read is given up at the 180 s budget; the audit insert then waits its own 5 s.
+        expect(answeredAfterMs).toBe(185_000);
+        expect(res.statusCode).toBe(503);
+        expect(JSON.stringify(res.body)).toContain("The run state was still unread 180 s after the request arrived");
+        expect(stateSnapshot()).toBe(before);
+        expect(pipelineStateRpc).not.toHaveBeenCalled();
+        expect(updateGoalieProjectionsV2Mock).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(200_000);
+
+        const next = await invokeOnFakeTime("2026-10-19T10:30:00.000Z");
+        expect(next.res.statusCode).toBe(200);
+        expect(killReceipts()).toHaveLength(0);
+        expect(acceptance("control").pass).toBe(true);
+      });
+
+      it("hands a stage acquired after the start window straight back, unrun and with no attempt spent", async () => {
+        beforeExecution.forEach((id) => seedStageRow(id, {}));
+        stallFor(120_000, ["rpc"]);
+
+        const { res, answeredAfterMs } = await invokeOnFakeTime(ARRIVAL);
+
+        expect(answeredAfterMs).toBe(120_000);
+        expect(res.body.termination).toMatchObject({
+          state: "stopped_on_blocking_failure", resumeRequired: true, reason: "retry_on_next_invocation",
+          nextStageId: "projection_execution", detail: expect.stringContaining("so it was handed back unrun")
+        });
+        expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({
+          status: "failed", last_error: "stage_handoff", lease_owner: null
+        });
+        expect(updateGoalieProjectionsV2Mock).not.toHaveBeenCalled();
+        expect(runProjectionV2Mock).not.toHaveBeenCalled();
+
+        const next = await invokeOnFakeTime("2026-10-19T10:25:00.000Z");
+        expect(next.res.statusCode).toBe(200);
+        expect(killReceipts()).toHaveLength(0);
+        expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "complete" });
+        expect(acceptance("control").pass).toBe(true);
+      });
+
+      it("still starts the rolling step up to 150 s into a normal invocation once an earlier stage ran", async () => {
+        seedStageRow("core_entity_freshness", {});
+        seedStageRow("upstream_skater_sources", {});
+        updateLineCombinationsMock.mockImplementationOnce(slowSuccess(100_000));
+
+        const { res } = await invokeOnFakeTime("2026-10-19T10:05:00.000Z");
+
+        expect(updateRollingPlayerAveragesMock).toHaveBeenCalledTimes(1);
+        expect(stageStatus(res, "rolling_player_recompute").status).toBe("success");
+        expect(res.body.termination).toMatchObject({ state: "continuation_required", reason: "runtime_budget",
+          nextStageId: "projection_input_ingest" });
+        expect(pipelineAuditRows()[0]).toMatchObject({ status: "continued" });
+      });
+
+      it("off day: a stalled first slot writes nothing, and the next slot completes and passes strict acceptance", async () => {
+        wgo.games = () => [];
+        updateNstGamelogMock.mockImplementation(async (_req: any, res: any) =>
+          res.status(200).json({ success: true, operationStatus: "skipped_no_completed_games", nstProgress: { verifiedOffDates: ["2026-10-18"] } }));
+        stallFor(160_000, ["seasons", "state", "rpc", "audit"]);
+
+        const { res } = await invokeOnFakeTime(ARRIVAL);
+        expect(res.body.termination).toMatchObject({ reason: "retry_on_next_invocation", nextStageId: "core_entity_freshness", stagesRun: 0 });
+        expect(pipelineStateRows.size).toBe(0);
+
+        const next = await invokeOnFakeTime("2026-10-19T10:25:00.000Z");
+        expect(next.res.statusCode).toBe(200);
+        expect(next.res.body.termination).toMatchObject({ state: "completed" });
+        expect(stageStatus(next.res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["wgo-skater-readiness", "success"], ["update-nst-gamelog", "skipped"]]);
+        expect(killReceipts()).toHaveLength(0);
+        expect(acceptance("offday").pass).toBe(true);
       });
     });
 

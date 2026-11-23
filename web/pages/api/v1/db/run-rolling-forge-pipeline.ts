@@ -5,7 +5,7 @@ import {
 } from "lib/api/scanSummary";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
-import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
+import { GATE_ENTERED_AT_KEY, withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { FORGE_COMPATIBILITY_INVENTORY } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
@@ -251,8 +251,12 @@ function parseDateWindow(req: NextApiRequest, implicitWindow: boolean) {
 }
 
 // The scheduled (implicit-window) run is resumable. Vercel kills the function
-// at 240 s (vercel.json maxDuration), so each invocation stops taking work
-// well before that, stores its progress, and the next invocation continues.
+// at 240 s (vercel.json maxDuration) from request arrival, so each invocation
+// stops taking work well before that, stores its progress, and the next
+// invocation continues. Every budget and deadline below counts from arrival
+// (the off-season gate's GATE_ENTERED_AT_KEY stamp), so time spent in the gate
+// is spent from it (2026-11-23 10:20Z: a 159 s gate stall pushed the child
+// deadline past the kill).
 const RESUMABLE_INVOCATION_BUDGET_MS = 180_000;
 // A stage of unknown length starts after the first one only while it still
 // has about 150 s before the kill.
@@ -1478,11 +1482,39 @@ async function runResumablePipeline(args: {
   }
   const { mode, date } = args.stageArgs;
   const runKey = buildRollingForgeRunScopeKey(mode, date);
-  const states = await readRollingForgeRunState({ supabase, scopeKey: runKey });
+  // A slow pre-stage start (a database stall before or during this read) ends
+  // the invocation with a retryable failure: no stage row is written, so no
+  // lease is left to expire into a kill receipt and no failed attempt is spent.
+  const deferredStart = (nextStageId: RollingForgePipelineStageId, detail: string): TerminationReceipt => ({
+    state: "stopped_on_blocking_failure", resumeRequired: true, nextStartDate: null, runKey,
+    nextStageId, reason: "retry_on_next_invocation", detail
+  });
+  // A stage starts only within its window from arrival: the rolling step while
+  // it keeps MIN_ROLLING_CLAIM_MS of the budget, any other stage before the cutoff.
+  const startWindowMs = (isRolling: boolean) =>
+    isRolling ? RESUMABLE_INVOCATION_BUDGET_MS - MIN_ROLLING_CLAIM_MS : RESUMABLE_STAGE_START_CUTOFF_MS;
+  const startWindowClosed = (isRolling: boolean, elapsedMs: number) => isRolling
+    ? RESUMABLE_INVOCATION_BUDGET_MS - elapsedMs < MIN_ROLLING_CLAIM_MS
+    : elapsedMs >= RESUMABLE_STAGE_START_CUTOFF_MS;
+  const lateStartDetail = (where: string, isRolling: boolean, outcome = "so none was taken and no stage row was written") =>
+    `${where} ${Math.round((Date.now() - args.startedAt) / 1000)} s after the request arrived, past the stage's ` +
+    `${startWindowMs(isRolling) / 1000} s start window, ${outcome}. The next scheduled invocation retries.`;
+  const stateRead = await settleBy(readRollingForgeRunState({ supabase, scopeKey: runKey }),
+    args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS);
+  if (!stateRead) {
+    const stages = getRollingForgeStagesForMode(mode);
+    return {
+      stageResults: stages.map(stage => notRunStage(stage, "pending", "Waiting for the next invocation of this run.")),
+      termination: { ...deferredStart(stages[0].id, lateStartDetail("The run state was still unread", false)), stagesRun: 0 },
+      terminalStopCode: null
+    };
+  }
+  const states = stateRead.value;
   const stageResults: StageResult[] = [];
   let termination: TerminationReceipt | null = null;
   let terminalStopCode: TerminalStopCode | null = null;
   let stagesRun = 0;
+  let startDeferred = false;
   const continuation = (
     reason: NonNullable<TerminationReceipt["reason"]>,
     nextStageId: RollingForgePipelineStageId,
@@ -1502,7 +1534,7 @@ async function runResumablePipeline(args: {
   for (const stage of getRollingForgeStagesForMode(mode)) {
     if (termination) {
       stageResults.push(
-        termination.state === "stopped_on_blocking_failure"
+        termination.state === "stopped_on_blocking_failure" && !startDeferred
           ? notRunStage(stage, "skipped", "Skipped because an earlier blocking stage failed.")
           : notRunStage(stage, "pending", "Waiting for the next invocation of this run.")
       );
@@ -1560,12 +1592,13 @@ async function runResumablePipeline(args: {
 
     const isRolling = stage.id === "rolling_player_recompute";
     const elapsedMs = Date.now() - args.startedAt;
-    if (
-      stagesRun > 0 &&
-      (isRolling
-        ? RESUMABLE_INVOCATION_BUDGET_MS - elapsedMs < MIN_ROLLING_CLAIM_MS
-        : elapsedMs >= RESUMABLE_STAGE_START_CUTOFF_MS)
-    ) {
+    if (stagesRun === 0 && startWindowClosed(isRolling, elapsedMs)) {
+      termination = deferredStart(stage.id, lateStartDetail("The first stage was reached", isRolling));
+      startDeferred = true;
+      stageResults.push(notRunStage(stage, "pending", "Waiting for the next invocation of this run."));
+      continue;
+    }
+    if (stagesRun > 0 && startWindowClosed(isRolling, elapsedMs)) {
       termination = continuation(
         "runtime_budget",
         stage.id,
@@ -1654,6 +1687,28 @@ async function runResumablePipeline(args: {
       stageResults.push(
         notRunStage(stage, "success", "Completed by an earlier invocation of this run.", true)
       );
+      continue;
+    }
+    // The acquire (or the kill receipt before it) may itself have waited out a
+    // stall. A stage taken this late could see its children abandoned at the
+    // child-step deadline (a review hold on a review-only stage), so hand it
+    // straight back with the zero-attempt resumable marker instead.
+    if (startWindowClosed(isRolling, Date.now() - args.startedAt)) {
+      try {
+        await advanceRollingForgeStage({ supabase, lease, cursorGameId: lease.cursorGameId });
+      } catch (error) {
+        // The running row stays as the fence; no child was called.
+        termination = { state: "stopped_on_blocking_failure", resumeRequired: isRollingForgeStageRetakeable(stage.id),
+          nextStartDate: null, runKey, nextStageId: stage.id,
+          reason: isRollingForgeStageRetakeable(stage.id) ? "retry_on_next_invocation" : "manual_review_required",
+          detail: `The stage was taken too late to run and its handoff was not acknowledged: ${errorMessage(error)}. No child step was called.` };
+        if (!isRollingForgeStageRetakeable(stage.id)) terminalStopCode = STAGE_HANDOFF_UNCONFIRMED;
+        stageResults.push(notRunStage(stage, "pending", "Could not take this stage; see termination.detail."));
+        continue;
+      }
+      termination = deferredStart(stage.id, lateStartDetail("The stage lease was acquired", isRolling, "so it was handed back unrun"));
+      startDeferred = true;
+      stageResults.push(notRunStage(stage, "pending", "Waiting for the next invocation of this run."));
       continue;
     }
 
@@ -1815,8 +1870,23 @@ export const __testables = {
   runStage
 };
 
+// Resolves with the work's value, or null once the deadline passes first.
+async function settleBy<T>(work: Promise<T>, deadlineAtMs: number): Promise<{ value: T } | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work.then(value => ({ value })),
+      new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), Math.max(0, deadlineAtMs - Date.now())); })
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) {
-  const startedAt = Date.now();
+  // Request arrival: the off-season gate stamps it before its season lookup.
+  const arrivedAt = (req as unknown as Record<symbol, unknown>)[GATE_ENTERED_AT_KEY];
+  const startedAt = typeof arrivedAt === "number" ? arrivedAt : Date.now();
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", ["GET", "POST"]);
     return res.status(405).json({

@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import { cronClassificationOf } from "./withCronJobAudit";
 import {
   CRON_CLASSIFICATION_KEY,
+  GATE_ENTERED_AT_KEY,
+  loadNhlSeasonWindow,
+  NHL_SEASON_WINDOW_TIMEOUT_MS,
   resolveNhlSeasonWindow,
   withNhlOffSeasonSkip,
   type NhlSeasonSpan,
@@ -169,5 +172,76 @@ describe("withNhlOffSeasonSkip", () => {
       expect(Object.keys(res)).not.toContain("cronClassification");
       expect(JSON.stringify(res.body ?? {})).not.toContain("nhl_seasonal_game_data");
     }
+  });
+
+  // 2026-11-23 10:20Z: the lookup hung for 159 s in a database stall and was logged as "[object Object]".
+  it("runs the handler as unknown when the lookup does not answer within the bound", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const handler = vi.fn();
+      const pending = withNhlOffSeasonSkip(handler, { loadWindow: () => new Promise<never>(() => undefined) })(
+        { query: {} } as never,
+        response() as never,
+      );
+      await vi.advanceTimersByTimeAsync(NHL_SEASON_WINDOW_TIMEOUT_MS - 1);
+      expect(handler).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      await pending;
+      expect(NHL_SEASON_WINDOW_TIMEOUT_MS).toBe(5_000);
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith("[nhl-off-season] season window unavailable; running job",
+        { reason: "season window lookup timed out after 5000 ms" });
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      warn.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it("stamps the request with when it entered the gate, before the lookup runs", async () => {
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    vi.setSystemTime(new Date("2026-11-23T10:20:29.000Z"));
+    try {
+      const req = { query: {} } as Record<PropertyKey, unknown>;
+      const seen: unknown[] = [];
+      const pending = withNhlOffSeasonSkip((handled: any) => { seen.push(handled[GATE_ENTERED_AT_KEY]); }, {
+        loadWindow: () => new Promise<never>(() => undefined),
+      })(req as never, response() as never);
+      await vi.advanceTimersByTimeAsync(NHL_SEASON_WINDOW_TIMEOUT_MS);
+      await pending;
+      expect(seen).toEqual([Date.parse("2026-11-23T10:20:29.000Z")]);
+      expect(Date.now()).toBe(Date.parse("2026-11-23T10:20:34.000Z"));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("runs the handler when an injected lookup rejects, naming its error", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const handler = vi.fn();
+      await withNhlOffSeasonSkip(handler, {
+        loadWindow: () => Promise.reject({ message: "connection reset", code: "08006" }),
+      })({ query: {} } as never, response() as never);
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith("[nhl-off-season] season window unavailable; running job",
+        { reason: "connection reset (08006)" });
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+describe("loadNhlSeasonWindow", () => {
+  it("names a PostgrestError by its message, not [object Object]", async () => {
+    const error = { message: "canceling statement due to statement timeout", code: "57014", details: null, hint: null };
+    const seasons = { select: () => seasons, order: () => seasons, limit: async () => ({ data: null, error }) };
+    const client = { from: () => seasons } as never;
+    expect(await loadNhlSeasonWindow(client, at("2026-11-23"))).toEqual({
+      state: "unknown",
+      today: "2026-11-23",
+      reason: "canceling statement due to statement timeout (57014)",
+    });
   });
 });
