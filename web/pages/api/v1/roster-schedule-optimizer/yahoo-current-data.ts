@@ -24,7 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await requireProviderSyncAccess(user.id);
     const now = new Date();
     let proofs: BridgeRunProof[] = [];
-    const current = await loadPlanningData(serviceRoleClient, query, { now, forgeDailyBridge: true, consumer: "rso", onBridgeRunProofs: served => { proofs = served; } });
+    const current = await loadPlanningData(serviceRoleClient, query, { now, forgeDailyBridge: true, consumer: "rso",
+      retryBridgeReadFailure: true, onBridgeRunProofs: served => { proofs = served; } });
     const { data, expiresAt } = await loadYahooPlanningConfirmations({ db: serviceRoleClient, userId: user.id, teamId, leagueId, query, data: current, now });
     const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId, proofs);
     const transport = encodePlanningDataTransport({ ...data, forecasts: bridge.forecasts });

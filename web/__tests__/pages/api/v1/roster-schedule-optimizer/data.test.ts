@@ -10,6 +10,7 @@ vi.mock("lib/player-forecasts/forecastServingSource", async importOriginal => ({
 import { decodePlanningDataTransport } from "lib/rosterScheduleData/planningDataTransport";
 import { bridgeRunProofs, expandBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
 import handler from "pages/api/v1/roster-schedule-optimizer/data";
+import { ForgeBridgeReadUnavailableError } from "lib/rosterScheduleData/planning";
 
 const query = { seasonId: "20262027", startDate: "2026-10-15", endDate: "2026-10-21" };
 const data = { players: [], games: [], forecasts: [], evidence: {} };
@@ -40,7 +41,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     const source = await mocks.select.mock.results[0].value;
     expect(source).toMatchObject({ kind: "legacy", reason: "native_not_activated" });
     expect(mocks.load).toHaveBeenCalledExactlyOnceWith(mocks.db, { seasonId: 20262027, startDate: query.startDate, endDate: query.endDate },
-      { now: new Date(), source, forgeDailyBridge: true, consumer: "rso", onBridgeRunProofs: expect.any(Function) });
+      { now: new Date(), source, forgeDailyBridge: true, consumer: "rso", retryBridgeReadFailure: true, onBridgeRunProofs: expect.any(Function) });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=300, stale-while-revalidate=300");
     expect(res.body.forecastSource).toEqual({ kind: "legacy", headRevision: null, expiresAt: null, reason: "native_not_activated" });
     expect(decodePlanningDataTransport(res.body.data)).toEqual(data);
@@ -50,7 +51,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     mocks.select.mockResolvedValue(native);
     const res = await request();
     expect(mocks.select).toHaveBeenCalledTimes(1);
-    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source: native, forgeDailyBridge: true, consumer: "rso", onBridgeRunProofs: expect.any(Function) });
+    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source: native, forgeDailyBridge: true, consumer: "rso", retryBridgeReadFailure: true, onBridgeRunProofs: expect.any(Function) });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=60, stale-while-revalidate=0");
     expect(res.body.forecastSource).toEqual({ kind: "native", headRevision: 3, expiresAt: native.expiresAt, reason: null });
     expect(decodePlanningDataTransport(res.body.data)).toEqual(data);
@@ -60,7 +61,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     const source = { kind, reason: "native_catalog_expired", environment: { PLAYER_FORECAST_BASELINE_RELEASE_IDS: "" } };
     mocks.select.mockResolvedValue(source);
     const res = await request();
-    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source, forgeDailyBridge: true, consumer: "rso", onBridgeRunProofs: expect.any(Function) });
+    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source, forgeDailyBridge: true, consumer: "rso", retryBridgeReadFailure: true, onBridgeRunProofs: expect.any(Function) });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=300, stale-while-revalidate=300");
     expect(res.body.forecastSource).toEqual({ kind, headRevision: null, expiresAt: null, reason: "native_catalog_expired" });
   });
@@ -72,6 +73,16 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     mocks.load.mockRejectedValue(new Error("fixture-secret-database-url"));
     const failed = await request();
     expect(failed.code).toBe(503); expect(JSON.stringify(failed.body)).not.toContain("fixture-secret");
+  });
+
+  it("answers a retryable 503, never a 200 with no forecasts, when FORGE's required reads fail", async () => {
+    mocks.load.mockRejectedValue(new ForgeBridgeReadUnavailableError());
+    const res = await request();
+    expect(res.code).toBe(503);
+    expect(res.headers).toMatchObject({ "Cache-Control": "no-store", "Retry-After": "30" });
+    // The client shows `error` verbatim and keeps the saved workspace (currentPlanningRead → capacityPlanningSnapshot).
+    expect(res.body).toEqual({ success: false, code: "forge_forecasts_unavailable", retryable: true,
+      error: "FORGE projections are temporarily unavailable; try again shortly. Your saved manual workspace is preserved." });
   });
 
   it("does not cache permission-bearing responses across policy revocation", async () => {
