@@ -5,24 +5,28 @@ const fixtures = vi.hoisted(() => ({
   unified: [] as Record<string, any>[],
   bands: [] as Record<string, any>[],
   unifiedBands: [] as Record<string, any>[],
+  baselines: [] as Record<string, any>[],
+  calls: [] as { table: string; method: string; args: unknown[] }[],
 }));
 
 vi.mock("lib/supabase/server", () => ({
   default: {
     from: (table: string) => {
+      fixtures.calls.push({ table, method: "from", args: [] });
       let rows = table === "sustainability_scores" ? [...fixtures.legacy]
         : table === "entity_sustainability_scores_daily" ? [...fixtures.unified]
         : table === "sustainability_trend_bands" ? [...fixtures.bands]
         : table === "entity_sustainability_bands_daily" ? [...fixtures.unifiedBands]
-        : table === "players" || table === "player_baselines" || table === "wgo_skater_stats" ? [] : null;
+        : table === "player_baselines" ? [...fixtures.baselines]
+        : table === "players" || table === "wgo_skater_stats" ? [] : null;
       if (!rows) throw new Error(`Unexpected test table: ${table}`);
       const query: any = {
         select: () => query,
-        eq: (key: string, value: unknown) => { rows = rows!.filter((row) => row[key] === value); return query; },
+        eq: (key: string, value: unknown) => { fixtures.calls.push({ table, method: "eq", args: [key, value] }); rows = rows!.filter((row) => row[key] === value); return query; },
         lte: (key: string, value: string) => { rows = rows!.filter((row) => row[key] <= value); return query; },
         gt: (key: string, value: string) => { rows = rows!.filter((row) => row[key] == null || row[key] > value); return query; },
         gte: (key: string, value: string) => { rows = rows!.filter((row) => row[key] == null || row[key] >= value); return query; },
-        in: (key: string, values: unknown[]) => { rows = rows!.filter((row) => values.includes(row[key])); return query; },
+        in: (key: string, values: unknown[]) => { fixtures.calls.push({ table, method: "in", args: [key, values] }); rows = rows!.filter((row) => values.includes(row[key])); return query; },
         order: () => query,
         limit: (count: number) => { rows = rows!.slice(0, count); return query; },
         single: () => Promise.resolve(rows!.length ? { data: rows![0], error: null } : { data: null, error: { code: "PGRST116" } }),
@@ -33,7 +37,7 @@ vi.mock("lib/supabase/server", () => ({
   },
 }));
 
-import { fetchSandboxBands, fetchSandboxScores } from "./entitySurfaceServer";
+import { fetchSandboxBands, fetchSandboxScoreHistory, fetchSandboxScores } from "./entitySurfaceServer";
 import { readUsualRange } from "./usualRange";
 
 const baseRow = {
@@ -192,5 +196,86 @@ describe("unified band comparisons skip carried-forward days", () => {
     expect(payload.snapshotDate).toBe("2026-11-22");
     expect(row.comparisons.find((c) => c.key === "season")?.value).toBe(50);
     expect(payload.historyRows).toHaveLength(4);
+  });
+});
+
+describe("player baselines are read only for the players a request needs", () => {
+  const missingComponents = {
+    warnings: [
+      "missing_window_z_shp", "missing_window_z_oishp", "missing_window_z_ipp",
+      "missing_window_z_ppshp", "missing_skill_window_ixg60",
+      "missing_skill_window_icf60", "missing_skill_window_hdcf60",
+    ],
+    fallbackFlags: { missing_luck_stats: true, missing_skill_stats: true },
+  };
+  const baselineCalls = () => fixtures.calls.filter((call) => call.table === "player_baselines");
+  const baselineQueries = () => baselineCalls().filter((call) => call.method === "from").length;
+  const baselinePlayerFilters = () => baselineCalls()
+    .filter((call) => call.method === "in")
+    .map((call) => [call.args[0], [...(call.args[1] as number[])].sort((a, b) => a - b)]);
+  const expectSnapshotFilter = (date: string) =>
+    expect(baselineCalls().filter((call) => call.method === "eq")).toEqual([
+      { table: "player_baselines", method: "eq", args: ["snapshot_date", date] },
+    ]);
+
+  beforeEach(() => {
+    fixtures.legacy = [];
+    fixtures.unified = [];
+    fixtures.bands = [];
+    fixtures.baselines = [];
+    fixtures.calls = [];
+  });
+
+  it("scores list asks for its listed players plus the selected one, and the selected one keeps its baseline", async () => {
+    fixtures.legacy = [
+      { ...baseRow, player_id: 1, s_raw: 0, s_100: 50, components: missingComponents },
+      { ...baseRow, player_id: 2, components: { warnings: [], fallbackFlags: {} } },
+      { ...baseRow, player_id: 3, components: { warnings: [], fallbackFlags: {} } },
+    ];
+    fixtures.baselines = [1, 2, 3, 4].map((id) => ({
+      player_id: id, player_name: `Baseline ${id}`, snapshot_date: "2026-10-19",
+    }));
+    const payload = await fetchSandboxScores({
+      entityType: "skater", requestedDate: "2026-10-19", windowCode: "l5", entityId: 1,
+    });
+    expect(baselineQueries()).toBe(1);
+    expectSnapshotFilter("2026-10-19");
+    expect(baselinePlayerFilters()).toEqual([["player_id", [1, 2, 3]]]);
+    expect(payload.rows.map((row) => row.entityId)).toEqual([2, 3]);
+    expect(payload.selectedRow).toMatchObject({ entityId: 1, entityName: "Baseline 1" });
+  });
+
+  it("scores list with no available players makes no baselines query", async () => {
+    fixtures.legacy = [
+      { ...baseRow, player_id: 1, s_raw: 0, s_100: 50, components: missingComponents },
+    ];
+    const payload = await fetchSandboxScores({
+      entityType: "skater", requestedDate: "2026-10-19", windowCode: "l5",
+    });
+    expect(payload.snapshotDate).toBe("2026-10-19");
+    expect(fixtures.calls.some((call) => call.table === "sustainability_scores")).toBe(true);
+    expect(payload.rows).toEqual([]);
+    expect(baselineQueries()).toBe(0);
+  });
+
+  it("bands ask for the selected player only", async () => {
+    fixtures.legacy = [{ ...baseRow, player_id: 8478402 }];
+    await fetchSandboxBands({
+      entityType: "skater", entityId: 8478402, requestedDate: "2026-10-19",
+      windowCode: "l5", metricKey: "pp_goals_per_60",
+    });
+    expect(baselineQueries()).toBe(1);
+    expectSnapshotFilter("2026-10-19");
+    expect(baselinePlayerFilters()).toEqual([["player_id", [8478402]]]);
+  });
+
+  it("score history asks for the selected player only", async () => {
+    fixtures.legacy = [{ ...baseRow, player_id: 8478402 }];
+    await fetchSandboxScoreHistory({
+      entityType: "skater", entityId: 8478402, requestedDate: "2026-10-19", windowCode: "l5",
+    });
+    expect(baselineQueries()).toBe(1);
+    expectSnapshotFilter("2026-10-19");
+    expect(baselinePlayerFilters()).toEqual([["player_id", [8478402]]]);
   });
 });

@@ -183,13 +183,20 @@ async function fetchPlayersByIds(playerIds: number[]) {
   );
 }
 
-async function fetchPlayerBaselinesForSnapshot(snapshotDate: string) {
+// Always filtered by player: a whole snapshot date of these wide rows runs past
+// the PostgREST statement timeout (prod incident 2026-11-23).
+async function fetchPlayerBaselinesForSnapshot(
+  snapshotDate: string,
+  playerIds: number[]
+) {
+  if (!playerIds.length) return new Map<number, PlayerBaselineRow>();
   const { data, error } = await supabase
     .from("player_baselines")
     .select(
       "player_id, player_name, position_code, snapshot_date, win_l5, win_l10, win_l20, win_season_prev, win_career"
     )
-    .eq("snapshot_date", snapshotDate);
+    .eq("snapshot_date", snapshotDate)
+    .in("player_id", Array.from(new Set(playerIds)));
 
   if (error) {
     throw new Error(`Failed to load player baselines: ${error.message}`);
@@ -943,7 +950,12 @@ export async function fetchSandboxScores(args: {
     const playerIds = legacyRows.map((row) => Number(row.player_id));
     const [playersById, baselinesById] = await Promise.all([
       fetchPlayersByIds(playerIds),
-      fetchPlayerBaselinesForSnapshot(snapshotDate)
+      // The selected player may sit outside the list; its fallback row below
+      // reads this map too.
+      fetchPlayerBaselinesForSnapshot(
+        snapshotDate,
+        args.entityId != null ? [...playerIds, args.entityId] : playerIds
+      )
     ]);
 
     const rows = legacyRows.map((row) =>
@@ -1168,7 +1180,7 @@ export async function fetchSandboxBands(args: {
           .order("snapshot_date", { ascending: true })
           .limit(5000),
         fetchPlayersByIds([args.entityId]),
-        fetchPlayerBaselinesForSnapshot(snapshotDate),
+        fetchPlayerBaselinesForSnapshot(snapshotDate, [args.entityId]),
         fetchSkaterGameContextByDate(args.entityId, seasonId)
       ]);
 
@@ -1371,7 +1383,7 @@ export async function fetchSandboxScoreHistory(args: {
 
     const [playersById, baselinesById] = await Promise.all([
       fetchPlayersByIds([args.entityId]),
-      fetchPlayerBaselinesForSnapshot(snapshotDate)
+      fetchPlayerBaselinesForSnapshot(snapshotDate, [args.entityId])
     ]);
 
     const player = playersById.get(args.entityId);
