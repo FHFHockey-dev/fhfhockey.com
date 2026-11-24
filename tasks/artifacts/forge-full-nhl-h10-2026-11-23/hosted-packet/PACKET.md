@@ -146,11 +146,12 @@ approval to schedule or enable, after one watched nightly run. Known gap, not bl
   comes from `rosters` plus stored moves only, and a trade report stays pending.
 - **Signing secret (new, both sides, ≥32 printable characters, used nowhere else):** Vault `forge_h10_dispatch_secret`
   and Vercel `FORGE_H10_DISPATCH_SECRET`, the same value. Not `CRON_SECRET`, not the pregame secret.
-- **Database URL:** `SUPABASE_DB_URL`, else `POSTGRES_URL` (the transaction-pooler URL the Supabase integration
-  syncs). Correction 11-24: this line used to call `SUPABASE_DB_URL` "existing", but it was in no Vercel project, so every
-  11-24 dispatch answered 503 `database_url_missing` before any database work. TJ added it to the `fhfhockey` project on
-  11-24; an env var reaches only deployments made after it is saved. Use a pooler host: the direct database host is
-  IPv6-only unless the IPv4 add-on is on, and serverless functions should use the pooler anyway.
+- **Database URL:** `SUPABASE_DB_POOLER_URL`, else `SUPABASE_DB_URL`, else `POSTGRES_URL` (the transaction-pooler URL
+  the Supabase integration syncs). Correction 11-24: this line used to call `SUPABASE_DB_URL` "existing", but it was in no
+  Vercel project, so every 11-24 dispatch answered 503 `database_url_missing` before any database work. TJ is adding
+  `SUPABASE_DB_POOLER_URL` (host `*.pooler.supabase.com`, port 6543, user `postgres.<project-ref>`) to `fhfhockey`. The
+  direct `db.<ref>.supabase.co:5432` host is IPv6-only unless the IPv4 add-on is on, so Vercel cannot use it. An env var
+  reaches only deployments made after it is saved.
 - **Existing:** `VERCEL_GIT_COMMIT_SHA`. `CRON_SECRET` is no longer accepted by this route.
 - **Fail-closed behaviour.** Without the signing secret the route answers 503 before any database connection; with an
   invalid, expired, altered or wrong-route signature it answers 400/401 before any database connection; with the

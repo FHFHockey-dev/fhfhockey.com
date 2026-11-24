@@ -38,6 +38,7 @@ describe("hosted H1–H10 route: signed dispatches only", () => {
     vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "0123456789abcdef0123456789abcdef01234567");
     vi.stubEnv("SUPABASE_DB_URL", "postgres://offline.invalid/db");
     vi.stubEnv("POSTGRES_URL", "");
+    vi.stubEnv("SUPABASE_DB_POOLER_URL", "");
     vi.stubEnv("CRON_SECRET", "a-reusable-bearer-secret");
   });
   afterEach(() => { vi.unstubAllEnvs(); });
@@ -78,17 +79,20 @@ describe("hosted H1–H10 route: signed dispatches only", () => {
     expect(pools.created).toBe(0);
   });
 
-  it("uses SUPABASE_DB_URL, else POSTGRES_URL, and refuses before any work with neither", async () => {
+  it("uses SUPABASE_DB_POOLER_URL, else SUPABASE_DB_URL, else POSTGRES_URL, and refuses before any work with none", async () => {
     handle.mockResolvedValue({ status: 200, body: { success: true, status: "complete" } });
     const signed = () => { const body = dispatch(); return call(body, { "x-forge-h10-signature": signH10Dispatch(secret, H10_ROUTE, body) }); };
+    vi.stubEnv("SUPABASE_DB_POOLER_URL", "postgres://supavisor.offline.invalid:6543/db");
     vi.stubEnv("POSTGRES_URL", "postgres://pooler.offline.invalid:6543/db");
+    expect((await signed()).code).toBe(200);
+    vi.stubEnv("SUPABASE_DB_POOLER_URL", "");
     expect((await signed()).code).toBe(200);
     vi.stubEnv("SUPABASE_DB_URL", "");
     expect((await signed()).code).toBe(200);
-    expect(pools.urls).toEqual(["postgres://offline.invalid/db", "postgres://pooler.offline.invalid:6543/db"]);
+    expect(pools.urls).toEqual(["postgres://supavisor.offline.invalid:6543/db", "postgres://offline.invalid/db", "postgres://pooler.offline.invalid:6543/db"]);
     vi.stubEnv("POSTGRES_URL", "");
     expect((await signed()).body).toEqual({ success: false, status: "failed", reason: "database_url_missing" });
-    expect(pools.created).toBe(2);
-    expect(handle).toHaveBeenCalledTimes(2);
+    expect(pools.created).toBe(3);
+    expect(handle).toHaveBeenCalledTimes(3);
   });
 });
