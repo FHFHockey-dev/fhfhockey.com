@@ -366,3 +366,46 @@ describe.runIf(Boolean(bin))("h10 nightly after a lost publication response", ()
     }
   }, 900000);
 });
+
+// Production configuration (Chef, 2026-11-24): the interval-editions migration is not applied, so the interval phase
+// skips. The night must still issue every key and end complete with its marker; no calibration or edition is written.
+describe.runIf(Boolean(bin))("h10 nightly without the interval table", () => {
+  let root: string, socket: string, admin: Pool, started = false;
+  const environment: NodeJS.ProcessEnv = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))), NODE_ENV: "test" };
+  const now = Date.now(), cutoff = Date.parse(easternDailyDeadline(easternDate(new Date(now).toISOString()))) - 4 * 3600000;
+  const league = syntheticLeague({ anchor: now, teams: 6, pastDays: 40 });
+  const config: H10RouteConfig = { enabled: true, approvalEvidenceId: "fixture-route-no-intervals", approvedAt: new Date(cutoff - 3600000).toISOString(), codeVersion: "local-route-test",
+    seasonId: H10_SEASON, logIngestUtcMinute: 450, gameHours: 3.5, rosterMaxAgeHours: 36, maximumTrainingExamples: 1500, budgetMs: 120000, logsWindowDays: 60, minimumPlayers: 100, expectedTeams: 6 };
+
+  beforeAll(async () => {
+    root = await mkdtemp(join(tmpdir(), "forge-h10-route-nointervals-")); socket = join(root, "socket");
+    await mkdir(socket, { mode: 0o700 });
+    await exec(join(bin!, "initdb"), ["-D", join(root, "data"), "--no-locale", "--encoding=UTF8", "--auth-local=trust", "--auth-host=reject", "-U", "forge_v2_fixture"], { env: environment });
+    await exec(join(bin!, "pg_ctl"), ["-D", join(root, "data"), "-l", join(root, "server.log"), "-w", "-t", "10", "-o", `-c listen_addresses='' -c unix_socket_directories='${socket}' -p 65464`, "start"], { env: environment });
+    started = true;
+    admin = new Pool({ host: socket, port: 65464, user: "forge_v2_fixture", database: "postgres", max: 3 });
+    await admin.query("create role anon; create role authenticated; create role service_role login");
+    for (const file of migrations.filter(file => !file.endsWith("20261124000000_forge_h10_interval_editions.sql"))) await admin.query(await readFile(file, "utf8"));
+    await seedH10Public(admin, league, cutoff);
+  }, 120000);
+  afterAll(async () => {
+    await admin?.end();
+    if (started) await exec(join(bin!, "pg_ctl"), ["-D", join(root, "data"), "-w", "-t", "10", "stop", "-m", "fast"], { env: environment });
+    if (root) await rm(root, { recursive: true, force: true });
+  });
+
+  it("issues every key and completes with its marker when the interval phase skips", async () => {
+    expect((await admin.query("select to_regclass('forge_v2_private.forge_h10_interval_editions') is null as missing")).rows[0].missing).toBe(true);
+    const call = (budgetMs: number) => handleH10Shadow({ mode: "nightly", now: Date.now(), db: admin as unknown as SqlConnection, config: { ...config, budgetMs } });
+    let last = await call(1), calls = 1;
+    expect(last.body.status).toBe("continued");
+    for (; calls < 80 && last.body.status !== "complete" && last.body.status !== "incomplete"; calls++) last = await call(15000);
+    expect(last.body).toMatchObject({ status: "complete", scopes: 1380, goalieKeys: 120, jobs: { published: 1380 }, intervals: { complete: true, skipped: "interval_table_not_migrated" } });
+    expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_vintages")).rows[0].n).toBe(1380);
+    expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_goalie_vintages")).rows[0].n).toBe(120);
+    const records = (await admin.query("select scope_key from forge_v2_private.forge_v2_records where scope_key like 'forge-h10-nightly-%' or scope_key like 'forge-h10-interval-calibration:%'")).rows.map(r => r.scope_key as string);
+    expect(records.filter(k => k.startsWith("forge-h10-nightly-complete:"))).toHaveLength(1);
+    expect(records.filter(k => k.startsWith("forge-h10-nightly-incomplete:") || k.startsWith("forge-h10-interval-calibration:"))).toEqual([]);
+    expect((await call(15000)).body).toMatchObject({ status: "complete", cached: true });
+  }, 600000);
+});
