@@ -102,7 +102,7 @@ function issue(input: H10RouteInput, value: Frozen, logs: H10GameLog[], trigger:
 async function goaliePhase(input: H10RouteInput, value: Frozen, built: Awaited<ReturnType<typeof inputs>>, trigger: "daily" | { material: MaterialEvent[] }, evidence?: H10RunInput["evidence"]) {
   const migrated = (await input.db.query<{ ok: boolean }>("select to_regclass('forge_v2_private.forge_v2_goalie_vintages') is not null as ok")).rows[0]?.ok;
   const goalieKeys = value.denominator.keys.filter(key => key.playerClass === "goalie");
-  if (!migrated) return { complete: true, published: 0, reused: 0, gaps: goalieKeys.map(key => ({ playerId: key.playerId, gameId: key.gameId, reason: "goalie_tables_not_migrated" })) };
+  if (!migrated) return { complete: true, keys: goalieKeys.length, published: 0, reused: 0, gaps: goalieKeys.map(key => ({ playerId: key.playerId, gameId: key.gameId, reason: "goalie_tables_not_migrated" })) };
   return runH10GoalieIssuance({ db: input.db, denominator: value.denominator, schedule: value.schedule, skaterLogs: built.logs, goalieLogs: built.goalieLogs, clock: () => new Date().toISOString(),
     trigger, stopAfterMs: input.now + input.config.budgetMs, evidence,
     config: { evidenceClass: "prospective_shadow", approvalEvidenceId: input.config.approvalEvidenceId, codeVersion: input.config.codeVersion, maximumTrainingExamples: input.config.maximumTrainingExamples } });
@@ -115,10 +115,14 @@ function intervalPhase(input: H10RouteInput, value: Frozen, built: Awaited<Retur
 }
 /** Every frozen key not issued tonight, by cause: failed or expired skater jobs, skater keys never queued (gaps) and
  * goalie gaps (lock closed, schedule fields, thin training, publish failed after its retries). Empty means full. */
-function shortfallOf(report: Awaited<ReturnType<typeof runH10Issuance>>, goalies: { gaps: ReadonlyArray<{ reason: string }> } | null) {
+export function shortfallOf(report: { jobs: Record<string, number>; gaps: ReadonlyArray<{ reason: string }> },
+  goalies: { keys?: number; published: number; reused: number; gaps: ReadonlyArray<{ reason: string }> } | null, expectedGoalieKeys: number) {
   const byReason = (gaps: ReadonlyArray<{ reason: string }>) => gaps.reduce((map, gap) => ({ ...map, [gap.reason]: (map[gap.reason] ?? 0) + 1 }), {} as Record<string, number>);
+  // Accounting: every expected goalie key is published, reused or a declared gap; anything else is unaccounted.
+  const unaccounted = goalies ? expectedGoalieKeys - goalies.published - goalies.reused - goalies.gaps.length : expectedGoalieKeys;
   return { ...(report.jobs.failed ? { skaterJobsFailed: report.jobs.failed } : {}), ...(report.jobs.expired ? { skaterJobsExpired: report.jobs.expired } : {}),
-    ...(report.gaps.length ? { skaterGaps: byReason(report.gaps) } : {}), ...(goalies?.gaps.length ? { goalieGaps: byReason(goalies.gaps) } : {}) };
+    ...(report.gaps.length ? { skaterGaps: byReason(report.gaps) } : {}), ...(goalies?.gaps.length ? { goalieGaps: byReason(goalies.gaps) } : {}),
+    ...(unaccounted !== 0 ? { goalieKeysUnaccounted: unaccounted } : {}) };
 }
 const summary = (report: Awaited<ReturnType<typeof runH10Issuance>>) => ({ denominatorSha256: report.denominatorSha256, asOf: report.asOf, trigger: report.trigger, scopes: report.scopes, goalieKeys: report.goalieKeys,
   gaps: report.gaps.reduce((map, gap) => ({ ...map, [gap.reason]: (map[gap.reason] ?? 0) + 1 }), {} as Record<string, number>), jobs: report.jobs, queues: report.queues, training: report.training, finished: report.finished, complete: report.complete });
@@ -208,7 +212,7 @@ export async function handleH10Shadow(input: H10RouteInput): Promise<{ status: n
     const goalies = report.finished ? await goaliePhase(input, value, current, "daily") : null;
     const intervals = report.finished && goalies?.complete === true ? await intervalPhase(input, value, current, date, value.denominator.asOf!) : null;
     // Complete means every frozen key issued: a failed or expired job, or any skater or goalie gap, is incomplete.
-    const shortfall = shortfallOf(report, goalies);
+    const shortfall = shortfallOf(report, goalies, value.denominator.keys.filter(k => k.playerClass === "goalie").length);
     const finished = report.finished && goalies?.complete === true && intervals?.complete === true, complete = finished && report.complete && !Object.keys(shortfall).length;
     const intervalSummary = intervals?.skipped ? { skipped: intervals.skipped } : finished ? await intervalCoverage(input.db, value.denominator) : null;
     const marker = { denominatorSha256: report.denominatorSha256, asOf: report.asOf, jobs: report.jobs, goalies: goalies ? { published: goalies.published, reused: goalies.reused, gaps: goalies.gaps.length } : null,
@@ -305,7 +309,8 @@ export async function handleH10Shadow(input: H10RouteInput): Promise<{ status: n
   const report = await issue(input, value, built.logs, { material: events }, [...keysOf(nightly.denominator), ...keysOf(previous?.denominator)], evidence);
   const goalies = report.finished ? await goaliePhase(input, value, built, { material: events }, evidence) : null;
   const intervals = report.finished && goalies?.complete === true ? await intervalPhase(input, value, built, date, nightly.denominator.asOf!) : null;
-  const shortfall = shortfallOf(report, goalies);
+  // Material re-issues only the goalies its events name: those keys are the expected ones.
+  const shortfall = shortfallOf(report, goalies, goalies?.keys ?? 0);
   const finished = report.finished && goalies?.complete === true && intervals?.complete === true, complete = finished && report.complete && !Object.keys(shortfall).length;
   return { status: 200, body: { success: complete || !finished, status: complete ? "complete" : finished ? "incomplete" : "continued", ...(finished && !complete ? { reason: "keys_not_issued", shortfall } : {}), moved: moved.length, availability: rosterEvents.length, ...summary(report), goalies, intervals,
     ...newsBody, ...(finished ? await overlay(value.denominator) : {}) } };

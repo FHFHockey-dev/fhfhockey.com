@@ -9,7 +9,7 @@ import { Pool } from "pg";
 import { SqlConnection } from "./history.server";
 import { DET, H10_SEASON, LARKIN, MTL, seedH10Public, syntheticLeague } from "./h10Fixtures";
 import { CALIBRATION_RESERVE_MS, runIntervalPhase } from "./h10IntervalStore.server";
-import { handleH10Shadow, h10DenominatorGuard, h10RouteConfig, H10RouteConfig } from "./h10Route.server";
+import { handleH10Shadow, h10DenominatorGuard, h10RouteConfig, H10RouteConfig, shortfallOf } from "./h10Route.server";
 import { buildDenominator } from "./denominator";
 import { easternDailyDeadline, easternDate } from "./refresh";
 
@@ -26,6 +26,20 @@ describe("h10 denominator guard", () => {
 });
 
 describe("h10 route configuration", () => {
+  it("counts a night short unless every expected key is published or reused (any gap, failure or unaccounted goalie key)", () => {
+    const clean = { jobs: { published: 20 }, gaps: [] };
+    expect(shortfallOf(clean, { keys: 4, published: 3, reused: 1, gaps: [] }, 4)).toEqual({});
+    // A goalie key neither published nor reported (an unreported gap) is caught by the accounting.
+    expect(shortfallOf(clean, { keys: 4, published: 3, reused: 0, gaps: [] }, 4)).toEqual({ goalieKeysUnaccounted: 1 });
+    // A lock passing before issuance, as in rehearsal B, is a declared gap and still short.
+    expect(shortfallOf(clean, { keys: 4, published: 2, reused: 0, gaps: [{ reason: "issuance_lock_closed" }, { reason: "issuance_lock_closed" }] }, 4))
+      .toEqual({ goalieGaps: { issuance_lock_closed: 2 } });
+    expect(shortfallOf({ jobs: { published: 18, failed: 1, expired: 1 }, gaps: [{ reason: "schedule_fields_missing" }] }, { keys: 4, published: 4, reused: 0, gaps: [] }, 4))
+      .toEqual({ skaterJobsFailed: 1, skaterJobsExpired: 1, skaterGaps: { schedule_fields_missing: 1 } });
+    // No goalie phase result at all (it never ran) leaves every expected goalie key unaccounted.
+    expect(shortfallOf(clean, null, 4)).toEqual({ goalieKeysUnaccounted: 4 });
+  });
+
   it("is off by default and fails closed without an approval id or code version", () => {
     expect(h10RouteConfig({})).toEqual({ error: "disabled" });
     expect(h10RouteConfig({ FORGE_H10_SHADOW_ENABLED: "true", VERCEL_GIT_COMMIT_SHA: "abc" })).toEqual({ error: "approval_or_code_version_missing" });

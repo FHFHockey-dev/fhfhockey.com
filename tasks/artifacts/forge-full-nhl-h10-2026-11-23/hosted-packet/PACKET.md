@@ -380,3 +380,21 @@ Still to approve:
 4. **Each monthly archive** (upload, verify, detach, drop).
 5. **Open, not needed for H10:** the extra 07:45Z `update-players` run; G2b; the duplicate `UTA` row in `teams`; author
    provenance on the 28% of accepted cards that have none (Codex lanes).
+
+## 11. After release (2026-11-24): uncertainty, first-night verifier, completion rule (local candidates, not released)
+
+H10 went to production on master `7db94da1d` (Chef, TJ's per-step pop-ups). Everything below is a **local candidate**.
+Each item needs TJ's separate approval to release. None is a migration applied, a deploy, a cron change or a route run.
+
+- **First-night verifier.** `first-night-verify.sql` (`f3695ee76`): read-only and key-by-key. TJ: a night is judged only by this check, never by the route's marker. Unchanged since.
+- **Uncertainty.** 50% and 90% predictive bands per issued key (`93ee303b2` … `f6bd031ca`; receipt `INTERVALS.md`).
+  - Additive migration `20261124000000`, not applied.
+  - Bands are conditional (if appearing / if starting) and not summable.
+  - Goalie band policy v1 (TJ), with a predeclared revisit threshold.
+  - Same-cutoff parity: 8,040 of 8,040 forecasts byte-identical with and without bands.
+  - Worst call 200.3 s against 200.8 s without bands.
+- **Completion rule** (`3853901512`, `08a4c0efa`, and the goalie accounting commit after them). Deployed `829258397` can mark a night "complete" with skater jobs failed or expired, or goalie keys not issued. The candidate marks a night complete **only if every frozen key was issued**. Otherwise it writes `forge-h10-nightly-incomplete:<date>` with a `shortfall` by cause:
+  - `skaterJobsFailed`, `skaterJobsExpired`, `skaterGaps`;
+  - `goalieGaps`, including `publish_failed:*` after retries and `issuance_lock_closed`;
+  - `goalieKeysUnaccounted`: expected goalie keys neither published nor declared.
+- **Retries.** Bounded, same-draft (never a second edition): skaters get 3 attempts at least 60 s apart; goalies get 3 in-call attempts, 1 s and then 4 s apart. Regression tests are in `h10Route.test.ts`.
