@@ -14,6 +14,10 @@ import { IntervalCalibration, IntervalClass, IssuedVintage, KernelPrediction, Ke
 
 export const INTERVAL_TABLE = "forge_v2_private.forge_h10_interval_editions";
 const BATCH = 250;
+/** The calibration replay cannot be interrupted (about 16-25 s on a laptop for a full night). It starts only with at
+ * least this much of the dispatch budget left; otherwise the dispatch ends "continued" and the next one starts with it.
+ * With the 200 s budget and the 300 s function limit, a calibration up to 160 s still ends inside the limit. */
+export const CALIBRATION_RESERVE_MS = 60_000;
 
 export interface IntervalPhaseInput {
   db: SqlConnection;
@@ -25,14 +29,17 @@ export interface IntervalPhaseInput {
   clock: () => string; stopAfterMs?: number;
 }
 export interface IntervalPhaseReport {
-  complete: boolean; skipped?: string; calibrationId?: string; calibrationMs?: number;
+  complete: boolean; skipped?: string; deferred?: string; calibrationId?: string; calibrationMs?: number;
   pending: number; written: number; editionsWithGap: number; gaps: Record<string, number>; ms: number;
 }
 
-async function storedCalibration(input: IntervalPhaseInput): Promise<{ id: string; value: IntervalCalibration; ms: number }> {
+async function findCalibration(input: IntervalPhaseInput): Promise<{ id: string; value: IntervalCalibration; ms: number } | null> {
+  const { rows } = await input.db.query<{ id: string; payload: string }>(`select id, payload from forge_v2_private.forge_v2_records where kind = 'evaluation' and scope_key = $1 order by ordinal limit 1`,
+    [`forge-h10-interval-calibration:${input.date}`]);
+  return rows[0] ? { id: rows[0].id, value: JSON.parse(rows[0].payload) as IntervalCalibration, ms: 0 } : null;
+}
+async function fitCalibration(input: IntervalPhaseInput): Promise<{ id: string; value: IntervalCalibration; ms: number }> {
   const scope = `forge-h10-interval-calibration:${input.date}`;
-  const { rows } = await input.db.query<{ id: string; payload: string }>(`select id, payload from forge_v2_private.forge_v2_records where kind = 'evaluation' and scope_key = $1 order by ordinal limit 1`, [scope]);
-  if (rows[0]) return { id: rows[0].id, value: JSON.parse(rows[0].payload) as IntervalCalibration, ms: 0 };
   const started = Date.now();
   const value = calibrationAt({ logs: input.logs, goalieLogs: input.goalieLogs, schedule: input.schedule, seasonId: input.seasonId, asOf: input.calibrationAsOf, maximumTrainingExamples: input.maximumTrainingExamples });
   const id = `${scope}:${value.version}`;
@@ -82,9 +89,12 @@ function rebuild(input: IntervalPhaseInput, cls: IntervalClass, cutoff: Instant)
 export async function runIntervalPhase(input: IntervalPhaseInput): Promise<IntervalPhaseReport> {
   const started = Date.now(), report: IntervalPhaseReport = { complete: false, pending: 0, written: 0, editionsWithGap: 0, gaps: {}, ms: 0 };
   if (!(await input.db.query<{ ok: boolean }>(`select to_regclass('${INTERVAL_TABLE}') is not null as ok`)).rows[0]?.ok) return { ...report, complete: true, skipped: "interval_table_not_migrated" };
-  // The nightly calibration replays ten cutoffs (about 25 s on a full night): start it only inside the budget.
-  if (input.stopAfterMs !== undefined && Date.now() > input.stopAfterMs) { report.ms = Date.now() - started; return report; }
-  const calibration = await storedCalibration(input);
+  // The nightly calibration replays ten cutoffs and cannot be interrupted: start it only with the reserve left.
+  let calibration = await findCalibration(input);
+  if (!calibration) {
+    if (input.stopAfterMs !== undefined && Date.now() > input.stopAfterMs - CALIBRATION_RESERVE_MS) { report.deferred = "calibration_needs_budget_reserve"; report.ms = Date.now() - started; return report; }
+    calibration = await fitCalibration(input);
+  }
   report.calibrationId = calibration.id; report.calibrationMs = calibration.ms;
   const pending = await pendingVintages(input);
   report.pending = pending.length;

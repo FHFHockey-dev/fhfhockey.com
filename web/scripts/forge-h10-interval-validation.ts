@@ -16,10 +16,12 @@ import { writeFileSync } from "node:fs";
 import { performance } from "node:perf_hooks";
 import { Interval, instant } from "../lib/forge-v2/contracts";
 import { h10InputsFromRows } from "../lib/forge-v2/h10Reader.server";
-import { H10_INTERVAL_LEVELS, H10_INTERVAL_POLICY, IntervalObservation, calibrate, calibrationAt, calibrationCutoffs, fitH10IntervalCalibration, intervalsValid, replayAtCutoff } from "../lib/forge-v2/h10Intervals";
+import { Component } from "../lib/forge-v2/contracts";
+import { GOALIE_BAND_POLICY, H10_INTERVAL_LEVELS, H10_INTERVAL_POLICY, IntervalCalibration, IntervalObservation, baselineBands, calibrate, calibrationAt, calibrationCutoffs, chooseBands,
+  fitH10IntervalCalibration, intervalScore, intervalsValid, replayAtCutoff } from "../lib/forge-v2/h10Intervals";
 import { realRows } from "./forge-h10-real-inputs";
 
-const [packet, out] = process.argv.slice(2);
+const [packet, out, mode] = process.argv.slice(2);
 if (!packet || !out) throw new Error("usage: <packet-dir> <out.json>");
 const SEASON = 20262027, DATA_AT = "2026-11-23T17:20:00.000Z", MAX_TRAINING = 2000, DAY = 86400000;
 const FIRST_EVAL = "2026-10-24T09:00:00.000Z", LAST_EVAL = "2026-11-20T09:00:00.000Z";
@@ -96,6 +98,66 @@ async function main() {
     }
     return result;
   };
+  // ---- Goalie band policy (TJ, 2026-11-24). The rule is GOALIE_BAND_POLICY.rule, fixed before this scoring. ----
+  const replayAt = (cutoff: string) => { if (!replay.has(cutoff)) replay.set(cutoff, replayAtCutoff({ ...input, cutoff, until: DATA_AT })); return replay.get(cutoff)!; };
+  const calibrations2 = new Map<string, IntervalCalibration>();
+  const calibrationFor = (e: string) => { if (!calibrations2.has(e)) { const cs = calibrationCutoffs(e); calibrations2.set(e, fitH10IntervalCalibration(cs.flatMap(c => replayAt(c)), e, cs)); } return calibrations2.get(e)!; };
+  type Scored = { o: IntervalObservation; candidate: Component<Interval[]> };
+  const goalieAt = (cutoffs: readonly string[], receivedBy?: string) => cutoffs.flatMap(e => replayAt(e).filter(o => o.cls === "goalie" && (!receivedBy || instant(o.outcomeAvailableAt) <= instant(receivedBy)))
+    .map(o => ({ o, candidate: calibrate({ state: "available", value: o.raw }, calibrationFor(e), "goalie", o.category, o.horizon) })));
+  // Deterministic bootstrap (mulberry32) over distinct starts.
+  const rng = (seed: number) => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const select = (rows: Scored[]) => {
+    const rule = GOALIE_BAND_POLICY.rule, cells: Record<string, Record<string, unknown>> = {}, chosen: string[] = [];
+    for (const category of ["GOALS_ALLOWED", "SAVES", "SHOTS_AGAINST", "SHUTOUT", "WIN"]) for (let h = 1; h <= 7; h++) {
+      const byStart = new Map<string, number[]>();
+      for (const { o, candidate } of rows) {
+        if (o.category !== category || o.horizon !== h || candidate.state !== "available") continue;
+        const base = baselineBands(o.category, o.mean); if (base.state !== "available") continue;
+        const d = intervalScore(candidate.value[1], o.actual) - intervalScore(base.value[1], o.actual), k = `${o.playerId}:${o.gameId}`;
+        byStart.set(k, [...(byStart.get(k) ?? []), d]);
+      }
+      const diffs = [...byStart.values()].map(ds => ds.reduce((a, b) => a + b, 0) / ds.length), n = diffs.length, mean = n ? diffs.reduce((a, b) => a + b, 0) / n : NaN;
+      let upper: number | null = null;
+      if (n) {
+        const next = rng(rule.bootstrap.seed + h * 101 + category.length), means: number[] = [];
+        for (let b = 0; b < rule.bootstrap.resamples; b++) { let sum = 0; for (let i = 0; i < n; i++) sum += diffs[Math.floor(next() * n)]; means.push(sum / n); }
+        means.sort((a, b) => a - b); upper = means[Math.ceil(0.95 * means.length) - 1];
+      }
+      const selected = n >= rule.minimumDistinctStarts && upper !== null && upper < 0;
+      cells[`${category}:H${h}`] = { distinctStarts: n, meanDifference: Number(mean.toFixed(4)), upper95: upper === null ? null : Number(upper.toFixed(4)), selected };
+      if (selected) chosen.push(`${category}:H${h}`);
+    }
+    return { cells, chosen };
+  };
+  const scorePolicy = (rows: Scored[], candidate90: readonly string[]) => {
+    const table: Record<string, Record<string, unknown>> = {}, methods: Record<string, number> = {};
+    for (let h = 1; h <= 10; h++) for (const level of H10_INTERVAL_LEVELS) {
+      const at = rows.filter(r => r.o.horizon === h), cell = { policy: blank(), candidate: blank(), baseline: blank() };
+      for (const { o, candidate } of at) {
+        const base = baselineBands(o.category, o.mean), chosen = chooseBands("goalie", o.category, h, candidate, { state: "available", value: o.mean }, { candidate90 });
+        if (chosen.intervals.state === "available") { add(cell.policy, chosen.intervals.value.find(b => b.level === level)!, o.actual); const m = chosen.methods[String(level) as "0.5" | "0.9"]!; methods[`${level}:${m}`] = (methods[`${level}:${m}`] ?? 0) + 1; }
+        if (candidate.state === "available") add(cell.candidate, candidate.value.find(b => b.level === level)!, o.actual);
+        if (base.state === "available") add(cell.baseline, base.value.find(b => b.level === level)!, o.actual);
+      }
+      if (at.length) table[`H${h}|${level}`] = { distinctStarts: new Set(at.map(r => `${r.o.playerId}:${r.o.gameId}`)).size, policy: summary(cell.policy), candidate: summary(cell.candidate), baseline: summary(cell.baseline) };
+    }
+    return { byHorizon: table, bandsByMethod: methods };
+  };
+  const rule = GOALIE_BAND_POLICY.rule;
+  const selection = select(goalieAt(evals, rule.selectionWindow.outcomesReceivedBy));
+  if (mode === "--select") { process.stdout.write(`${JSON.stringify(selection, null, 1)}\n`); return; }
+  if (JSON.stringify(selection.chosen) !== JSON.stringify(GOALIE_BAND_POLICY.candidate90)) throw new Error(`policy_cells_differ_from_rule: ${JSON.stringify(selection.chosen)}`);
+  const holdoutRows = goalieAt(rule.holdout.cutoffs);
+  // Supporting check of the rule itself (not of TJ's policy structure): select on earlier outcomes, score later cutoffs.
+  const early = evals.filter(e => instant(e) <= instant("2026-11-05T09:00:00.000Z")), late = evals.filter(e => instant(e) >= instant("2026-11-08T09:00:00.000Z"));
+  const earlySelection = select(goalieAt(early, "2026-11-08T09:00:00.000Z"));
+  const goaliePolicy = {
+    version: GOALIE_BAND_POLICY.version, rule, selection, candidate90: GOALIE_BAND_POLICY.candidate90,
+    holdout: { cutoffs: rule.holdout.cutoffs, scoredPredictions: holdoutRows.length, distinctStarts: new Set(holdoutRows.map(r => `${r.o.playerId}:${r.o.gameId}`)).size, ...scorePolicy(holdoutRows, GOALIE_BAND_POLICY.candidate90) },
+    ruleCheck: { selectedOn: { cutoffs: early, outcomesReceivedBy: "2026-11-08T09:00:00.000Z" }, chosen: earlySelection.chosen, scoredOn: late, ...scorePolicy(goalieAt(late), earlySelection.chosen) },
+    selectionWindowInSample: scorePolicy(goalieAt(evals), GOALIE_BAND_POLICY.candidate90),
+  };
   // The nightly cost: one calibration at the production cutoff, replayed from scratch.
   const nightStarted = performance.now();
   const production = calibrationAt({ ...input, asOf: "2026-11-23T09:00:00.000Z" });
@@ -118,9 +180,11 @@ async function main() {
     rawRefusalsAtEvaluationCutoffs: (() => { const all = new Map<string, number>(); for (const e of evals) for (const [k, n] of refusals.get(e) ?? []) all.set(k, (all.get(k) ?? 0) + n);
       return Object.fromEntries([...all].sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))); })(),
     gapsByClassHorizonReason: Object.fromEntries([...gaps].sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))),
+    goaliePolicy,
     overall: table("overall"), matched: table("matched"), byHorizon: table("byHorizon"), byCategory: table("byCategory"), byHistory: table("byHistory"),
   };
   writeFileSync(out!, `${JSON.stringify(receipt, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ goaliePolicyHoldout: goaliePolicy.holdout, selected: goaliePolicy.candidate90, ruleCheckChosen: goaliePolicy.ruleCheck.chosen }, null, 1)}\n`);
   process.stdout.write(`${JSON.stringify({ replayMs: receipt.replayMs, nightlyCalibrationMs, checks, overall: receipt.overall, matched: receipt.matched, production: { observations: production.observations, fitted: receipt.productionCalibration.cellsFitted, thin: receipt.productionCalibration.cellsThin.length } }, null, 1)}\n`);
 }
 main().catch(error => { console.error(error); process.exit(1); });

@@ -147,6 +147,8 @@ export interface IntervalCalibration {
   fittedAt: Instant; availableAt: Instant; dependencyAvailableAt: Instant | null; cutoffs: Instant[]; observations: number; sampleSha256: string;
   /** `${class}:${category}:H${horizon}` → replay support and the padding per level (absent when too thin). */
   cells: Record<string, { n: number; padding: Array<{ level: 0.5 | 0.9; lower: number; upper: number }> | null }>;
+  /** Monitoring only (never switches a method): goalie replay scores per cell and level, in-sample for the candidate. */
+  goalieMonitor: Record<string, { level: 0.5 | 0.9; n: number; starts: number; candidateScore: number | null; baselineScore: number }[]>;
   version: string;
 }
 export const cellKey = (cls: IntervalClass, category: string, horizon: number) => `${cls}:${category}:H${horizon}`;
@@ -173,10 +175,28 @@ export function fitH10IntervalCalibration(observations: readonly IntervalObserva
     });
     cells[key] = { n: group.length, padding: padding.some(p => p === null) ? null : padding as Array<{ level: 0.5 | 0.9; lower: number; upper: number }> };
   }
+  const goalieMonitor: IntervalCalibration["goalieMonitor"] = {};
+  for (const [key, group] of groups) {
+    if (!key.startsWith("goalie:")) continue;
+    const cell = cells[key];
+    goalieMonitor[key] = H10_INTERVAL_LEVELS.map(level => {
+      let candidate = 0, baseline = 0, scored = 0;
+      for (const o of group) {
+        const base = baselineBands(o.category, o.mean);
+        if (base.state === "available") baseline += intervalScore(base.value.find(b => b.level === level)!, o.actual);
+        if (cell?.padding) {
+          const p = cell.padding.find(x => x.level === level)!, r = o.raw.find(b => b.level === level)!;
+          candidate += intervalScore({ level, lower: Math.max(0, r.lower - p.lower), upper: Math.min(BINARY.has(o.category) ? 1 : Infinity, r.upper + p.upper) }, o.actual); scored += 1;
+        }
+      }
+      return { level, n: group.length, starts: new Set(group.map(o => `${o.playerId}:${o.gameId}`)).size,
+        candidateScore: scored ? Number((candidate / scored).toFixed(6)) : null, baselineScore: Number((baseline / group.length).toFixed(6)) };
+    });
+  }
   const body: Omit<IntervalCalibration, "version"> = { schemaVersion: H10_CALIBRATION_SCHEMA, method: H10_CALIBRATION_METHOD, calculationVersion: INTERVAL_CALCULATION, policy: H10_INTERVAL_POLICY,
     evidence: "development_only_unreviewed" as const, fittedAt: asOf, availableAt: asOf,
     dependencyAvailableAt: rows.length ? new Date(rows.reduce((max, o) => Math.max(max, instant(o.outcomeAvailableAt)), -Infinity)).toISOString() : null,
-    cutoffs: [...cutoffs], observations: rows.length, sampleSha256: contentHash(rows.map(o => [o.cls, o.category, o.horizon, o.cutoff, o.playerId, o.gameId, o.actual, o.raw])), cells };
+    cutoffs: [...cutoffs], observations: rows.length, sampleSha256: contentHash(rows.map(o => [o.cls, o.category, o.horizon, o.cutoff, o.playerId, o.gameId, o.actual, o.raw])), cells, goalieMonitor };
   return { ...body, version: contentHash(body) };
 }
 
@@ -189,6 +209,60 @@ export function calibrate(raw: Component<Interval[]>, calibration: IntervalCalib
   const top = BINARY.has(category) ? 1 : Infinity;
   const out = raw.value.map(i => { const p = cell.padding!.find(x => x.level === i.level)!; return { level: i.level, lower: Math.max(0, i.lower - p.lower), upper: Math.min(top, i.upper + p.upper) }; });
   return intervalsValid(out, category) ? available(out) : unavailable("non_nested_calibrated_intervals");
+}
+
+export type BandMethod = "kernel_calibrated" | "poisson_baseline" | "bernoulli_baseline";
+/** The labelled simple baseline: equal-tail left-CDF quantiles of a Poisson (counts) or Bernoulli (WIN, SHUTOUT) with
+ * the stored point forecast as its mean. */
+export function baselineBands(category: string, mean: number): Component<Interval[]> {
+  if (!Number.isFinite(mean) || mean < 0 || BINARY.has(category) && mean > 1) return unavailable("baseline_mean_invalid");
+  const q = (p: number) => {
+    if (BINARY.has(category)) return p <= 1 - mean ? 0 : 1;
+    let k = 0, term = Math.exp(-mean), cdf = term;
+    while (cdf + 1e-12 < p && k < 10000) { k += 1; term *= mean / k; cdf += term; }
+    return k;
+  };
+  const bands = H10_INTERVAL_LEVELS.map(level => ({ level, lower: q((1 - level) / 2), upper: q((1 + level) / 2) }));
+  return intervalsValid(bands, category) ? available(bands) : unavailable("baseline_band_invalid");
+}
+export const baselineMethod = (category: string): BandMethod => BINARY.has(category) ? "bernoulli_baseline" : "poisson_baseline";
+/** Winkler interval score of one band for one outcome (lower is better). */
+export const intervalScore = (band: Interval, actual: number) =>
+  band.upper - band.lower + (2 / (1 - band.level)) * (Math.max(0, band.lower - actual) + Math.max(0, actual - band.upper));
+
+/** Goalie band policy (TJ, 2026-11-24, by pop-up). Goalie 50% at H1–H10 and goalie 90% at H8–H10 use the labelled
+ * baseline. Goalie 90% at H1–H7 uses the calibrated kernel band only in cells the predeclared reliability rule
+ * selected, and only when that band contains the 50% band; otherwise the baseline for both levels. Skaters use the
+ * calibrated kernel band at both levels. The cell list is fixed per policy version: a new cutoff is monitored (the
+ * nightly calibration record carries the replay scores) but never switches a method, and past editions are never
+ * rewritten. The rule was written down before any scoring (see INTERVALS.md). */
+export const GOALIE_BAND_POLICY = {
+  version: "forge-h10-goalie-band-policy-v1",
+  rule: {
+    candidateCells: "goalie 90% at H1-H7, per category x horizon",
+    minimumDistinctStarts: 150,
+    criterion: "one-sided 95% bootstrap upper bound (95th percentile of resampled means) of the mean paired interval-score difference, candidate minus baseline, per distinct start, below 0",
+    bootstrap: { resamples: 2000, seed: 20261124, unit: "distinct goalie start (player, game)" },
+    selectionWindow: { first: "2026-10-24T09:00:00.000Z", last: "2026-11-20T09:00:00.000Z", stepDays: 3, outcomesReceivedBy: "2026-11-21T09:00:00.000Z" },
+    holdout: { cutoffs: ["2026-11-21T09:00:00.000Z", "2026-11-22T09:00:00.000Z", "2026-11-23T09:00:00.000Z"], note: "outcomes after the selection data; daily cutoffs" },
+  },
+  /** Cells selected by the rule on the selection window (scripts/forge-h10-interval-validation.ts --select). */
+  candidate90: ["SAVES:H2", "SAVES:H4"] as readonly string[],
+} as const;
+
+/** The bands an edition issues for one category, with the method behind each band. */
+export function chooseBands(cls: IntervalClass, category: string, horizon: number, candidate: Component<Interval[]>, point: Component<number>,
+  policy: { candidate90: readonly string[] } = GOALIE_BAND_POLICY): { intervals: Component<Interval[]>; methods: Partial<Record<"0.5" | "0.9", BandMethod>> } {
+  if (cls === "skater") return candidate.state === "available" ? { intervals: candidate, methods: { "0.5": "kernel_calibrated", "0.9": "kernel_calibrated" } } : { intervals: candidate, methods: {} };
+  if (point.state !== "available") return { intervals: unavailable(`no_valid_band:point_${point.reason}`), methods: {} };
+  const base = baselineBands(category, point.value), method = baselineMethod(category);
+  if (base.state !== "available") return { intervals: unavailable(`no_valid_band:${base.reason}`), methods: {} };
+  const [half, ninety] = base.value;
+  if (horizon <= 7 && policy.candidate90.includes(`${category}:H${horizon}`) && candidate.state === "available") {
+    const c90 = candidate.value.find(b => b.level === 0.9)!;
+    if (intervalsValid([half, c90], category)) return { intervals: available([half, c90]), methods: { "0.5": method, "0.9": "kernel_calibrated" } };
+  }
+  return { intervals: available([half, ninety]), methods: { "0.5": method, "0.9": method } };
 }
 
 /** Replay cutoffs before the issuing cutoff: every `stepDays`, at most `cutoffs` of them. */
@@ -273,7 +347,10 @@ export interface IntervalEdition {
   method: { id: typeof H10_INTERVAL_METHOD; calculationVersion: typeof INTERVAL_CALCULATION; policy: typeof H10_INTERVAL_POLICY };
   calibration: { id: string; version: string; availableAt: Instant; evidence: "development_only_unreviewed" } | null;
   support: number;
-  categories: Record<string, { point: Component<number>; intervals: Component<Interval[]>; rawIntervals: Component<Interval[]>; effectiveSupport: number }>;
+  /** Which method issued each band, per category and level; the candidate bands are kept for monitoring. */
+  bandPolicy: typeof GOALIE_BAND_POLICY.version;
+  categories: Record<string, { point: Component<number>; intervals: Component<Interval[]>; methods: Partial<Record<"0.5" | "0.9", BandMethod>>;
+    candidateIntervals: Component<Interval[]>; rawIntervals: Component<Interval[]>; effectiveSupport: number }>;
   limitations: string[];
 }
 export interface IssuedVintage {
@@ -297,8 +374,10 @@ export function buildIntervalEdition(input: { cls: IntervalClass; vintage: Issue
       const mean = prediction.means[category];
       raw = mean.state !== "available" || Math.abs(mean.value - point.value) > 1e-9 ? unavailable("point_forecast_mismatch") : prediction.raw[category];
     }
-    const intervals = calibrationLate ? unavailable("calibration_not_available_at_cutoff") : calibrate(raw, input.calibration?.value ?? null, cls, category, v.horizon);
-    categories[category] = { point, intervals, rawIntervals: raw, effectiveSupport: Number((prediction?.effectiveSupport[category] ?? 0).toFixed(6)) };
+    const candidate = calibrationLate ? unavailable("calibration_not_available_at_cutoff") : calibrate(raw, input.calibration?.value ?? null, cls, category, v.horizon);
+    const chosen = chooseBands(cls, category, v.horizon, candidate, point);
+    categories[category] = { point, intervals: chosen.intervals, methods: chosen.methods, candidateIntervals: candidate, rawIntervals: raw,
+      effectiveSupport: Number((prediction?.effectiveSupport[category] ?? 0).toFixed(6)) };
   }
   return {
     schemaVersion: H10_INTERVAL_SCHEMA, id: `h10-interval:${v.id}`, vintageId: v.id, vintageOutputHash: v.outputHash,
@@ -307,9 +386,10 @@ export function buildIntervalEdition(input: { cls: IntervalClass; vintage: Issue
     inputCutoffAt: v.inputCutoffAt, generatedAt: input.generatedAt, modelVersion: v.modelVersion, featureVersion: v.featureVersion,
     method: { id: H10_INTERVAL_METHOD, calculationVersion: INTERVAL_CALCULATION, policy: H10_INTERVAL_POLICY },
     calibration: input.calibration ? { id: input.calibration.id, version: input.calibration.value.version, availableAt: input.calibration.value.availableAt, evidence: "development_only_unreviewed" } : null,
-    support: prediction?.support ?? 0, categories,
+    support: prediction?.support ?? 0, bandPolicy: GOALIE_BAND_POLICY.version, categories,
     limitations: ["conditional_on_" + H10_CONDITIONAL_ON[cls], cls === "goalie" ? "start_probability_not_modelled" : "participation_not_modelled",
-      "marginal_bands_not_summable_use_joint_scoring", "calibration_development_only_unreviewed", "predeclared_recipe_unreviewed"],
+      "marginal_bands_not_summable_use_joint_scoring", "calibration_development_only_unreviewed", "predeclared_recipe_unreviewed",
+      ...(cls === "goalie" ? ["goalie_bands_follow_policy_baseline_where_candidate_not_reliable"] : [])],
   };
 }
 

@@ -5,7 +5,7 @@ import { buildH10Model, buildH10Training, H10RateState } from "./h10Features";
 import { GOALIE_CATEGORIES, GoalieRateState, buildGoalieTraining, goalieKernelMeans } from "./h10Goalies";
 import { H10_SEASON, syntheticLeague } from "./h10Fixtures";
 import {
-  H10_INTERVAL_POLICY, IntervalObservation, buildIntervalEdition, calibrate, calibrationAt, calibrationCutoffs, editionGaps, fitH10IntervalCalibration,
+  GOALIE_BAND_POLICY, H10_INTERVAL_POLICY, IntervalObservation, baselineBands, buildIntervalEdition, chooseBands, calibrate, calibrationAt, calibrationCutoffs, editionGaps, fitH10IntervalCalibration,
   goalieKernelTable, intervalsValid, predictKernel, skaterKernelTable,
 } from "./h10Intervals";
 
@@ -86,6 +86,25 @@ describe("H1–H10 predictive intervals", () => {
     expect(Object.values(calibration.cells).some(c => c.padding)).toBe(true);
     expect(calibration.version).toMatch(/^[a-f0-9]{64}$/);
   }, 60000);
+
+  it("applies TJ's goalie band policy and records the method behind every band", () => {
+    const candidate = available([{ level: 0.5 as const, lower: 22, upper: 30 }, { level: 0.9 as const, lower: 15, upper: 36 }]), mean = available(26);
+    // Goalie 50% is always the baseline; 90% too outside the selected H1–H7 cells.
+    const base = (baselineBands("SAVES", 26) as { value: Interval[] }).value;
+    expect(chooseBands("goalie", "SAVES", 3, candidate, mean, { candidate90: ["SAVES:H2"] })).toEqual({ intervals: available(base), methods: { "0.5": "poisson_baseline", "0.9": "poisson_baseline" } });
+    expect(chooseBands("goalie", "SAVES", 2, candidate, mean, { candidate90: ["SAVES:H2"] }))
+      .toEqual({ intervals: available([base[0], { level: 0.9, lower: 15, upper: 36 }]), methods: { "0.5": "poisson_baseline", "0.9": "kernel_calibrated" } });
+    // H8–H10 never use the candidate, even if listed.
+    expect(chooseBands("goalie", "SAVES", 9, candidate, mean, { candidate90: ["SAVES:H9"] }).methods["0.9"]).toBe("poisson_baseline");
+    // A selected candidate that does not contain the 50% band gives way to the baseline at both levels.
+    const narrow = available([{ level: 0.5 as const, lower: 25, upper: 27 }, { level: 0.9 as const, lower: 25, upper: 28 }]);
+    expect(chooseBands("goalie", "SAVES", 2, narrow, mean, { candidate90: ["SAVES:H2"] }).methods).toEqual({ "0.5": "poisson_baseline", "0.9": "poisson_baseline" });
+    expect(chooseBands("goalie", "WIN", 1, candidate, available(0.55)).methods).toEqual({ "0.5": "bernoulli_baseline", "0.9": "bernoulli_baseline" });
+    expect(chooseBands("goalie", "SAVES", 1, candidate, unavailable("sparse_goalie_start_history")).intervals).toEqual(unavailable("no_valid_band:point_sparse_goalie_start_history"));
+    expect(chooseBands("skater", "SOG", 9, candidate, mean).methods).toEqual({ "0.5": "kernel_calibrated", "0.9": "kernel_calibrated" });
+    expect(GOALIE_BAND_POLICY.candidate90.every(cell => /^[A-Z_]+:H[1-7]$/.test(cell))).toBe(true);
+    expect(intervalsValid(base, "SAVES")).toBe(true);
+  });
 
   it("builds a conditional, non-summable edition that refuses on any mismatch with the stored point forecast", () => {
     const t = skaterKernelTable(model), game = future[0], player = league.roster.find(p => p.position !== "G" && p.teamId === game.homeTeamId)!;

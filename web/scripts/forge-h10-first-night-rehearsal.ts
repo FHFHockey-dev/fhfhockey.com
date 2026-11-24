@@ -10,6 +10,7 @@
  *     --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/forge-h10-first-night-rehearsal.ts <packet-dir> <out-dir>
  */
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 
 import { tmpdir } from "node:os";
@@ -25,11 +26,15 @@ import { intervalCoverage, runIntervalPhase } from "../lib/forge-v2/h10IntervalS
 import type { FrozenDenominator } from "../lib/forge-v2/denominator";
 
 const exec = promisify(execFile);
-const [packet, outDir, flag] = process.argv.slice(2), bin = process.env.FORGE_V2_POSTGRES_BIN;
-if (!packet || !outDir || !bin) throw new Error("usage: <packet-dir> <out-dir> [--intervals] with FORGE_V2_POSTGRES_BIN");
+const [packet, outDir, ...flags] = process.argv.slice(2), bin = process.env.FORGE_V2_POSTGRES_BIN;
+if (!packet || !outDir || !bin) throw new Error("usage: <packet-dir> <out-dir> [--intervals] [--frozen=<ISO>] [--budget-ms=<n>] [--no-extras] with FORGE_V2_POSTGRES_BIN");
+const option = (name: string) => flags.find(f => f.startsWith(`--${name}=`))?.split("=")[1];
+// --frozen: the freeze cutoff and official stamps use one fixed time, so runs on different wall clocks freeze the same
+// denominator and issue the same keys. --budget-ms: the dispatch budget.
+const FROZEN = option("frozen"), BUDGET_MS = option("budget-ms") ? Number(option("budget-ms")) : null, EXTRAS = !flags.includes("--no-extras");
 // --intervals: also apply the interval-editions migration (20261124000000), so the night issues uncertainty too; the
 // summary then carries per-dispatch times and storage for an A/B against a run without it.
-const INTERVALS = flag === "--intervals";
+const INTERVALS = flags.includes("--intervals");
 const PORT = 65461, SECRET = "local-rehearsal-h10-dispatch-signing-key-0123456789";
 const STUBS = `
 create schema extensions; create extension pgcrypto schema extensions; create extension pg_stat_statements schema extensions;
@@ -73,6 +78,11 @@ async function main() {
     const config = h10RouteConfig({ FORGE_H10_SHADOW_ENABLED: "true", FORGE_H10_SHADOW_APPROVAL_ID: "local-first-night-rehearsal-not-an-approval", FORGE_H10_SHADOW_APPROVED_AT: "2026-11-23T22:00:00Z",
       VERCEL_GIT_COMMIT_SHA: "local-rehearsal-code-version" });
     if ("error" in config) throw new Error(config.error);
+    if (BUDGET_MS) config.budgetMs = BUDGET_MS;
+    // Issuance itself runs on real time (job leases are checked against the database clock), so pick a frozen time after
+    // which no denominator game starts before the runs end.
+    const frozen = FROZEN ? { clock: () => Date.parse(FROZEN) } : {};
+    summary.options = { intervals: INTERVALS, frozen: FROZEN ?? null, budgetMs: config.budgetMs };
     const fetchRoster = async (abbrev: string) => JSON.parse(sweep(`roster_${abbrev}_20262027.json`));
 
     // One cron tick, then delivery of whatever it queued, exactly as the hosted route handles it.
@@ -91,7 +101,7 @@ async function main() {
       else {
         let outcome = "failed";
         try {
-          const result2 = await handleH10Shadow({ mode: "nightly", now: Date.now(), db, config, readRows: async () => rows, fetchRoster });
+          const result2 = await handleH10Shadow({ mode: "nightly", now: Date.now(), db, config, readRows: async () => rows, fetchRoster, ...frozen });
           outcome = String(result2.body.status ?? "unknown"); status = result2.status; body = { ...result2.body, runKey: auth.dispatch.runKey };
         } finally { await finishH10Dispatch(db, auth.dispatch.dispatchId, outcome); }
       }
@@ -119,6 +129,15 @@ async function main() {
     // A later tick after completion: the route answers from the completion marker, as production ticks to 12:45Z will.
     await tick();
     summary.complete = await verify("2-complete", runDate);
+    // Every published forecast, key by key: class, player, game, team, horizon, model version and the means (canonical).
+    const forecasts = (await admin.query(`select cls, player_id, game_id, p->>'teamId' as team, p->>'horizon' as horizon, p->>'modelVersion' as model, p->>'inputCutoffAt' as cutoff, (p->'means')::text as means
+      from (select 'skater' as cls, v.player_id, v.game_id, v.payload::jsonb as p from forge_v2_private.forge_v2_vintages v join forge_v2_private.forge_v2_publication_receipts r on r.vintage_id = v.id and r.output_hash = v.output_hash
+            union all select 'goalie', v.player_id, v.game_id, v.payload::jsonb from forge_v2_private.forge_v2_goalie_vintages v join forge_v2_private.forge_v2_goalie_publication_receipts r on r.vintage_id = v.id and r.output_hash = v.output_hash) x
+      order by 1, 2, 3, 4, 5`)).rows.map(r => [r.cls, r.player_id, r.game_id, r.team, r.horizon, r.model, r.cutoff, r.means].join("\t"));
+    await writeFile(join(outDir!, "forecasts.tsv"), `${forecasts.join("\n")}\n`);
+    const freezeOf = (await admin.query("select payload::jsonb->'denominator'->>'denominatorSha256' as sha, payload::jsonb->'denominator'->'counts'->>'keys' as keys from forge_v2_private.forge_v2_records where scope_key = $1", [`forge-h10-nightly:${runDate}`])).rows[0];
+    summary.forecasts = { denominatorSha256: freezeOf.sha, frozenKeys: Number(freezeOf.keys), published: forecasts.length, sha256: createHash("sha256").update(forecasts.join("\n")).digest("hex") };
+    process.stdout.write(`${JSON.stringify({ forecasts: summary.forecasts })}\n`);
     // Storage after one full night: every forge_v2_private table (partitions folded into their parent), with indexes.
     await admin.query("analyze");
     summary.storage = (await admin.query(`select coalesce(p.relname, c.relname) as table_name, sum(c.reltuples)::bigint as rows_estimate,
@@ -132,7 +151,7 @@ async function main() {
     // Steady state: a game stays in a team's next-ten window for 10-20 nights, so the interval reads must not grow with
     // history. Time the phase (pending read, editions) and the coverage read on tonight alone, then again after seeding
     // 15 prior nights of vintages, receipts and editions for the same keys (owner, triggers off).
-    if (INTERVALS) {
+    if (INTERVALS && EXTRAS) {
       const freezeRow = (await admin.query("select payload from forge_v2_private.forge_v2_records where scope_key = $1 order by ordinal desc limit 1", [`forge-h10-nightly:${runDate}`])).rows[0];
       const denominator = JSON.parse(freezeRow.payload).denominator as FrozenDenominator;
       const built = h10InputsFromRows(rows, { asOf: denominator.asOf!, seasonId: config.seasonId, logIngestUtcMinute: config.logIngestUtcMinute, gameHours: config.gameHours, rosterMaxAgeHours: config.rosterMaxAgeHours });
@@ -171,6 +190,7 @@ async function main() {
       process.stdout.write(`${JSON.stringify({ steadyState: { tonightOnly: { phaseMs: tonightOnly.phaseMs, coverageMs: tonightOnly.coverageMs }, withHistory: { phaseMs: withHistory.phaseMs, coverageMs: withHistory.coverageMs }, seeded } })}\n`);
     }
 
+    if (EXTRAS) {
     // Known defects, seeded directly as the owner with triggers off (replica): every check must see exactly these.
     const dc = await admin.connect();
     await dc.query("begin"); await dc.query("set local session_replication_role = replica");
@@ -199,6 +219,7 @@ async function main() {
       duplicate: { skaterH7: 1, alsoLackingModelLineage: 1 }, ignoredPriorNightEdition: { skaterH5: 1 }, freezeSha: freeze.sha };
     summary.defects = await verify("3-defects", runDate);
     summary.noFreeze = await verify("4-no-freeze", "2026-11-22");
+    }
   } finally {
     await pool.end(); await admin.end();
     await exec(join(bin!, "pg_ctl"), ["-D", join(root, "d"), "-w", "-t", "10", "stop", "-m", "fast"], { env: environment }).catch(() => undefined);

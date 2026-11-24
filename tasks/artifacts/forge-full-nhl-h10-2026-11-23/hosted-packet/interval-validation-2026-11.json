@@ -36,11 +36,11 @@
     "intervalScore": "Winkler: width + (2/alpha) * shortfall below + (2/alpha) * excess above; lower is better",
     "horizon": "k-th game of the player's team after the cutoff (team schedule, regular season)"
   },
-  "replayMs": 24546,
-  "nightlyCalibrationMs": 17500,
+  "replayMs": 25269,
+  "nightlyCalibrationMs": 17307,
   "productionCalibration": {
     "cutoff": "2026-11-23T09:00:00.000Z",
-    "version": "1556b2e62343a0339bf38236191132cdc7daabd4e1ea5237a9772cb84329da66",
+    "version": "bcb86fbd53cdad0ea0e423cb899eb75c92a56f17564ec20f4caa37d4509287ae",
     "observations": 278244,
     "cellsFitted": 120,
     "cellsThin": []
@@ -48,7 +48,7 @@
   "calibrations": [
     {
       "cutoff": "2026-10-24T09:00:00.000Z",
-      "version": "ea1650514200e70e04edad48cdb2ae8b1dd38d56db5d4244ef85ef40ed0b2220",
+      "version": "cc268c9e7df8c09c39e40a37aa17f63dfa491993eeddcf3d2073480421a80146",
       "observations": 145630,
       "cellsFitted": 105,
       "cellsThin": 15,
@@ -56,7 +56,7 @@
     },
     {
       "cutoff": "2026-10-27T09:00:00.000Z",
-      "version": "a28b5e4ff17cb6ff418dc48bff5e85bcc9cffc7382e08911c1205419457470b9",
+      "version": "c33e6d6e47c30a969e442c6ac3ec90bd3885015eee89517dfb6cc4ab2907c7b3",
       "observations": 185072,
       "cellsFitted": 110,
       "cellsThin": 10,
@@ -64,7 +64,7 @@
     },
     {
       "cutoff": "2026-10-30T09:00:00.000Z",
-      "version": "59d49f07bbfd88b59c1976b446d12640c23fdd3b05ed2c57d3ffbabca22a0f91",
+      "version": "15ed9617de225bcac7dc3a7ffb22e8f5c9db888d095f986169f53db86ebd3f35",
       "observations": 237316,
       "cellsFitted": 120,
       "cellsThin": 0,
@@ -72,7 +72,7 @@
     },
     {
       "cutoff": "2026-11-02T09:00:00.000Z",
-      "version": "1e5b5fa61351f56f8f81e3c0fad989ea5011a65f925fec4f58b8f5da06da3abe",
+      "version": "fe07e45f4cc3479e85908301cbb32f875494d7bfc6d218f6a95f0dc657a289be",
       "observations": 273472,
       "cellsFitted": 120,
       "cellsThin": 0,
@@ -80,7 +80,7 @@
     },
     {
       "cutoff": "2026-11-05T09:00:00.000Z",
-      "version": "a33c2620fbe7dcaef1b8aa934db739def6d9c7a99fcfd713d4344b0b2368df82",
+      "version": "2ce2a4b5936319e9ae0f4e52aeec6eb9633a78299e7fa609e5de6c4cbff5af60",
       "observations": 271411,
       "cellsFitted": 120,
       "cellsThin": 0,
@@ -88,7 +88,7 @@
     },
     {
       "cutoff": "2026-11-08T09:00:00.000Z",
-      "version": "4b93959e219a7107d8b9e2ccf4d63ff34b10c49a120cc3655df15637f4a256f0",
+      "version": "835d65cc03641ba22f41fa9d08a081020034d95b6c6c5adc9a9bb0f594669a79",
       "observations": 281898,
       "cellsFitted": 120,
       "cellsThin": 0,
@@ -96,7 +96,7 @@
     },
     {
       "cutoff": "2026-11-11T09:00:00.000Z",
-      "version": "3281405a79658f5b9dcae6db8538d5b2843d5643a1678dc8707b7a1f96696bf1",
+      "version": "e47ef043dbee45b12a8735cd471c5820d6a47fcdac6e95efb302c2693aeb9d5d",
       "observations": 272473,
       "cellsFitted": 120,
       "cellsThin": 0,
@@ -104,7 +104,7 @@
     },
     {
       "cutoff": "2026-11-14T09:00:00.000Z",
-      "version": "f19582fd78c84c271ba95078ec66d95b6d9d81aed3b47f5a1cf0a807916d4af3",
+      "version": "f69539dcbccff496fe20b495debf1df05078df4aed5c99c1e0993bdbe4ed4d25",
       "observations": 270777,
       "cellsFitted": 120,
       "cellsThin": 0,
@@ -112,7 +112,7 @@
     },
     {
       "cutoff": "2026-11-17T09:00:00.000Z",
-      "version": "c925971366260b10c598ff14d45b7a3189bb41a8c7ad7a9a90c8333940966d82",
+      "version": "3dc165b768552e218cf7a12e7423906245d32dcce372d55f0fae7a86677b2827",
       "observations": 271825,
       "cellsFitted": 120,
       "cellsThin": 0,
@@ -120,7 +120,7 @@
     },
     {
       "cutoff": "2026-11-20T09:00:00.000Z",
-      "version": "cdea5e6f51bb48ad00b8c54c9063e81060ae4d9712b94bceed9e7b137f2028a2",
+      "version": "0e173d4c79ee4e9ac22d457063e9ba0e58dc128e2824f0dae62bf0b63f33d248",
       "observations": 281650,
       "cellsFitted": 120,
       "cellsThin": 0,
@@ -146,6 +146,1152 @@
     "goalie:H8:calibration_support_too_thin": 160,
     "goalie:H9:calibration_support_too_thin": 315,
     "goalie:H10:calibration_support_too_thin": 305
+  },
+  "goaliePolicy": {
+    "version": "forge-h10-goalie-band-policy-v1",
+    "rule": {
+      "candidateCells": "goalie 90% at H1-H7, per category x horizon",
+      "minimumDistinctStarts": 150,
+      "criterion": "one-sided 95% bootstrap upper bound (95th percentile of resampled means) of the mean paired interval-score difference, candidate minus baseline, per distinct start, below 0",
+      "bootstrap": {
+        "resamples": 2000,
+        "seed": 20261124,
+        "unit": "distinct goalie start (player, game)"
+      },
+      "selectionWindow": {
+        "first": "2026-10-24T09:00:00.000Z",
+        "last": "2026-11-20T09:00:00.000Z",
+        "stepDays": 3,
+        "outcomesReceivedBy": "2026-11-21T09:00:00.000Z"
+      },
+      "holdout": {
+        "cutoffs": [
+          "2026-11-21T09:00:00.000Z",
+          "2026-11-22T09:00:00.000Z",
+          "2026-11-23T09:00:00.000Z"
+        ],
+        "note": "outcomes after the selection data; daily cutoffs"
+      }
+    },
+    "selection": {
+      "cells": {
+        "GOALS_ALLOWED:H1": {
+          "distinctStarts": 280,
+          "meanDifference": -0.1143,
+          "upper95": 0.375,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H2": {
+          "distinctStarts": 269,
+          "meanDifference": -0.1617,
+          "upper95": 0.329,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H3": {
+          "distinctStarts": 242,
+          "meanDifference": -0.2479,
+          "upper95": 0.2934,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H4": {
+          "distinctStarts": 217,
+          "meanDifference": -0.1152,
+          "upper95": 0.447,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H5": {
+          "distinctStarts": 191,
+          "meanDifference": 0.1047,
+          "upper95": 0.7644,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H6": {
+          "distinctStarts": 166,
+          "meanDifference": -0.2651,
+          "upper95": 0.3675,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H7": {
+          "distinctStarts": 146,
+          "meanDifference": -0.1096,
+          "upper95": 0.5753,
+          "selected": false
+        },
+        "SAVES:H1": {
+          "distinctStarts": 280,
+          "meanDifference": -0.6946,
+          "upper95": 1.3,
+          "selected": false
+        },
+        "SAVES:H2": {
+          "distinctStarts": 269,
+          "meanDifference": -3.4796,
+          "upper95": -0.5762,
+          "selected": true
+        },
+        "SAVES:H3": {
+          "distinctStarts": 242,
+          "meanDifference": -1.9194,
+          "upper95": 0.4442,
+          "selected": false
+        },
+        "SAVES:H4": {
+          "distinctStarts": 217,
+          "meanDifference": -3.0599,
+          "upper95": -0.318,
+          "selected": true
+        },
+        "SAVES:H5": {
+          "distinctStarts": 191,
+          "meanDifference": -0.5969,
+          "upper95": 2.0131,
+          "selected": false
+        },
+        "SAVES:H6": {
+          "distinctStarts": 166,
+          "meanDifference": -0.5542,
+          "upper95": 2.3976,
+          "selected": false
+        },
+        "SAVES:H7": {
+          "distinctStarts": 146,
+          "meanDifference": -2.9726,
+          "upper95": 0.5411,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H1": {
+          "distinctStarts": 280,
+          "meanDifference": -0.5893,
+          "upper95": 1.0357,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H2": {
+          "distinctStarts": 269,
+          "meanDifference": -1.3178,
+          "upper95": 0.855,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H3": {
+          "distinctStarts": 242,
+          "meanDifference": 0.0021,
+          "upper95": 1.9091,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H4": {
+          "distinctStarts": 217,
+          "meanDifference": -0.9908,
+          "upper95": 0.8456,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H5": {
+          "distinctStarts": 191,
+          "meanDifference": 0.5969,
+          "upper95": 2.7487,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H6": {
+          "distinctStarts": 166,
+          "meanDifference": 0.8735,
+          "upper95": 3.3614,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H7": {
+          "distinctStarts": 146,
+          "meanDifference": -0.2192,
+          "upper95": 2.9178,
+          "selected": false
+        },
+        "SHUTOUT:H1": {
+          "distinctStarts": 280,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "SHUTOUT:H2": {
+          "distinctStarts": 269,
+          "meanDifference": 0.0037,
+          "upper95": 0.0929,
+          "selected": false
+        },
+        "SHUTOUT:H3": {
+          "distinctStarts": 242,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "SHUTOUT:H4": {
+          "distinctStarts": 217,
+          "meanDifference": 0.0276,
+          "upper95": 0.0461,
+          "selected": false
+        },
+        "SHUTOUT:H5": {
+          "distinctStarts": 191,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "SHUTOUT:H6": {
+          "distinctStarts": 166,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "SHUTOUT:H7": {
+          "distinctStarts": 146,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H1": {
+          "distinctStarts": 280,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H2": {
+          "distinctStarts": 269,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H3": {
+          "distinctStarts": 242,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H4": {
+          "distinctStarts": 217,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H5": {
+          "distinctStarts": 191,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H6": {
+          "distinctStarts": 166,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H7": {
+          "distinctStarts": 146,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        }
+      },
+      "chosen": [
+        "SAVES:H2",
+        "SAVES:H4"
+      ]
+    },
+    "candidate90": [
+      "SAVES:H2",
+      "SAVES:H4"
+    ],
+    "holdout": {
+      "cutoffs": [
+        "2026-11-21T09:00:00.000Z",
+        "2026-11-22T09:00:00.000Z",
+        "2026-11-23T09:00:00.000Z"
+      ],
+      "scoredPredictions": 240,
+      "distinctStarts": 38,
+      "byHorizon": {
+        "H1|0.5": {
+          "distinctStarts": 38,
+          "policy": {
+            "n": 205,
+            "coverage": 0.7122,
+            "meanWidth": 3.3317,
+            "intervalScore": 8.9902
+          },
+          "candidate": {
+            "n": 205,
+            "coverage": 0.7415,
+            "meanWidth": 3.9073,
+            "intervalScore": 8.9805
+          },
+          "baseline": {
+            "n": 205,
+            "coverage": 0.7122,
+            "meanWidth": 3.3317,
+            "intervalScore": 8.9902
+          }
+        },
+        "H1|0.9": {
+          "distinctStarts": 38,
+          "policy": {
+            "n": 205,
+            "coverage": 0.9024,
+            "meanWidth": 8.0683,
+            "intervalScore": 18.1171
+          },
+          "candidate": {
+            "n": 205,
+            "coverage": 0.9073,
+            "meanWidth": 9.9659,
+            "intervalScore": 16.2098
+          },
+          "baseline": {
+            "n": 205,
+            "coverage": 0.9024,
+            "meanWidth": 8.0683,
+            "intervalScore": 18.1171
+          }
+        },
+        "H2|0.5": {
+          "distinctStarts": 7,
+          "policy": {
+            "n": 35,
+            "coverage": 0.8857,
+            "meanWidth": 3.2857,
+            "intervalScore": 6.4857
+          },
+          "candidate": {
+            "n": 35,
+            "coverage": 0.9143,
+            "meanWidth": 4,
+            "intervalScore": 6.7429
+          },
+          "baseline": {
+            "n": 35,
+            "coverage": 0.8857,
+            "meanWidth": 3.2857,
+            "intervalScore": 6.4857
+          }
+        },
+        "H2|0.9": {
+          "distinctStarts": 7,
+          "policy": {
+            "n": 35,
+            "coverage": 0.9429,
+            "meanWidth": 9.6286,
+            "intervalScore": 15.9143
+          },
+          "candidate": {
+            "n": 35,
+            "coverage": 0.9429,
+            "meanWidth": 11.0857,
+            "intervalScore": 14.5143
+          },
+          "baseline": {
+            "n": 35,
+            "coverage": 0.9429,
+            "meanWidth": 8.1429,
+            "intervalScore": 17.2857
+          }
+        }
+      },
+      "bandsByMethod": {
+        "0.5:poisson_baseline": 144,
+        "0.5:bernoulli_baseline": 96,
+        "0.9:poisson_baseline": 137,
+        "0.9:bernoulli_baseline": 96,
+        "0.9:kernel_calibrated": 7
+      }
+    },
+    "ruleCheck": {
+      "selectedOn": {
+        "cutoffs": [
+          "2026-10-24T09:00:00.000Z",
+          "2026-10-27T09:00:00.000Z",
+          "2026-10-30T09:00:00.000Z",
+          "2026-11-02T09:00:00.000Z",
+          "2026-11-05T09:00:00.000Z"
+        ],
+        "outcomesReceivedBy": "2026-11-08T09:00:00.000Z"
+      },
+      "chosen": [],
+      "scoredOn": [
+        "2026-11-08T09:00:00.000Z",
+        "2026-11-11T09:00:00.000Z",
+        "2026-11-14T09:00:00.000Z",
+        "2026-11-17T09:00:00.000Z",
+        "2026-11-20T09:00:00.000Z"
+      ],
+      "byHorizon": {
+        "H1|0.5": {
+          "distinctStarts": 153,
+          "policy": {
+            "n": 795,
+            "coverage": 0.717,
+            "meanWidth": 3.317,
+            "intervalScore": 7.8151
+          },
+          "candidate": {
+            "n": 795,
+            "coverage": 0.7572,
+            "meanWidth": 4.0969,
+            "intervalScore": 7.8151
+          },
+          "baseline": {
+            "n": 795,
+            "coverage": 0.717,
+            "meanWidth": 3.317,
+            "intervalScore": 7.8151
+          }
+        },
+        "H1|0.9": {
+          "distinctStarts": 153,
+          "policy": {
+            "n": 795,
+            "coverage": 0.9182,
+            "meanWidth": 8.0503,
+            "intervalScore": 14.7421
+          },
+          "candidate": {
+            "n": 795,
+            "coverage": 0.9308,
+            "meanWidth": 10.0629,
+            "intervalScore": 13.9874
+          },
+          "baseline": {
+            "n": 795,
+            "coverage": 0.9182,
+            "meanWidth": 8.0503,
+            "intervalScore": 14.7421
+          }
+        },
+        "H2|0.5": {
+          "distinctStarts": 129,
+          "policy": {
+            "n": 670,
+            "coverage": 0.7104,
+            "meanWidth": 3.3104,
+            "intervalScore": 7.8657
+          },
+          "candidate": {
+            "n": 670,
+            "coverage": 0.7597,
+            "meanWidth": 4.1507,
+            "intervalScore": 7.8224
+          },
+          "baseline": {
+            "n": 670,
+            "coverage": 0.7104,
+            "meanWidth": 3.3104,
+            "intervalScore": 7.8657
+          }
+        },
+        "H2|0.9": {
+          "distinctStarts": 129,
+          "policy": {
+            "n": 670,
+            "coverage": 0.9149,
+            "meanWidth": 8.0418,
+            "intervalScore": 15.5343
+          },
+          "candidate": {
+            "n": 670,
+            "coverage": 0.9358,
+            "meanWidth": 10.7149,
+            "intervalScore": 14.1478
+          },
+          "baseline": {
+            "n": 670,
+            "coverage": 0.9149,
+            "meanWidth": 8.0418,
+            "intervalScore": 15.5343
+          }
+        },
+        "H3|0.5": {
+          "distinctStarts": 113,
+          "policy": {
+            "n": 590,
+            "coverage": 0.7119,
+            "meanWidth": 3.3136,
+            "intervalScore": 7.578
+          },
+          "candidate": {
+            "n": 590,
+            "coverage": 0.7542,
+            "meanWidth": 4.0966,
+            "intervalScore": 7.5475
+          },
+          "baseline": {
+            "n": 590,
+            "coverage": 0.7119,
+            "meanWidth": 3.3136,
+            "intervalScore": 7.578
+          }
+        },
+        "H3|0.9": {
+          "distinctStarts": 113,
+          "policy": {
+            "n": 590,
+            "coverage": 0.9339,
+            "meanWidth": 8.0373,
+            "intervalScore": 13.8339
+          },
+          "candidate": {
+            "n": 590,
+            "coverage": 0.9458,
+            "meanWidth": 10.5814,
+            "intervalScore": 13.7678
+          },
+          "baseline": {
+            "n": 590,
+            "coverage": 0.9339,
+            "meanWidth": 8.0373,
+            "intervalScore": 13.8339
+          }
+        },
+        "H4|0.5": {
+          "distinctStarts": 89,
+          "policy": {
+            "n": 470,
+            "coverage": 0.7489,
+            "meanWidth": 3.2979,
+            "intervalScore": 7.6638
+          },
+          "candidate": {
+            "n": 470,
+            "coverage": 0.7766,
+            "meanWidth": 4.0979,
+            "intervalScore": 7.6979
+          },
+          "baseline": {
+            "n": 470,
+            "coverage": 0.7489,
+            "meanWidth": 3.2979,
+            "intervalScore": 7.6638
+          }
+        },
+        "H4|0.9": {
+          "distinctStarts": 89,
+          "policy": {
+            "n": 470,
+            "coverage": 0.9298,
+            "meanWidth": 8.0298,
+            "intervalScore": 15.6468
+          },
+          "candidate": {
+            "n": 470,
+            "coverage": 0.9489,
+            "meanWidth": 10.5872,
+            "intervalScore": 14.8
+          },
+          "baseline": {
+            "n": 470,
+            "coverage": 0.9298,
+            "meanWidth": 8.0298,
+            "intervalScore": 15.6468
+          }
+        },
+        "H5|0.5": {
+          "distinctStarts": 64,
+          "policy": {
+            "n": 340,
+            "coverage": 0.7206,
+            "meanWidth": 3.2971,
+            "intervalScore": 7.8147
+          },
+          "candidate": {
+            "n": 340,
+            "coverage": 0.7647,
+            "meanWidth": 4.1765,
+            "intervalScore": 7.7412
+          },
+          "baseline": {
+            "n": 340,
+            "coverage": 0.7206,
+            "meanWidth": 3.2971,
+            "intervalScore": 7.8147
+          }
+        },
+        "H5|0.9": {
+          "distinctStarts": 64,
+          "policy": {
+            "n": 340,
+            "coverage": 0.9294,
+            "meanWidth": 8.0118,
+            "intervalScore": 14.4824
+          },
+          "candidate": {
+            "n": 340,
+            "coverage": 0.9441,
+            "meanWidth": 10.8088,
+            "intervalScore": 13.9265
+          },
+          "baseline": {
+            "n": 340,
+            "coverage": 0.9294,
+            "meanWidth": 8.0118,
+            "intervalScore": 14.4824
+          }
+        },
+        "H6|0.5": {
+          "distinctStarts": 38,
+          "policy": {
+            "n": 205,
+            "coverage": 0.7317,
+            "meanWidth": 3.3073,
+            "intervalScore": 8.0878
+          },
+          "candidate": {
+            "n": 205,
+            "coverage": 0.761,
+            "meanWidth": 4.1073,
+            "intervalScore": 8.0488
+          },
+          "baseline": {
+            "n": 205,
+            "coverage": 0.7317,
+            "meanWidth": 3.3073,
+            "intervalScore": 8.0878
+          }
+        },
+        "H6|0.9": {
+          "distinctStarts": 38,
+          "policy": {
+            "n": 205,
+            "coverage": 0.9122,
+            "meanWidth": 7.9902,
+            "intervalScore": 16.1854
+          },
+          "candidate": {
+            "n": 205,
+            "coverage": 0.9317,
+            "meanWidth": 10.4195,
+            "intervalScore": 15.0049
+          },
+          "baseline": {
+            "n": 205,
+            "coverage": 0.9122,
+            "meanWidth": 7.9902,
+            "intervalScore": 16.1854
+          }
+        },
+        "H7|0.5": {
+          "distinctStarts": 15,
+          "policy": {
+            "n": 75,
+            "coverage": 0.72,
+            "meanWidth": 3.2933,
+            "intervalScore": 8.5733
+          },
+          "candidate": {
+            "n": 75,
+            "coverage": 0.7333,
+            "meanWidth": 4.24,
+            "intervalScore": 8.4533
+          },
+          "baseline": {
+            "n": 75,
+            "coverage": 0.72,
+            "meanWidth": 3.2933,
+            "intervalScore": 8.5733
+          }
+        },
+        "H7|0.9": {
+          "distinctStarts": 15,
+          "policy": {
+            "n": 75,
+            "coverage": 0.9333,
+            "meanWidth": 8,
+            "intervalScore": 16.5333
+          },
+          "candidate": {
+            "n": 75,
+            "coverage": 0.9467,
+            "meanWidth": 11.2533,
+            "intervalScore": 13.3867
+          },
+          "baseline": {
+            "n": 75,
+            "coverage": 0.9333,
+            "meanWidth": 8,
+            "intervalScore": 16.5333
+          }
+        },
+        "H8|0.5": {
+          "distinctStarts": 3,
+          "policy": {
+            "n": 15,
+            "coverage": 0.8,
+            "meanWidth": 3.2,
+            "intervalScore": 4.2667
+          },
+          "candidate": {
+            "n": 15,
+            "coverage": 0.9333,
+            "meanWidth": 4.3333,
+            "intervalScore": 4.6
+          },
+          "baseline": {
+            "n": 15,
+            "coverage": 0.8,
+            "meanWidth": 3.2,
+            "intervalScore": 4.2667
+          }
+        },
+        "H8|0.9": {
+          "distinctStarts": 3,
+          "policy": {
+            "n": 15,
+            "coverage": 1,
+            "meanWidth": 8,
+            "intervalScore": 8
+          },
+          "candidate": {
+            "n": 15,
+            "coverage": 1,
+            "meanWidth": 10.8,
+            "intervalScore": 10.8
+          },
+          "baseline": {
+            "n": 15,
+            "coverage": 1,
+            "meanWidth": 8,
+            "intervalScore": 8
+          }
+        }
+      },
+      "bandsByMethod": {
+        "0.5:poisson_baseline": 1896,
+        "0.5:bernoulli_baseline": 1264,
+        "0.9:poisson_baseline": 1896,
+        "0.9:bernoulli_baseline": 1264
+      }
+    },
+    "selectionWindowInSample": {
+      "byHorizon": {
+        "H1|0.5": {
+          "distinctStarts": 311,
+          "policy": {
+            "n": 1595,
+            "coverage": 0.7129,
+            "meanWidth": 3.2865,
+            "intervalScore": 7.6075
+          },
+          "candidate": {
+            "n": 1595,
+            "coverage": 0.7655,
+            "meanWidth": 4.3498,
+            "intervalScore": 7.6426
+          },
+          "baseline": {
+            "n": 1595,
+            "coverage": 0.7129,
+            "meanWidth": 3.2865,
+            "intervalScore": 7.6075
+          }
+        },
+        "H1|0.9": {
+          "distinctStarts": 311,
+          "policy": {
+            "n": 1595,
+            "coverage": 0.9266,
+            "meanWidth": 8.0251,
+            "intervalScore": 14.0063
+          },
+          "candidate": {
+            "n": 1595,
+            "coverage": 0.9429,
+            "meanWidth": 10.2746,
+            "intervalScore": 13.4846
+          },
+          "baseline": {
+            "n": 1595,
+            "coverage": 0.9266,
+            "meanWidth": 8.0251,
+            "intervalScore": 14.0063
+          }
+        },
+        "H2|0.5": {
+          "distinctStarts": 287,
+          "policy": {
+            "n": 1470,
+            "coverage": 0.715,
+            "meanWidth": 3.2878,
+            "intervalScore": 7.9571
+          },
+          "candidate": {
+            "n": 1470,
+            "coverage": 0.7776,
+            "meanWidth": 4.4231,
+            "intervalScore": 7.9878
+          },
+          "baseline": {
+            "n": 1470,
+            "coverage": 0.715,
+            "meanWidth": 3.2878,
+            "intervalScore": 7.9571
+          }
+        },
+        "H2|0.9": {
+          "distinctStarts": 287,
+          "policy": {
+            "n": 1470,
+            "coverage": 0.9388,
+            "meanWidth": 9.7878,
+            "intervalScore": 15.0939
+          },
+          "candidate": {
+            "n": 1470,
+            "coverage": 0.9442,
+            "meanWidth": 11.0014,
+            "intervalScore": 14.634
+          },
+          "baseline": {
+            "n": 1470,
+            "coverage": 0.917,
+            "meanWidth": 8.019,
+            "intervalScore": 16.019
+          }
+        },
+        "H3|0.5": {
+          "distinctStarts": 271,
+          "policy": {
+            "n": 1390,
+            "coverage": 0.7295,
+            "meanWidth": 3.277,
+            "intervalScore": 7.6367
+          },
+          "candidate": {
+            "n": 1390,
+            "coverage": 0.7741,
+            "meanWidth": 4.4504,
+            "intervalScore": 7.7597
+          },
+          "baseline": {
+            "n": 1390,
+            "coverage": 0.7295,
+            "meanWidth": 3.277,
+            "intervalScore": 7.6367
+          }
+        },
+        "H3|0.9": {
+          "distinctStarts": 271,
+          "policy": {
+            "n": 1390,
+            "coverage": 0.9281,
+            "meanWidth": 8.0151,
+            "intervalScore": 14.6194
+          },
+          "candidate": {
+            "n": 1390,
+            "coverage": 0.9439,
+            "meanWidth": 10.5403,
+            "intervalScore": 13.9504
+          },
+          "baseline": {
+            "n": 1390,
+            "coverage": 0.9281,
+            "meanWidth": 8.0151,
+            "intervalScore": 14.6194
+          }
+        },
+        "H4|0.5": {
+          "distinctStarts": 247,
+          "policy": {
+            "n": 1270,
+            "coverage": 0.7409,
+            "meanWidth": 3.2661,
+            "intervalScore": 7.4835
+          },
+          "candidate": {
+            "n": 1270,
+            "coverage": 0.7827,
+            "meanWidth": 4.3236,
+            "intervalScore": 7.5898
+          },
+          "baseline": {
+            "n": 1270,
+            "coverage": 0.7409,
+            "meanWidth": 3.2661,
+            "intervalScore": 7.4835
+          }
+        },
+        "H4|0.9": {
+          "distinctStarts": 247,
+          "policy": {
+            "n": 1270,
+            "coverage": 0.9441,
+            "meanWidth": 9.5228,
+            "intervalScore": 14.1528
+          },
+          "candidate": {
+            "n": 1270,
+            "coverage": 0.9433,
+            "meanWidth": 10.2992,
+            "intervalScore": 13.9055
+          },
+          "baseline": {
+            "n": 1270,
+            "coverage": 0.9276,
+            "meanWidth": 8.0134,
+            "intervalScore": 14.7693
+          }
+        },
+        "H5|0.5": {
+          "distinctStarts": 222,
+          "policy": {
+            "n": 1140,
+            "coverage": 0.7132,
+            "meanWidth": 3.2684,
+            "intervalScore": 7.5912
+          },
+          "candidate": {
+            "n": 1140,
+            "coverage": 0.786,
+            "meanWidth": 4.8289,
+            "intervalScore": 7.8184
+          },
+          "baseline": {
+            "n": 1140,
+            "coverage": 0.7132,
+            "meanWidth": 3.2684,
+            "intervalScore": 7.5912
+          }
+        },
+        "H5|0.9": {
+          "distinctStarts": 222,
+          "policy": {
+            "n": 1140,
+            "coverage": 0.9289,
+            "meanWidth": 8.0105,
+            "intervalScore": 14.2561
+          },
+          "candidate": {
+            "n": 1140,
+            "coverage": 0.943,
+            "meanWidth": 10.8684,
+            "intervalScore": 14.114
+          },
+          "baseline": {
+            "n": 1140,
+            "coverage": 0.9289,
+            "meanWidth": 8.0105,
+            "intervalScore": 14.2561
+          }
+        },
+        "H6|0.5": {
+          "distinctStarts": 195,
+          "policy": {
+            "n": 1000,
+            "coverage": 0.736,
+            "meanWidth": 3.258,
+            "intervalScore": 7.438
+          },
+          "candidate": {
+            "n": 1000,
+            "coverage": 0.803,
+            "meanWidth": 4.581,
+            "intervalScore": 7.549
+          },
+          "baseline": {
+            "n": 1000,
+            "coverage": 0.736,
+            "meanWidth": 3.258,
+            "intervalScore": 7.438
+          }
+        },
+        "H6|0.9": {
+          "distinctStarts": 195,
+          "policy": {
+            "n": 1000,
+            "coverage": 0.932,
+            "meanWidth": 7.998,
+            "intervalScore": 14.558
+          },
+          "candidate": {
+            "n": 1000,
+            "coverage": 0.946,
+            "meanWidth": 10.705,
+            "intervalScore": 14.225
+          },
+          "baseline": {
+            "n": 1000,
+            "coverage": 0.932,
+            "meanWidth": 7.998,
+            "intervalScore": 14.558
+          }
+        },
+        "H7|0.5": {
+          "distinctStarts": 171,
+          "policy": {
+            "n": 865,
+            "coverage": 0.7121,
+            "meanWidth": 3.2497,
+            "intervalScore": 7.9572
+          },
+          "candidate": {
+            "n": 865,
+            "coverage": 0.7769,
+            "meanWidth": 4.7156,
+            "intervalScore": 7.8925
+          },
+          "baseline": {
+            "n": 865,
+            "coverage": 0.7121,
+            "meanWidth": 3.2497,
+            "intervalScore": 7.9572
+          }
+        },
+        "H7|0.9": {
+          "distinctStarts": 171,
+          "policy": {
+            "n": 865,
+            "coverage": 0.9202,
+            "meanWidth": 8.0012,
+            "intervalScore": 14.452
+          },
+          "candidate": {
+            "n": 865,
+            "coverage": 0.9538,
+            "meanWidth": 11.163,
+            "intervalScore": 13.4289
+          },
+          "baseline": {
+            "n": 865,
+            "coverage": 0.9202,
+            "meanWidth": 8.0012,
+            "intervalScore": 14.452
+          }
+        },
+        "H8|0.5": {
+          "distinctStarts": 150,
+          "policy": {
+            "n": 760,
+            "coverage": 0.7368,
+            "meanWidth": 3.2513,
+            "intervalScore": 7.325
+          },
+          "candidate": {
+            "n": 600,
+            "coverage": 0.8183,
+            "meanWidth": 4.9167,
+            "intervalScore": 7.5233
+          },
+          "baseline": {
+            "n": 760,
+            "coverage": 0.7368,
+            "meanWidth": 3.2513,
+            "intervalScore": 7.325
+          }
+        },
+        "H8|0.9": {
+          "distinctStarts": 150,
+          "policy": {
+            "n": 760,
+            "coverage": 0.9303,
+            "meanWidth": 8.0079,
+            "intervalScore": 14.0605
+          },
+          "candidate": {
+            "n": 600,
+            "coverage": 0.9533,
+            "meanWidth": 11.5567,
+            "intervalScore": 14.4233
+          },
+          "baseline": {
+            "n": 760,
+            "coverage": 0.9303,
+            "meanWidth": 8.0079,
+            "intervalScore": 14.0605
+          }
+        },
+        "H9|0.5": {
+          "distinctStarts": 125,
+          "policy": {
+            "n": 630,
+            "coverage": 0.7016,
+            "meanWidth": 3.273,
+            "intervalScore": 7.4
+          },
+          "candidate": {
+            "n": 315,
+            "coverage": 0.7873,
+            "meanWidth": 5.1079,
+            "intervalScore": 8.2698
+          },
+          "baseline": {
+            "n": 630,
+            "coverage": 0.7016,
+            "meanWidth": 3.273,
+            "intervalScore": 7.4
+          }
+        },
+        "H9|0.9": {
+          "distinctStarts": 125,
+          "policy": {
+            "n": 630,
+            "coverage": 0.927,
+            "meanWidth": 8.0175,
+            "intervalScore": 13.1286
+          },
+          "candidate": {
+            "n": 315,
+            "coverage": 0.9365,
+            "meanWidth": 10.9524,
+            "intervalScore": 14.3175
+          },
+          "baseline": {
+            "n": 630,
+            "coverage": 0.927,
+            "meanWidth": 8.0175,
+            "intervalScore": 13.1286
+          }
+        },
+        "H10|0.5": {
+          "distinctStarts": 100,
+          "policy": {
+            "n": 500,
+            "coverage": 0.742,
+            "meanWidth": 3.3,
+            "intervalScore": 7.436
+          },
+          "candidate": {
+            "n": 195,
+            "coverage": 0.8205,
+            "meanWidth": 5.0872,
+            "intervalScore": 8.1436
+          },
+          "baseline": {
+            "n": 500,
+            "coverage": 0.742,
+            "meanWidth": 3.3,
+            "intervalScore": 7.436
+          }
+        },
+        "H10|0.9": {
+          "distinctStarts": 100,
+          "policy": {
+            "n": 500,
+            "coverage": 0.936,
+            "meanWidth": 8.016,
+            "intervalScore": 15.096
+          },
+          "candidate": {
+            "n": 195,
+            "coverage": 0.9385,
+            "meanWidth": 13.3179,
+            "intervalScore": 16.6
+          },
+          "baseline": {
+            "n": 500,
+            "coverage": 0.936,
+            "meanWidth": 8.016,
+            "intervalScore": 15.096
+          }
+        }
+      },
+      "bandsByMethod": {
+        "0.5:poisson_baseline": 6372,
+        "0.5:bernoulli_baseline": 4248,
+        "0.9:poisson_baseline": 5824,
+        "0.9:bernoulli_baseline": 4248,
+        "0.9:kernel_calibrated": 548
+      }
+    }
   },
   "overall": {
     "goalie|0.5": {

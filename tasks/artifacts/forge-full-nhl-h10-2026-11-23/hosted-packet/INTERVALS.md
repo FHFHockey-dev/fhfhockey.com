@@ -68,6 +68,80 @@ Goalie rows are matched: the baseline is scored on the same 9,840 outcomes that 
 - **Limitation, later in the season.** The route reads a 60-day log window. Today it covers the whole season, so this validation could not show the effect. From about late November on, a replay at a cutoff up to 30 days back sees only 30–57 days of rate history, not exactly what was issued then. The calibration replay then approximates the issued forecasts rather than reproducing them. Widening the route's window, or reading season-to-date for the replay, would fix that. It needs its own decision.
 - **Gaps.** No raw band was refused for thin kernel support at the evaluation cutoffs. Calibration was too thin for goalie H8–H10 at the earliest cutoffs: 780 outcomes in total, counted as open gaps. At the 2026-11-23 cutoff all 120 cells are fitted (278,244 replay observations).
 
+## Goalie band policy (TJ, 2026-11-24, by pop-up)
+
+TJ's decision: "Use the labelled Poisson/Bernoulli baseline for goalie 50% at H1–H10 and goalie 90% at H8–H10. Keep
+the candidate 90% band at H1–H7 only where it reliably improves on the baseline and contains the 50% band. Otherwise
+use the baseline for both levels."
+
+**As implemented** (`GOALIE_BAND_POLICY`, version `forge-h10-goalie-band-policy-v1`, in `lib/forge-v2/h10Intervals.ts`):
+- **Goalie 50%, H1–H10:** baseline around the stored point forecast. Poisson for SAVES, SHOTS_AGAINST and GOALS_ALLOWED; Bernoulli for WIN and SHUTOUT.
+- **Goalie 90%, H8–H10:** baseline.
+- **Goalie 90%, H1–H7:** the calibrated kernel band only in cells the rule selected, and only when that band is valid and contains the 50% band. Otherwise the baseline at both levels.
+- **Skaters:** unchanged; the calibrated kernel band at both levels.
+- **Gaps:** if neither method gives a valid band (no usable point forecast), the band is an explicit gap, `no_valid_band:<reason>`.
+- **Method on every band:** each edition records `methods` per category and level (`kernel_calibrated`, `poisson_baseline` or `bernoulli_baseline`) and the policy version. The candidate band is kept beside it (`candidateIntervals`) for monitoring.
+- **Monitoring, without switching:** each nightly calibration record carries `goalieMonitor`: per goalie cell and level, the replay's candidate and baseline interval scores and distinct starts. These are in-sample for the candidate. The cell list changes only with a new policy version, a human decision. Past editions are never rewritten.
+
+**Reliability rule.** Written into the code before any scoring:
+- **Applies to:** goalie 90% cells at H1–H7, per category × horizon (35 cells).
+- **Selection data:** evaluation cutoffs 10-24 to 11-20 (every 3 days), using only outcomes received by 2026-11-21 09:00Z, so the holdout's games are excluded.
+- **Condition 1:** at least 150 distinct goalie starts in the cell.
+- **Condition 2:** the one-sided 95% bootstrap upper bound of the mean paired interval-score difference, candidate minus baseline per distinct start, must be below 0. That is the 95th percentile of 2,000 resampled means, seed 20261124.
+- The script refuses to run if the committed cell list differs from what the rule selects.
+
+**Selected: SAVES at H2 and SAVES at H4** (269 and 217 starts; upper bounds −0.58 and −0.32).
+- No other cell qualified. SAVES at H1 and H3 have negative mean differences, but their upper bounds are above 0.
+- WIN and SHUTOUT bands are identical under both methods: a difference of exactly 0.
+- **Caveat:** testing 35 cells at one-sided 95% would select about 1.75 cells by chance even with no real edge. So two selections are not strong evidence on their own. The rule is conservative in the other direction too (next two items).
+
+**Untouched holdout.** Daily cutoffs 11-21, 11-22 and 11-23, on games after the selection data. **It is very small.**
+- Only H1 and H2 have outcomes: 38 distinct starts at H1 and 7 at H2; 240 scored predictions in all.
+- The 11-23 cutoff has none yet: the saved reads end with the 11-22 games.
+- The policy's structure was chosen after TJ saw tables that included these games at long horizons. So "untouched" holds for the cell selection, not for the policy design. Truly untouched evidence starts with the first nights after release, which is what the monitoring is for.
+
+| Horizon, level | Distinct starts | Policy coverage / width / score | Candidate coverage / width / score | Baseline coverage / width / score |
+|---|---|---|---|---|
+| H1 50% | 38 | 0.712 / 3.33 / 8.99 | 0.742 / 3.91 / 8.98 | 0.712 / 3.33 / 8.99 |
+| H1 90% | 38 | 0.902 / 8.07 / 18.12 | 0.907 / 9.97 / **16.21** | 0.902 / 8.07 / 18.12 |
+| H2 50% | 7 | 0.886 / 3.29 / 6.49 | 0.914 / 4.00 / 6.74 | 0.886 / 3.29 / 6.49 |
+| H2 90% | 7 | 0.943 / 9.63 / 15.91 | 0.943 / 11.09 / **14.51** | 0.943 / 8.14 / 17.29 |
+
+Bands by method in the holdout:
+- 50%: 144 Poisson and 96 Bernoulli.
+- 90%: 137 Poisson, 96 Bernoulli and 7 kernel (SAVES at H2).
+
+**Check of the rule itself (supporting).** The rule was applied to the earlier outcomes only (cutoffs 10-24 to 11-05, outcomes received by 11-08), then scored on cutoffs 11-08 to 11-20.
+- It selected **no** cell.
+- On those later cutoffs the candidate 90% band beat the baseline's interval score at every horizon H1–H7, by 0.07 to 3.1 points. The policy (all baseline there) gave that up.
+- The 50% bands were close: the candidate was marginally better at some horizons and worse at others.
+
+**Reading:** the policy is safe and clearly labelled. The evidence so far suggests it leaves goalie 90% sharpness on the table at H1–H7. Revisiting that is a policy decision for TJ, not an automatic switch.
+
+## Same-cutoff parity and hosted time budget (final candidate)
+
+Receipt: `interval-frozen-parity.json`.
+- Three full-night runs at one frozen cutoff, 2026-11-24T00:45:00Z, using the same real reads and official rosters.
+- The cutoff and official stamps were pinned through the route's existing `clock` input; the route is unchanged.
+- Issuance ran on real time. No denominator game started during the runs: the next start was 02:40Z and the runs ended at 01:15Z.
+
+| Run | Budget | Calls (s) | Published | Forecast fingerprint |
+|---|---|---|---|---|
+| A, no bands | 200 s | 200.8, 96.7, 0.0 (cached) | 8,040 of 8,040 frozen keys | `0bea1a7c…` |
+| B, bands | 200 s | 200.3, 116.1 (interval phase 24.8 s, of which calibration 15.9 s), 0.0 | 8,040 of 8,040 | `0bea1a7c…` |
+| C, bands | 120 s | 120.7, 120.7, 84.1 (interval phase 25.5 s), 0.0 | 8,040 of 8,040 | `0bea1a7c…` |
+
+- **Parity.** The three runs froze the same denominator (`87093244…`). They published the **identical** 8,040 forecasts:
+  - compared on class, player, game, team, horizon, model version, cutoff and every category mean;
+  - the files are byte-identical (sha256 `0bea1a7c22c3…`).
+  - The bands remove, add and change no forecast. The verifier reconcile shows 0 missing, 0 extra and 0 duplicate in all three.
+- **Every forecast got an edition.** B and C wrote 8,040 editions with no category gaps.
+- **Added time.** +18.9 s for the night (B 316.4 s against A 297.5 s), the same number of calls.
+- **Worst call.** 200.3 s with bands, against 200.8 s without. The issuance step's own budget check sets the worst call, not the bands. Every call is under the 300 s function limit.
+- **Budget guard.** The interval calibration starts only with at least 60 s of budget left (`CALIBRATION_RESERVE_MS`); otherwise the call ends "continued" and the next call starts with it. The route test drives this deferral through tight budgets. In C the phase started with 61 s left and ran.
+- **Hosted ceiling.** A call can run to the 200 s budget plus one calibration started at the edge (≤ 60 s reserve by construction). It stays under 300 s unless the host is more than 2.5× slower than this laptop on the calibration. **None of this was measured on Vercel.**
+- **Not usable for parity.** An earlier attempt also froze the issuance clock. The skater job leases are checked against the database's real clock, so every skater job failed. The route still reported the night "complete", because failed jobs count as finished. That is an existing behaviour, not caused by the bands, and the verifier would show it as 7,320 missing. It is listed as a follow-up.
+
 ## Full-night rehearsal (runtime and storage)
 
 Receipt: `interval-night-rehearsal.json`.
@@ -111,7 +185,7 @@ Receipt: `interval-night-rehearsal.json`.
   - immutability, first-write-wins, and refusal of an edition whose vintage is missing;
   - material revisions get their own editions (30).
 - `h10Partitions.test.ts`: the archive round trip, including the new table.
-- The full forge-v2 suite with Postgres plus the `forge-h10-shadow` page test, on the final tree: 28 files, 291/291 passed. Without Postgres: 243 passed, 44 skipped.
+- The full forge-v2 suite with Postgres plus the `forge-h10-shadow` page test, on the final tree: 28 files, 292/292 passed. Without Postgres: 244 passed, 44 skipped. This includes the goalie policy test (methods, containment fallback, H8–H10 baseline, gap) and the route test's calibration-deferral path.
 - Typecheck 0, eslint 0, and the closure print.
 
 ## Approvals this would need (none requested here)

@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { Pool } from "pg";
 import { SqlConnection } from "./history.server";
 import { DET, H10_SEASON, LARKIN, MTL, seedH10Public, syntheticLeague } from "./h10Fixtures";
+import { CALIBRATION_RESERVE_MS, runIntervalPhase } from "./h10IntervalStore.server";
 import { handleH10Shadow, h10DenominatorGuard, h10RouteConfig, H10RouteConfig } from "./h10Route.server";
 import { buildDenominator } from "./denominator";
 import { easternDailyDeadline, easternDate } from "./refresh";
@@ -95,7 +96,14 @@ describe.runIf(Boolean(bin))("h10 hosted handler on disposable PostgreSQL (reade
     const first = await call("nightly", { now: night, config: { ...config, budgetMs: 1 } });
     expect(first).toMatchObject({ status: 200, body: { status: "continued" } });
     let last = first;
-    for (let i = 0; i < 80 && last.body.status !== "complete"; i++) last = await call("nightly", { now: night, config: { ...config, budgetMs: Date.now() - night + 1500 } });
+    // Tight budgets throughout; the interval calibration defers until a call has its reserve (hosted-budget guard).
+    let deferrals = 0;
+    for (let i = 0; i < 80 && last.body.status !== "complete"; i++) {
+      const deferred = Boolean((last.body.intervals as { deferred?: string } | null | undefined)?.deferred);
+      if (deferred) deferrals += 1;
+      last = await call("nightly", { now: night, config: { ...config, budgetMs: Date.now() - night + 1500 + (deferred ? CALIBRATION_RESERVE_MS : 0) } });
+    }
+    expect(deferrals).toBeGreaterThan(0);
     expect(last.body).toMatchObject({ status: "complete", scopes: 1380, goalieKeys: 120, jobs: { published: 1380 } });
     // Goalies run once the skater queues are done; every goalie key is issued under the goalie target.
     expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_goalie_vintages")).rows[0].n).toBe(120);
@@ -120,11 +128,15 @@ describe.runIf(Boolean(bin))("h10 hosted handler on disposable PostgreSQL (reade
     const sample = editions.find(x => x.cls === "skater")!.e, vintage = JSON.parse((await admin.query("select payload from forge_v2_private.forge_v2_vintages where id = $1", [sample.vintageId])).rows[0].payload);
     expect(sample).toMatchObject({ conditionalOn: "official_appearance", combination: "marginal_per_category_not_summable", inputCutoffAt: vintage.inputCutoffAt, modelVersion: vintage.modelVersion, horizon: vintage.horizon });
     for (const c of Object.keys(vintage.means)) expect(sample.categories[c].point).toEqual(vintage.means[c]);
-    const bands = editions.flatMap(x => Object.values(x.e.categories as Record<string, { intervals: { state: string; value?: Array<{ level: number; lower: number; upper: number }>; reason?: string } }>));
+    const bands = editions.flatMap(x => Object.values(x.e.categories as Record<string, { intervals: { state: string; value?: Array<{ level: number; lower: number; upper: number }>; reason?: string };
+      candidateIntervals: { state: string; reason?: string }; methods: Record<string, string> }>));
     expect(bands.filter(b => b.intervals.state === "available").every(b => b.intervals.value![0].lower <= b.intervals.value![0].upper && b.intervals.value![1].lower <= b.intervals.value![0].lower && b.intervals.value![1].upper >= b.intervals.value![0].upper)).toBe(true);
     expect(bands.filter(b => b.intervals.state !== "available").every(b => typeof b.intervals.reason === "string" && b.intervals.reason.length > 0)).toBe(true);
     // The rebuilt kernel reproduces every stored point forecast and model version (no silent drift).
-    expect(bands.some(b => ["point_forecast_mismatch", "model_version_mismatch", "model_unavailable_at_cutoff"].includes(b.intervals.reason ?? ""))).toBe(false);
+    expect(bands.some(b => ["point_forecast_mismatch", "model_version_mismatch", "model_unavailable_at_cutoff"].includes(b.candidateIntervals.reason ?? ""))).toBe(false);
+    // Every issued band names its method; goalie 50% bands are the labelled baseline (TJ policy).
+    expect(bands.filter(b => b.intervals.state === "available").every(b => b.methods["0.5"] && b.methods["0.9"])).toBe(true);
+    expect(editions.filter(x => x.cls === "goalie").every(x => Object.values(x.e.categories as Record<string, { methods: Record<string, string> }>).every(c => /_baseline$/.test(c.methods["0.5"])))).toBe(true);
     expect(bands.filter(b => b.intervals.state === "available").length).toBeGreaterThan(bands.length / 2);
     const marker = JSON.parse((await admin.query("select payload from forge_v2_private.forge_v2_records where scope_key like 'forge-h10-nightly-complete:%'")).rows[0].payload);
     expect(marker.intervals).toMatchObject({ calibrationId: calibrations[0].id, skater: { keys: 1380, editions: 1380, keysWithoutEdition: 0 }, goalie: { keys: 120, editions: 120, keysWithoutEdition: 0 } });
@@ -136,6 +148,12 @@ describe.runIf(Boolean(bin))("h10 hosted handler on disposable PostgreSQL (reade
     await admin.query("insert into forge_v2_private.forge_h10_interval_editions (id, vintage_id, player_class, player_id, game_id, payload) values ($1, $2, 'skater', $3, $4, $5)",
       [sample.id, sample.vintageId, sample.playerId, sample.gameId, JSON.stringify({ ...sample, generatedAt: new Date().toISOString() })]);
     expect((await admin.query("select count(*)::int n from forge_v2_private.forge_h10_interval_editions where vintage_id = $1", [sample.vintageId])).rows[0].n).toBe(1);
+    // Hosted budget: the uncalibrated replay never starts without its reserve; the dispatch ends "continued" instead.
+    const tight = await runIntervalPhase({ db: admin as unknown as SqlConnection, denominator: { denominatorSha256: last.body.denominatorSha256 as string, asOf: marker.asOf, keys: [] },
+      date: "reserve-test", calibrationAsOf: marker.asOf, logs: league.logs, goalieLogs: league.goalieLogs, schedule: league.schedule, seasonId: H10_SEASON, maximumTrainingExamples: 1500,
+      clock: () => new Date().toISOString(), stopAfterMs: Date.now() + CALIBRATION_RESERVE_MS - 1000 });
+    expect(tight).toMatchObject({ complete: false, deferred: "calibration_needs_budget_reserve", written: 0 });
+    expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_records where scope_key = 'forge-h10-interval-calibration:reserve-test'")).rows[0].n).toBe(0);
   }, 600000);
 
   it("turns a roster move and an injury event into material revisions for exactly those players", async () => {
