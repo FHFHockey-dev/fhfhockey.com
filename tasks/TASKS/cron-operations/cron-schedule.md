@@ -6,8 +6,9 @@
 -- unreachable from Vercel), else SUPABASE_DB_URL, else POSTGRES_URL. The 2026-11-24 night issued nothing
 -- (503 database_url_missing, then ENOTFOUND on a db.<ref> URL); temporary same-day retry jobs ran once each and
 -- were removed: 467 at 14:26 UTC (ENOTFOUND), 468 at 14:57 UTC and 469 at 15:18 UTC (both password
--- authentication failed; the saved value differed from the tested one). The variable was re-saved at
--- 15:05:41 UTC and the next build picks it up.
+-- authentication failed: the saved value carried an older password from a second local pooler line).
+-- The variable was re-saved at about 15:24 UTC from the URL proven with select 1, and the next build
+-- picks it up.
 -- Each failure was caught at the first query, so nothing was written. Evidence: tasks/artifacts/forge-full-nhl-h10-2026-11-23/
 -- hosted-packet/PACKET.md and first-night-verify.sql (read-only, run_date=<ET date>).
 
