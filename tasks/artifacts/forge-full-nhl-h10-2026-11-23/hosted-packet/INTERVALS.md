@@ -46,7 +46,7 @@ Receipt: `interval-validation-2026-11.json`, produced by `scripts/forge-h10-inte
 - Ten evaluation cutoffs, 2026-10-24 to 2026-11-20 at 09:00Z, every 3 days.
 - At each cutoff the model, rates and calibration use only rows received by it. The script asserts the calibration's latest outcome time is at or before the cutoff.
 - Bands are scored on each team's next ten games: skaters on realized appearances, goalies on realized starts.
-- 278,244 realized category outcomes: 267,624 skater and 10,620 goalie.
+- 278,244 scored category predictions: 267,624 skater and 10,620 goalie. These are not independent outcomes: one realized game line is scored at up to ten horizons, from different cutoffs, and across categories.
 - Baseline: a Poisson (counts) or Bernoulli (WIN, SHUTOUT) equal-tail band around the **same mean**.
 - Interval score: the Winkler score; lower is better.
 
@@ -65,6 +65,7 @@ Goalie rows are matched: the baseline is scored on the same 9,840 outcomes that 
 - **Goalies at 50%.** Not better than the baseline: 7.76 vs 7.66 overall. The padding widens them slightly and the raw bands roughly tie the baseline (7.67). This is the weakest result. It should be read as such, not hidden.
 - **Coverage is at or above nominal.** It runs well above nominal at 50%: 0.83 for skaters, 0.78 for goalies. Most categories are small integers, so equal-tail bands on discrete outcomes over-cover. The bands are conservative, not "calibrated to 50%".
 - **Ordered and nested.** 0 invalid bands among 278,244 raw, 277,464 calibrated and 278,244 baseline sets.
+- **Limitation, later in the season.** The route reads a 60-day log window. Today it covers the whole season, so this validation could not show the effect. From about late November on, a replay at a cutoff up to 30 days back sees only 30–57 days of rate history, not exactly what was issued then. The calibration replay then approximates the issued forecasts rather than reproducing them. Widening the route's window, or reading season-to-date for the replay, would fix that. It needs its own decision.
 - **Gaps.** No raw band was refused for thin kernel support at the evaluation cutoffs. Calibration was too thin for goalie H8–H10 at the earliest cutoffs: 780 outcomes in total, counted as open gaps. At the 2026-11-23 cutoff all 120 cells are fitted (278,244 replay observations).
 
 ## Full-night rehearsal (runtime and storage)
@@ -81,7 +82,15 @@ Receipt: `interval-night-rehearsal.json`.
 | Interval table (with indexes) | – | 19.6 MB (3.1 MB indexes); 30.2 MB raw payload text | ≈ +37% of the night's forge_v2 storage |
 | Calibration record | – | 13.9 KB per night | |
 
-- **Budget.** Dispatch 2 stays inside the 200 s budget. The phase checks the budget before the calibration and between batches of 250, and resumes on the next dispatch.
+- **Budget.** Dispatch 2 stays inside the 200 s budget. The phase checks the budget before the calibration and between batches of 250, and resumes on the next dispatch. The calibration itself (about 25 s here) cannot be interrupted once started, so a calibration starting near 200 s ends near 225 s, under the 300 s function limit. **All runtimes are laptop measurements; none was measured on the Vercel host.**
+- **Steady state (final tree).** The pending read and the coverage read are bounded to the run: rows inserted at or after its cutoff. That also prunes the monthly partitions, and the coverage is aggregated in SQL. Re-timed after seeding 15 prior nights of vintages, receipts and editions for the same keys (118,905 each):
+
+  | | Tonight only | With 15 prior nights | Change |
+  |---|---|---|---|
+  | Interval phase (pending read + 7,927 editions) | 5.5 s | 5.6 s | flat |
+  | Coverage read | 0.39 s | 0.38 s | flat |
+
+  Same final-tree run: dispatch 2 took 121.7 s, of which 16.1 s was calibration.
 - **Completion marker.** Now includes interval coverage per class: keys, editions, category bands and gaps.
 - **Retention.** At about 19.6 MB a night, three hot months is about 1.8 GB. The table is partitioned monthly and listed in the archive procedure, like the vintages.
 - **B's 2 goalie gaps** (`issuance_lock_closed`): game 2026020378 started at 00:00Z during B's run. This was caught by both the verifier and the route's gap tallies, and is not caused by the intervals. The goalie phase runs first.
@@ -102,7 +111,7 @@ Receipt: `interval-night-rehearsal.json`.
   - immutability, first-write-wins, and refusal of an edition whose vintage is missing;
   - material revisions get their own editions (30).
 - `h10Partitions.test.ts`: the archive round trip, including the new table.
-- The full forge-v2 suite with Postgres.
+- The full forge-v2 suite with Postgres plus the `forge-h10-shadow` page test, on the final tree: 28 files, 291/291 passed. Without Postgres: 243 passed, 44 skipped.
 - Typecheck 0, eslint 0, and the closure print.
 
 ## Approvals this would need (none requested here)

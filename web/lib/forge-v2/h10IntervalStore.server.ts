@@ -18,7 +18,7 @@ const BATCH = 250;
 export interface IntervalPhaseInput {
   db: SqlConnection;
   /** The run's frozen denominator: its sha names the vintages, its keys bound the read. */
-  denominator: { denominatorSha256: string; keys: ReadonlyArray<{ playerId: number; gameId: number; playerClass: string }> };
+  denominator: { denominatorSha256: string; asOf: Instant | null; keys: ReadonlyArray<{ playerId: number; gameId: number; playerClass: string }> };
   /** Eastern date of the nightly run and its cutoff: the calibration is fitted there once per night. */
   date: string; calibrationAsOf: Instant;
   logs: readonly H10GameLog[]; goalieLogs: readonly H10GoalieLog[]; schedule: readonly ScheduleGame[]; seasonId: number; maximumTrainingExamples: number;
@@ -41,7 +41,9 @@ async function storedCalibration(input: IntervalPhaseInput): Promise<{ id: strin
 }
 
 interface Pending { cls: IntervalClass; vintage: IssuedVintage; opponentId: number; home: boolean }
-/** Published vintages naming the denominator that have no edition yet (read through the (player, game) index). */
+/** Published vintages naming the denominator that have no edition yet. Bounded to this run: its vintages were inserted
+ * after its cutoff, so earlier nights' editions of the same (player, game) keys are never read (and their monthly
+ * partitions are pruned). */
 async function pendingVintages(input: IntervalPhaseInput): Promise<Pending[]> {
   const source = JSON.stringify([{ id: `forge-h10-denominator:${input.denominator.denominatorSha256}` }]), out: Pending[] = [];
   for (const cls of ["skater", "goalie"] as const) {
@@ -52,8 +54,9 @@ async function pendingVintages(input: IntervalPhaseInput): Promise<Pending[]> {
       `select v.id, v.output_hash, v.payload from forge_v2_private.${V} v
        join unnest($1::bigint[], $2::bigint[]) as t(player_id, game_id) on t.player_id = v.player_id and t.game_id = v.game_id
        join forge_v2_private.${R} r on r.vintage_id = v.id and r.output_hash = v.output_hash
-       where v.payload::jsonb->'sourceManifest' @> $3::jsonb and not exists (select 1 from ${INTERVAL_TABLE} e where e.vintage_id = v.id)
-       order by v.issuance_sequence`, [keys.map(k => k.playerId), keys.map(k => k.gameId), source]);
+       where v.inserted_at >= $4::timestamptz and r.inserted_at >= $4::timestamptz and v.payload::jsonb->'sourceManifest' @> $3::jsonb
+         and not exists (select 1 from ${INTERVAL_TABLE} e where e.vintage_id = v.id and e.inserted_at >= $4::timestamptz)
+       order by v.issuance_sequence`, [keys.map(k => k.playerId), keys.map(k => k.gameId), source, input.denominator.asOf]);
     for (const row of rows) {
       const p = JSON.parse(row.payload) as { playerId: number; gameId: number; teamId: number; opponentId: number; home: boolean; horizon: number; targetVersion: string; conditioning: string;
         inputCutoffAt: Instant; modelVersion: string; featureVersion: string; means: Record<string, Component<number>> };
@@ -109,26 +112,22 @@ export async function runIntervalPhase(input: IntervalPhaseInput): Promise<Inter
   return report;
 }
 
-/** Read-only coverage of a run's editions: keys and category bands available, and open gaps by reason. */
-export async function intervalCoverage(db: SqlConnection, denominator: IntervalPhaseInput["denominator"]) {
-  const source = `forge-h10-denominator:${denominator.denominatorSha256}`, result: Record<string, unknown> = {};
+/** Read-only coverage of a run's editions, aggregated in SQL over this run's rows only (bounded like the pending read). */
+export async function intervalCoverage(db: SqlConnection, denominator: IntervalPhaseInput["denominator"] & { asOf: Instant | null }) {
+  const source = JSON.stringify([{ id: `forge-h10-denominator:${denominator.denominatorSha256}` }]), result: Record<string, unknown> = {};
   for (const cls of ["skater", "goalie"] as const) {
-    const keys = denominator.keys.filter(k => (k.playerClass === "goalie") === (cls === "goalie"));
-    const { rows } = await db.query<{ payload: string }>(`select e.payload from ${INTERVAL_TABLE} e
-      join unnest($1::bigint[], $2::bigint[]) as t(player_id, game_id) on t.player_id = e.player_id and t.game_id = e.game_id where e.player_class = $3`,
-      [keys.map(k => k.playerId), keys.map(k => k.gameId), cls]);
-    const editions = rows.map(r => JSON.parse(r.payload) as { vintageId: string; categories: Record<string, { intervals: { state: string; reason?: string } }> });
-    const vintages = new Set((await db.query<{ id: string }>(`select v.id from forge_v2_private.${cls === "goalie" ? "forge_v2_goalie_vintages" : "forge_v2_vintages"} v
-      join unnest($1::bigint[], $2::bigint[]) as t(player_id, game_id) on t.player_id = v.player_id and t.game_id = v.game_id
-      where v.payload::jsonb->'sourceManifest' @> $3::jsonb`, [keys.map(k => k.playerId), keys.map(k => k.gameId), JSON.stringify([{ id: source }])])).rows.map(r => r.id));
-    const mine = editions.filter(e => vintages.has(e.vintageId)), categories = cls === "goalie" ? GOALIE_CATEGORIES : CATEGORIES, gaps: Record<string, number> = {};
-    let bands = 0;
-    for (const e of mine) for (const c of categories) {
-      const cell = e.categories[c];
-      const reason = cell?.intervals.state === "available" ? null : cell?.intervals.reason ?? "missing_category";
-      if (reason === null) bands += 1; else gaps[reason] = (gaps[reason] ?? 0) + 1;
-    }
-    result[cls] = { keys: keys.length, vintages: vintages.size, editions: mine.length, keysWithoutEdition: keys.length - mine.length, categoryBands: bands, categoryBandsExpected: keys.length * categories.length, gaps };
+    const keys = denominator.keys.filter(k => (k.playerClass === "goalie") === (cls === "goalie")), V = cls === "goalie" ? "forge_v2_goalie_vintages" : "forge_v2_vintages";
+    const { rows } = await db.query<{ vintages: number; editions: number; bands: number; gaps: Record<string, number> | null }>(
+      `with v as (select v.id from forge_v2_private.${V} v join unnest($1::bigint[], $2::bigint[]) as t(player_id, game_id) on t.player_id = v.player_id and t.game_id = v.game_id
+         where v.inserted_at >= $4::timestamptz and v.payload::jsonb->'sourceManifest' @> $3::jsonb),
+       e as (select e.payload::jsonb as p from ${INTERVAL_TABLE} e join v on v.id = e.vintage_id where e.inserted_at >= $4::timestamptz),
+       c as (select x.value->'intervals' as i from e, jsonb_each(e.p->'categories') x)
+       select (select count(*) from v)::int as vintages, (select count(*) from e)::int as editions,
+         (select count(*) from c where i->>'state' = 'available')::int as bands,
+         (select jsonb_object_agg(reason, n) from (select coalesce(i->>'reason', 'missing_reason') as reason, count(*)::int as n from c where i->>'state' is distinct from 'available' group by 1) g) as gaps`,
+      [keys.map(k => k.playerId), keys.map(k => k.gameId), source, denominator.asOf]);
+    const r = rows[0], categories = cls === "goalie" ? GOALIE_CATEGORIES.length : CATEGORIES.length;
+    result[cls] = { keys: keys.length, vintages: r.vintages, editions: r.editions, keysWithoutEdition: keys.length - r.editions, categoryBands: r.bands, categoryBandsExpected: keys.length * categories, gaps: r.gaps ?? {} };
   }
   return result;
 }

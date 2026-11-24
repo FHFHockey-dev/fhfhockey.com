@@ -240,6 +240,117 @@
         }
       ],
       "verifyReconcile": " class  | horizon | expected | stored | missing | extra | duplicate_keys | numeric_complete | reported_gap | unpublished_vintages \n--------+---------+----------+--------+---------+-------+----------------+------------------+--------------+----------------------\n skater | 1       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 2       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 3       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 4       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 5       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 6       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 7       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 8       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 9       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 10      |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | all     |     7320 |   7320 |       0 |     0 |              0 |             7320 |            0 |                    0\n goalie | 1       |       72 |     70 |       2 |     0 |              0 |               70 |            0 |                    0\n goalie | 2       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 3       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 4       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 5       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 6       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 7       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 8       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 9       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 10      |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | all     |      720 |    718 |       2 |     0 |              0 |              718 |            0 |                    0\n(22 rows)\n\n"
+    },
+    "B2_with_intervals_and_steady_state": {
+      "note": "Final tree (reads bounded to the run). Started after 00:00Z, so games already under way were lock-closed: 96 skater and 17 goalie keys were never issued (issuance_lock_closed). Every published vintage still received an edition.",
+      "dispatches": [
+        {
+          "status": "continued",
+          "ms": 200558,
+          "intervals": null
+        },
+        {
+          "status": "complete",
+          "ms": 121716,
+          "intervals": {
+            "complete": true,
+            "pending": 7927,
+            "written": 7927,
+            "editionsWithGap": 0,
+            "gaps": {},
+            "ms": 23812,
+            "calibrationId": "forge-h10-interval-calibration:2026-11-23:8b2f557bf0e680b82074de6bfd7017c6be497d62985964be5be92dd9811f927c",
+            "calibrationMs": 16067
+          }
+        },
+        {
+          "status": "complete",
+          "ms": 1,
+          "intervals": {
+            "calibrationId": "forge-h10-interval-calibration:2026-11-23:8b2f557bf0e680b82074de6bfd7017c6be497d62985964be5be92dd9811f927c",
+            "goalie": {
+              "categoryBands": 3515,
+              "categoryBandsExpected": 3600,
+              "editions": 703,
+              "gaps": {},
+              "keys": 720,
+              "keysWithoutEdition": 17,
+              "vintages": 703
+            },
+            "skater": {
+              "categoryBands": 50568,
+              "categoryBandsExpected": 51240,
+              "editions": 7224,
+              "gaps": {},
+              "keys": 7320,
+              "keysWithoutEdition": 96,
+              "vintages": 7224
+            }
+          }
+        }
+      ],
+      "steadyState": {
+        "seededPriorNights": 15,
+        "seeded": {
+          "vintages": 118905,
+          "editions": 118905
+        },
+        "tonightOnly": {
+          "phaseMs": 5491,
+          "coverageMs": 390,
+          "pending": 7927,
+          "written": 7927,
+          "gaps": {},
+          "coverage": {
+            "skater": {
+              "keys": 7320,
+              "vintages": 7224,
+              "editions": 7224,
+              "keysWithoutEdition": 96,
+              "categoryBands": 50568,
+              "categoryBandsExpected": 51240,
+              "gaps": {}
+            },
+            "goalie": {
+              "keys": 720,
+              "vintages": 703,
+              "editions": 703,
+              "keysWithoutEdition": 17,
+              "categoryBands": 3515,
+              "categoryBandsExpected": 3600,
+              "gaps": {}
+            }
+          }
+        },
+        "withHistory": {
+          "phaseMs": 5590,
+          "coverageMs": 381,
+          "pending": 7927,
+          "written": 7927,
+          "gaps": {},
+          "coverage": {
+            "skater": {
+              "keys": 7320,
+              "vintages": 7224,
+              "editions": 7224,
+              "keysWithoutEdition": 96,
+              "categoryBands": 50568,
+              "categoryBandsExpected": 51240,
+              "gaps": {}
+            },
+            "goalie": {
+              "keys": 720,
+              "vintages": 703,
+              "editions": 703,
+              "keysWithoutEdition": 17,
+              "categoryBands": 3515,
+              "categoryBandsExpected": 3600,
+              "gaps": {}
+            }
+          }
+        }
+      },
+      "verifyReconcile": " class  | horizon | expected | stored | missing | extra | duplicate_keys | numeric_complete | reported_gap | unpublished_vintages \n--------+---------+----------+--------+---------+-------+----------------+------------------+--------------+----------------------\n skater | 1       |      732 |    636 |      96 |     0 |              0 |              636 |            0 |                    0\n skater | 2       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 3       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 4       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 5       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 6       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 7       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 8       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 9       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 10      |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | all     |     7320 |   7224 |      96 |     0 |              0 |             7224 |            0 |                    0\n goalie | 1       |       72 |     55 |      17 |     0 |              0 |               55 |            0 |                    0\n goalie | 2       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 3       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 4       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 5       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 6       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 7       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 8       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 9       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 10      |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | all     |      720 |    703 |      17 |     0 |              0 |              703 |            0 |                    0\n(22 rows)\n\n"
     }
   }
 }

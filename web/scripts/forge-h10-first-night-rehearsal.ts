@@ -20,6 +20,9 @@ import type { SqlConnection } from "../lib/forge-v2/history.server";
 import { handleH10Shadow, h10RouteConfig } from "../lib/forge-v2/h10Route.server";
 import { H10_ROUTE, beginH10Dispatch, finishH10Dispatch, verifyH10Dispatch } from "../lib/forge-v2/h10Dispatch.server";
 import { realRows, verified } from "./forge-h10-real-inputs";
+import { h10InputsFromRows } from "../lib/forge-v2/h10Reader.server";
+import { intervalCoverage, runIntervalPhase } from "../lib/forge-v2/h10IntervalStore.server";
+import type { FrozenDenominator } from "../lib/forge-v2/denominator";
 
 const exec = promisify(execFile);
 const [packet, outDir, flag] = process.argv.slice(2), bin = process.env.FORGE_V2_POSTGRES_BIN;
@@ -100,6 +103,12 @@ async function main() {
       return entry;
     };
 
+    // Owner work with triggers off, on one dedicated connection (a pool may hand each statement a different one).
+    const replica = async <T>(work: (c: import("pg").PoolClient) => Promise<T>): Promise<T> => {
+      const c = await admin.connect();
+      try { await c.query("begin"); await c.query("set local session_replication_role = replica"); const out = await work(c); await c.query("commit"); return out; }
+      catch (error) { await c.query("rollback"); throw error; } finally { c.release(); }
+    };
     const first = await tick();
     const runDate = String((first as { runKey?: string }).runKey ?? "").split(":")[1];
     if (!runDate) throw new Error(`first tick did not dispatch: ${JSON.stringify(first)}`);
@@ -120,29 +129,72 @@ async function main() {
         (select octet_length(payload) from forge_v2_private.forge_v2_records where kind = 'evaluation' limit 1) as calibration_record_bytes
       from forge_v2_private.forge_h10_interval_editions group by 1 order by 1`)).rows;
 
+    // Steady state: a game stays in a team's next-ten window for 10-20 nights, so the interval reads must not grow with
+    // history. Time the phase (pending read, editions) and the coverage read on tonight alone, then again after seeding
+    // 15 prior nights of vintages, receipts and editions for the same keys (owner, triggers off).
+    if (INTERVALS) {
+      const freezeRow = (await admin.query("select payload from forge_v2_private.forge_v2_records where scope_key = $1 order by ordinal desc limit 1", [`forge-h10-nightly:${runDate}`])).rows[0];
+      const denominator = JSON.parse(freezeRow.payload).denominator as FrozenDenominator;
+      const built = h10InputsFromRows(rows, { asOf: denominator.asOf!, seasonId: config.seasonId, logIngestUtcMinute: config.logIngestUtcMinute, gameHours: config.gameHours, rosterMaxAgeHours: config.rosterMaxAgeHours });
+      const probe = async () => {
+        await replica(c => c.query("delete from forge_v2_private.forge_h10_interval_editions where inserted_at >= $1", [denominator.asOf]));
+        const t0 = Date.now();
+        const phase = await runIntervalPhase({ db, denominator, date: runDate, calibrationAsOf: denominator.asOf!, logs: built.logs, goalieLogs: built.goalieLogs, schedule: built.schedule,
+          seasonId: config.seasonId, maximumTrainingExamples: config.maximumTrainingExamples, clock: () => new Date().toISOString() });
+        const t1 = Date.now(), coverage = await intervalCoverage(db, denominator), t2 = Date.now();
+        return { phaseMs: t1 - t0, coverageMs: t2 - t1, pending: phase.pending, written: phase.written, gaps: phase.gaps, coverage };
+      };
+      const tonightOnly = await probe();
+      const seeded = { vintages: 0, editions: 0 };
+      await replica(async c => { for (let k = 1; k <= 15; k++) for (const [V, R, cls] of [["forge_v2_vintages", "forge_v2_publication_receipts", "skater"], ["forge_v2_goalie_vintages", "forge_v2_goalie_publication_receipts", "goalie"]]) {
+        const ins = await c.query(`insert into forge_v2_private.${V} (id, issuance_key, issuance_sequence, player_id, game_id, payload, output_hash, insert_transaction, inserted_at)
+          select v.id || ':prior' || $1, v.issuance_key || ':prior' || $1, v.issuance_sequence + $3::int * 100000000, v.player_id, v.game_id,
+            (v.payload::jsonb || jsonb_build_object('id', v.id || ':prior' || $1, 'issuanceKey', v.issuance_key || ':prior' || $1, 'sequence', v.issuance_sequence + $3::int * 100000000,
+              'sourceManifest', jsonb_build_array(jsonb_build_object('id', 'forge-h10-denominator:prior-' || $1))))::text,
+            'prior-' || $1 || '-' || v.output_hash, pg_current_xact_id(), v.inserted_at - make_interval(days => $3::int)
+          from forge_v2_private.${V} v where v.inserted_at >= $2`, [String(k), denominator.asOf, k]);
+        seeded.vintages += ins.rowCount ?? 0;
+        await c.query(`insert into forge_v2_private.${R} (vintage_id, output_hash, confirmed_at, receipt_transaction, witness, inserted_at)
+          select v.id, v.output_hash, v.inserted_at, pg_current_xact_id(), 'committed_readback', v.inserted_at from forge_v2_private.${V} v where v.id like '%:prior' || $1`, [String(k)]);
+        const eds = await c.query(`insert into forge_v2_private.forge_h10_interval_editions (id, vintage_id, player_class, player_id, game_id, payload, content_hash, inserted_at)
+          select 'h10-interval:' || v.id, v.id, $2::text, v.player_id, v.game_id,
+            jsonb_build_object('schemaVersion', 'forge-h10-interval-edition-v1', 'id', 'h10-interval:' || v.id, 'vintageId', v.id, 'vintageOutputHash', v.output_hash, 'playerClass', $2::text,
+              'playerId', v.player_id, 'gameId', v.game_id, 'teamId', 1, 'horizon', 1, 'conditionalOn', case $2::text when 'goalie' then 'official_start' else 'official_appearance' end,
+              'combination', 'marginal_per_category_not_summable', 'inputCutoffAt', '', 'generatedAt', '', 'modelVersion', '', 'method', '{}'::jsonb, 'calibration', null,
+              'categories', '{}'::jsonb, 'limitations', '[]'::jsonb, 'padding', repeat('x', 3500))::text, 'seeded', v.inserted_at
+          from forge_v2_private.${V} v where v.id like '%:prior' || $1`, [String(k), cls]);
+        seeded.editions += eds.rowCount ?? 0;
+      } });
+      await admin.query("analyze");
+      const withHistory = await probe();
+      summary.steadyState = { seededPriorNights: 15, seeded, tonightOnly, withHistory };
+      process.stdout.write(`${JSON.stringify({ steadyState: { tonightOnly: { phaseMs: tonightOnly.phaseMs, coverageMs: tonightOnly.coverageMs }, withHistory: { phaseMs: withHistory.phaseMs, coverageMs: withHistory.coverageMs }, seeded } })}\n`);
+    }
+
     // Known defects, seeded directly as the owner with triggers off (replica): every check must see exactly these.
-    await admin.query("begin; set local session_replication_role = replica");
-    const freeze = (await admin.query("select recorded_at, payload::jsonb->'denominator'->>'denominatorSha256' as sha from forge_v2_private.forge_v2_records where scope_key = $1 order by ordinal desc limit 1", [`forge-h10-nightly:${runDate}`])).rows[0];
-    const pick = async (table: string, horizon: number, offset = 0) => (await admin.query(`select v.id, v.payload from forge_v2_private.${table} v join forge_v2_private.${table.replace("vintages", "publication_receipts")} r on r.vintage_id = v.id
-      where (v.payload::jsonb->>'horizon')::int = $1 order by v.player_id, v.game_id limit 1 offset $2`, [horizon, offset])).rows[0];
-    let sequence = Number((await admin.query("select coalesce(max(issuance_sequence), 0) + 1000000 as s from (select issuance_sequence from forge_v2_private.forge_v2_vintages union all select issuance_sequence from forge_v2_private.forge_v2_goalie_vintages) x")).rows[0].s);
+    const dc = await admin.connect();
+    await dc.query("begin"); await dc.query("set local session_replication_role = replica");
+    const freeze = (await dc.query("select recorded_at, payload::jsonb->'denominator'->>'denominatorSha256' as sha from forge_v2_private.forge_v2_records where scope_key = $1 order by ordinal desc limit 1", [`forge-h10-nightly:${runDate}`])).rows[0];
+    const pick = async (table: string, horizon: number, offset = 0) => (await dc.query(`select v.id, v.payload from forge_v2_private.${table} v join forge_v2_private.${table.replace("vintages", "publication_receipts")} r on r.vintage_id = v.id
+      where (v.payload::jsonb->>'horizon')::int = $1 and v.id not like '%:prior%' order by v.player_id, v.game_id limit 1 offset $2`, [horizon, offset])).rows[0];
+    let sequence = Number((await dc.query("select coalesce(max(issuance_sequence), 0) + 1000000 as s from (select issuance_sequence from forge_v2_private.forge_v2_vintages union all select issuance_sequence from forge_v2_private.forge_v2_goalie_vintages) x")).rows[0].s);
     const copy = async (table: string, payloadText: string, change: (p: Record<string, unknown>) => void, insertedAt: string | null, receipt = true) => {
       const p = JSON.parse(payloadText); sequence += 1;
       p.id = `rehearsal-defect:${sequence}`; p.issuanceKey = `rehearsal-defect:${sequence}`; p.sequence = sequence; change(p);
-      await admin.query(`insert into forge_v2_private.${table} (id, issuance_key, issuance_sequence, player_id, game_id, payload, output_hash, insert_transaction, inserted_at)
+      await dc.query(`insert into forge_v2_private.${table} (id, issuance_key, issuance_sequence, player_id, game_id, payload, output_hash, insert_transaction, inserted_at)
         values ($1, $1, $2, $3, $4, $5, $6, pg_current_xact_id(), coalesce($7::timestamptz, clock_timestamp()))`, [p.id, sequence, p.playerId, p.gameId, JSON.stringify(p), `hash-${sequence}`, insertedAt]);
-      if (receipt) await admin.query(`insert into forge_v2_private.${table.replace("vintages", "publication_receipts")} (vintage_id, output_hash, confirmed_at, receipt_transaction, witness, inserted_at)
+      if (receipt) await dc.query(`insert into forge_v2_private.${table.replace("vintages", "publication_receipts")} (vintage_id, output_hash, confirmed_at, receipt_transaction, witness, inserted_at)
         values ($1, $2, clock_timestamp(), pg_current_xact_id(), 'committed_readback', coalesce($3::timestamptz, clock_timestamp()))`, [p.id, `hash-${sequence}`, insertedAt]);
     };
     const s3 = await pick("forge_v2_vintages", 3), s5 = await pick("forge_v2_vintages", 5), s7 = await pick("forge_v2_vintages", 7), g2 = await pick("forge_v2_goalie_vintages", 2);
-    await admin.query("delete from forge_v2_private.forge_v2_publication_receipts where vintage_id = $1", [s3.id]);                       // skater H3: missing + unpublished
+    await dc.query("delete from forge_v2_private.forge_v2_publication_receipts where vintage_id = $1", [s3.id]);                       // skater H3: missing + unpublished
     await copy("forge_v2_vintages", s5.payload, p => { p.gameId = 2026029999; }, null);                                                  // skater H5: extra, player_game_not_frozen
     await copy("forge_v2_vintages", s7.payload, p => { p.modelVersion = ""; }, null);                                                    // skater H7: duplicate + lacking model lineage
     await copy("forge_v2_vintages", s7.payload, p => { (p.sourceManifest as Array<{ id: string }>)[0].id = "forge-h10-denominator:another"; }, null); // extra, names_another_denominator
     await copy("forge_v2_vintages", s5.payload, p => { (p.sourceManifest as Array<{ id: string }>)[0].id = "forge-h10-denominator:yesterday"; },
       new Date(new Date(freeze.recorded_at).getTime() - 86400000).toISOString());                                                       // a prior night's edition: ignored
     await copy("forge_v2_goalie_vintages", g2.payload, p => { p.teamId = p.opponentId; }, null);                                          // goalie H2: extra (team differs) + team not frozen
-    await admin.query("commit");
+    await dc.query("commit"); dc.release();
     summary.seeded = { missingAndUnpublished: { skaterH3: s3.id }, extra: { skaterH5_gameNotFrozen: 1, skaterH7_otherDenominator: 1, goalieH2_teamDiffers: 1 },
       duplicate: { skaterH7: 1, alsoLackingModelLineage: 1 }, ignoredPriorNightEdition: { skaterH5: 1 }, freezeSha: freeze.sha };
     summary.defects = await verify("3-defects", runDate);
