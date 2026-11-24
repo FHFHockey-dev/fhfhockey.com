@@ -2,10 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { H10_ROUTE, h10RunKey, signH10Dispatch } from "lib/forge-v2/h10Dispatch.server";
 
-const { pools, queries, handle, beginStatus } = vi.hoisted(() => ({ pools: { created: 0 }, queries: [] as string[], handle: vi.fn(), beginStatus: { value: "started" } }));
+const { pools, queries, handle, beginStatus } = vi.hoisted(() => ({ pools: { created: 0, urls: [] as string[] }, queries: [] as string[], handle: vi.fn(), beginStatus: { value: "started" } }));
 vi.mock("pg", () => ({
   Pool: class {
-    constructor() { pools.created += 1; }
+    constructor(options: { connectionString: string }) { pools.created += 1; pools.urls.push(options.connectionString); }
     async query(text: string) {
       queries.push(text);
       if (text.includes("forge_h10_dispatch_begin_v1")) return { rows: [{ status: beginStatus.value, outcome: beginStatus.value === "duplicate" ? "complete" : null }] };
@@ -30,13 +30,14 @@ function call(body: unknown, headers: Record<string, string>, url = H10_ROUTE, m
 
 describe("hosted H1–H10 route: signed dispatches only", () => {
   beforeEach(() => {
-    pools.created = 0; queries.length = 0; handle.mockReset(); beginStatus.value = "started";
+    pools.created = 0; pools.urls.length = 0; queries.length = 0; handle.mockReset(); beginStatus.value = "started";
     vi.stubEnv("FORGE_H10_DISPATCH_SECRET", secret);
     vi.stubEnv("FORGE_H10_SHADOW_ENABLED", "true");
     vi.stubEnv("FORGE_H10_SHADOW_APPROVAL_ID", "offline-test");
     vi.stubEnv("FORGE_H10_SHADOW_APPROVED_AT", "2026-11-23T00:00:00Z");
     vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "0123456789abcdef0123456789abcdef01234567");
     vi.stubEnv("SUPABASE_DB_URL", "postgres://offline.invalid/db");
+    vi.stubEnv("POSTGRES_URL", "");
     vi.stubEnv("CRON_SECRET", "a-reusable-bearer-secret");
   });
   afterEach(() => { vi.unstubAllEnvs(); });
@@ -75,5 +76,19 @@ describe("hosted H1–H10 route: signed dispatches only", () => {
     const body = dispatch();
     expect((await call(body, { "x-forge-h10-signature": signH10Dispatch(secret, H10_ROUTE, body) })).code).toBe(503);
     expect(pools.created).toBe(0);
+  });
+
+  it("uses SUPABASE_DB_URL, else POSTGRES_URL, and refuses before any work with neither", async () => {
+    handle.mockResolvedValue({ status: 200, body: { success: true, status: "complete" } });
+    const signed = () => { const body = dispatch(); return call(body, { "x-forge-h10-signature": signH10Dispatch(secret, H10_ROUTE, body) }); };
+    vi.stubEnv("POSTGRES_URL", "postgres://pooler.offline.invalid:6543/db");
+    expect((await signed()).code).toBe(200);
+    vi.stubEnv("SUPABASE_DB_URL", "");
+    expect((await signed()).code).toBe(200);
+    expect(pools.urls).toEqual(["postgres://offline.invalid/db", "postgres://pooler.offline.invalid:6543/db"]);
+    vi.stubEnv("POSTGRES_URL", "");
+    expect((await signed()).body).toEqual({ success: false, status: "failed", reason: "database_url_missing" });
+    expect(pools.created).toBe(2);
+    expect(handle).toHaveBeenCalledTimes(2);
   });
 });

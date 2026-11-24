@@ -31,8 +31,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
   const config = h10RouteConfig(process.env);
   if ("error" in config) return res.status(200).json({ success: true, status: "skipped", reason: config.error });
-  if (!process.env.SUPABASE_DB_URL) return res.status(503).json({ success: false, status: "failed", reason: "database_url_missing" });
-  const pool = new Pool({ connectionString: process.env.SUPABASE_DB_URL, ssl: { rejectUnauthorized: false }, max: 2 });
+  // SUPABASE_DB_URL first; else POSTGRES_URL, the Supavisor transaction-pooler URL the Supabase integration syncs to
+  // Vercel. The H10 code needs no session state: its two advisory locks are transaction-scoped.
+  const databaseUrl = process.env.SUPABASE_DB_URL || process.env.POSTGRES_URL;
+  if (!databaseUrl) return res.status(503).json({ success: false, status: "failed", reason: "database_url_missing" });
+  const pool = new Pool({ connectionString: databaseUrl, ssl: { rejectUnauthorized: false }, max: 2 });
   const db = pool as unknown as SqlConnection;
   try {
     const begun = await beginH10Dispatch(db, verified.dispatch);
