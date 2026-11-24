@@ -3,7 +3,7 @@ import { resolveTweetRosterIdentity } from "./tweetNameLexicon";
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
 import { breakIdentityTie, normalizeIdentityName, positionSlotRole, type PlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-11-23.17";
+export const TWEET_INTERPRETATION_VERSION = "2026-11-24.1";
 export type TweetInitialsEvidence = EvidenceSpan & { playerId: number; teamId: number };
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
@@ -370,6 +370,8 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       sourceMarker = { certainty: markerMatch[1]!.startsWith("🅿") ? "projected" : "confirmed", evidence: { start: at, end: at + markerMatch[1]!.length, text: markerMatch[1]! } };
       line = line.slice(0, markerMatch.index).trim();
     }
+    // The hyphen in a warm-up title is punctuation, so it cannot reserve a defense pair.
+    if (!situation && !result.units.length && /^(?:[#\p{L}.'’ ]+ warm[- ]?ups? lines|lines (?:in|at) [#\p{L}.'’ ]+ warm[- ]?ups?)[:.]?$/iu.test(line)) continue;
     // DFO writes the goalie row as "🥅: Name ✅"; the emoji is a goalie heading with or without a colon.
     const goalieEmoji = line.match(/^🥅\s*:?\s*/u);
     if (goalieEmoji) {

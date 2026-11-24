@@ -120,6 +120,24 @@ describe("source sections and positive role admission", () => {
     expect(result.relationships).toBeUndefined();
     checkSpans(seattleSectionText, result);
   });
+  it.each(["Leafs warm-up lines", "RT @markhmasters: Lines in Leafs warm-up"])("keeps a warm-up title out of defense slots and identity review: %s", title => {
+    const names = ["McCabe", "Raddysh", "Ekman-Larsson", "Tanev", "Rielly", "Stecher"];
+    const roster = names.map((lastName, index) => ({ playerId: index + 1, fullName: "Fixture " + lastName, lastName, teamId: 10, position: "D" }));
+    const rows = ["McCabe - Raddysh", "Ekman-Larsson - Tanev", "Rielly - Stecher"];
+    const parse = (sourceRows: string[]) => {
+      const text = [title, ...sourceRows].join("\n");
+      const parsed = interpretTweetUnits(text, roster);
+      checkSpans(text, parsed);
+      expect(parsed.lineContext?.context).toBe("warmup");
+      return parsed;
+    };
+    const intact = parse(rows);
+    expect(intact.unresolved).toEqual([]);
+    expect(intact.units.map(u => [u.number, u.players.map(p => p.playerId)])).toEqual([[1, [1, 2]], [2, [3, 4]], [3, [5, 6]]]);
+    const gap = parse(["Unresolved - Raddysh", ...rows.slice(1)]);
+    expect(gap.unresolved).toContainEqual(expect.objectContaining({ text: "Unresolved", situation: "es_defense", number: 1 }));
+    expect(gap.units.map(u => u.number)).toEqual([2, 3]);
+  });
   it("does not let short forward extras shift defense ordinals or a lone defenseman become a goalie", () => {
     const result = interpretTweetUnits(edmontonSectionText, edmontonSectionRoster);
     expect(result.context).toBe("practice");
