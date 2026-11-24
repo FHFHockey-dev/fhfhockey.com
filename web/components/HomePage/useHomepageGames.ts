@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import moment from "moment";
 
 import Fetch from "lib/cors-fetch";
@@ -17,6 +17,9 @@ export function useHomepageGames({
   const [games, setGames] = useState(
     currentDate === nextGameDate ? initialGames : []
   );
+  const visibleSsrSlateDate = useRef(
+    currentDate === nextGameDate && initialGames.length ? currentDate : null
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(
@@ -25,11 +28,16 @@ export function useHomepageGames({
 
   useEffect(() => {
     let cancelled = false;
+    // Revalidate an already visible SSR slate without removing its cards.
+    // Once a different date is selected, do not reuse that initial snapshot.
+    if (visibleSsrSlateDate.current !== currentDate) {
+      visibleSsrSlateDate.current = null;
+    }
 
     const fetchGamesForDate = async () => {
       try {
         if (!cancelled) {
-          setLoading(true);
+          setLoading(visibleSsrSlateDate.current !== currentDate);
           setError(null);
         }
         const res = await fetch(`/api/v1/games?date=${currentDate}`);
