@@ -243,6 +243,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "November 23 preflight-timeout fix on 699e90b7d: the pipeline's budget and child deadlines count from request arrival, the off-season gate is bounded at 5 s, and a late start records a retryable stop with no stage row. The verifier found no excluded projection inputs in the 244-module producer closure.",
   },
+  {
+    closureSha256: "6ae6bf1092a3c21e650c862d7d7c5f1c14327d678fd84044ceede48cc8dd7ebb",
+    commit: "65e0291906f9fb3a6933d8db9ace560371dcdee9",
+    receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/65e0291906f9fb3a6933d8db9ace560371dcdee9.json",
+    receiptSha256: "27df4d5c37fe04387bf5ef2653413a0747b4545815739acba97aa1566a35d544",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 23 lines, news and tweet-intake release on 65e029190 (master 7db94da1d merged with octoberBranch): source-dated goalie start reports, explicit PP unit numbers and reported club roster moves. The verifier found no excluded projection inputs in the 244-module producer closure.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
