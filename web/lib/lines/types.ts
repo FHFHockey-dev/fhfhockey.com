@@ -81,11 +81,20 @@ export type OfficialPowerPlayObservation = {
   period: number; elapsed: string; players: { playerId: number; name: string }[]; sourceUrl: string;
 };
 export type EntryView = { mode: "expected" | "entering" | "unrecorded"; frozenAt: string | null; basis: "stored" | "read_time" | null };
+export type GameGoalieReport = {
+  key: string; text: string; originalUrl: string | null; author: string | null; postedAt: string | null; receivedAt: string | null;
+  starter: { status: "projected" | "confirmed"; playerId: number; playerName: string } | null;
+};
+export type GameTimeDecisionReport = {
+  playerId: number; playerName: string; originalUrl: string; author: string; postedAt: string; receivedAt: string;
+};
 export type GameTeamLines = {
   teamId: number; abbreviation: string; entry: EntryRevision | null;
   entryRevisions: EntryRevision[];
   fallback: { gameId: number; date: string; entry: EntryRevision } | null;
   officialPowerPlay?: OfficialPowerPlayObservation[] | null;
+  gameTimeDecisionReports?: GameTimeDecisionReport[] | null;
+  goalieReports?: GameGoalieReport[] | null;
   observations: LineClaim[]; history: LineClaim[]; ppDefaults: PPDecision[];
   unresolved: Array<{ claimId: string; reasons: string[] }>; conflicts: LineConflict[];
   feed: SourceFeedItem[];

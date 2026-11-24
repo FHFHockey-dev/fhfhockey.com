@@ -1,4 +1,6 @@
+import { qualifyStoredReturn, reportedLineupExpectation } from "./lineupReturnEvidence";
 // @vitest-environment node
+import { bilingualGameEvents, readBilingualGameReport } from "./bilingualGameReport";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -15,7 +17,68 @@ import claimContextCases from "./fixtures/claimContextCases.json";
 import iftttComparison from "./fixtures/iftttComparisonObservations.json";
 import { buildNewsLineupSnapshot, validatedNewsLineupRows } from "../newsLineupPresentation";
 
+it("binds each named Toronto skater to announced participation and withholds unsupported returns", () => {
+  const players = [{ playerId: 8484287, fullName: "Cole McWard", lastName: "McWard", teamId: 10 },
+    { playerId: 8477541, fullName: "Dakota Mermis", lastName: "Mermis", teamId: 10 }];
+  const line = "McWard and Mermis will play tonight for Toronto";
+  const read = (text: string, roster = players, gameTeamIds = [10, 1]) =>
+    extractTweetPlayerEvents({ text, players: roster, gameTeamIds, publishedAt: "2026-11-08T21:53:31.000Z" });
+  const claims = read("Additional Leafs updates:\n\n" + line + "\n\nNo further update on Rielly (lower body)");
+  expect(claims.map(e => [e.playerId, e.kind, e.state, e.modality, e.availabilityScope, e.evidence.text])).toEqual(
+    players.map(p => [p.playerId, "participation", "will_play", "affirmative", "game", line]));
+  for (const events of [read(line, players, []), read(line, players, [8, 1]), read(line.replace("Toronto", "Boston")),
+    read("If cleared, " + line), read(line.replace("McWard", "Unknown")), read(line, [players[0]!, { ...players[1]!, teamId: 8 }])]) {
+    expect(events.filter(e => e.state === "will_play" || e.state === "confirmed_return")).toEqual([]);
+  }
+  const conflict = read(line + "\nMcWard will not play tonight.");
+  expect(conflict.filter(e => e.playerId === 8484287).map(e => e.reviewReason)).toEqual(["conflicting_claims", "conflicting_claims"]);
+  expect(conflict.find(e => e.playerId === 8477541)?.state).toBe("will_play");
+});
+
 describe("reviewed critical corpus extraction gaps", () => {
+  it("binds the club's bilingual ranges once per player and holds a disputed translation", () => {
+    const players = [{ playerId: 8476981, teamId: 8, fullName: "Josh Anderson", lastName: "Anderson" },
+      { playerId: 8476875, teamId: 8, fullName: "Mike Matheson", lastName: "Matheson" }];
+    const fr = "L'attaquant Josh Anderson (bas du corps) sera à l'écart du jeu pour approximativement 3 à 4 semaines et le défenseur Mike Matheson (bas du corps) sera à l'écart du jeu pour approximativement 2 à 3 semaines.";
+    const en = "Forward Josh Anderson (lower body) will be out for approximately 3 to 4 weeks and defenseman Mike Matheson (lower body) will be out for approximately 2 to 3 weeks.";
+    const read = (text: string) => extractTweetPlayerEvents({ players, text, publishedAt: "2026-11-15T22:05:13Z" });
+    const post = fr + "\n\n" + en;
+    const claims = read(post);
+    expect(claims).toMatchObject([{ playerId: 8476981, availability: "out", timeline: { minimum: 3, maximum: 4, approximate: true } },
+      { playerId: 8476875, availability: "out", timeline: { minimum: 2, maximum: 3, approximate: true } }]);
+    for (const claim of claims) for (const span of [claim.evidence, claim.claimAnchor!.subjectSpan, claim.claimAnchor!.predicateSpan]) {
+      expect(post.slice(span.start, span.end)).toBe(span.text);
+    }
+    expect(read(post.replace("3 à 4", "2 à 3")).map(c => c.playerId)).toEqual([8476875]);
+    expect(read(post.replace("Josh Anderson (bas", "Mike Matheson (bas"))).toEqual([]);
+    expect(read(post + " Correction: both are available.")).toEqual([]);
+    const separate = extractTweetPlayerEvents({ players: [...players,
+      { playerId: 8478470, teamId: 8, fullName: "Samuel Montembeault", lastName: "Montembeault", position: "G" }],
+      text: post + " Samuel Montembeault starts tonight.", publishedAt: "2026-11-15T22:05:13Z" });
+    expect(separate.some(e => e.kind === "goalie" && e.playerName === "Samuel Montembeault")).toBe(true);
+  });
+  it("keeps the two Colorado absence windows scoped to their named players without a return date", () => {
+    const players = [{ playerId: 8477492, teamId: 21, fullName: "Nathan MacKinnon", lastName: "MacKinnon" },
+      { playerId: 8480069, teamId: 21, fullName: "Cale Makar", lastName: "Makar" },
+      { playerId: 8482953, teamId: 21, fullName: "Taylor Makar", lastName: "Makar" }];
+    const read = (text: string) => extractTweetPlayerEvents({ players, text, publishedAt: "2026-11-14T17:21:56Z" });
+    const raw = "Avs coach Jared Bednar confirms that Nathan MacKinnon is out at least a month. Cale Makar will be out approximately two weeks.";
+    expect(read(raw)).toMatchObject([{ playerId: 8477492, availability: "out", timeline: {
+      minimum: 1, maximum: null, unit: "months", text: "at least a month", targetDate: null } },
+      { playerId: 8480069, availability: "out", timeline: { minimum: null, maximum: null, estimate: 2, approximate: true, unit: "weeks", targetDate: null } }]);
+    for (const event of read(raw)) {
+      for (const span of [event.evidence, event.claimAnchor!.subjectSpan, event.claimAnchor!.predicateSpan]) {
+        expect(raw.slice(span.start, span.end)).toBe(span.text);
+      }
+    }
+    expect(read("Makar is out at least a month.")).toEqual([]);
+    for (const text of ["If cleared, Nathan MacKinnon is out at least a month.", "Last season:\nCale Makar will be out approximately two weeks.",
+      "Cale Makar will be out approximately two weeks if surgery is needed.", "Is Cale Makar out approximately two weeks?"]) {
+      expect(read(text).filter(e => e.timeline?.estimate || e.timeline?.text === "at least a month")).toEqual([]);
+    }
+    expect(read("Cale Makar is expected to miss about a month.")).toMatchObject([{ modality: "tentative", availability: "uncertain",
+      timeline: { estimate: 1, minimum: null, maximum: null } }]);
+  });
   const fixture = (id: string) => claimContextCases.cases.find(item => item.id === id)!;
   const events = (id: string) => extractTweetPlayerEvents({ ...fixture(id), claimAware: true });
   it("retains the exact three source hashes as development regression evidence", () => {
@@ -197,6 +260,15 @@ describe("BOS standard lineup identity regression", () => {
     spansMatch(practiceText, [...result.units, ...(result.excludedUnits ?? [])]);
   });
 
+  it("keeps practice dates out of player alternatives and preserves an actual rotation", () => {
+    const text = practiceText.replace("Bruins practice lines:", "Back at it. Bruins practice, 11/18:");
+    const dated = interpretTweetUnits(text, bruins);
+    expect(dated.relationships ?? []).toEqual([]);
+    expect(dated.excludedUnits).toMatchObject([{ situation: "es_defense", number: 4, complete: true }]);
+    const alternate = interpretTweetUnits(text.replace("Jeannot-Poitras-Kastelic", "Jeannot-Poitras-Kastelic/Kuraly"), bruins);
+    expect(alternate.relationships?.filter(r => r.kind === "alternatives").map(r => r.evidence.text)).toEqual(["Jeannot-Poitras-Kastelic/Kuraly"]);
+  });
+
   it("excludes a fifth standard forward triplet without renumbering or discarding its spans", () => {
     const text = practiceText.replace("\nKuraly\n", "\nKuraly-Gaunce-Eyssimont\n");
     const result = interpretTweetUnits(text, bruins);
@@ -296,7 +368,8 @@ describe("structured tweet interpretation", () => {
   });
   it.each(["2105378254983205114", "2105375596687843639", "2105366758089695718"])("retains two PP units and original offsets for %s", (id) => {
     const text = seed(id), result = interpretTweetUnits(text, seedRoster(id));
-    expect(result.units.map((unit) => [unit.situation, unit.number, unit.players.length, unit.complete])).toEqual([["pp", 1, 5, true], ["pp", 2, 5, true]]);
+    const numbers = id === "2105375596687843639" ? [null, null] : [1, 2];
+    expect(result.units.map(unit => [unit.situation, unit.number, unit.players.length, unit.complete])).toEqual(numbers.map(number => ["pp", number, 5, true]));
     for (const unit of result.units) for (const span of unit.evidence) expect(text.slice(span.start, span.end)).toBe(span.text);
   });
   it("preserves CBJ row ordinals and slash uncertainty without combining identities", () => {
@@ -420,6 +493,72 @@ describe("structured tweet interpretation", () => {
     expect(extractTweetPlayerEvents({ text: "McLeod will play tonight. Norris remains out.", players: roster, publishedAt: null }))
       .toMatchObject([{ playerId: 1, state: "confirmed_return" }, { playerId: 2, state: "ongoing" }]);
   });
+  it("keeps an expected entry out of lineup changes and sends only a missing subject for review", () => {
+    const kev = { playerId: 8483466, fullName: "Kevin Korchinski", lastName: "Korchinski", teamId: 16 };
+    for (const modal of ["is expected to", "is not expected to"]) {
+      const text = `Korchinski ${modal} draw back into the lineup.`;
+      expect(extractTweetUnitChanges(text, [kev])).toEqual([]);
+      expect(interpretTweetUnits(text, [kev]).unresolved).toEqual([]);
+    }
+    const text = "Wolcott is expected to draw back into the lineup.";
+    expect(interpretTweetUnits(text, [kev]).unresolved).toMatchObject([{ text: "Wolcott", start: 0, end: 7, reason: "missing_player" }]);
+  });
+  it("binds only the full-name bulletin's own subject, day, opponent and occurrence", async () => {
+    const { expectedLineupEvent } = await import("./reportedLineupEntry");
+    const subject = { playerId: 8482726, fullName: "Samuel Helenius", lastName: "Helenius", teamId: 26 };
+    const other = { playerId: 8484797, fullName: "Konsta Helenius", lastName: "Helenius", teamId: 7 };
+    const text = "Samuel Helenius: Line Change: Helenius is expected to draw back into the lineup vs. Toronto on Thursday.";
+    const hit = { reason: "ambiguous_name" as const, rawName: "Helenius", start: 30, end: 38, teamId: null, candidatePlayerIds: [subject.playerId, other.playerId] };
+    const args = { rosters: new Map([[26, [subject]], [7, [other]]]), teamId: 26, opponentId: 10, postId: "2123468483476459931",
+      publishedAt: "2026-11-19T17:28:33Z", gameDate: "2026-11-19", review: [hit] };
+    const event = expectedLineupEvent(text + " https://t.co/gmb2lizmSJ", args);
+    expect(event).toMatchObject({ playerId: subject.playerId, teamId: 26, kind: "participation", state: "projected",
+      modality: "tentative", availability: "uncertain", evidence: { start: 0, end: text.length, text } });
+    for (const changed of [text.replace("Samuel ", ""), text.replace("Thursday", "Friday"), text.replace("Toronto", "Dallas"),
+      text.replace("is expected", "is not expected"), text + " Correction: scratched.", "At practice: " + text, text.replace("Thursday.", "Thursday?")]) {
+      expect(expectedLineupEvent(changed, args), changed).toBeNull();
+    }
+    for (const change of [{ publishedAt: "2026-11-19T17:28:35Z" }, { postId: "1" }, { gameDate: "2026-11-20" },
+      { opponentId: 7 }, { rosters: new Map([[26, [subject]], [7, [{ ...subject, teamId: 7 }]]]) },
+      { review: [{ ...hit, reason: "conflicting_context" as const }] }, { review: [{ ...hit, end: 39 }] },
+      { review: [{ ...hit, candidatePlayerIds: [other.playerId] }] }]) {
+      expect(expectedLineupEvent(text, { ...args, ...change })).toBeNull();
+    }
+  });
+  it("binds a directly reported lineup entry without upgrading a practice, conditional or conflicting report", async () => {
+    const { reportedLineupEntries } = await import("./reportedLineupEntry");
+    const { extractTweetUnitChanges } = await import("./tweetInterpretation");
+    const player = { playerId: 8483424, fullName: "Owen Beck", lastName: "Beck", teamId: 8 };
+    const sentence = "Owen Beck draws back into the line-up";
+    const entries = (text: string) => reportedLineupEntries(text, extractTweetUnitChanges(text, [player]), extractTweetPlayerEvents({ text, players: [player], publishedAt: null }), 3);
+    expect(entries("Tonight vs. #NYR\n" + sentence + " for the injured Josh Anderson")).toMatchObject([{ playerId: player.playerId }]);
+    for (const text of ["If cleared, " + sentence, sentence + " if cleared", "At practice\n" + sentence,
+      "Expected lineup\n" + sentence, "Yesterday\n" + sentence, sentence + "?",
+      sentence + " tonight against the Leafs", sentence + ". Correction: Beck is out.", sentence + ". He will not play.",
+      sentence + ". Owen Beck draws out of the lineup.", "Does " + sentence + "?", "Last game\n" + sentence, "It looks like:\n" + sentence, "Owen Beck will not play tonight. " + sentence]) {
+      expect(entries(text), text).toEqual([]);
+    }
+    const substitution = sentence + " for the injured Josh Anderson";
+    const injury = extractTweetPlayerEvents({ text: substitution, players: [player, { playerId: 8476981, teamId: 8, fullName: "Josh Anderson", lastName: "Anderson" }], publishedAt: null });
+    expect(injury.map(e => [e.playerId, e.kind, e.evidence.text, e.availability])).toEqual([[8476981, "injury", "injured Josh Anderson", "unknown"]]);
+    expect(interpretTweetUnits(substitution, [player]).unresolved.some(u => u.situation === "es_defense")).toBe(false);
+    const changed = extractTweetUnitChanges(sentence, [player]);
+    changed[0]!.playersIn[0]!.evidence.end--;
+    expect(reportedLineupEntries(sentence, changed, [], 3)).toEqual([]);
+  });
+  it("keeps a lineup return's missing timeline and the reporter's hedge separate from announced availability", () => {
+    const clause = "Norris (upper-body) is without a timeline to return to the lineup.";
+    expect(classifyInjuryEvent(clause)).toBe("unknown");
+    expect(injuryAvailability(clause)).toBe("unknown");
+    expect(classifyInjuryEvent("It looks like Norris returns to the lineup tonight.")).toBe("possible_return");
+    const text = "The coach says it looks like Norris will return to the lineup tonight. McLeod will play tonight.";
+    const events = extractTweetPlayerEvents({ text, players: roster, publishedAt: null });
+    expect(events.map(e => [e.playerId, e.state, e.availability])).toEqual([
+      [2, "possible_return", "uncertain"], [1, "confirmed_return", "available"],
+    ]);
+    expect(events[0]!.evidence.text).toContain("looks like Norris");
+    for (const event of events) expect(text.slice(event.evidence.start, event.evidence.end)).toBe(event.evidence.text);
+  });
   it("preserves source spans for accents and repeated surname mentions", () => {
     const text = "Emile O’Connor suffered an injury. Norris remains out. O'Connor will be re-evaluated Monday.";
     const events = extractTweetPlayerEvents({ text, players: [...roster, { playerId: 100, fullName: "Émile O'Connor", lastName: "O'Connor", position: "C" }], publishedAt: "2026-09-18T15:00:00Z" });
@@ -439,7 +578,7 @@ describe("structured tweet interpretation", () => {
   it("parses the Utah 3+2 power-play example without creating ES pairs", () => {
     const text = "Utah power play units\nGuenther - Cooley - Schmaltz\nKeller - Sergachev\n\nLee - Trocheck - Yamamoto\nHayton - Marino";
     const result = interpretTweetUnits(text, roster);
-    expect(result.units.map((unit) => [unit.situation, unit.number, unit.players.length, unit.complete])).toEqual([["pp", 1, 5, true], ["pp", 2, 5, true]]);
+    expect(result.units.map((unit) => [unit.situation, unit.number, unit.players.length, unit.complete])).toEqual([["pp", null, 5, true], ["pp", null, 5, true]]);
     for (const unit of result.units) for (const span of unit.evidence) expect(text.slice(span.start, span.end)).toBe(span.text);
   });
   it("supports explicit PP units and PK pairs, keeping camp groups separate", () => {
@@ -728,10 +867,75 @@ describe("retained audit claim regressions", () => {
     expect(completeEvenStrengthUnits({ ...parsed, units: parsed.units.slice(1) })).toEqual([]);
     for (const unit of parsed.units) for (const span of unit.evidence) expect(f.text.slice(span.start, span.end)).toBe(span.text);
   });
+  it("preserves a credited goalie announcement, the full matchup and the governing conditions", () => {
+    const player = { playerId: 8484170, fullName: "Jacob Fowler", lastName: "Fowler", teamId: 8, position: "G" };
+    const source = "#Habs Martin St-Louis confirms Jacob Fowler will get the start tonight vs. the #mnwild";
+    const read = (text: string, teamIds = [8, 30], skater = player) =>
+      extractTweetPlayerEvents({ text, players: [skater], gameTeamIds: teamIds, publishedAt: "2026-11-10T16:12:29Z",
+        includeClaimAnchors: true }).filter(e => e.kind === "goalie" && e.state === "confirmed");
+    expect(read(source)).toMatchObject([{ playerId: player.playerId, goalieRole: "starter", evidence: { start: 0, end: source.length, text: source },
+      claimAnchor: { subjectSpan: { text: "Jacob Fowler" }, predicateSpan: { text: "will get the start tonight vs. the #mnwild" } } }]);
+    for (const text of [source + " if healthy.", source + "?", source + ". Correction: he is backing up.",
+      "Yesterday: " + source, "Practice notes:\n" + source, source.replace("confirms", "thinks"),
+      source.replace("#mnwild", "#Habs"), source.replace("tonight", "tomorrow"), source.replace("tonight", "in practice")]) {
+      expect(read(text), text).toEqual([]);
+    }
+    expect(read(source, [8, 6])).toEqual([]);
+    expect(read(source, [8, 30], { ...player, teamId: 30 })).toEqual([]);
+    expect(read(source, [8, 30], { ...player, position: "C" })).toEqual([]);
+  });
+  it("binds a direct start announcement to its goalie and preserves the source span", () => {
+    const player = { playerId: 8476914, fullName: "Joonas Korpisalo", lastName: "Korpisalo", position: "G", teamId: 3 };
+    const clause = "Korpisalo will get the start in net.";
+    const text = "Dorofeyev is on the ice right now and looks like he’s good for tonight. " + clause + " #NYR";
+    const read = (source: string) => extractTweetPlayerEvents({ text: source, players: [player], publishedAt: null, claimAware: true })
+      .filter(event => event.state === "confirmed");
+    expect(read(text)).toMatchObject([{ playerId: player.playerId, goalieRole: "starter",
+      evidence: { start: text.indexOf(clause), end: text.indexOf(clause) + clause.length, text: clause } }]);
+    for (const source of [
+      "Looks like " + clause, "If healthy, " + clause, "Yesterday’s projected lineup:\n" + clause,
+      "Practice notes:\n" + clause, "Rumor: " + clause, "Korpisalo will get the start in net if healthy.",
+      "Korpisalo will get the start in net?", "Korpisalo will get the start tomorrow.",
+      clause + " Correction: he will back up.", "The suggestion was: “" + clause + "”",
+    ]) expect(read(source), source).toEqual([]);
+  });
   it.each(["Hart is expected in goal", "The coach would expect Hart to start", "Coach did not confirm Hart will start", "Hart starts if healthy", "Hart is not the starter", "Hart is first goalie off", "Hart has made two starts this season.", "Hart is in the starter net at practice.", "Hart did not start yesterday."])("preserves uncertainty or negation in %s", (text) => {
     const claims = extractTweetPlayerEvents({ text, players: [{ playerId: 100, fullName: "Carter Hart", lastName: "Hart", position: "G" }], publishedAt: null });
     expect(claims).toHaveLength(1);
     expect(claims[0]!.state).not.toBe("confirmed");
+  });
+  describe("reported weekday goalie start", () => {
+    const publishedAt = "2026-11-14T01:45:14Z";
+    const goalie = { playerId: 8482447, fullName: "Leevi Meriläinen", lastName: "Meriläinen", position: "G", teamId: 23 };
+    const literal = "Meriläinen starts Friday vs. the Rangers.";
+    const full = "Leevi Merilainen: Goalie Start: " + literal + " https://t.co/5xXIlu7B1N";
+    const read = (text: string, options: Partial<Parameters<typeof extractTweetPlayerEvents>[0]> = {}) =>
+      extractTweetPlayerEvents({ text, players: [goalie], publishedAt, claimAware: true, ...options }).filter(e => e.state === "confirmed");
+
+    it.each([literal, full])("retains the named opponent and source date in %s", text => {
+      const events = extractTweetPlayerEvents({ text, publishedAt, players: [goalie], gameTeamIds: [3, 23], claimAware: true });
+      expect(events).toMatchObject([{ playerId: goalie.playerId, state: "confirmed", effectiveDate: "2026-11-13",
+        goalieRole: "starter", evidence: { start: text.indexOf(literal), end: text.indexOf(literal) + literal.length, text: literal } }]);
+    });
+    it.each([
+      "Meriläinen is expected to start Friday vs. the Rangers.", "If healthy, " + literal,
+      "At practice, " + literal, "Meriläinen starts Friday vs. the Rangers if healthy.",
+      literal + " Correction: the coach has not chosen a starter.", literal.replace("Friday", "Saturday"),
+      literal.replace("Rangers", "Canucks"), literal.replace("the Rangers", "New York"),
+      literal.replace("the Rangers", "Utah U18"), literal.replace("vs.", "in"),
+      "Garand: Goalie Start: " + literal, "The trip starts Friday vs. the Rangers."
+    ])("withholds a confirmed claim for %s", text => {
+      expect(read(text)).toEqual([]);
+    });
+    it("checks the publication clock, team and bound matchup independently", () => {
+      const late = "2026-11-14T06:15:00Z";
+      expect(read(literal, { publishedAt: late })).toMatchObject([{ effectiveDate: "2026-11-13" }]);
+      expect(read(literal, { publishedAt: late, players: [{ ...goalie, teamId: null }] })).toEqual([]);
+      expect(read(literal, { publishedAt: null })).toEqual([]);
+      expect(read(literal, { gameTeamIds: [23, 7] })).toEqual([]);
+      expect(read(literal, { players: [{ ...goalie, position: "D" }] })).toEqual([]);
+      expect(read(full, { claimAware: false })).toEqual([]);
+    });
   });
   describe("goalie matchup 'A vs B in goal'", () => {
     // Retained report receipt (VGK, game 2026020278 BUF/VGK, 11-08): only Hill was confirmed; Ellis got no event.
@@ -1138,4 +1342,145 @@ describe("pipe-separated goalie lines", () => {
     none(rushes("Husso | Dostál split the week in net, coach says"));
     none(rushes("Caulfield | Gauthier"));
   });
+});
+
+it("keeps a definite game absence separate from recovery and from another player's start", () => {
+  const players = [{ playerId: 8482758, fullName: "Ville Koivunen", lastName: "Koivunen", teamId: 5, position: "R" },
+    { playerId: 8481668, fullName: "Arturs Silovs", lastName: "Silovs", teamId: 5, position: "G" }];
+  const sentence = "Ville Koivunen is out day-to-day with an LBI and is out tonight.";
+  const read = (text: string, gameTeamIds = [5, 24]) => extractTweetPlayerEvents({ text, players, publishedAt: "2026-11-08T23:10:43Z", gameTeamIds });
+  const [missed, goalie] = read(sentence + "\n\nArturs Silovs is in net. Both per the team.");
+  expect(missed).toMatchObject({ playerId: 8482758, teamId: 5, availabilityScope: "game", effectiveDate: "2026-11-08",
+    modality: "affirmative", availability: "out", claimAnchor: { predicateSpan: { text: "is out tonight" } },
+    timelines: [{ text: "day-to-day", targetDate: null }, { purpose: "absence", targetDate: "2026-11-08" }] });
+  expect(goalie).toMatchObject({ playerId: 8481668, state: "confirmed", goalieRole: "starter" });
+  for (const text of ["Ville Koivunen is day-to-day ahead of tonight's game.", "Ville Koivunen is day-to-day and will not practice today.",
+    "Ville Koivunen is day-to-day and Arturs Silovs is out tonight.", "Projected:\n" + sentence, "If cleared:\n" + sentence,
+    sentence + "\nCorrection: he will play.", sentence + "\nHe may still play.", sentence.replace("tonight", "tomorrow"),
+    sentence.replace("tonight", "tonight in Toronto"), sentence.replace("tonight", "tonight?")]) {
+    expect(read(text).filter(e => e.playerId === 8482758 && e.availabilityScope === "game" && e.availability === "out")).toEqual([]);
+  }
+  expect(read(sentence, [8, 24]).some(e => e.availabilityScope === "game")).toBe(false);
+});
+
+it("keeps the game predicate literal when a medical report also describes recovery", () => {
+  const players = [{ playerId: 8483431, fullName: "Logan Cooley", lastName: "Cooley", teamId: 68 }];
+  const read = (text: string) => extractTweetPlayerEvents({ text, players, publishedAt: "2026-11-12T02:06:49Z", gameTeamIds: [54, 68] });
+  for (const [report, predicate] of [
+    ["Lots of injury updates:\n\nLogan Cooley will not play tonight (upper-body) and is listed as day to day.", "will not play tonight"],
+    ["Logan Cooley will not play today. Considered day-to-day.", "will not play today"],
+  ]) {
+    const [event] = read(report!);
+    expect(event).toMatchObject({ playerId: 8483431, availabilityScope: "game", availability: "out", effectiveDate: "2026-11-11",
+      claimAnchor: { predicateSpan: { start: report!.indexOf(predicate!), text: predicate } } });
+  }
+  for (const text of ["Logan Cooley is listed as day to day.", "Logan Cooley could play tonight. Considered day-to-day."])
+    expect(read(text).some(e => e.availabilityScope === "game" && e.availability === "out")).toBe(false);
+});
+
+it("attributes Guenther's adjacent IR duration without treating a prose pronoun as Kevin He", () => {
+  const players = [{ playerId: 8482699, fullName: "Dylan Guenther", lastName: "Guenther", teamId: 68 },
+    { playerId: 8484864, fullName: "Kevin He", lastName: "He", teamId: 52, aliases: ["He"] },
+    { playerId: 8483431, fullName: "Logan Cooley", lastName: "Cooley", teamId: 68 }];
+  const read = (text: string) => extractTweetPlayerEvents({ text, players, publishedAt: "2026-11-12T02:08:03Z" });
+  const injury = "Dylan Guenther will not play tonight (upper-body) and has been placed on Injured Reserve (IR).";
+  const duration = "He will miss approximately 2-4 weeks.";
+  const [event] = read(injury + " " + duration);
+  expect(event).toMatchObject({ playerId: 8482699, availability: "out", claimAnchor: { subjectSpan: { text: "Dylan Guenther" },
+    predicateSpan: { text: "will miss approximately 2-4 weeks" } }, timelines: [
+    { minimum: 2, maximum: 4, unit: "weeks", approximate: true, targetDate: null }, { text: "tonight", targetDate: "2026-11-11" }] });
+  for (const text of [duration, "Logan Cooley and " + injury + " " + duration, injury + "\n" + duration,
+    injury + " Logan Cooley spoke first. " + duration, injury + " " + duration + " Correction: Guenther could return tonight."]) {
+    const events = read(text);
+    expect(events.some(e => e.playerId === 8484864)).toBe(false);
+    expect(events.some(e => e.timeline?.approximate && e.timeline.unit === "weeks")).toBe(false);
+  }
+  expect(read("Kevin He will miss approximately 2-4 weeks.")).toMatchObject([{ playerId: 8484864, timeline: { minimum: 2, maximum: 4 } }]);
+  expect(interpretTweetUnits("Projected lines\nHe-Cooley-Guenther", players).units.some(u => u.players.some(e => e.playerId === 8484864))).toBe(true);
+});
+
+it("keeps a day-to-day update on its named skater and preserves an explicit goalie surname", () => {
+  const players = [{ playerId: 8476853, fullName: "Morgan Rielly", lastName: "Rielly", teamId: 10 },
+    { playerId: 8484455, fullName: "Nathaniel Day", lastName: "Day", teamId: 22, position: "G" }];
+  const read = (text: string) => extractTweetPlayerEvents({ text, players, publishedAt: "2026-11-16T15:49:06Z" });
+  for (const term of ["Day-to-day", "Day to Day"]) {
+    const events = read("Morgan Rielly: " + term + ", lower body injury. He will participate in practice today.");
+    expect(events.map(e => e.playerId)).toEqual([8476853]);
+    expect(events[0]).toMatchObject({ availability: "uncertain" });
+  }
+  expect(read("Day starts in net tonight.")).toMatchObject([{ playerId: 8484455, goalieRole: "starter" }]);
+});
+
+describe("matching English and French game-day bulletins", () => {
+  const original = "Owen Beck sera en uniforme ce soir face aux Leafs, tandis que Jacob Fowler sera le gardien partant. Josh Anderson ne jouera pas ce soir.\n\nOwen Beck draws back into the lineup tonight against the Leafs, while Jacob Fowler will get the start in net. Josh Anderson will not play tonight.";
+  const roster = [
+    { playerId: 8483424, fullName: "Owen Beck", lastName: "Beck", position: "C", teamId: 8 },
+    { playerId: 8484170, fullName: "Jacob Fowler", lastName: "Fowler", position: "G", teamId: 8 },
+    { playerId: 8476981, fullName: "Josh Anderson", lastName: "Anderson", position: "R", teamId: 8 },
+  ];
+  const games = new Map([[8, 2026020268], [10, 2026020268]]);
+  const read = (text = original, players = roster, date = "2026-11-07", review: { start: number; end: number }[] = [], author = "CanadiensMTL") =>
+    bilingualGameEvents(text, players, games, "2026-11-07T17:19:03Z", date, author, review)?.events ?? [];
+  it("keeps both language spans and each player's own affirmative status", () => {
+    const text = "RT @CanadiensMTL: " + original, events = read(text);
+    expect(events.map(e => [e.playerId, e.kind, e.state])).toEqual([[8483424,"participation","will_play"], [8484170,"goalie","confirmed"], [8476981,"participation","ruled_out"]]);
+    for (const e of events) for (const s of [e.claimAnchor!.subjectSpan, e.claimAnchor!.predicateSpan, e.evidence, e.translatedEvidence!]) {
+      expect(text.slice(s.start, s.end)).toBe(s.text);
+    }
+    expect(events.every(e => e.effectiveDate === "2026-11-07" && !e.timelines.length)).toBe(true);
+  });
+  it("withholds a namesake, skater in a goalie sentence, disputed translation or review-only occurrence independently", () => {
+    const other = { ...roster[1]!, playerId: 999 };
+    for (const events of [read(original, [...roster, other]), read(original, roster.map(p => ({ ...p, position: "D" }))),
+      read(original, roster, undefined, [{ start: original.indexOf("Jacob"), end: original.indexOf("Jacob") + 5 }]),
+      read(original.replace("Jacob Fowler sera le gardien partant", "Jacob Fowler ne jouera pas ce soir"))]) {
+      expect(events.map(e => e.playerId)).toEqual([8483424, 8476981]);
+    }
+  });
+  it("withholds the new assignments for the wrong day, opponent, wrapper author or hedged source", () => {
+    expect(read(original, roster, "2026-11-08")).toEqual([]);
+    expect(read(original.replaceAll("Leafs", "Wild"))).toEqual([]);
+    expect(read("RT @SomeoneElse: " + original)).toEqual([]);
+    for (const text of [original + " Correction to follow.", "At practice: " + original,
+      original.replace("will get the start", "might get the start"), original.replace(", while ", ". "),
+      original.replace(", while ", ", tandis que ")]) expect(read(text).filter(e => e.goalieRole === "starter")).toEqual([]);
+  });
+  it("respects the printed injury location and the dated bilingual club byline", () => {
+    const text = "L'attaquant Zachary Bolduc (haut du corps) ne participera au match de ce soir.\n\nForward Zachary Bolduc (upper body) will not play in tonight's game.";
+    const player = [{ playerId: 8482737, fullName: "Zachary Bolduc", lastName: "Bolduc", teamId: 8, position: "R" }];
+    const match = (body: string, author: string) => bilingualGameEvents(body, player, new Map([[8,2026020352],[12,2026020352]]), "2026-11-19T18:00:02Z","2026-11-19",author,[])?.events ?? [];
+    expect(match(text,"CanadiensMTL")).toMatchObject([{ playerId: 8482737, availability: "out", timelines: [] }]);
+    expect(match(text,"GameDayNewsNHL")).toEqual([]);
+    expect(match(text.replace("upper body","lower body"),"CanadiensMTL")).toEqual([]);
+    expect(readBilingualGameReport(text)?.pairs[0]?.english.body).toBe("upper");
+  });
+});
+
+it("keeps a game-time decision on its named player and out of the goalie and absence slots", () => {
+  const players = [{ playerId: 8477951, fullName: "Nick Schmaltz", lastName: "Schmaltz", teamId: 68, position: "C" },
+    { playerId: 8477220, fullName: "Nate Schmidt", lastName: "Schmidt", teamId: 68, position: "D" }];
+  const read = (text: string) => extractTweetPlayerEvents({ players, text, publishedAt: "2026-11-12T19:17:25Z", includeClaimAnchors: true });
+  const text = "Schmaltz is a game time decision.\nSchmidt is considered week to week.";
+  const decisions = read(text).filter(e => e.state === "game_time_decision");
+  expect(decisions).toMatchObject([{ playerId: 8477951, teamId: 68, availability: "uncertain", modality: "tentative", timeline: null,
+    claimAnchor: { subjectSpan: { text: "Schmaltz" }, predicateSpan: { text: "is a game time decision" } } }]);
+  for (const line of ["Schmaltz was a game time decision.", "Schmaltz is not a game time decision.", "Is Schmaltz a game-time decision?",
+    "There will be some game time decisions. Schmidt is skating.", "If Schmidt rests, Schmaltz is a game time decision.",
+    "Schmaltz is a game time decision unless cleared.", "Schmaltz is a game time decision. He will not play.",
+    "Schmaltz is a game time decision. Correction: ruled out."]) expect(read(line).filter(e => e.state === "game_time_decision"),line).toEqual([]);
+});
+
+it("keeps the reporter's hedge on a stored return and does not guess between repeated excerpts", () => {
+  const text = "Looks like Zack MacEwen will play tonight.";
+  const start = text.indexOf("Zack"), end = start + "Zack MacEwen".length;
+  const event = { kind: "injury", state: "confirmed_return", playerName: "Zack MacEwen", playerId: 8479772,
+    availability: "available", modality: "affirmative", evidence: { start, end: text.length, text: text.slice(start) },
+    claimAnchor: { subjectSpan: { start, end, text: "Zack MacEwen" }, predicateSpan: { start: end + 1, end: end + 10, text: "will play" } } } as const;
+  expect(qualifyStoredReturn(event as any, text)).toMatchObject({ kind: "participation", state: "projected",
+    availability: "uncertain", modality: "tentative", evidence: { start: 0, text: "Looks like Zack MacEwen will play" } });
+  expect(qualifyStoredReturn(event as any, text + " " + text.slice(start))).toBeNull();
+  expect(qualifyStoredReturn(event as any, text.slice(start))).toBe(event);
+  for (const changed of [text.replace("tonight.", "if cleared."), text + " He is out.", text.replace("Looks like", "Yesterday it looked like")]) {
+    expect(reportedLineupExpectation(changed, changed.indexOf("Zack"), changed.indexOf(" will"))).toBeNull();
+  }
 });

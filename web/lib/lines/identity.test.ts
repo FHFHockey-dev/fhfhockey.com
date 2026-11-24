@@ -13,6 +13,20 @@ describe("event-date player identities", () => {
     expect(result.reasons).toHaveLength(0); expect(result.unit.players[0]!.name).toBe("Nikita Kucherov");
     expect(result.unit.evidence[0]!.text).toBe("Kucherv"); expect(result.evidence).toContain("approved_alias:1");
   });
+  it("uses the event's roster season and preserves same-season and undated conflicts", () => {
+    const unit = fixtureUnit(["Carlson"]);
+    const skaters = [{ playerId: 1, fullName: "John Carlson", lastName: "Carlson" }];
+    const carolina = { ...membership, teamId: 12, seasonId: 20252026, from: "2026-06-28T02:00:03Z", until: null, evidenceId: "prior_club" };
+    const tampa = { ...membership, seasonId: 20262027, from: "2026-09-19T00:57:25Z", until: null, evidenceId: "report_season" };
+    const at = { ...options, effectiveAt: "2026-11-20T00:51:18Z", players: skaters };
+    expect(resolveEventUnit(unit, { ...at, memberships: [carolina, tampa] })).toMatchObject({ reasons: [], evidence: ["report_season"] });
+    for (const seasonId of [tampa.seasonId, null]) {
+      expect(resolveEventUnit(unit, { ...at, memberships: [{ ...carolina, seasonId }, tampa] }).reasons).toContain("identity:Carlson:conflicting_membership");
+    }
+    const prior = { ...at, teamId: 12, effectiveAt: "2026-07-01T01:00:00Z", memberships: [carolina, tampa] };
+    expect(resolveEventUnit(unit, prior).evidence).toEqual(["prior_club"]);
+    expect(resolveEventUnit(unit, { ...prior, effectiveAt: "2026-07-01T04:00:00Z" }).reasons).toContain("identity:Carlson:conflicting_membership");
+  });
   it("historical membership wins over today's team and fails after the interval ends", () => {
     const unit = fixtureUnit(["Kucherov"]);
     expect(resolveEventUnit(unit, { ...options, players: [{ ...players[0]!, teamId: 99 }] }).reasons).toHaveLength(0);

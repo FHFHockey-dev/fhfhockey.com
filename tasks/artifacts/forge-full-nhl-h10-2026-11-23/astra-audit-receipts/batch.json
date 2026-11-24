@@ -1,0 +1,62 @@
+{
+  "query": "select run_id,as_of_date,created_at,status,git_sha from forge_runs where git_sha='989ee767cb9723bcf1b9d2242343aee53c7e3448' and status='succeeded' and created_at between '2026-11-23 10:16Z' and '2026-11-23 10:39Z' order by as_of_date",
+  "rows": [
+    {
+      "run_id": "0203c9b0-7dbc-4f8e-a0cc-000cb974bb13",
+      "as_of_date": "2026-11-23",
+      "created_at": "2026-11-23 10:16:22.488514+00",
+      "status": "succeeded",
+      "git_sha": "989ee767cb9723bcf1b9d2242343aee53c7e3448"
+    },
+    {
+      "run_id": "db190142-2f66-47d9-9d54-5d66af05888d",
+      "as_of_date": "2026-11-24",
+      "created_at": "2026-11-23 10:17:49.03084+00",
+      "status": "succeeded",
+      "git_sha": "989ee767cb9723bcf1b9d2242343aee53c7e3448"
+    },
+    {
+      "run_id": "0ddc93e3-79fc-46f7-9416-72e838aec059",
+      "as_of_date": "2026-11-25",
+      "created_at": "2026-11-23 10:23:34.978516+00",
+      "status": "succeeded",
+      "git_sha": "989ee767cb9723bcf1b9d2242343aee53c7e3448"
+    },
+    {
+      "run_id": "5dc35244-0cd9-4fb3-b247-e79bd79ff8dc",
+      "as_of_date": "2026-11-26",
+      "created_at": "2026-11-23 10:32:20.507508+00",
+      "status": "succeeded",
+      "git_sha": "989ee767cb9723bcf1b9d2242343aee53c7e3448"
+    },
+    {
+      "run_id": "df4b39a8-ff7d-4df5-b142-0137e58d31a5",
+      "as_of_date": "2026-11-27",
+      "created_at": "2026-11-23 10:32:29.21455+00",
+      "status": "succeeded",
+      "git_sha": "989ee767cb9723bcf1b9d2242343aee53c7e3448"
+    },
+    {
+      "run_id": "b8da5fb9-b27e-4f36-8f59-63222da0d85f",
+      "as_of_date": "2026-11-28",
+      "created_at": "2026-11-23 10:36:21.832669+00",
+      "status": "succeeded",
+      "git_sha": "989ee767cb9723bcf1b9d2242343aee53c7e3448"
+    },
+    {
+      "run_id": "f20889ee-100d-42db-bc07-02fca48964e5",
+      "as_of_date": "2026-11-29",
+      "created_at": "2026-11-23 10:37:53.393418+00",
+      "status": "succeeded",
+      "git_sha": "989ee767cb9723bcf1b9d2242343aee53c7e3448"
+    }
+  ],
+  "accountability_counts": [
+    {
+      "roster_events": 0,
+      "revisions": 3,
+      "locks": 0,
+      "native_heads": 0
+    }
+  ]
+}

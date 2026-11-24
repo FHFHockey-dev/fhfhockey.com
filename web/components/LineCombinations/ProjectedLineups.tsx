@@ -11,6 +11,11 @@ type ProjectionResponse = { enabled: boolean; sets: ProjectedUnitSet[]; reports:
   navigation?: { selectedGameId: number | null; games: Pick<LineGame, "id" | "date" | "awayAbbreviation" | "homeAbbreviation">[] };
   reportScope?: { requestedDate: string; reportDate: string; fallback: boolean } };
 
+function reportSession(report: Pick<ProjectionReport, "reportedInGamePP" | "interpretation">) {
+  if (report.reportedInGamePP?.length) return "in game";
+  return report.interpretation.context === "unknown" ? "session unspecified" : report.interpretation.context;
+}
+
 export function ProjectedLineupsContent({ data, onGameChange }: { data: ProjectionResponse; onGameChange?: (id: number) => void }) {
   const selectId = useId();
   const rail = useRef<HTMLElement>(null);
@@ -39,7 +44,7 @@ export function ProjectedLineupsContent({ data, onGameChange }: { data: Projecti
       {!data.sets.length && <p>{selected ? "No complete projected units have been reported for this game." : "No complete projected units have been reported for this occasion. Partial reports appear in the rail."}</p>}
       {data.sets.map((set) => <article className={styles.card} key={set.key}>
         <p className={styles.itemTitle}>{set.reports[0]!.teamAbbreviation} · {set.situation === "es" ? "Even strength" : set.situation.toUpperCase()}{set.group ? ` · Group ${set.group.toUpperCase()}` : ""}</p>
-        <p className={styles.muted}>{set.reports[0]!.interpretation.context} · {set.reports[0]!.interpretation.certainty} · <time dateTime={set.publishedAt}>{formatTime(set.publishedAt)}</time></p>
+        <p className={styles.muted}>{reportSession(set.reports[0]!)} · {set.reports[0]!.interpretation.certainty} · <time dateTime={set.publishedAt}>{formatTime(set.publishedAt)}</time></p>
         <ul className={styles.units}>{set.units.map((unit, index) => <li key={`${unit.situation}:${unit.number}:${index}`}>
           <span>{unit.situation === "es_defense" ? "Pair" : unit.situation === "es_forward" ? "Line" : unit.situation.toUpperCase()} {unit.number}</span>
           <strong>{unit.players.map((player) => player.name).join(" — ")}</strong>
@@ -52,14 +57,35 @@ export function ProjectedLineupsContent({ data, onGameChange }: { data: Projecti
       {reports.length === 0 && <p>No reports yet.</p>}
       {reports.map((report) => {
         const game = nav?.games.find(candidate => candidate.id === report.gameId);
+        const decisions = report.interpretation.events?.filter(e => e.kind === "participation" && e.state === "game_time_decision") ?? [];
         const conflicting = report.reviewReason === "conflicting_claims";
+        const datedStarts = !conflicting && report.verifiedOriginalAuthor ? report.interpretation.reportedGoalieDates ?? [] : [];
         const starter = !conflicting && selected && selected.id === report.gameId && selected.date === report.date ? report.reportedStarter : undefined;
         return <article className={styles.card} key={report.key}>
-          <p className={styles.itemTitle}>{report.teamAbbreviation ? `${report.teamAbbreviation} · ${report.interpretation.context}` : "Subject team unverified"}</p>
-          {nav && <p className={styles.muted}>{game ? `Report for ${gameLabel(game)}` : report.gameId ? `Report for game ${report.gameId}` : "No verified game for this report"}</p>}
+          <p className={styles.itemTitle}>{report.teamAbbreviation ? `${report.teamAbbreviation} · ${reportSession(report)}` : "Subject team unverified"}</p>
+          {report.reportedInGamePP?.length
+            ? <p className={styles.muted}>{report.gameId ? `Intake game link · ${game ? gameLabel(game) : report.gameId}` : "No verified game for this report"}</p>
+            : nav && <p className={styles.muted}>{game ? `Report for ${gameLabel(game)}` : report.gameId ? `Report for game ${report.gameId}` : "No verified game for this report"}</p>}
           {conflicting && <p className={styles.stateWarn}>Conflicting readings of this report. Player status is unverified.</p>}
           {starter && <p><strong>{starter.teamAbbreviation} {starter.status} starter · {starter.playerName}</strong> · Reported by @{starter.author}</p>}
-          {nav ? <p className={styles.muted}>{report.originalPublishedAt ? <>Posted <time dateTime={report.originalPublishedAt}>{formatTime(report.originalPublishedAt)}</time></> : "Original post time unavailable"}
+          {datedStarts.length > 0 &&
+            <div><p>Starts reported by @{report.verifiedOriginalAuthor}</p>
+              <ul>{datedStarts.map(start => <li key={`${start.playerId}:${start.evidence.start}`}>
+                <time dateTime={start.day.date ?? undefined}>{start.day.date}</time> · {start.playerName}
+              </li>)}</ul></div>}
+          {!conflicting && decisions.map(e => <p key={e.playerId + ":" + e.evidence.start}>
+            <strong>{e.playerName} · Game-time decision</strong>
+          </p>)}
+          {!conflicting && report.reportedLineupExpectations?.map(event => <p key={"expectation:" + event.playerId}>
+            <strong>{event.playerName} · {event.status === "expected_in_lineup" ? "Expected in lineup" : "Possible return"}</strong>
+          </p>)}
+          {!conflicting && report.reportedPracticeDepth?.map(unit => <p key={unit.situation + unit.number}>
+            <strong>Practice {unit.situation === "es_forward" ? "line" : "pair"} {unit.number}</strong> · {unit.players.map(player => player.name).join(" — ")}
+          </p>)}
+          {!conflicting && report.reportedInGamePP?.map(unit => <p key={unit.number}>
+            <strong>Reported in-game PP{unit.number}</strong> · {unit.players.map(player => player.name).join(" — ")}
+          </p>)}
+          {nav || decisions.length || report.reportedLineupExpectations?.length || report.reportedInGamePP?.length || report.reportedPracticeDepth?.length ? <p className={styles.muted}>{report.originalPublishedAt ? <>Posted <time dateTime={report.originalPublishedAt}>{formatTime(report.originalPublishedAt)}</time></> : "Original post time unavailable"}
             {report.receivedAt && <> · Received <time dateTime={report.receivedAt}>{formatTime(report.receivedAt)}</time></>}</p>
             : report.publishedAt && <time className={styles.muted} dateTime={report.publishedAt}>{formatTime(report.publishedAt)}</time>}
           {report.originalUrl ? <blockquote className="twitter-tweet" data-theme="dark" data-conversation="none"><p className={styles.rawText}>{report.text}</p><a href={report.originalUrl}>View original post</a></blockquote> : <><p className={styles.rawText}>{report.text}</p><p className={styles.muted}>Original source link pending</p></>}

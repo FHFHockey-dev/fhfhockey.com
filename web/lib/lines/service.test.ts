@@ -9,7 +9,7 @@ const routeDb = vi.hoisted(() => ({ from: vi.fn() }));
 vi.mock("lib/supabase/server", () => ({ default: routeDb }));
 vi.mock("./officialPowerPlay", () => ({ readOfficialPowerPlay: async () => [] }));
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: unknown) => game }));
-import { readGameLines, readReportGames } from "./service";
+import { buildSourceFeed, publicClaim, readGameLines, readReportGames } from "./service";
 import { reconcileEntry } from "./reconcile";
 import { RELAY_ACCOUNTS } from "./authority";
 import { lineTestDatabase } from "./testDatabase";
@@ -124,6 +124,29 @@ describe("shared game/team response", () => {
     const feed = (await readGameLines(db, { teamId: 14, now: fixtureNow })).teams[0]!.feed;
     expect(feed.find(item => item.claimIds.includes(claim.id))).toMatchObject({ publishedAt: null, ingestedAt: claim.time.ingestedAt });
   });
+  it("retires only an older game-binding notice for the exact PP five now on display", async () => {
+    const db = serviceDatabase(), bound = fixturePP(1);
+    const pending: LineClaim = { ...bound, id: "pending", gameId: null, explicit: false,
+      time: { ...bound.time, interpretedAt: "2026-10-01T22:36:30Z" },
+      binding: { ...bound.binding, status: "unresolved", scheduleIdentity: null, evidence: ["no_game_binding_evidence"] },
+      reviewReasons: ["no_game_binding_evidence", "binding_decision_unverified"] };
+    const add = (claim: LineClaim) => db.tables.line_claim_revisions!.push({ team_id: claim.teamId,
+      claim_id: claim.id, interpreted_at: claim.time.interpretedAt, payload: claim });
+    add(pending);
+    add({ ...pending, id: "namesake", reviewReasons: ["no_game_binding_evidence", "event_membership_unverified"] });
+    add({ ...pending, id: "other-five", unit: { ...pending.unit!, players: [...pending.unit!.players].reverse() } });
+    add({ ...pending, id: "other-capture", captureId: "different-capture" });
+    add({ ...pending, id: "new-doubt", time: { ...bound.time, interpretedAt: "2026-10-02T00:59:00Z" } });
+    const read = async () => (await readGameLines(db, { teamId: 14, gameId: fixtureGame.id, now: fixtureNow })).teams[0]!;
+    const team = await read();
+    expect(team.ppDefaults[0]!.selection?.claims.map(c => c.id)).toContain(bound.id);
+    expect(team.history.map(c => c.id)).toContain(pending.id);
+    expect(team.unresolved.map(c => c.claimId)).toEqual(expect.arrayContaining(["namesake", "other-five", "other-capture", "new-doubt"]));
+    expect(team.unresolved.map(c => c.claimId)).not.toContain(pending.id);
+    add({ ...bound, id: "conflicting-game", gameId: fixtureNext.id, binding: { ...bound.binding, scheduleIdentity: fixtureNext.scheduleIdentity } });
+    expect((await read()).unresolved.map(c => c.claimId)).toContain(pending.id);
+  });
+
   it("resolves current readings before game filtering and keeps a withdrawn game binding in history", async () => {
     const db = serviceDatabase();
     const old = fixtureClaim("old-game", { kind: "iga", phase: "in_game", version: "2026-11-06.1:selector" });
@@ -244,4 +267,44 @@ describe("shared game/team response", () => {
     const response = await readGameLines(db, { teamId: 14, now: fixtureNow });
     expect(response.teams[0]!.observations).toHaveLength(0); expect(response.teams[0]!.history).toHaveLength(0); expect(response.teams[0]!.entry).not.toBeNull();
   });
+});
+
+it("withholds a legacy carrier's borrowed byline in history and the grouped feed", () => {
+  const originalTweetId = "2119136747439481176", relayTweetId = "2119145714580341242";
+  const link = `https://x.com/JG_PxP/status/${originalTweetId}`;
+  const carrier = fixtureClaim("carrier", { originalIdentity: originalTweetId, sourceUrl: null, author: "jg_pxp", originalAuthor: "jg_pxp",
+    authorityTier: "beat", relayAccount: "gamedaylines", text: `PIT: Rakell-Crosby-Malkin ${link}`, publicationEvidence: [],
+    time: { ...fixtureClaim().time, originalPublishedAt: null }, provenance: { originalTweetId, relayTweetId, attributionStatus: "resolved" } });
+  const reporter = fixtureClaim("original", { originalIdentity: originalTweetId, sourceUrl: link, author: "jg_pxp", originalAuthor: "jg_pxp",
+    authorityTier: "beat", text: "Trevor van Riemsdyk is on the ice.", provenance: { originalTweetId, relayTweetId:null, attributionStatus:"resolved" } });
+  expect(publicClaim(carrier)).toMatchObject({originalAuthor:null,author:"Original source pending",authorityTier:"unknown",sourceUrl:null});
+  const items = buildSourceFeed([reporter,carrier],fixtureGame,fixtureNow);
+  expect(items).toHaveLength(2);
+  expect(items.find(i=>i.claimIds.includes(carrier.id))).toMatchObject({originalAuthor:null,authorityTier:"unknown",sourceUrl:null});
+  expect(items.find(i=>i.claimIds.includes(reporter.id))).toMatchObject({originalAuthor:"jg_pxp",sourceUrl:link});
+  expect(buildSourceFeed([{ ...carrier, authorityTier: "excluded" }], fixtureGame, fixtureNow)).toEqual([]);
+});
+
+it("shows a unit number from a stored PP claim only when the source assigned it", () => {
+  const unit = fixtureUnit(["A", "B", "C", "D", "E"], "pp", 1);
+  for (const explicitNumber of [false, true]) {
+    const claim = fixtureClaim("power-play", { unit: { ...unit, explicitNumber } });
+    expect(publicClaim(claim).unit).toMatchObject({ number: explicitNumber ? 1 : null, players: unit.players });
+    expect(claim.unit?.number).toBe(1);
+  }
+});
+
+it("selects the corrected relay time and withholds an old clock belonging to the quoted post", () => {
+  const time = fixtureClaim().time;
+  const original = "2026-11-13T00:13:38.000Z", relay = "2026-11-13T00:14:47.000Z";
+  const old = fixtureClaim("old", { relayAccount: "gamedaylines", version: "2026-11-23.10",
+    provenance: { originalTweetId: "2121033710149521799", relayTweetId: "2121034003314810881", attributionStatus: "resolved" },
+    time: { ...time, originalPublishedAt: null, relayPublishedAt: original }, reviewReasons: ["quoted_publication_time_unresolved"] });
+  const fresh = { ...old, id: "fresh", version: "2026-11-23.11", reviewReasons: [],
+    time: { ...time, originalPublishedAt: original, relayPublishedAt: relay } };
+  expect(publicClaim(old).time.relayPublishedAt).toBeNull();
+  for (const claims of [[old, fresh], [fresh, old]]) {
+    const [item] = buildSourceFeed(claims, fixtureGame, fixtureNow);
+    expect(item).toMatchObject({ publishedAt: original, relays: [{ relayPublishedAt: relay }] });
+  }
 });

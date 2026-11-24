@@ -1,0 +1,126 @@
+{
+  "1 G": {
+    "eligible": 73,
+    "stored": 72,
+    "no_wire_stored": 0,
+    "wire": 72,
+    "different_date": 5,
+    "priced": 67
+  },
+  "2 G": {
+    "eligible": 73,
+    "stored": 72,
+    "no_wire_stored": 0,
+    "wire": 72,
+    "different_date": 5,
+    "priced": 67
+  },
+  "3 G": {
+    "eligible": 73,
+    "stored": 67,
+    "no_wire_stored": 0,
+    "wire": 67,
+    "different_date": 1,
+    "priced": 62
+  },
+  "4 G": {
+    "eligible": 73,
+    "stored": 22,
+    "no_wire_stored": 0,
+    "wire": 22,
+    "different_date": 0,
+    "priced": 21
+  },
+  "5 G": {
+    "eligible": 73,
+    "stored": 0,
+    "no_wire_stored": 0
+  },
+  "6 G": {
+    "eligible": 73,
+    "stored": 0,
+    "no_wire_stored": 0
+  },
+  "7 G": {
+    "eligible": 73,
+    "stored": 0,
+    "no_wire_stored": 0
+  },
+  "8 G": {
+    "eligible": 73,
+    "stored": 0,
+    "no_wire_stored": 0
+  },
+  "9 G": {
+    "eligible": 73,
+    "stored": 0,
+    "no_wire_stored": 0
+  },
+  "10 G": {
+    "eligible": 73,
+    "stored": 0,
+    "no_wire_stored": 0
+  },
+  "1 S": {
+    "eligible": 731,
+    "stored": 727,
+    "no_wire_stored": 14,
+    "wire": 714,
+    "different_date": 151,
+    "priced": 563
+  },
+  "2 S": {
+    "eligible": 731,
+    "stored": 727,
+    "no_wire_stored": 14,
+    "wire": 714,
+    "different_date": 144,
+    "priced": 563
+  },
+  "3 S": {
+    "eligible": 731,
+    "stored": 683,
+    "no_wire_stored": 13,
+    "wire": 671,
+    "different_date": 49,
+    "priced": 527
+  },
+  "4 S": {
+    "eligible": 731,
+    "stored": 228,
+    "no_wire_stored": 3,
+    "wire": 226,
+    "different_date": 0,
+    "priced": 177
+  },
+  "5 S": {
+    "eligible": 731,
+    "stored": 0,
+    "no_wire_stored": 0
+  },
+  "6 S": {
+    "eligible": 731,
+    "stored": 0,
+    "no_wire_stored": 0
+  },
+  "7 S": {
+    "eligible": 731,
+    "stored": 0,
+    "no_wire_stored": 0
+  },
+  "8 S": {
+    "eligible": 731,
+    "stored": 0,
+    "no_wire_stored": 0
+  },
+  "9 S": {
+    "eligible": 731,
+    "stored": 0,
+    "no_wire_stored": 0
+  },
+  "10 S": {
+    "eligible": 731,
+    "stored": 0,
+    "no_wire_stored": 0
+  }
+}

@@ -10,6 +10,23 @@ export type TweetNewsRosterEvidence = {
 
 type ReviewSource = Pick<TweetNewsAutomationReviewRow, "metadata" | "enriched_text" | "raw_text" | "quoted_text" | "parser_filter_status">;
 
+/** Re-check the exact machine suggestions before interpreting a pending row with attached assignments. */
+export function pendingNewsAssignments(metadata: Record<string, unknown> | null,
+  review: { review_status?: string | null; review_assignments?: unknown[] | null }) {
+  if (review.review_status !== "pending") return false;
+  const current = review.review_assignments;
+  if (current == null || Array.isArray(current) && current.length === 0) return true;
+  const saved = (metadata?.automation as { rosterReportAssignments?: unknown } | undefined)?.rosterReportAssignments;
+  if (!Array.isArray(current) || !Array.isArray(saved) || saved.length !== current.length) return false;
+  return current.every((row, index) => {
+    if (!row || typeof row !== "object" || Array.isArray(row)) return false;
+    const a = row as Record<string, unknown>, original = saved[index];
+    return typeof a.ruleId === "string" && a.id === `auto-${a.ruleId}` && original && typeof original === "object"
+      && Object.keys(a).length === Object.keys(original).length
+      && Object.keys(a).every(key => Object.hasOwn(original, key) && JSON.stringify(a[key]) === JSON.stringify(original[key]));
+  });
+}
+
 /** A legacy review has no receipt. A mismatched receipt cannot lend its player IDs to different text. */
 export function readTweetNewsRosterEvidence(row: ReviewSource): TweetNewsRosterEvidence | null {
   const value = row.metadata?.intakeRosterEvidence;

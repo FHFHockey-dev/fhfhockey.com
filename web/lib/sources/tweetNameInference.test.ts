@@ -27,6 +27,16 @@ const rosterByTeam = new Map([[17, det], [5, pit], [9, ott]]);
 const read = (text: string, changes: Partial<TweetRosterNameInput> = {}) => inferTweetRosterNames({ text, teams, rosterByTeam, ...changes });
 
 describe("publication-roster inference", () => {
+  it("keeps a sentence-opening 'Back at it.' out of a club's roster anchors", () => {
+    const rosters = new Map(rosterByTeam).set(9, [...ott, player(302, "Oskar Bäck", "Bäck", 9)]);
+    const lines = "Detroit practice, 11/18:\nRaymond-Larkin-MBN";
+    for (const prefix of ["Back at it. ", "RT @reporter: Back at it. "]) {
+      expect(read(prefix + lines, { rosterByTeam: rosters }).autoMatches).toMatchObject([{ playerId: 100 }]);
+    }
+    for (const prefix of ["Oskar Back at it. ", "Bäck at it. ", "Back skated today. "]) {
+      expect(read(prefix + lines, { rosterByTeam: rosters }).autoMatches).toEqual([]);
+    }
+  });
   it.each([
     ["Detroit lines tonight:\nRaymond-Larkin-MBN", "MBN", 100, 17],
     ["Pittsburgh's morning skate: TVR is back.", "TVR", 201, 5],
@@ -157,4 +167,50 @@ describe("publication-roster inference", () => {
     }
     expect(read('Detroit lines: MBN\nMBN will skate.').autoMatches).toHaveLength(2);
   });
+});
+
+describe("dated personnel after a reported penalty", () => {
+  const club = buildTeamDirectory([{ id: 21, name: "Colorado Avalanche", abbreviation: "COL", logo: "" },
+    { id: 24, name: "Anaheim Ducks", abbreviation: "ANA", logo: "" }, { id: 1, name: "New Jersey Devils", abbreviation: "NJD", logo: "" }]);
+  const skaters = [
+    player(8486171, "T.J. Hughes", "Hughes", 21), player(8475172, "Nazem Kadri", "Kadri", 21),
+    player(8477476, "Artturi Lehkonen", "Lehkonen", 21), player(8480039, "Martin Necas", "Necas", 21),
+    player(8478038, "Devon Toews", "Toews", 21),
+  ];
+  const penalty = "Nikita Nesterenko gets the call for high-sticking and the Avs PP will get another look.";
+  const personnel = "PP1: Hughes, Kadri, Lehkonen, Necas, Toews";
+  const readPenalty = (text: string, roster = skaters) => inferTweetRosterNames({ text, teams: club, rosterByTeam: new Map([
+    [21, roster], [24, [player(8481754, "Nikita Nesterenko", "Nesterenko", 24)]],
+    [1, [player(8481559, "Jack Hughes", "Hughes", 1)]],
+  ]) });
+  it("uses the numbered list's teammates and keeps a local namesake tie for review", () => {
+    const text = penalty + "\n\n" + personnel;
+    expect(readPenalty(text).scopedNames).toEqual([expect.objectContaining({ rawName: "Hughes", playerId: 8486171,
+      teamId: 21, start: text.indexOf("Hughes"), end: text.indexOf("Hughes") + 6 })]);
+    const tied = readPenalty(text, [...skaters, player(999, "Other Hughes", "Hughes", 21)]);
+    expect(tied.scopedNames).toEqual([]);
+    expect(tied.review).toContainEqual(expect.objectContaining({ rawName: "Hughes", reason: "ambiguous_name" }));
+  });
+  it("withholds the inference for historical, conditional, mixed-club and unsupported lists", () => {
+    for (const text of ["Last night: " + penalty + "\n" + personnel, "If " + penalty + "\n" + personnel,
+      penalty + "\nPP1: Hughes, Kadri", penalty + "\n" + personnel.replace("Kadri", "Nesterenko")]) {
+      expect(readPenalty(text).scopedNames, text).toEqual([]);
+    }
+  });
+});
+
+it("uses numbered skaters to distinguish an identical club label at publication", () => {
+  const clubs = buildTeamDirectory([
+    { id: 59, name: "Utah Hockey Club", abbreviation: "UTA", logo: "" },
+    { id: 68, name: "Utah Mammoth", abbreviation: "UTA", logo: "" },
+    { id: 20, name: "Calgary Flames", abbreviation: "CGY", logo: "" },
+  ]);
+  const dated = new Map([[68, [player(8479343, "Clayton Keller", "Keller", 68), player(8479410, "Mikhail Sergachev", "Sergachev", 68),
+    player(8483431, "Logan Cooley", "Cooley", 68)]], [20, [player(8482445, "Devin Cooley", "Cooley", 20)]]]);
+  const text = "Utah's power play units\nPP1: Keller, Sergachev, Cooley\n#TusksUp";
+  const infer = (body: string, roster = dated) => inferTweetRosterNames({ text: body, rosterByTeam: roster, teams: clubs });
+  expect(infer(text).scopedNames).toContainEqual(expect.objectContaining({ rawName: "Cooley", playerId: 8483431 }));
+  expect(infer(text, new Map(dated).set(59, [player(1, "Another Player", "Player", 59)])).establishedTeamId).toBeNull();
+  expect(infer(text.replace("Utah's", "Utah Hockey Club's")).establishedTeamId).toBeNull();
+  expect(infer(text.replace("Keller, Sergachev, ", "Keller, ")).establishedTeamId).toBeNull();
 });

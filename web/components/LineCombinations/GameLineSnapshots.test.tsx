@@ -22,6 +22,21 @@ function stubNarrow(matches: boolean) {
 }
 
 describe("game Lines presentation", () => {
+  it("shows dated goalie reporting outside the original lineup, with a later withdrawal first", () => {
+    const data = fixtureResponse(0);
+    const older = { key: "original", text: "Allen starts tonight.", starter: { status: "confirmed" as const, playerId: 1, playerName: "Allen" },
+      author: "TestReporter", originalUrl: "https://x.com/TestReporter/status/123", postedAt: "2026-10-01T19:00:00Z", receivedAt: "2026-10-01T19:02:00Z" };
+    data.teams[0]!.goalieReports = [{ ...older, key: "update", text: "Allen will not start tonight.", starter: null,
+      originalUrl: "https://x.com/TestReporter/status/124", postedAt: "2026-10-01T21:00:00Z", receivedAt: "2026-10-01T21:03:00Z" }, older];
+    render(<GameLineSnapshots data={data} />);
+    const reports = within(screen.getByRole("region", { name: "TBL goalie reports" }));
+    const latest = reports.getByText("Allen will not start tonight.").closest("article")!;
+    expect(within(latest).getByRole("link", { name: "@TestReporter" }).getAttribute("href")).toBe(data.teams[0]!.goalieReports[0]!.originalUrl);
+    expect([...latest.querySelectorAll("time")].map(time => time.dateTime)).toEqual(["2026-10-01T21:00:00Z", "2026-10-01T21:03:00Z"]);
+    expect(reports.getByText("Allen · reported confirmed starter").closest("details")?.open).toBe(false);
+    expect(entryPanel().textContent).not.toContain("Allen");
+    expect(updatesPanel().textContent).not.toContain("Allen");
+  });
   it("shows applicability, phase and plain-language review separately for mixed IGA and PP claims in one capture", () => {
     const data = fixtureResponse(0);
     const iga = fixtureClaim("iga", { kind: "iga", phase: "in_game", unit: null, text: "Mixed source evidence" });

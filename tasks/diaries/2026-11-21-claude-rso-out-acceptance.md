@@ -236,3 +236,21 @@ No Yahoo roster changes, forced sync, production writes or deploy.
 - Blocker for live acceptance: a successful FORGE daily run. Earliest chance: Week 9 after Nov 23 10:05–10:55Z run +
   12:40Z snapshot, IF upstream_skater_sources is fixed (off-day Chef lane owns it). 18:05Z timer stopped.
 - TJ (Nov 22): recheck live points mode only once FORGE's upstream_skater_sources failure is fixed and a daily run prices the window. No timer armed. Next step then: one tab, confirm full coverage, starts → points → starts + reload, record SHA/window/coverage + one points-driven lineup difference.
+
+## Live points-mode acceptance — check 3 (Nov 22 ~14:25Z) — PASS (on manual recovery run, not natural run)
+- Trigger: FORGE lane report — natural 10:05Z run failed (upstream_skater_sources / update-wgo-skaters timeout); TJ-approved
+  scoped recovery run a294e2f3-eae3-4d8d-a418-0f680896bc9c (selected_games) at 14:14Z covered all 5 Nov 22 games.
+- Deployed: fhfhockey dpl_A6wXhPbxbrNJWGCThoe5bsouyHmG READY on 480bd5d71 (contains RSO 356f93a5d).
+- Window: Week 8 Mon Nov 16 – Sun Nov 22, plan from Sun Nov 22. Coverage "34/34 assignment targets", forecast evidence
+  timestamp 2026-11-22T14:14:38.457Z. Sunday lineup priced: McDavid @STL 3.6, Lekkerimäki vs CHI 2.8, D'Astous vs BUF 2.7,
+  Carlson vs BUF 2.1, Heiskanen vs PIT 2.1, Oettinger vs PIT 4.0 (4.1 if GS). Bench (Granlund, Batherson, Caufield): no game.
+- No fallback: "schedule capacity" text absent; tile "Active games only"; Compare Most starts 6 GP · 141.7 pts and
+  Best projected points 6 GP · 141.7 pts (both priced; earlier checks showed "— pts" + schedule capacity).
+- Points consumed FORGE: 141.7 = 124.4 realized (check 2: 127.0 known − Lekkerimäki's old 2.6) + 17.3 Sunday projections
+  (3.6+2.8+2.7+2.1+2.1+4.0). Plan details header "Selected plan · projected points comparison".
+- Round trip (one tab): points* (saved) → starts → points → starts: aria-pressed + Compare [selected] row followed each
+  press, no disabled/lock reason. Reload → Most starts persisted. Restored points → reload → Best projected points persisted.
+  Yahoo reads ~11 total (2–3 per load, 1 per press); no Optimize/Refresh/Sync/Save/roster write. Tab closed.
+- Limit: both goals give the same Sunday lineup — all 6 Sunday plays fit open slots and benched players have no game, so no
+  start/sit choice existed for points to change. Differing-lineup proof stays the fixture test (4 GP/-3 vs 2 GP/3).
+- Pettersson: verified mapping reused (no rerun); customer screen UNVERIFIED until they confirm after one Refresh provider.

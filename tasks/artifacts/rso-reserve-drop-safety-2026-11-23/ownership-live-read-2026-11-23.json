@@ -1,0 +1,70 @@
+{
+ "at": "2026-11-23T19:29:22.231Z",
+ "since": "2026-11-20",
+ "before": {
+  "relation": "yahoo_player_ownership_daily",
+  "season_id": 20262027,
+  "freshRows": 0,
+  "error": null
+ },
+ "after": {
+  "relation": "yahoo_player_ownership_history",
+  "gameKey": "477",
+  "newestDate": "2026-11-23",
+  "playersWithFreshOwnership": 569,
+  "knownNonzero": 569,
+  "knownZero": 0,
+  "atOrAbove50": 176,
+  "readMs": 675
+ },
+ "sample": [
+  {
+   "name": "Nikita Kucherov",
+   "nhlId": 8476453,
+   "ownership": 100,
+   "on": "2026-11-23"
+  },
+  {
+   "name": "Nathan MacKinnon",
+   "nhlId": 8477492,
+   "ownership": 100,
+   "on": "2026-11-23"
+  },
+  {
+   "name": "Connor McDavid",
+   "nhlId": 8478402,
+   "ownership": 100,
+   "on": "2026-11-23"
+  },
+  {
+   "name": "Elias Pettersson",
+   "nhlId": 8480012,
+   "ownership": 74,
+   "on": "2026-11-23"
+  },
+  {
+   "name": "Cale Makar",
+   "nhlId": 8480069,
+   "ownership": 100,
+   "on": "2026-11-23"
+  },
+  {
+   "name": "Trevor Zegras",
+   "nhlId": 8481533,
+   "ownership": 62,
+   "on": "2026-11-23"
+  },
+  {
+   "name": "Elias Pettersson",
+   "nhlId": 8483678,
+   "ownership": 14,
+   "on": "2026-11-23"
+  },
+  {
+   "name": "Connor Bedard",
+   "nhlId": 8484144,
+   "ownership": 90,
+   "on": "2026-11-23"
+  }
+ ]
+}

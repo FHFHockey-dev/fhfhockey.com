@@ -1,0 +1,59 @@
+{
+  "valueKnown": true,
+  "assignedPoints": 0,
+  "remainingGames": 0,
+  "dropOrder": [
+    [
+      "a",
+      0
+    ]
+  ],
+  "firstFive": [
+    [
+      {
+        "id": "add:c:0:2026-10-05",
+        "type": "add",
+        "playerId": "c",
+        "at": "2026-10-05T00:00:00.000Z",
+        "effectiveAt": "2026-10-05T00:00:00.000Z",
+        "conditional": true,
+        "dependsOn": []
+      }
+    ],
+    [
+      {
+        "id": "add:c:0:2026-10-05:drop:a",
+        "type": "add",
+        "playerId": "c",
+        "at": "2026-10-05T00:00:00.000Z",
+        "effectiveAt": "2026-10-05T00:00:00.000Z",
+        "conditional": true,
+        "dependsOn": [],
+        "dropPlayerId": "a"
+      }
+    ],
+    [
+      {
+        "id": "add:c:0:2026-10-06",
+        "type": "add",
+        "playerId": "c",
+        "at": "2026-10-06T00:00:00.000Z",
+        "effectiveAt": "2026-10-06T00:00:00.000Z",
+        "conditional": true,
+        "dependsOn": []
+      }
+    ],
+    [
+      {
+        "id": "add:c:0:2026-10-06:drop:a",
+        "type": "add",
+        "playerId": "c",
+        "at": "2026-10-06T00:00:00.000Z",
+        "effectiveAt": "2026-10-06T00:00:00.000Z",
+        "conditional": true,
+        "dependsOn": [],
+        "dropPlayerId": "a"
+      }
+    ]
+  ]
+}

@@ -1,10 +1,11 @@
-import { normalizeIdentityName, resolvePlayerIdentity, type PlayerIdentity } from "lib/sources/playerIdentity";
+import { normalizeIdentityName, resolvePlayerIdentity, rosterSeasonForDate, type PlayerIdentity } from "lib/sources/playerIdentity";
 import type { TweetInitialsEvidence, TweetUnit } from "lib/sources/tweetInterpretation";
 import { canonicalAcronymMatches } from "lib/sources/tweetNameLexicon";
 import { timestampMicros } from "lib/projections/evidenceTime";
+import { sourceLocalDate } from "./binding";
 import { instant } from "./types";
 
-export type EventMembership = { playerId: number; teamId: number; from: string; until: string | null; evidenceId: string };
+export type EventMembership = { playerId: number; teamId: number; seasonId?: number | null; from: string; until: string | null; evidenceId: string };
 export type ApprovedEventAlias = { raw: string; playerId: number; approvedAt: string; revisedAt?: string; evidenceId: string };
 
 function membershipInstant(value: string | null) {
@@ -17,7 +18,11 @@ function membershipInstant(value: string | null) {
 export function resolveEventUnit(unit: TweetUnit, args: { teamId: number; effectiveAt: string | null; players: PlayerIdentity[]; memberships: EventMembership[]; aliases: ApprovedEventAlias[]; sourcePublishedAt?: string | null; uniqueInitials?: TweetInitialsEvidence[] }) {
   const at = membershipInstant(args.effectiveAt), reasons: string[] = [], evidence: string[] = [];
   if (at == null) return { unit, reasons: ["identity_event_time_unresolved"], evidence };
+  const day = sourceLocalDate(args.effectiveAt, "America/New_York");
+  const season = day ? rosterSeasonForDate(day) : null;
   const members = args.memberships.filter((row) => {
+    // A club can leave last season's roster row open after the player's transfer.
+    if (row.seasonId != null && row.seasonId !== season) return false;
     const start = membershipInstant(row.from), end = membershipInstant(row.until);
     return start != null && start <= at && (!row.until || end != null && end > at);
   });

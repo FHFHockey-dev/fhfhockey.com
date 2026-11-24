@@ -1,0 +1,12 @@
+project	key	target	type	configurationId
+fhfhockey	NEXT_PUBLIC_SUPABASE_ANON_KEY	production	encrypted	-
+fhfhockey	NEXT_PUBLIC_SUPABASE_PUBLIC_KEY	production,preview,development	encrypted	-
+fhfhockey	NEXT_PUBLIC_SUPABASE_URL	production,preview,development	encrypted	-
+fhfhockey	SUPABASE_SERVICE_ROLE_KEY	production,preview,development	encrypted	-
+fhfhockey	SUPABASE_URL	production	encrypted	-
+functions-fhfhockey	NEXT_PUBLIC_SUPABASE_URL	production	encrypted	-
+functions-fhfhockey	SUPABASE_SERVICE_ROLE_KEY	production	sensitive	-
+web	NEXT_PUBLIC_SUPABASE_ANON_KEY	production	encrypted	-
+web	NEXT_PUBLIC_SUPABASE_PUBLIC_KEY	production	encrypted	-
+web	NEXT_PUBLIC_SUPABASE_URL	production	encrypted	-
+web	SUPABASE_SERVICE_ROLE_KEY	production	encrypted	-

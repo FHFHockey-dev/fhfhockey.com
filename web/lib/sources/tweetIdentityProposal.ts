@@ -1,7 +1,9 @@
+import { isNonPlayerNameUse } from "./playerNameInProse";
 import { z } from "zod";
 import { freezeIdentityValue, identityDigest, identityTimestamp, canonicalIdentityId, indexPlayerIdentitySnapshot, type PlayerIdentityIndex } from "./playerIdentitySnapshot";
 import { retrieveTweetIdentityCandidates, type IdentityCandidateSet } from "./tweetIdentityCandidates";
 import { tweetNewsPhraseDictionary } from "./tweetNewsPhraseDictionary";
+import { normalizeIdentityName } from "./playerIdentity";
 
 export const TWEET_IDENTITY_PROPOSAL_VERSION = "tweet-identity-proposal-v1";
 export const IDENTITY_PROPOSAL_AUTHORITY = {
@@ -115,6 +117,8 @@ export function prepareFixtureIdentityRequest(args: {
           && other.span.start < last && other.span.end > first)) throw new Error("identity_context_hint_unbound");
       }
     }
+    const names = mentions.filter(({ kind, span }) => kind !== "name" || !isNonPlayerNameUse(span.text, source.text.slice(span.end), source.text.slice(0, span.start)));
+    if (!names.length) throw new Error("no_named_occurrences");
     const index = indexPlayerIdentitySnapshot(args.index.snapshot);
     const pass = args.pass ?? 0;
     if (pass !== 0 && pass !== 1) throw new Error("identity_widening_limit");
@@ -123,7 +127,7 @@ export function prepareFixtureIdentityRequest(args: {
       authority: IDENTITY_PROPOSAL_AUTHORITY, sourceTextIsUntrustedData: true, source,
       directory: { version: index.snapshot.content.version, hash: index.snapshot.hash,
         asOf: index.snapshot.content.asOf, completeness: index.snapshot.content.completeness },
-      occurrences: mentions.map(mention => ({ ...mention, candidateSet: retrieveTweetIdentityCandidates({ index,
+      occurrences: names.map(mention => ({ ...mention, candidateSet: retrieveTweetIdentityCandidates({ index,
         mention: mention.span.text, publishedAt: source.publishedAt!, teamId: mention.teamHint?.teamId,
         position: mention.positionHint?.position, pass }) })),
       hints: buildTweetIdentityHints(source.text),
@@ -133,6 +137,22 @@ export function prepareFixtureIdentityRequest(args: {
   } catch (error) {
     return { status: "held", reason: error instanceof z.ZodError ? "invalid_identity_input" : error instanceof Error ? error.message : "invalid_identity_input", request: null };
   }
+}
+
+/** DFO's single-player bulletins name the subject, then repeat the surname before the reporting verb. */
+export function namedDfoSubject(request: FixtureIdentityRequest, mention: RequestOccurrence) {
+  const { source, occurrences } = request.content;
+  if (occurrences.length !== 2 || source.authorId.toLowerCase() !== "dfofantasy"
+    || /^https:\/\/(?:x|twitter)\.com\/DFOFantasy\/status\/(\d+)\/?$/i.exec(source.url)?.[1] !== source.originalPostId) return null;
+  const heading = occurrences.find(o => o.kind === "name" && o.span.start === 0);
+  if (!heading || heading.candidateSet.truncated || heading.candidateSet.exactStatus !== "matched"
+    || !normalizeIdentityName(heading.span.text).endsWith(" " + normalizeIdentityName(mention.span.text))
+    || !/^: (?:Injury|Line Change|General|Call Up|Send Down|Goalie Start): $/.test(source.text.slice(heading.span.end, mention.span.start))) return null;
+  // A different person, qualifier, or correction in the clause needs independent review.
+  const predicate = /^(?: \((?:upper[- ]body|lower[- ]body|undisclosed|illness|personal|hand|(?:planned )?maintenance)\))? (?:is|will|has|could|was|missed|left|returned|remains|starts)\b/;
+  if (!predicate.test(source.text.slice(mention.span.end)) || /\b(?:correction|corrected|retracted|actually|misidentified)\b/i.test(source.text)) return null;
+  const fullName = heading.candidateSet.candidates.find(c => c.basis === "full_name");
+  return fullName ? { occurrenceId: heading.id, canonicalId: fullName.row.canonicalId } : null;
 }
 
 export function validateFixtureIdentityProposal(request: FixtureIdentityRequest, value: unknown): TweetIdentityProposalOutput {
@@ -150,9 +170,22 @@ export function validateFixtureIdentityProposal(request: FixtureIdentityRequest,
     if (proposal.status !== "matched") continue;
     const candidate = mention.candidateSet.candidates.find(item => item.row.canonicalId === proposal.canonicalId);
     if (!candidate || candidate.basis === "context") throw new Error("identity_not_in_occurrence_candidates");
+    if (isNonPlayerNameUse(mention.span.text, request.content.source.text.slice(mention.span.end), request.content.source.text.slice(0, mention.span.start)))
+      throw new Error("identity_prose_is_not_a_subject");
     if (mention.kind !== "name") throw new Error("identity_heading_or_chunk_is_not_a_person");
     if (candidate.teamEvidence === "conflicting") throw new Error("identity_membership_conflict");
     if (mention.candidateSet.truncated) throw new Error("identity_truncated_candidates_unresolved");
+    if (candidate.basis === "fuzzy" && mention.candidateSet.exactStatus === "matched") throw new Error("identity_fuzzy_over_exact");
+    if (mention.candidateSet.exactStatus === "ambiguous" && candidate.basis === "surname") {
+      const subject = namedDfoSubject(request, mention);
+      if (subject) {
+        const selectedHeading = output.occurrences.find(o => o.occurrenceId === subject.occurrenceId);
+        if (subject.canonicalId !== candidate.row.canonicalId || selectedHeading?.canonicalId !== subject.canonicalId) {
+          throw new Error("identity_ambiguity_unresolved");
+        }
+        if (!mention.teamHint && !mention.positionHint) continue;
+      }
+    }
     const acronymCollision = candidate.basis === "acronym"
       && mention.candidateSet.candidates.filter(item => !["context", "fuzzy"].includes(item.basis)).length > 1;
     if (mention.candidateSet.exactStatus === "ambiguous" || acronymCollision) {

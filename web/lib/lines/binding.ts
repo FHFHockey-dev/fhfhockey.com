@@ -8,16 +8,21 @@ export function sourceLocalDate(timestamp: string | null | undefined, timezone: 
   catch { return null; }
 }
 
+export function relativeSourceDate(timestamp: string | null | undefined, timezone: string | null | undefined, relative: NonNullable<BindingInput["relative"]>): string | null {
+  const local = sourceLocalDate(timestamp, timezone);
+  if (!local) return null;
+  const shifted = new Date(`${local}T12:00:00Z`);
+  shifted.setUTCDate(shifted.getUTCDate() + (relative === "tomorrow" ? 1 : relative === "yesterday" ? -1 : 0));
+  return shifted.toISOString().slice(0, 10);
+}
+
 export function bindLineGame(input: BindingInput, games: LineGame[]) {
   const evidence: string[] = [];
   let date = input.date;
   if (input.quotedTimeUnresolved) return { gameId: null, status: "unresolved" as const, evidence: ["quoted_publication_time_unresolved"], resolverVersion: LINE_SELECTOR_VERSION, scheduleIdentity: null };
   if (input.relative) {
-    const local = sourceLocalDate(input.originalPublishedAt, input.timezone);
-    if (!local) return { gameId: null, status: "unresolved" as const, evidence: ["relative_date_timezone_unresolved"], resolverVersion: LINE_SELECTOR_VERSION, scheduleIdentity: null };
-    const shifted = new Date(`${local}T12:00:00Z`);
-    shifted.setUTCDate(shifted.getUTCDate() + (input.relative === "tomorrow" ? 1 : input.relative === "yesterday" ? -1 : 0));
-    const relativeDate = shifted.toISOString().slice(0, 10);
+    const relativeDate = relativeSourceDate(input.originalPublishedAt, input.timezone, input.relative);
+    if (!relativeDate) return { gameId: null, status: "unresolved" as const, evidence: ["relative_date_timezone_unresolved"], resolverVersion: LINE_SELECTOR_VERSION, scheduleIdentity: null };
     if (date && date !== relativeDate) return { gameId: null, status: "ambiguous" as const, evidence: ["conflicting_dates"], resolverVersion: LINE_SELECTOR_VERSION, scheduleIdentity: null };
     date = relativeDate; evidence.push(`source_timezone:${input.timezone}`, `relative_date:${input.relative}:${date}`);
   }

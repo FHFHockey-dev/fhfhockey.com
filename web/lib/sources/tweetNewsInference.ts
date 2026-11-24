@@ -1,7 +1,7 @@
 import { identityMentionPresent, tweetPipelineFlags, TWEET_INTERPRETATION_VERSION } from "./tweetInterpretation";
 import { readTweetNewsRosterEvidence } from "./tweetNewsRosterEvidence";
 import { resolvePlayerIdentity } from "./playerIdentity";
-import { classifyInjuryEvent, extractInjuryTimeline, extractTweetPlayerEvents } from "./tweetPlayerEvents";
+import { classifyInjuryEvent, extractTweetPlayerEvents, type InjuryTimeline } from "./tweetPlayerEvents";
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
@@ -316,13 +316,13 @@ function hasCompletedSigningEvidence(sources: TweetNewsInferenceSource[]): boole
   );
 }
 
-export function validateTweetNewsInference(args: {
+function checkTweetNewsInference(args: {
   result: TweetNewsInferenceResult;
   row: TweetNewsAutomationReviewRow;
   sources: TweetNewsInferenceSource[];
   playerCandidates: TweetNewsAutomationPlayer[];
   teams: TweetNewsInferenceTeam[];
-}): { publish: boolean; errors: string[] } {
+}) {
   const roster = readTweetNewsRosterEvidence(args.row);
   const sources = roster ? buildTweetNewsInferenceSources(args.row) : args.sources;
   const players = roster?.players ?? args.playerCandidates;
@@ -397,12 +397,20 @@ export function validateTweetNewsInference(args: {
     }
   }
 
+  const timelines: Array<InjuryTimeline | null> = [];
   for (const event of args.result.playerEvents ?? []) {
     const player = playerById.get(event.playerId);
     const source = sourceById.get(event.sourceId);
     if (!player || !source || !supportedSubject(event.excerpt, player) || !containsEvidence(source.text, event.excerpt) || !evidenceAdmitted(event.excerpt)) errors.push("unsupported_player_event");
-    if (event.timeframe && !containsEvidence(event.excerpt, event.timeframe)) errors.push("unsupported_timeframe");
     const supportedEvents = events.filter(supported => supported.sourceId === event.sourceId && supported.playerId === event.playerId && supported.kind === "injury");
+    // A copied passage may contain several players' periods. Verify the subject before comparing the timeframe.
+    const periods = supportedEvents.filter(supported => !supported.reviewReason && (containsEvidence(event.excerpt, supported.evidence.text)
+      || containsEvidence(supported.evidence.text, event.excerpt))).flatMap(supported => supported.timelines.filter(period =>
+      event.timeframe ? (containsEvidence(event.excerpt, event.timeframe) && containsEvidence(supported.evidence.text, event.timeframe)
+        && containsEvidence(event.timeframe, period.text)) : containsEvidence(event.excerpt, period.text)));
+    const period = periods.length === 1 ? periods[0]! : null;
+    if (event.timeframe && !period) errors.push("unsupported_timeframe");
+    timelines.push(period);
     if (event.state !== "unknown" && (classifyInjuryEvent(event.excerpt) !== event.state || !supportedEvents.some(supported => supported.state === event.state
       && (!roster || containsEvidence(supported.evidence.text, event.excerpt))))) errors.push("event_requires_review");
   }
@@ -449,11 +457,18 @@ export function validateTweetNewsInference(args: {
     errors.push("reported_injury_missing_awaiting_confirmation_state");
   }
 
+  if (timelines.some(period => period?.purpose === "absence" && period.unit)
+    && !getTweetNewsCandidateSource(args.row, buildBlurb(sources)).sourceUrl) errors.push("absence_source_unresolved");
   const publish =
     (!tweetPipelineFlags().interpretation || tweetPipelineFlags().publishing) &&
     args.result.decision === "publish" &&
     args.result.confidence >= minimumPublishConfidence(args.result) &&
     errors.length === 0;
+  return { publish, errors, timelines };
+}
+
+export function validateTweetNewsInference(args: Parameters<typeof checkTweetNewsInference>[0]) {
+  const { publish, errors } = checkTweetNewsInference(args);
   return { publish, errors };
 }
 
@@ -467,7 +482,7 @@ export function buildTweetNewsInferenceCandidate(args: {
   nowIso?: string;
 }): TweetNewsAutomationCandidate {
   const result = normalizeTweetNewsInferenceResult(args.result);
-  const validation = validateTweetNewsInference(args);
+  const validation = checkTweetNewsInference(args);
   const roster = readTweetNewsRosterEvidence(args.row);
   const sources = roster ? buildTweetNewsInferenceSources(args.row) : args.sources;
   const nowIso = args.nowIso ?? new Date().toISOString();
@@ -496,7 +511,8 @@ export function buildTweetNewsInferenceCandidate(args: {
   const selectedSubcategory =
     selectedCategory === "OTHER" ? "AMBIGUOUS" : args.result.subcategory;
   const assignmentId = `model-${TWEET_NEWS_INFERENCE_PROMPT_VERSION}`;
-  const source = getTweetNewsCandidateSource(args.row);
+  const blurb = buildBlurb(sources);
+  const source = getTweetNewsCandidateSource(args.row, blurb);
   const summary = selectedCategory === "LINE COMBINATION" ? null : result.summary;
 
   return {
@@ -515,7 +531,7 @@ export function buildTweetNewsInferenceCandidate(args: {
       subcategory: selectedSubcategory,
       teamAbbreviation: team?.abbreviation ?? args.row.team_abbreviation,
     }),
-    blurb: buildBlurb(sources),
+    blurb,
     category: selectedCategory,
     subcategory: selectedSubcategory,
     cardStatus: validation.publish ? "published" : "draft",
@@ -553,7 +569,7 @@ export function buildTweetNewsInferenceCandidate(args: {
         verificationState: args.result.verificationState,
         summary: summary ?? null,
         evidence: args.result.evidence,
-        playerEvents: args.result.playerEvents?.map((event) => ({ ...event, timeline: extractInjuryTimeline(event.excerpt, roster ? roster.publishedAt : args.row.source_created_at) })) ?? [],
+        playerEvents: args.result.playerEvents?.map((event, index) => ({ ...event, timeline: validation.timelines[index] })) ?? [],
         validationErrors: validation.errors,
       },
     },

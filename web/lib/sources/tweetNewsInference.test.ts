@@ -90,6 +90,25 @@ function buildNewsUpdateResult(
 }
 
 describe("tweet news inference", () => {
+  it("keeps each timeframe on its own player even when a proposal copies both Colorado sentences", () => {
+    const text = "Avs coach Jared Bednar confirms that Nathan MacKinnon is out at least a month. Cale Makar will be out approximately two weeks.";
+    const roster = [{ id: 8477492, fullName: "Nathan MacKinnon", lastName: "MacKinnon", team_id: 21, position: "C" },
+      { id: 8480069, fullName: "Cale Makar", lastName: "Makar", team_id: 21, position: "D" }];
+    const url = "https://x.com/cmasisak22/status/2121654880410468660";
+    const row = buildRow({ team_id: 21, team_abbreviation: "COL", quoted_text: text, quoted_tweet_url: url, metadata: {
+      primaryTextSource: "quoted_oembed", quotedTweetUrl: url, quotedAuthorHandle: "cmasisak22",
+      intakeRosterEvidence: { source: "quoted", text, publishedAt: "2026-11-14T17:21:56Z", players: roster, reviewSpans: [] } } });
+    const build = (timeframe: string) => buildTweetNewsInferenceCandidate({ model: "fixture", row, sources: buildTweetNewsInferenceSources(row),
+      playerCandidates: roster, teams: [{ id: 21, abbreviation: "COL", name: "Colorado Avalanche" }],
+      result: buildNewsUpdateResult({ category: "INJURY", subcategory: "OUT", teamAbbreviation: "COL", subjects: [{ playerId: 8480069, playerName: "Cale Makar" }],
+        evidence: [{ sourceId: "quoted", excerpt: text }], playerEvents: [{ sourceId: "quoted", playerId: 8480069, excerpt: text, state: "unknown", timeframe }] }) });
+    expect(build("at least a month")).toMatchObject({ cardStatus: "draft", metadata: { automation: {
+      validationErrors: expect.arrayContaining(["unsupported_timeframe"]), playerEvents: [{ timeline: null }] } } });
+    expect(build("two weeks").cardStatus).toBe("draft");
+    expect(build("approximately two weeks")).toMatchObject({ cardStatus: "published", metadata: { automation: {
+      validationErrors: [], playerEvents: [{ playerId: 8480069, timeline: { purpose: "absence", approximate: true,
+        estimate: 2, minimum: null, maximum: null, unit: "weeks", targetDate: null } }] } } });
+  });
   it.each(["Nico Hischier remains out. Connor Bedard will play tonight.", "Nico Hischier will return tonight if healthy."])("rejects unsupported confirmed returns in copied evidence: %s", (text) => {
     const row = buildRow({ review_text: text });
     const validation = validateTweetNewsInference({ row, sources: buildTweetNewsInferenceSources(row), playerCandidates: players, teams,

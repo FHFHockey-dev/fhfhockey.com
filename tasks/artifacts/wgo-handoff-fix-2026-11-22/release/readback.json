@@ -1,0 +1,1 @@
+{"ledger" : {"version" : "20261122145409", "name" : "rankings_readiness_standalone_wgo", "n" : 1}, "digest_fn" : 1, "service_role_exec" : true, "anon_exec" : false, "authenticated_exec" : false, "readiness_has_digest" : true, "digest_1121" : {"md5": "55147d3a5e1068165b526548c57120c5", "rows": 504}}

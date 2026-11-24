@@ -41,7 +41,9 @@ function primaryReport(event: LinesCccIftttEventInput, source?: ParsedLinesCccSo
     let publishedAt: string | null = null;
     if (id && (!source.quotedTweetUrl || urlId === id)) {
       const rawClock = source.metadata?.quotedPostedAt;
-      if (source.metadata?.quotedRetrievalStatus === "x_api_success" && typeof rawClock === "string" && Number.isFinite(micros(rawClock))) {
+      if ((source.metadata?.quotedRetrievalStatus === "x_api_success" || (source.metadata?.quotedRetrievalStatus === "fxtwitter_payload"
+        && source.metadata?.publicationTimeBasis === "provider_timestamp" && rawClock === source.tweetPostedAt))
+        && typeof rawClock === "string" && Number.isFinite(micros(rawClock))) {
         publishedAt = rawClock;
       } else {
         publishedAt = tweetPublicationFromUrl(source.quotedTweetUrl ?? `https://x.com/i/web/status/${id}`);

@@ -1,7 +1,8 @@
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { sanitizePublicNewsText } from "lib/newsFeed";
 import { easternReportDate, verifiedOriginalTweetUrl } from "lib/sources/projectedLineups";
-import { isRelayAccount, scrubRelayHandles } from "./authority";
+import { tweetPublicationFromUrl } from "lib/sources/tweetPublicationTime";
+import { isRelayAccount, RELAY_ONLY_WEIGHT, scrubRelayHandles } from "./authority";
 import { activeLineClaims, captureIdentity, currentSourceReadings, eligibleClaim, reconcilePP } from "./reconcile";
 import { readOfficialPowerPlay } from "./officialPowerPlay";
 import { chooseDefaultGame, observeLineGame, stateAtRead, trustworthyState } from "./gameState";
@@ -75,8 +76,29 @@ export async function readReportGames(supabase: any, args: { teamId?: number; ga
     ({ id, date, awayTeamId, homeTeamId, awayAbbreviation, homeAbbreviation })) };
 }
 
+function publicQuoteEvidence(claim: LineClaim): LineClaim {
+  const original = claim.provenance?.originalTweetId;
+  const relay = claim.provenance?.relayTweetId;
+  // Older selected quotes sometimes put the original status clock in the relay field.
+  if (relay && original && relay !== original && claim.time.relayPublishedAt && claim.reviewReasons.includes("quoted_publication_time_unresolved")) {
+    const carrierClock = tweetPublicationFromUrl(`https://x.com/i/web/status/${relay}`);
+    if (carrierClock && Math.floor(Date.parse(carrierClock) / 1000) !== Math.floor(Date.parse(claim.time.relayPublishedAt) / 1000)) {
+      claim = { ...claim, time: { ...claim.time, relayPublishedAt: null } };
+    }
+  }
+  // A trailing link on the carrier's own lineup does not establish its byline.
+  if (!original || original === claim.provenance?.relayTweetId || !isRelayAccount(claim.relayAccount)
+    || claim.sourceUrl || claim.time.originalPublishedAt || claim.publicationEvidence?.length) return claim;
+  const link = claim.text.trimEnd().match(/\shttps:\/\/(?:x|twitter)\.com\/([\w]{1,15})\/status\/(\d+)\/?$/i);
+  if (!link || link[2] !== original || link[1]!.toLowerCase() !== claim.originalAuthor?.toLowerCase()) return claim;
+  return { ...claim, originalAuthor: null, author: null, originalIdentity: null, authorityTier: claim.authorityTier === "excluded" ? "excluded" : "unknown", authority: RELAY_ONLY_WEIGHT,
+    certainty: claim.certainty === "confirmed" ? "reported" : claim.certainty, confirmationEvidence: [],
+    provenance: { ...claim.provenance!, originalTweetId: null, attributionStatus: "pending" } };
+}
+
 /** Relay accounts never reach the site surface: every public string field is scrubbed of them. */
 export function publicClaim(claim: LineClaim): LineClaim {
+  claim = publicQuoteEvidence(claim);
   const sanitize = (value: string) => sanitizePublicNewsText(scrubRelayHandles(value));
   const candidate = verifiedOriginalTweetUrl(claim.sourceUrl);
   const handle = candidate ? new URL(candidate).pathname.split("/")[1]! : null;
@@ -95,7 +117,8 @@ export function publicClaim(claim: LineClaim): LineClaim {
     contextEvidence: claim.contextEvidence?.map((span) => ({ ...span, text: sanitize(span.text) })),
     author: originalUrl ? new URL(originalUrl).pathname.split("/")[1]! : "Original source pending",
     originalIdentity: originalUrl,
-    unit: claim.unit ? { ...claim.unit, evidence: claim.unit.evidence.map((span) => ({ ...span, text: sanitize(span.text) })) } : null,
+    unit: claim.unit ? { ...claim.unit, number: claim.unit.situation === "pp" && !claim.unit.explicitNumber ? null : claim.unit.number,
+      evidence: claim.unit.evidence.map((span) => ({ ...span, text: sanitize(span.text) })) } : null,
     relationship: claim.relationship ? { ...claim.relationship, evidence: { ...claim.relationship.evidence, text: sanitize(claim.relationship.evidence.text) } } : null };
 }
 const FEED_WINDOW_MS = 2 * 86400000;
@@ -104,14 +127,16 @@ const excludedAuthor = (claim: LineClaim) => claim.authorityTier === "excluded" 
 /** Raw captures for one team and game, one item per original post with its relays collapsed under it. */
 export function buildSourceFeed(claims: LineClaim[], game: LineGame, now: string): SourceFeedItem[] {
   const start = (instant(game.scheduledStart) ?? instant(`${game.date}T12:00:00Z`)!) - FEED_WINDOW_MS, end = instant(now) ?? -Infinity;
-  const identity = captureIdentity(claims);
-  const visible = claims.filter(claim => !excludedAuthor(claim) && (instant(claim.time.ingestedAt) ?? Infinity) <= end);
+  const readings = claims.map(publicQuoteEvidence);
+  const identity = captureIdentity(readings);
+  const visible = readings.filter(claim => !excludedAuthor(claim) && (instant(claim.time.ingestedAt) ?? Infinity) <= end);
   const inScope = (claim: LineClaim) => claim.gameId === game.id || claim.gameId == null && (instant(claim.time.ingestedAt) ?? -Infinity) >= start;
   const currentIds = new Set(currentSourceReadings(visible, identity).filter(inScope).map(claim => claim.id));
   const groups = new Map<string, LineClaim[]>();
   for (const claim of visible.filter(inScope)) groups.set(identity(claim), [...groups.get(identity(claim)) ?? [], claim]);
   return [...groups.entries()].filter(([, group]) => group.some(claim => currentIds.has(claim.id))).map(([id, group]) => {
-    const ordered = [...group].sort((a, b) => Number(b.provenance?.attributionStatus === "resolved") - Number(a.provenance?.attributionStatus === "resolved")
+    const ordered = [...group].sort((a, b) => Number(currentIds.has(b.id)) - Number(currentIds.has(a.id))
+      || Number(b.provenance?.attributionStatus === "resolved") - Number(a.provenance?.attributionStatus === "resolved")
       || (instant(b.time.interpretedAt) ?? 0) - (instant(a.time.interpretedAt) ?? 0) || a.id.localeCompare(b.id));
     const current = ordered.filter(claim => currentIds.has(claim.id));
     const representative = current[0]!, shown = publicClaim(representative);
@@ -133,6 +158,16 @@ export function buildSourceFeed(claims: LineClaim[], game: LineGame, now: string
 
 function publicUnits(units: SelectedLineUnit[]) { return units.map((unit) => ({ ...unit, claims: unit.claims.map(publicClaim) })); }
 function publicEntry(entry: EntryRevision): EntryRevision { return { ...entry, units: publicUnits(entry.units), evidenceClaims: entry.evidenceClaims?.map(publicClaim) }; }
+
+// A later game binding can qualify the same captured five without changing parser version.
+function sameReportedPP(a: LineClaim, b: LineClaim): boolean {
+  const unit = a.unit, other = b.unit;
+  return !!unit && !!other && a.kind === "pp" && b.kind === "pp" && !!a.captureId && a.captureId === b.captureId
+    && a.teamId === b.teamId && a.phase === b.phase && unit.complete && other.complete
+    && unit.explicitNumber && other.explicitNumber && unit.number === other.number && unit.group === other.group
+    && unit.players.length === 5 && other.players.length === 5
+    && unit.players.every((player, i) => player.playerId === other.players[i]!.playerId);
+}
 
 export async function readGameLines(supabase: any, args: { teamId?: number; gameId?: number; now: string }): Promise<GameLinesResponse> {
   const controls = lineSnapshotFlags();
@@ -176,8 +211,16 @@ export async function readGameLines(supabase: any, args: { teamId?: number; game
     const history = entries.filter((entry) => entry.teamId === teamId && entry.gameId !== game.id && entry.status !== "expected" && games.find((candidate) => candidate.id === entry.gameId)?.date! < game.date)
       .sort((a, b) => games.find((candidate) => candidate.id === b.gameId)!.date.localeCompare(games.find((candidate) => candidate.id === a.gameId)!.date) || b.revision - a.revision);
     const fallback = history[0];
-    const active = activeLineClaims(claims.filter(claim => claim.teamId === teamId)).filter(claim => claim.gameId === game.id);
+    const activeTeamClaims = activeLineClaims(claims.filter(claim => claim.teamId === teamId));
+    const active = activeTeamClaims.filter(claim => claim.gameId === game.id);
     const pp = reconcilePP({ game, teamId, games, claims, previous: previous.pp, now: args.now, carryForward: controls.carryForward, memberships });
+    const shownBindings = pp.flatMap(decision => decision.selection?.claims ?? []).filter(selected =>
+      eligibleClaim(selected) && !activeTeamClaims.some(other => other.gameId != null && other.gameId !== selected.gameId && sameReportedPP(selected, other)));
+    const unresolved = claims.filter(claim => claim.teamId === teamId && (claim.gameId === game.id || claim.gameId == null) && !eligibleClaim(claim))
+      .filter(claim => !(claim.gameId == null && claim.binding.status === "unresolved" && claim.reviewReasons.length > 0
+        && claim.reviewReasons.every(reason => reason === "no_game_binding_evidence" || reason === "binding_decision_unverified")
+        && shownBindings.some(selected => sameReportedPP(claim, selected)
+          && (instant(selected.time.interpretedAt) ?? -Infinity) > (instant(claim.time.interpretedAt) ?? Infinity))));
     return { teamId, abbreviation: teamId === game.homeTeamId ? game.homeAbbreviation : game.awayAbbreviation,
       entry: entry ? publicEntry(entry) : null,
       entryRevisions: entries.filter((entry) => entry.gameId === game.id && entry.teamId === teamId).map(publicEntry),
@@ -188,7 +231,7 @@ export async function readGameLines(supabase: any, args: { teamId?: number; game
         && (["iga", "entry_correction"].includes(claim.kind) || claim.kind === "pp" && claim.phase === "in_game")).map(publicClaim) : [],
       history: controls.observations ? [...scoped, ...claims.filter((claim) => claim.teamId === teamId && claim.gameId == null)].map(publicClaim) : [],
       ppDefaults: pp.map((decision) => ({ ...decision, selection: decision.selection ? { ...decision.selection, claims: decision.selection.claims.map(publicClaim) } : null })),
-      unresolved: [...claims.filter((claim) => claim.teamId === teamId && (claim.gameId === game.id || claim.gameId == null) && !eligibleClaim(claim)).map((claim) => ({ claimId: claim.id, reasons: claim.reviewReasons.length ? claim.reviewReasons.map(scrubRelayHandles) : ["Evidence is not eligible for selection"] })),
+      unresolved: [...unresolved.map((claim) => ({ claimId: claim.id, reasons: claim.reviewReasons.length ? claim.reviewReasons.map(scrubRelayHandles) : ["Evidence is not eligible for selection"] })),
         ...scoped.filter((claim) => claim.kind === "entry" && entry?.cutoff && (instant(claim.time.interpretedAt) ?? Infinity) > instant(entry.cutoff)!).map((claim) => ({ claimId: claim.id, reasons: ["Late entry evidence requires an explicit correction"] }))],
       conflicts: [...entry?.conflicts ?? [], ...pp.flatMap((decision) => decision.conflict ? [decision.conflict] : [])],
       feed: controls.observations ? buildSourceFeed(claims.filter((claim) => claim.teamId === teamId), game, args.now) : [],

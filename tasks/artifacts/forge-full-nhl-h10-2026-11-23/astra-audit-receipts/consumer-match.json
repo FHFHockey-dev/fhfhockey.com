@@ -1,0 +1,783 @@
+{
+  "http": {
+    "daily": {
+      "kind": "legacy",
+      "headRevision": null,
+      "expiresAt": null,
+      "reason": "native_not_activated"
+    },
+    "start": {
+      "slateGames": 7,
+      "slateTeams": 14,
+      "projectionRows": 283,
+      "renderedRows": 283,
+      "goalieTeamsExpected": 14,
+      "goalieTeamsCovered": 14,
+      "yahooMappedPlayers": 275,
+      "yahooUnmappedPlayers": 8
+    },
+    "start_source": [
+      "0203c9b0-7dbc-4f8e-a0cc-000cb974bb13",
+      "forge_player_projections",
+      "goalie_start_projections",
+      "l10_start_share"
+    ]
+  },
+  "manifest": {
+    "asOf": "2026-11-23T15:15:32.944Z",
+    "requiredOpportunities": 3306,
+    "forecastedOpportunities": 3306,
+    "exclusionCounts": {}
+  },
+  "weekly": {
+    "duplicate_wire_keys": 0,
+    "expected_value_missing": 1226,
+    "numeric": 2080
+  },
+  "weekly_types": [
+    [
+      "skater:no_lineup_evidence",
+      false,
+      true,
+      false,
+      723
+    ],
+    [
+      "regular",
+      true,
+      false,
+      true,
+      1842
+    ],
+    [
+      "regular",
+      true,
+      true,
+      true,
+      238
+    ],
+    [
+      "skater:no_forge_line",
+      false,
+      false,
+      false,
+      50
+    ],
+    [
+      "goalie:start_unknown",
+      false,
+      true,
+      false,
+      74
+    ],
+    [
+      "skater:no_lineup_evidence",
+      false,
+      true,
+      true,
+      324
+    ],
+    [
+      "goalie:start_unknown",
+      false,
+      true,
+      true,
+      33
+    ],
+    [
+      "skater:no_forge_line",
+      false,
+      false,
+      true,
+      22
+    ]
+  ],
+  "per_horizon": {
+    "(1, 'G')": {
+      "eligible": 73,
+      "stored": 73,
+      "no_wire": 0,
+      "stored_no_wire": 0,
+      "wire": 73,
+      "value": 67,
+      "unknown": 6,
+      "different_run_date": 6,
+      "stored_other_or_no_wire": 6,
+      "same_date_numeric": 67,
+      "same_date_cond_only": 0
+    },
+    "(2, 'G')": {
+      "eligible": 73,
+      "stored": 73,
+      "no_wire": 0,
+      "stored_no_wire": 0,
+      "wire": 73,
+      "value": 67,
+      "unknown": 6,
+      "different_run_date": 6,
+      "stored_other_or_no_wire": 6,
+      "same_date_numeric": 67,
+      "same_date_cond_only": 0
+    },
+    "(3, 'G')": {
+      "eligible": 73,
+      "stored": 68,
+      "no_wire": 5,
+      "stored_no_wire": 0,
+      "wire": 68,
+      "value": 62,
+      "unknown": 6,
+      "different_run_date": 1,
+      "stored_other_or_no_wire": 1,
+      "same_date_numeric": 62,
+      "same_date_cond_only": 5
+    },
+    "(4, 'G')": {
+      "eligible": 73,
+      "stored": 22,
+      "no_wire": 51,
+      "stored_no_wire": 0,
+      "wire": 22,
+      "value": 21,
+      "unknown": 1,
+      "different_run_date": 0,
+      "stored_other_or_no_wire": 0,
+      "same_date_numeric": 21,
+      "same_date_cond_only": 1
+    },
+    "(5, 'G')": {
+      "eligible": 73,
+      "stored": 0,
+      "no_wire": 73,
+      "stored_no_wire": 0
+    },
+    "(6, 'G')": {
+      "eligible": 73,
+      "stored": 0,
+      "no_wire": 73,
+      "stored_no_wire": 0
+    },
+    "(7, 'G')": {
+      "eligible": 73,
+      "stored": 0,
+      "no_wire": 73,
+      "stored_no_wire": 0
+    },
+    "(8, 'G')": {
+      "eligible": 73,
+      "stored": 0,
+      "no_wire": 73,
+      "stored_no_wire": 0
+    },
+    "(9, 'G')": {
+      "eligible": 73,
+      "stored": 0,
+      "no_wire": 73,
+      "stored_no_wire": 0
+    },
+    "(10, 'G')": {
+      "eligible": 73,
+      "stored": 0,
+      "no_wire": 73,
+      "stored_no_wire": 0
+    },
+    "(1, 'S')": {
+      "eligible": 730,
+      "stored": 728,
+      "no_wire": 15,
+      "stored_no_wire": 14,
+      "wire": 715,
+      "value": 564,
+      "unknown": 151,
+      "different_run_date": 151,
+      "stored_other_or_no_wire": 150,
+      "same_date_numeric": 564,
+      "same_date_cond_only": 0
+    },
+    "(2, 'S')": {
+      "eligible": 730,
+      "stored": 728,
+      "no_wire": 15,
+      "stored_no_wire": 14,
+      "wire": 715,
+      "value": 564,
+      "unknown": 151,
+      "different_run_date": 144,
+      "stored_other_or_no_wire": 143,
+      "same_date_numeric": 564,
+      "same_date_cond_only": 7
+    },
+    "(3, 'S')": {
+      "eligible": 730,
+      "stored": 684,
+      "no_wire": 58,
+      "stored_no_wire": 13,
+      "wire": 672,
+      "value": 528,
+      "unknown": 144,
+      "different_run_date": 49,
+      "stored_other_or_no_wire": 48,
+      "same_date_numeric": 528,
+      "same_date_cond_only": 95
+    },
+    "(4, 'S')": {
+      "eligible": 730,
+      "stored": 228,
+      "no_wire": 504,
+      "stored_no_wire": 3,
+      "wire": 226,
+      "value": 177,
+      "unknown": 49,
+      "different_run_date": 0,
+      "stored_other_or_no_wire": 0,
+      "same_date_numeric": 177,
+      "same_date_cond_only": 48
+    },
+    "(5, 'S')": {
+      "eligible": 730,
+      "stored": 0,
+      "no_wire": 730,
+      "stored_no_wire": 0
+    },
+    "(6, 'S')": {
+      "eligible": 730,
+      "stored": 0,
+      "no_wire": 730,
+      "stored_no_wire": 0
+    },
+    "(7, 'S')": {
+      "eligible": 730,
+      "stored": 0,
+      "no_wire": 730,
+      "stored_no_wire": 0
+    },
+    "(8, 'S')": {
+      "eligible": 730,
+      "stored": 0,
+      "no_wire": 730,
+      "stored_no_wire": 0
+    },
+    "(9, 'S')": {
+      "eligible": 730,
+      "stored": 0,
+      "no_wire": 730,
+      "stored_no_wire": 0
+    },
+    "(10, 'S')": {
+      "eligible": 730,
+      "stored": 0,
+      "no_wire": 730,
+      "stored_no_wire": 0
+    }
+  },
+  "total": {
+    "stored": 2604,
+    "missing": 5426
+  },
+  "other_memberships": {
+    "eligible": 5340,
+    "stored": 898,
+    "no_wire": 4598,
+    "stored_no_wire": 224,
+    "wire": 742,
+    "value": 30,
+    "unknown": 712,
+    "different_run_date": 490,
+    "stored_other_or_no_wire": 443,
+    "same_date_numeric": 30,
+    "same_date_cond_only": 201
+  },
+  "players": {
+    "Ivan Demidov": [
+      {
+        "game": "2026020379",
+        "date": "2026-11-23",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.2457
+        },
+        "start": null
+      },
+      {
+        "game": "2026020397",
+        "date": "2026-11-25",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.2194
+        },
+        "start": null
+      },
+      {
+        "game": "2026020415",
+        "date": "2026-11-28",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.265
+        },
+        "start": null
+      }
+    ],
+    "John Tavares": [
+      {
+        "game": "2026020381",
+        "date": "2026-11-23",
+        "run": "0203c9b0",
+        "evidence": "regular",
+        "expected": {
+          "GOALS": 0.281,
+          "ASSISTS": 0.416,
+          "PP_POINTS": 0.258,
+          "SHOTS_ON_GOAL": 1.546,
+          "HITS": 1.057,
+          "BLOCKED_SHOTS": 0.504,
+          "PENALTY_MINUTES": 0.3783
+        },
+        "conditional": {
+          "GOALS": null
+        },
+        "start": null
+      },
+      {
+        "game": "2026020400",
+        "date": "2026-11-27",
+        "run": "df4b39a8",
+        "evidence": "regular",
+        "expected": {
+          "GOALS": 0.282,
+          "ASSISTS": 0.418,
+          "PP_POINTS": 0.255,
+          "SHOTS_ON_GOAL": 1.543,
+          "HITS": 1.06,
+          "BLOCKED_SHOTS": 0.505,
+          "PENALTY_MINUTES": 0.3783
+        },
+        "conditional": {
+          "GOALS": null
+        },
+        "start": null
+      },
+      {
+        "game": "2026020420",
+        "date": "2026-11-28",
+        "run": "b8da5fb9",
+        "evidence": "regular",
+        "expected": {
+          "GOALS": 0.273,
+          "ASSISTS": 0.406,
+          "PP_POINTS": 0.247,
+          "SHOTS_ON_GOAL": 1.531,
+          "HITS": 1.051,
+          "BLOCKED_SHOTS": 0.501,
+          "PENALTY_MINUTES": 0.3783
+        },
+        "conditional": {
+          "GOALS": null
+        },
+        "start": null
+      }
+    ],
+    "Quinn Hughes": [
+      {
+        "game": "2026020384",
+        "date": "2026-11-23",
+        "run": "f20889ee",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.1405
+        },
+        "start": null
+      },
+      {
+        "game": "2026020396",
+        "date": "2026-11-25",
+        "run": "f20889ee",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.1402
+        },
+        "start": null
+      },
+      {
+        "game": "2026020408",
+        "date": "2026-11-27",
+        "run": "f20889ee",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.1372
+        },
+        "start": null
+      },
+      {
+        "game": "2026020428",
+        "date": "2026-11-29",
+        "run": "f20889ee",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.141
+        },
+        "start": null
+      }
+    ],
+    "Dylan Larkin": [
+      {
+        "game": "2026020394",
+        "date": "2026-11-25",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.3296
+        },
+        "start": null
+      },
+      {
+        "game": "2026020407",
+        "date": "2026-11-27",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.284
+        },
+        "start": null
+      },
+      {
+        "game": "2026020417",
+        "date": "2026-11-28",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.273
+        },
+        "start": null
+      }
+    ],
+    "Jake DeBrusk": [
+      {
+        "game": "2026020394",
+        "date": "2026-11-25",
+        "run": "0ddc93e3",
+        "evidence": "regular",
+        "expected": {
+          "GOALS": 0.303,
+          "ASSISTS": 0.323,
+          "PP_POINTS": 0.277,
+          "SHOTS_ON_GOAL": 2.08,
+          "HITS": 1.264,
+          "BLOCKED_SHOTS": 0.514,
+          "PENALTY_MINUTES": 0.2009
+        },
+        "conditional": {
+          "GOALS": null
+        },
+        "start": null
+      },
+      {
+        "game": "2026020405",
+        "date": "2026-11-27",
+        "run": "df4b39a8",
+        "evidence": "regular",
+        "expected": {
+          "GOALS": 0.307,
+          "ASSISTS": 0.327,
+          "PP_POINTS": 0.281,
+          "SHOTS_ON_GOAL": 2.094,
+          "HITS": 1.276,
+          "BLOCKED_SHOTS": 0.519,
+          "PENALTY_MINUTES": 0.2009
+        },
+        "conditional": {
+          "GOALS": null
+        },
+        "start": null
+      },
+      {
+        "game": "2026020429",
+        "date": "2026-11-29",
+        "run": "f20889ee",
+        "evidence": "regular",
+        "expected": {
+          "GOALS": 0.322,
+          "ASSISTS": 0.34,
+          "PP_POINTS": 0.311,
+          "SHOTS_ON_GOAL": 2.17,
+          "HITS": 1.295,
+          "BLOCKED_SHOTS": 0.526,
+          "PENALTY_MINUTES": 0.2009
+        },
+        "conditional": {
+          "GOALS": null
+        },
+        "start": null
+      }
+    ],
+    "Jake Oettinger": [
+      {
+        "game": "2026020395",
+        "date": "2026-11-25",
+        "run": "0ddc93e3",
+        "evidence": "regular",
+        "expected": {
+          "SAVES_GOALIE": 24.926,
+          "GOALS_AGAINST_GOALIE": 2.941,
+          "WINS_GOALIE": 0.4357,
+          "GOALIE_MINUTES": 58.59
+        },
+        "conditional": {
+          "SAVES_GOALIE": 25.525,
+          "SHOTS_AGAINST_GOALIE": 28.537,
+          "WINS_GOALIE": 0.446,
+          "GOALIE_MINUTES": 60
+        },
+        "start": 0.9765
+      },
+      {
+        "game": "2026020403",
+        "date": "2026-11-27",
+        "run": "df4b39a8",
+        "evidence": "regular",
+        "expected": {
+          "SAVES_GOALIE": 26.677,
+          "GOALS_AGAINST_GOALIE": 3.108,
+          "WINS_GOALIE": 0.4576,
+          "GOALIE_MINUTES": 58.59
+        },
+        "conditional": {
+          "SAVES_GOALIE": 27.319,
+          "SHOTS_AGAINST_GOALIE": 30.502,
+          "WINS_GOALIE": 0.4684,
+          "GOALIE_MINUTES": 60
+        },
+        "start": 0.9765
+      },
+      {
+        "game": "2026020424",
+        "date": "2026-11-28",
+        "run": "b8da5fb9",
+        "evidence": "regular",
+        "expected": {
+          "SAVES_GOALIE": 22.466,
+          "GOALS_AGAINST_GOALIE": 2.575,
+          "WINS_GOALIE": 0.4816,
+          "GOALIE_MINUTES": 58.59
+        },
+        "conditional": {
+          "SAVES_GOALIE": 23.007,
+          "SHOTS_AGAINST_GOALIE": 25.644,
+          "WINS_GOALIE": 0.493,
+          "GOALIE_MINUTES": 60
+        },
+        "start": 0.9765
+      }
+    ],
+    "Nathan MacKinnon": [
+      {
+        "game": "2026020397",
+        "date": "2026-11-25",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.3592
+        },
+        "start": null
+      },
+      {
+        "game": "2026020408",
+        "date": "2026-11-27",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.2907
+        },
+        "start": null
+      },
+      {
+        "game": "2026020425",
+        "date": "2026-11-28",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.292
+        },
+        "start": null
+      }
+    ],
+    "Cale Makar": [
+      {
+        "game": "2026020397",
+        "date": "2026-11-25",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.2354
+        },
+        "start": null
+      },
+      {
+        "game": "2026020408",
+        "date": "2026-11-27",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.203
+        },
+        "start": null
+      },
+      {
+        "game": "2026020425",
+        "date": "2026-11-28",
+        "run": "b8da5fb9",
+        "evidence": "skater:no_lineup_evidence",
+        "expected": {
+          "GOALS": null,
+          "ASSISTS": null,
+          "PP_POINTS": null,
+          "SHOTS_ON_GOAL": null,
+          "HITS": null,
+          "BLOCKED_SHOTS": null,
+          "PENALTY_MINUTES": null
+        },
+        "conditional": {
+          "GOALS": 0.192
+        },
+        "start": null
+      }
+    ]
+  }
+}

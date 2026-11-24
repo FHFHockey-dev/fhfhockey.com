@@ -18,6 +18,7 @@ import {
   type NewsFeedItem,
 } from "lib/newsFeed";
 import { isLineupNewsCategory } from "lib/newsLineupCard";
+import { clubRosterMoveLabel } from "lib/sources/reportedClubRosterMoves";
 
 // The reader's unresolved reason is an internal contract label and cannot say which check failed.
 const UNVERIFIED_DETAILS_COPY = "Player details not verified";
@@ -36,6 +37,8 @@ type NewsCardProps = {
     | "published_at"
     | "source_posted_at"
     | "lineup_matchup"
+    | "reported_lineup_entries"
+    | "reported_roster_moves"
     | "created_at"
     | "card_status"
     | "metadata"
@@ -232,6 +235,17 @@ export default function NewsCard({
         reviewDraft: Boolean(onLineupGoalieSlotClick) })
     : null;
   const presentation = getPublicNewsClaimPresentation(item);
+  const entries = item.reported_lineup_entries ?? [];
+  const playerChips = presentation.claims.flatMap((claim, index) =>
+    claim.kind === "participation" && entries.some(entry => entry.playerId === claim.playerId && entry.evidence.start === claim.evidence.start)
+      ? [] : [{ playerId: claim.playerId, playerName: claim.playerName, label: formatNewsClaimLabel(claim, item, presentation.claims[index + 1]) }]);
+  for (const move of item.reported_roster_moves ?? []) {
+    const chip = playerChips.find(c => c.playerId === move.playerId);
+    const label = clubRosterMoveLabel(move);
+    if (!chip) playerChips.push({ playerId: move.playerId, playerName: move.playerName, label });
+    else chip.label = ["Source report", "Injured", "Status unknown"].includes(chip.label) ? label : `${chip.label} · ${label}`;
+  }
+  for (const entry of entries) playerChips.push({ playerId: entry.playerId, playerName: entry.playerName, label: item.lineup_matchup ? `Reported in lineup vs. ${item.lineup_matchup.opponent}` : "Reported in lineup" });
   // Only lineup cards carry a category chip; source reports used to repeat
   // "report" up to three times per card (TJ, 2026-11-15).
   // Lineup cards: one title ("FLA practice lines") instead of a
@@ -240,11 +254,11 @@ export default function NewsCard({
   const categoryLabel = null;
   const subcategoryLabel = null;
   const details = getPublicNewsItemDetails(lineup ? item : { ...item, metadata: null, headline: "Source passage unavailable" });
-  const claimedPlayers = [...new Set(presentation.claims.map((claim) => claim.playerName))];
+  const claimedPlayers = [...new Set(playerChips.map(claim => claim.playerName))];
+  const lineupCategory = item.subcategory ? normalizeNewsCategory(item.subcategory).toLowerCase() : "lines";
+  const practicePowerPlay = lineupCategory === "power play" && lineup?.context === "Practice snapshot" && lineup.rows.length > 0;
   const lineupTitle = lineup
-    ? `${team.abbreviation ?? item.team_abbreviation ?? "NHL"} ${
-        item.subcategory ? normalizeNewsCategory(item.subcategory).toLowerCase() : "lines"
-      }${item.lineup_matchup ? ` vs. ${item.lineup_matchup.opponent} · Game ${item.lineup_matchup.gameId}` : ""}`
+    ? `${team.abbreviation ?? item.team_abbreviation ?? "NHL"} ${practicePowerPlay ? "practice power play" : lineupCategory}${item.lineup_matchup ? ` vs. ${item.lineup_matchup.opponent} · Game ${item.lineup_matchup.gameId}` : ""}`
     : null;
   const originalHeadline = lineupTitle ?? (claimedPlayers.join(", ") || team.name);
   const teamLabel = team.abbreviation ?? item.team_abbreviation ?? "NHL";
@@ -345,9 +359,9 @@ export default function NewsCard({
           </div>
         ) : null}
 
-        {!lineup && presentation.claims.length > 0 ? (
+        {!lineup && playerChips.length > 0 ? (
           <div className={styles.playerRow}>
-            {presentation.claims.map((claim, index) => (
+            {playerChips.map((claim, index) => (
               <span
                 key={`${claim.playerId}-${index}`}
                 className={styles.playerChip}
@@ -358,7 +372,7 @@ export default function NewsCard({
                   strokeLinejoin="round" aria-hidden="true" focusable="false">
                   <path d="M20 6 9 17l-5-5" />
                 </svg>
-                {claim.playerName} · {formatNewsClaimLabel(claim)}
+                {claim.playerName} · {claim.label}
                 <span className={styles.visuallyHidden}> (verified)</span>
               </span>
             ))}
@@ -369,7 +383,7 @@ export default function NewsCard({
           <p className={styles.blurb}>{details}</p>
         ) : null}
         {!lineup && presentation.unresolvedReason ? (
-          <p className={styles.unverifiedNote}>{UNVERIFIED_DETAILS_COPY}</p>
+          <p className={styles.unverifiedNote}>{entries.length ? "Other player details not verified" : UNVERIFIED_DETAILS_COPY}</p>
         ) : null}
 
         {hasDisclosure ? (

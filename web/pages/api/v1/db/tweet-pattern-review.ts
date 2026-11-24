@@ -365,6 +365,9 @@ function extractFallbackReviewText(args: {
 
 function shouldPreferQuotedAttribution(row: {
   primary_text_source: string | null;
+  raw_payload?: Record<string, unknown> | null;
+  source_url?: string | null;
+  tweet_id?: string | null;
   quoted_author_handle: string | null;
   quoted_author_name: string | null;
   quoted_tweet_url: string | null;
@@ -373,6 +376,10 @@ function shouldPreferQuotedAttribution(row: {
   quoted_raw_text: string | null;
   quoted_enriched_text: string | null;
 }): boolean {
+  // The intake serializer retained the named primary status. Its quote can be
+  // longer and older, including when the primary reports a subsequent decision.
+  if (row.primary_text_source === "ifttt_text" && row.raw_payload?.provider === "fxtwitter" && row.tweet_id &&
+    /^https:\/\/x\.com\/(?!i\/)[A-Za-z0-9_]{1,15}\/status\/(\d+)$/.exec(row.source_url ?? "")?.[1] === row.tweet_id) return false;
   const wrapperText = chooseLongestText(row.enriched_text, row.raw_text) ?? "";
   const quotedText =
     chooseLongestText(row.quoted_enriched_text, row.quoted_raw_text) ?? "";

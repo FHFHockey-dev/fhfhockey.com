@@ -1,0 +1,319 @@
+{
+  "now": "2026-11-23T15:00:00.000Z",
+  "table": [
+    {
+      "player": "Ivan Demidov",
+      "game": "2026020379",
+      "storedRun": "0203c9b0",
+      "storedGoals": 0.245,
+      "productionWire": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.2457
+      },
+      "before": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.265,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "0203c9b0",
+        "ifDressesGoals": 0.245,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Quinn Hughes",
+      "game": "2026020384",
+      "storedRun": "0203c9b0",
+      "storedGoals": 0.141,
+      "productionWire": {
+        "run": "f20889ee",
+        "ifDressesGoals": 0.1405
+      },
+      "before": {
+        "run": "f20889ee",
+        "ifDressesGoals": 0.141,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "0203c9b0",
+        "ifDressesGoals": 0.141,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Cale Makar",
+      "game": "2026020397",
+      "storedRun": "0ddc93e3",
+      "storedGoals": 0.225,
+      "productionWire": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.2354
+      },
+      "before": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.192,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "0ddc93e3",
+        "ifDressesGoals": 0.225,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Ivan Demidov",
+      "game": "2026020397",
+      "storedRun": "0ddc93e3",
+      "storedGoals": 0.214,
+      "productionWire": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.2194
+      },
+      "before": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.265,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "0ddc93e3",
+        "ifDressesGoals": 0.214,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Nathan MacKinnon",
+      "game": "2026020397",
+      "storedRun": "0ddc93e3",
+      "storedGoals": 0.341,
+      "productionWire": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.3592
+      },
+      "before": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.292,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "0ddc93e3",
+        "ifDressesGoals": 0.341,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Quinn Hughes",
+      "game": "2026020396",
+      "storedRun": "0ddc93e3",
+      "storedGoals": 0.139,
+      "productionWire": {
+        "run": "f20889ee",
+        "ifDressesGoals": 0.1402
+      },
+      "before": {
+        "run": "f20889ee",
+        "ifDressesGoals": 0.141,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "0ddc93e3",
+        "ifDressesGoals": 0.139,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Cale Makar",
+      "game": "2026020408",
+      "storedRun": "df4b39a8",
+      "storedGoals": 0.188,
+      "productionWire": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.203
+      },
+      "before": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.192,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "df4b39a8",
+        "ifDressesGoals": 0.188,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Nathan MacKinnon",
+      "game": "2026020408",
+      "storedRun": "df4b39a8",
+      "storedGoals": 0.286,
+      "productionWire": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.2907
+      },
+      "before": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.292,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "df4b39a8",
+        "ifDressesGoals": 0.286,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Quinn Hughes",
+      "game": "2026020408",
+      "storedRun": "df4b39a8",
+      "storedGoals": 0.141,
+      "productionWire": {
+        "run": "f20889ee",
+        "ifDressesGoals": 0.1372
+      },
+      "before": {
+        "run": "f20889ee",
+        "ifDressesGoals": 0.141,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "df4b39a8",
+        "ifDressesGoals": 0.141,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Cale Makar",
+      "game": "2026020425",
+      "storedRun": "b8da5fb9",
+      "storedGoals": 0.192,
+      "productionWire": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.192
+      },
+      "before": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.192,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.192,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Ivan Demidov",
+      "game": "2026020415",
+      "storedRun": "b8da5fb9",
+      "storedGoals": 0.265,
+      "productionWire": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.265
+      },
+      "before": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.265,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.265,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Nathan MacKinnon",
+      "game": "2026020425",
+      "storedRun": "b8da5fb9",
+      "storedGoals": 0.292,
+      "productionWire": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.292
+      },
+      "before": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.292,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "b8da5fb9",
+        "ifDressesGoals": 0.292,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    },
+    {
+      "player": "Quinn Hughes",
+      "game": "2026020428",
+      "storedRun": "f20889ee",
+      "storedGoals": 0.141,
+      "productionWire": {
+        "run": "f20889ee",
+        "ifDressesGoals": 0.141
+      },
+      "before": {
+        "run": "f20889ee",
+        "ifDressesGoals": 0.141,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      },
+      "after": {
+        "run": "f20889ee",
+        "ifDressesGoals": 0.141,
+        "counted": null,
+        "totals": false,
+        "code": "skater:no_lineup_evidence"
+      }
+    }
+  ],
+  "beforeMoved": [],
+  "afterMoved": []
+}

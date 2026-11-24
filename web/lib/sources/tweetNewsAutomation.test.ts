@@ -14,6 +14,8 @@ import {
 import { buildNewsLineupSnapshot, readNewsLineupPresentation, validatedNewsLineupRows } from "../newsLineupPresentation";
 import { interpretTweetUnits } from "./tweetInterpretation";
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
+import { selectClubRosterMoves } from "./reportedClubRosterMoves";
+import { pendingNewsAssignments } from "./tweetNewsRosterEvidence";
 
 const players: TweetNewsAutomationPlayer[] = [
   { id: 1, fullName: "Andrei Vasilevskiy", position: "G", team_id: 14 },
@@ -62,6 +64,114 @@ function buildRow(
 
 describe("tweet news automation", () => {
   afterEach(() => vi.unstubAllEnvs());
+  it("separates Winnipeg's retroactive IR placement from the player recalled from Manitoba", () => {
+    const id = "2122708840634581339", url = "https://x.com/WpgJetsPR/status/" + id;
+    const text = "RT @WpgJetsPR: TRANSACTIONS: The #NHLJets have recalled forward Danny Zhilkin from the Manitoba Moose (AHL). The Jets also placed forward Isak Rosén on injured reserve retroactive to Nov. 12.";
+    const roster = { text, source: "wrapper" as const, publishedAt: "2026-11-17T15:10:00Z", reviewSpans: [], players: [
+      { id: 8482765, team_id: 52, fullName: "Isak Rosen", lastName: "Rosen", position: "F" },
+      { id: 8483526, team_id: 52, fullName: "Danil Zhilkin", lastName: "Zhilkin", position: "F" }] };
+    const row = buildRow({ tweet_id: id, source_url: url, tweet_url: url, team_id: 52, team_abbreviation: "WPG",
+      source_handle: "WpgJetsPR", review_text: text, raw_text: text, metadata: { intakeRosterEvidence: roster } });
+    expect(buildTweetNewsAutomationCandidate({ row, players: [] })).toMatchObject({ category: "INJURY", cardStatus: "published",
+      playerAssignments: [{ playerId: 8482765 }], reviewAssignments: [{ ruleId: "club-ir-placement", playerIds: [8482765] }] });
+    const [move] = selectClubRosterMoves(roster, 52, url, id);
+    expect(move).toMatchObject({ move: "placed_on_ir", retroactive: "Nov. 12", subject: { text: "Isak Rosén" } });
+    expect(text.slice(move!.subject.start, move!.subject.end)).toBe("Isak Rosén");
+    expect(selectClubRosterMoves({ ...roster, players: [...roster.players, { ...roster.players[0]!, id: 999 }] }, 52, url, id)).toEqual([]);
+    expect(selectClubRosterMoves({ ...roster, text: text.replace("The Jets also", "The Ducks also") }, 52, url, id)).toEqual([]);
+    expect(selectClubRosterMoves({ ...roster, reviewSpans: [move!.subject] }, 52, url, id)).toEqual([]);
+    expect(selectClubRosterMoves({ ...roster, publishedAt: "2026-11-17T15:11:00Z" }, 52, url, id)).toEqual([]);
+    expect(selectClubRosterMoves(roster, 52, url.replace("WpgJetsPR", "Other"), id)).toEqual([]);
+    expect(buildTweetNewsAutomationCandidate({ row: { ...row, review_status: "ignored" }, players: [] })).toBeNull();
+  });
+
+  it("withholds automated roster labels after an edit to an attached suggestion with the same ID", () => {
+    const assignment = { id: "auto-club-ir-placement", ruleId: "club-ir-placement", playerIds: [8482765], notes: "Original" };
+    const metadata = { automation: { rosterReportAssignments: [assignment] } };
+    const check = (current: unknown[], status = "pending") => pendingNewsAssignments(metadata, { review_status: status, review_assignments: current });
+    expect(check([{ notes: "Original", ruleId: assignment.ruleId, playerIds: [8482765], id: assignment.id }])).toBe(true);
+    expect(check([{ ...assignment, playerIds: [8483526] }])).toBe(false);
+    expect(check([{ ...assignment, notes: "Reviewer correction" }])).toBe(false);
+    expect(check([assignment], "reviewed")).toBe(false);
+    expect(pendingNewsAssignments(null, { review_status: "pending", review_assignments: [assignment] })).toBe(false);
+  });
+
+  it("requires a dated club byline for a first-person recall and keeps different full names distinct", () => {
+    const id = "2124207149450686645", url = "https://x.com/AnaheimDucks/status/" + id;
+    const text = "Roster Move: We have recalled Nico Myatovic from the @SDGullsAHL and placed Beckett Sennecke on IR with an upper-body injury.";
+    const roster = { source: "wrapper" as const, text, publishedAt: "2026-11-21T18:23:44Z", reviewSpans: [],
+      players: [{ id: 8484201, fullName: "Nico Myatovic", lastName: "Myatovic", team_id: 24, position: "L" },
+        { id: 8484762, fullName: "Beckett Sennecke", lastName: "Sennecke", team_id: 24, position: "R" }] };
+    expect(selectClubRosterMoves(roster, 24, url, id).map(m => [m.playerId, m.move]))
+      .toEqual([[8484201, "recalled"], [8484762, "placed_on_ir"]]);
+    expect(selectClubRosterMoves(roster, 24, url.replace("AnaheimDucks", "Reporter"), id)).toEqual([]);
+    const wrong = { ...roster, text: text.replace("Nico Myatovic", "Another Myatovic") };
+    expect(selectClubRosterMoves(wrong, 24, url, id).map(m => m.playerId)).toEqual([8484762]);
+  });
+
+  it("binds consecutive New Jersey transaction sentences to their separate named subjects", () => {
+    const id = "2121312309528453495", url = "https://x.com/JamesNicholsNHL/status/" + id;
+    const text = "The #NJDevils have placed Johnathan Kovacevic in IR. \n\nThey’ve recalled Anton Silaev.";
+    const roster = { text, source: "wrapper" as const, publishedAt: "2026-11-13T18:40:41Z", reviewSpans: [], players: [
+      { id: 8480192, fullName: "Johnathan Kovacevic", lastName: "Kovacevic", team_id: 1, position: "D" },
+      { id: 8484987, fullName: "Anton Silaev", lastName: "Silaev", team_id: 1, position: "D" },
+    ] };
+    const read = (value: string) => selectClubRosterMoves({ ...roster, text: value }, 1, url, id);
+    const moves = read(text);
+    expect(moves.map(m => [m.playerId, m.move])).toEqual([[8480192, "placed_on_ir"], [8484987, "recalled"]]);
+    for (const m of moves) {
+      expect(text.slice(m.subject.start, m.subject.end)).toBe(m.subject.text);
+      expect(text.slice(m.evidence.start, m.evidence.end)).toBe(m.evidence.text);
+    }
+    expect(read(text.replace("They’ve", "They have"))).toEqual(expect.arrayContaining([expect.objectContaining({ move: "recalled" })]));
+    for (const changed of [text.replace("They’ve", "The #Canucks have"), text.replace("have placed", "may place"),
+      text.replace("in IR.", "in IR?"), text.replace("Silaev.", "Silaev from Utica if healthy."), text.replace("#NJDevils", "#Canucks")]) {
+      expect(read(changed)).toEqual([]);
+    }
+    expect(read(text.replace("Anton Silaev", "Another Silaev")).map(m => m.playerId)).toEqual([8480192]);
+  });
+
+  it("separates the Tampa recall from the injured player named in the same sentence", () => {
+    const id = "2120174470593970413", url = "https://x.com/Erik_Erlendsson/status/" + id;
+    const text = "With Brayden Point expected to miss some time, #GoBolts have placed Point on injured reserve and recalled C Sam O'Reilly";
+    const roster = { text, source: "wrapper" as const, publishedAt: "2026-11-10T15:19:19Z", reviewSpans: [], players: [
+      { id: 8478010, fullName: "Brayden Point", lastName: "Point", team_id: 14, position: "C" },
+      { id: 8484770, fullName: "Sam O'Reilly", lastName: "O'Reilly", team_id: 14, position: "R" },
+    ] };
+    expect(selectClubRosterMoves(roster, 14, url, id).map(m => [m.playerId, m.move])).toEqual([
+      [8478010, "placed_on_ir"], [8484770, "recalled"],
+    ]);
+    const mismatch = text.replace("placed Point", "placed Smith");
+    expect(selectClubRosterMoves({ ...roster, text: mismatch }, 14, url, id).map(m => m.playerId)).toEqual([8484770]);
+    expect(selectClubRosterMoves({ ...roster, text: text.replace("have placed", "may place") }, 14, url, id)).toEqual([]);
+  });
+
+  it("keeps a reported waiver destination separate from the player's dated source roster", () => {
+    const id = "2120236759145750689", url = "https://x.com/mnwildPR/status/" + id;
+    const text = "The #mnwild has activated defenseman Jared Spurgeon from Injured Reserve and reassigned forward Tyler Pitlick to the @IAWild. Defenseman Cameron Crotty has been claimed off waivers by the Vancouver Canucks.";
+    const roster = { text, source: "wrapper" as const, publishedAt: "2026-11-10T19:26:50Z", reviewSpans: [], players: [
+      { id: 8474716, fullName: "Jared Spurgeon", lastName: "Spurgeon", team_id: 30, position: "D" },
+      { id: 8475752, fullName: "Tyler Pitlick", lastName: "Pitlick", team_id: 30, position: "F" },
+      { id: 8480075, fullName: "Cameron Crotty", lastName: "Crotty", team_id: 30, position: "D" },
+    ] };
+    const moves = selectClubRosterMoves(roster, 30, url, id);
+    expect(moves.map(move => move.move)).toEqual(["activated_off_ir", "reassigned", "claimed_off_waivers"]);
+    expect(moves[2]).toMatchObject({ playerId: 8480075, teamId: 30, reportedDestination: { teamId: 23, name: "Vancouver Canucks" } });
+    expect(selectClubRosterMoves({ ...roster, text: text.replace("Vancouver Canucks", "unidentified club") }, 30, url, id))
+      .toEqual(moves.slice(0, 2));
+  });
+
+  it("leaves a relay's Avery Hayes correction in review without tagging the roster's Travis Hayes", () => {
+    const id = "2123813937988964613", url = "https://x.com/NHL_Rosters/status/" + id;
+    const text = "Pittsburgh has placed Nick Robertson on IR and recalled Avery Hayes from Wilkes-Barre/Scranton. #LetsGoPens";
+    const row = buildRow({ tweet_id: id, tweet_url: url, source_url: url, source_handle: "NHL_Rosters",
+      review_text: text, raw_text: text, team_id: 5, metadata: { intakeRosterEvidence: { text, source: "wrapper",
+        publishedAt: "2026-11-20T16:21:16Z", reviewSpans: [], players: [
+          { id: 8485581, fullName: "Travis Hayes", lastName: "Hayes", team_id: 5, position: "R" }] } } });
+    expect(buildTweetNewsAutomationCandidate({ row, players: [] })).toBeNull();
+    expect(buildTweetNewsAmbiguousCandidate({ row, players: [] })).toMatchObject({ cardStatus: "draft", playerAssignments: [],
+      reviewAssignments: [], metadata: { automation: { ambiguityReason: "missing_required_evidence", dictionaryGap: false } } });
+  });
   it.each(["Andrei Vasilevskiy will start if healthy.", "Andrei Vasilevskiy first off, but not confirmed.", "Victor Hedman has not been ruled out tonight.", "Andrei Vasilevskiy will start tonight?", "Connor Bedard could return fully healthy and ready for training camp.", "Connor Bedard is not fully healthy and ready for training camp."])("keeps uncertain claims out of confirmed automated news: %s", (text) => {
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
     vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");

@@ -585,6 +585,17 @@ export const teamNameToAbbreviationMap: { [name: string]: string } = {
   "Utah Utah HC": "UTA" // Natural Stat Trick uses "Utah Utah HC" for some reason
 };
 
+export const NHL_TEXT_HINTS: Record<string, string> = {
+  gohabsgo: "MTL",
+  habs: "MTL",
+  gobolts: "TBL",
+  bolts: "TBL",
+  flytogether: "ANA",
+  mnwild: "MIN",
+  nhlbruins: "BOS",
+  sabres: "BUF",
+};
+
 export const teamHashtagsByAbbreviation: Record<string, string[]> = {
   ANA: ["#FlyTogether"],
   BOS: ["#NHLBruins"],

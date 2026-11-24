@@ -111,6 +111,18 @@ function report(key: string, number: number, overrides: Partial<ProjectionReport
     publishedAt: "2026-09-18T15:00:00Z", originalPublishedAt: overrides.publishedAt === undefined ? "2026-09-18T15:00:00Z" : overrides.publishedAt, receivedAt: "2026-09-18T15:01:00Z", originalUrl: `https://x.com/reporter${number}/status/${number}`, text: "", interpretation: { version: "test", units: [unit(number)], unresolved: [], context: "practice", certainty: "reported" }, ...overrides };
 }
 
+it("keeps five-forward PP personnel and removes a legacy game label based only on today", () => {
+  const text = "RT @LeggetNHL: Kings working with a 5-forward power play on the top unit today\n\nPP1\nPanarin – Byfield – Laferriere\nKempe – Fiala";
+  const original = report("five-forward", 1, { text, teamId: 26, session: null, gameId: 42 });
+  original.interpretation = { ...original.interpretation, context: "game" };
+  const publicRow = publicProjectionReport(original);
+  expect(publicRow).toMatchObject({ gameId: null, interpretation: { context: "unknown", version: original.interpretation.version } });
+  expect(publicRow.interpretation.units).toEqual(original.interpretation.units);
+  expect(original.gameId).toBe(42);
+  expect(interpretTweetUnits(text, []).context).toBe("unknown");
+  expect(interpretTweetUnits(text + "\nDuring the first period", []).lineContext?.phase).toBe("in_game");
+});
+
 describe("projected unit publishing", () => {
   afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
   function enableLivePublishing() {
@@ -512,6 +524,30 @@ describe("projected unit publishing", () => {
     expect(internal.find((candidate) => candidate.key === "1000")).toEqual(rows[1000]!.payload);
     expect(await fetchTweetProjectionReports(database, { date: "2026-09-18" })).toHaveLength(1000);
   });
+  it("rechecks the opponent on older expected-entry reports without altering the stored originals", async () => {
+    enableLivePublishing();
+    const database = projectionDatabase([]);
+    const date = "2026-11-10", game = { id: 2026020290, date, homeTeamId: 19, awayTeamId: 17 };
+    const rows = new Map<string, any>();
+    database.tables.set("tweet_projection_reports", rows);
+    for (const [opponent, post] of [["Montreal", "2120256072137261302"], ["Detroit", "2120259182544695630"]] as const) {
+      const payload = report(post, 1, { date, teamId: 19, teamAbbreviation: "STL", gameId: game.id, originalUrl: null,
+        text: `Jonatan Berggren: Line Change: Berggren is expected to draw back into the lineup vs. ${opponent} on Tuesday.`,
+        provenance: { relayTweetId: post, originalTweetId: null, attributionStatus: "pending" } });
+      payload.interpretation = { ...payload.interpretation, version: "2026-11-23.2", units: [], events: [] };
+      rows.set(post, { report_key: post, team_id: 19, game_id: game.id, report_date: date, interpretation_version: payload.interpretation.version, payload });
+    }
+    const scheduled = { teamId: 19, date, games: [game] };
+    expect((await fetchTweetProjectionReports(database.db, { ...scheduled, gameId: game.id })).map(row => row.key)).toEqual(["2120259182544695630"]);
+    const dateView = await fetchTweetProjectionReports(database.db, scheduled);
+    expect(dateView.find(row => row.key === "2120256072137261302")).toMatchObject({ gameId: null, interpretation: { events: [], units: [] } });
+    expect((await fetchTweetProjectionReports(database.db, { teamId: 19, date, gameId: game.id, internal: true }))).toHaveLength(2);
+    const carDate = "2026-11-07", key = "2119102582354591806";
+    const car = report(key, 1, { date: carDate, teamId: 12, teamAbbreviation: "CAR", gameId: 2026020271, originalUrl: null,
+      text: "Kevin Korchinski: Line Change: Korchinski is expected to draw back into the lineup vs. Carolina on Saturday. https://t.co/W2k7VMCCIN" });
+    rows.set(key, { report_key: key, team_id: 12, game_id: car.gameId, report_date: carDate, payload: car });
+    expect(await fetchTweetProjectionReports(database.db, { teamId: 12, date: carDate })).toEqual([]);
+  });
   it("selects corrected source versions before team/game scope while keeping both supported sides", async () => {
     enableLivePublishing();
     const database = projectionDatabase([]);
@@ -529,11 +565,13 @@ describe("projected unit publishing", () => {
       makeReading("confirmed-other-side", 7, gameId, "2026-11-16.10", 21),
     ];
     database.tables.set("tweet_projection_reports", new Map(versions.map(row => [row.report_key, row])));
-    const keys = async (scope: { teamId?: number; gameId?: number; internal?: boolean }) =>
+    const keys = async (scope: { teamId?: number; gameId?: number; internal?: boolean; snapshotTeamIds?: number[] }) =>
       (await fetchTweetProjectionReports(database.db, { date, ...scope })).map(value => value.key);
     expect(await keys({ gameId })).toEqual(["confirmed-other-side"]);
     expect(await keys({ teamId: 54 })).toEqual(["unbound"]);
     expect(await keys({ gameId, teamId: 54 })).toEqual([]);
+    expect(await keys({ gameId, snapshotTeamIds: [54, 7] })).toEqual(["confirmed-other-side"]);
+    expect(await keys({ gameId, snapshotTeamIds: [4] })).toEqual([]);
     expect(await keys({ teamId: 4 })).toEqual([]);
     expect(await keys({ gameId, teamId: 54, internal: true })).toEqual(["stale-game"]);
     const later = makeReading("vgk-current", 54, gameId, "2026-11-16.10", 22);
@@ -544,6 +582,20 @@ describe("projected unit publishing", () => {
     const correctedSides = [makeReading("ellis", 7, gameId, "2026-11-18.1", 10), makeReading("hill", 54, gameId, "2026-11-18.1", 10)];
     for (const row of correctedSides) database.tables.get("tweet_projection_reports")!.set(row.report_key, row);
     expect(await keys({ gameId })).toEqual(["ellis", "hill"]);
+    expect(await keys({ gameId, snapshotTeamIds: [54, 7] })).toEqual(["ellis", "hill"]);
+  });
+  it.each([[101, 0], [1, 501]])("withholds a partial snapshot read with %i team reports and %i other revisions", async (ours, others) => {
+    enableLivePublishing();
+    const database = projectionDatabase([]);
+    const day = "2026-09-18", gameId = 2026020278;
+    const rows = Array.from({ length: ours + others }, (_, i) => {
+      const teamId = i < ours ? 7 : 4, key = String(i);
+      return { report_key: key, team_id: teamId, report_date: day, interpretation_version: "2026-11-19.1",
+        payload: report(key, 1, { teamId, gameId, originalUrl: "https://x.com/Reporter/status/2119520323309617358" }) };
+    });
+    database.tables.set("tweet_projection_reports", new Map(rows.map(row => [row.report_key, row])));
+    await expect(fetchTweetProjectionReports(database.db, { date: day, gameId, snapshotTeamIds: [7, 54] })).rejects.toThrow("incomplete");
+    expect(database.calls.filter(call => call.startsWith("read:")).length).toBe(others ? 2 : 1);
   });
   it("keeps new game bindings independently addressable and older parser keys stable", () => {
     const { source } = liveProjectionFixture("goalie");
@@ -796,5 +848,78 @@ describe("declared formation publishing", () => {
     const duplicated = structuredClone(units);
     duplicated[7]!.players[0] = duplicated[0]!.players[0]!;
     expect(selectProjectedUnitSets([{ ...source, interpretation: { ...source.interpretation, units: duplicated } }])).toEqual([]);
+  });
+});
+
+describe("practice depth in the original report", () => {
+  // The two last names, original post and publication date are from Benton's Nov 12 morning skate.
+  const url = "https://x.com/Benton_Mike/status/2120795699000365220", time = "2026-11-12T08:27:51.777Z";
+  const text = "Morning skate:\nMahura-Ottavainen";
+  const roster = [{ playerId: 8479372, fullName: "Josh Mahura", lastName: "Mahura", teamId: 55, position: "D" },
+    { playerId: 8482866, fullName: "Ville Ottavainen", lastName: "Ottavainen", teamId: 55, position: "D" }];
+  const reading = interpretTweetUnits(text, roster);
+  const fourth = { ...reading.units[0]!, number: 4 };
+  const original = report("practice", 1, { teamId: 55, gameId: null, originalUrl: url, originalPublishedAt: time, receivedAt: "2026-11-12T15:38:23Z", text,
+    provenance: { originalTweetId: "2120795699000365220", relayTweetId: "2120800809646752225", attributionStatus: "resolved" },
+    interpretation: { ...reading, units: [], excludedUnits: [fourth],
+      identityContext: { basis: "publication_roster", sourcePublishedAt: time, eventRosterRevision: reading.rosterRevision! } } });
+  it("exposes the verified pair only on its practice report", () => {
+    const shown = publicProjectionReport(original);
+    expect(shown.reportedPracticeDepth).toMatchObject([{ situation: "es_defense", number: 4, players: roster.map(p => ({ playerId: p.playerId, name: p.fullName })) }]);
+    expect(shown.interpretation.units).toEqual([]);
+    expect(selectProjectedUnitSets([shown])).toEqual([]);
+    expect(original.interpretation.excludedUnits![0]!.evidence.length).toBe(2);
+  });
+  it("withholds a stale, unresolved, conflicting or differently sourced pair", () => {
+    for (const changes of [{ originalPublishedAt: null }, { originalUrl: null }, { provenance: undefined }, { teamId: 3 },
+      { receivedAt: "2026-11-12T06:00:00Z" }, { gameId: 2026020309 }, { reviewReason: "conflicting_claims" as const }, { text: text.replace("Morning skate", "Last evening") },
+      { text: text.replace("Ottavainen", "McAvoy") }, { text: text + "/Evans" }]) {
+      expect(publicProjectionReport({ ...original, ...changes }).reportedPracticeDepth).toBeUndefined();
+    }
+    for (const changes of [{ units: [{ ...fourth, number: 2 }] }, { excludedUnits: [{ ...fourth, complete: false }] },
+      { unresolved: [{ ...fourth.evidence[0]!, situation: fourth.situation, number: 4, reason: "ambiguous" as const, candidates: [] }] },
+      { rosterRevision: reading.rosterRevision + "|123:Another Mahura:Mahura:55:D" }]) {
+      expect(publicProjectionReport({ ...original, interpretation: { ...original.interpretation, ...changes } }).reportedPracticeDepth).toBeUndefined();
+    }
+  });
+});
+
+describe("numbered power-play observations after a penalty", () => {
+  const skaters = ["Carlson", "Point", "O'Reilly", "Kucherov", "Guentzel"].map((name, index) =>
+    ({ playerId: index + 1, fullName: name, lastName: name, teamId: 14, position: "C" }));
+  const lead = "Hyman to the box for hooking at the 7:17 mark in the first, so #GoBolts will get the first power play of the night.";
+  const raw = lead + "\n\nPP1 is Carlson, Point, O'Reilly, Kucherov &amp; Guentzel";
+  const url = "https://x.com/EddieInTheYard/status/2123579904235016409";
+  const original = report("penalty", 1, { date:"2026-11-19", teamId:14, text: raw, originalUrl:url, publishedAt:"2026-11-20T00:51:18Z",
+    session:null, gameId:2026020349, provenance:{originalTweetId:"2123579904235016409",relayTweetId:null,attributionStatus:"resolved"},
+    interpretation:{...interpretTweetUnits(raw,skaters),identityContext:{basis:"publication_roster",sourcePublishedAt:"2026-11-20T00:51:18Z",eventRosterRevision:"fixture"}} });
+  it("keeps five literal skater spans and requires a credited, timed report for the sidebar", () => {
+    const u = original.interpretation.units[0]!;
+    expect(u.evidence.map(e => raw.slice(e.start,e.end))).toEqual(skaters.map(s=>s.lastName));
+    expect(original.interpretation.lineContext?.phase).toBe("in_game");
+    expect(publicProjectionReport(original).reportedInGamePP).toEqual([{number:1,players:u.players}]);
+    for (const changes of [{originalPublishedAt:null},{originalPublishedAt:"2026-11-20T00:51:25Z"},
+      {reviewReason:"conflicting_claims" as const},{provenance:undefined},
+      {interpretation:{...original.interpretation,identityContext:undefined}},
+      {interpretation:{...original.interpretation,identityContext:{...original.interpretation.identityContext!,basis:"current_membership" as const}}},
+      {interpretation:{...original.interpretation,identityContext:{...original.interpretation.identityContext!,sourcePublishedAt:"2026-11-21T00:51:18Z"}}},
+      {interpretation:{...original.interpretation,units:[{...u,explicitNumber:false}]}},
+      {interpretation:{...original.interpretation,units:[{...u,number:2}]}},
+      {interpretation:{...original.interpretation,units:[{...u,evidence:[...u.evidence].reverse()}]}}]) {
+      expect(publicProjectionReport({...original,...changes}).reportedInGamePP).toBeUndefined();
+    }
+  });
+  it("keeps in-game PP out of projections and out of a pregame report's companion unit", () => {
+    const companion = report("pregame",2,{date:original.date,teamId:14,session:null,gameId:original.gameId,publishedAt:original.publishedAt});
+    expect(selectProjectedUnitSets([original,companion])).toEqual([]);
+    const legacy = {...original,interpretation:{...original.interpretation,lineContext:undefined,units:[unit(1),unit(2)]}};
+    expect(selectProjectedUnitSets([legacy,companion])).toEqual([]);
+  });
+  it("requires a complete distinct five for the copula and does not promote a goalie or alternative", () => {
+    for (const row of ["PP1 is not Carlson, Point, O'Reilly, Kucherov, Guentzel", "PP1 is Carlson, Point, O'Reilly, Kucherov, Point",
+      "PP1 is Carlson, Point, O'Reilly, Kucherov or Guentzel","PP1 is Carlson, Point, O'Reilly, Kucherov, Netminder"]) {
+      const result = interpretTweetUnits(lead+"\n"+row,[...skaters,{playerId:6,fullName:"Netminder",lastName:"Netminder",position:"G"}]);
+      expect(result.units.filter(u=>u.situation==="pp" && u.complete),row).toEqual([]);
+    }
   });
 });

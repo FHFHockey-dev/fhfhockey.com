@@ -119,6 +119,55 @@ describe("legacy team report recency", () => {
   const captured = { ...JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/artifacts/same-day-news-lines-2026-11-18/BUF-VGK-REPORT-ROWS.json"), "utf8"))[1].payload,
     verifiedOriginalAuthor: "ByMHarrington" };
   const matchup = { id: captured.gameId, date: captured.date, awayTeamId: 54, homeTeamId: 7, awayAbbreviation: "VGK", homeAbbreviation: "BUF" };
+  function useMatchupSnapshots() {
+    mocks.flags.entryServing = true;
+    const snapshot = fixtureResponse();
+    mocks.read.mockResolvedValue({ ...snapshot, game: { ...snapshot.game, ...matchup },
+      teams: [54, 7].map(teamId => ({ ...snapshot.teams[0], teamId })) });
+    return snapshot;
+  }
+  it("shows a named pregame decision after arrival and removes it when a newer ruling arrives", async () => {
+    mocks.flags.entryServing = true;
+    const snapshot = fixtureResponse();
+    const game = { ...snapshot.game, id: 2026020315, date: "2026-11-14", homeTeamId: 8, awayTeamId: 21,
+      homeAbbreviation: "MTL", awayAbbreviation: "COL", scheduledStart: "2026-11-15T00:00:00Z", actualStart: null };
+    const team = { ...snapshot.teams[0], teamId: 8 };
+    mocks.read.mockResolvedValue({ ...snapshot, game, teams: [team] });
+    const event = { teamId: 8, playerId: 8476875, playerName: "Mike Matheson", kind: "participation", state: "game_time_decision" };
+    const reported = { teamId: 8, gameId: game.id, date: game.date, originalPublishedAt: "2026-11-14T16:12:13.000Z",
+      receivedAt: "2026-11-14T16:14:10.416757Z", verifiedOriginalAuthor: "HabsInHighHeels",
+      originalUrl: "https://x.com/HabsInHighHeels/status/2121637334458474582",
+      text: "#Habs Martin St-Louis says Mike Matheson will be a game-time decision tonight",
+      interpretation: { context: "game", units: [], events: [event] } };
+    const updated = { ...reported, originalPublishedAt: "2026-11-14T17:00:00Z", receivedAt: "2026-11-14T17:01:00Z",
+      originalUrl: "https://x.com/FixtureReporter/status/2121649358238646272", verifiedOriginalAuthor: "FixtureReporter",
+      text: "Mike Matheson is out tonight.",
+      interpretation: { ...reported.interpretation, events: [{ ...event, kind: "injury", state: "ruled_out" }] } };
+    mocks.reports.mockResolvedValue([reported, updated]);
+    const readAt = async (time: string) => {
+      vi.setSystemTime(new Date(time));
+      return (await request({ gameId: String(game.id) })).body.teams[0];
+    };
+    expect((await readAt("2026-11-14T16:13:00Z")).gameTimeDecisionReports).toEqual([]);
+    expect((await readAt("2026-11-14T16:30:00Z")).gameTimeDecisionReports).toEqual([{
+      playerName: event.playerName, playerId: event.playerId, postedAt: reported.originalPublishedAt, receivedAt: reported.receivedAt,
+      author: reported.verifiedOriginalAuthor, originalUrl: reported.originalUrl }]);
+    expect(await readAt("2026-11-14T17:02:00Z")).toMatchObject({
+      gameTimeDecisionReports: [], entry: snapshot.teams[0]!.entry, ppDefaults: snapshot.teams[0]!.ppDefaults });
+  });
+  it("credits only Hill's side in the snapshot response and keeps a read failure separate from the frozen lineup", async () => {
+    const snapshot = useMatchupSnapshots();
+    mocks.reports.mockResolvedValueOnce([captured]);
+    const { body } = await request({ gameId: String(matchup.id) });
+    expect(mocks.reports).toHaveBeenCalledWith(expect.anything(), { snapshotTeamIds: [54, 7], gameId: matchup.id, date: matchup.date, games: [expect.objectContaining(matchup)] });
+    expect(body.teams[0].goalieReports).toMatchObject([{ starter: { playerName: "Adin Hill", status: "confirmed" },
+      originalUrl: captured.originalUrl, postedAt: captured.originalPublishedAt, receivedAt: captured.receivedAt }]);
+    expect(body.teams[1].goalieReports).toEqual([]);
+    mocks.reports.mockRejectedValueOnce(new Error("incomplete revision set"));
+    const failed = await request({ gameId: String(matchup.id) });
+    expect(failed.code).toBe(200);
+    expect(failed.body.teams[0]).toMatchObject({ goalieReports: null, entry: snapshot.teams[0]!.entry, ppDefaults: snapshot.teams[0]!.ppDefaults });
+  });
   it.each([
     ["opposite side", (r: any) => { r.interpretation.events[0].teamId = 7; }],
     ["unbound", (r: any) => { r.gameId = null; }],
@@ -135,6 +184,7 @@ describe("legacy team report recency", () => {
     ["mismatched original clock", (r: any) => { r.originalPublishedAt = r.receivedAt; }],
     ["relay byline", (r: any) => { r.originalUrl = r.originalUrl.replace("ByMHarrington", "GameDayGoalies"); }],
     ["pending original", (r: any) => { delete r.verifiedOriginalAuthor; }],
+    ["mismatched byline", (r: any) => { r.verifiedOriginalAuthor = "AnotherReporter"; }],
     ["event for another day", (r: any) => { r.interpretation.events[0].effectiveDate = "2026-11-09"; }],
     ["unverified evidence", (r: any) => { r.interpretation.events[0].evidence.text = "Hill was named the starter."; }],
   ] as const)("preserves source wording without a starter label for %s", async (_reason, edit) => {
@@ -145,6 +195,11 @@ describe("legacy team report recency", () => {
     const result = await request({ teamId: "54", gameId: String(matchup.id), view: "game" });
     expect(result.body.reports[0].text).toBe(report.text);
     expect(result.body.reports[0].reportedStarter).toBeUndefined();
+    useMatchupSnapshots();
+    const snapshot = await request({ gameId: String(matchup.id) });
+    expect(snapshot.body.teams.flatMap((team: any) => team.goalieReports).filter((row: any) => row.starter)).toEqual([]);
+    if (_reason === "practice context") expect(snapshot.body.teams[0].goalieReports).toEqual([]);
+    if (_reason === "mismatched byline") expect(snapshot.body.teams[0].goalieReports[0]).toMatchObject({ author: null, postedAt: null });
   });
   it("attributes a written projection to its reporter and derives the side from the event independently of name order", async () => {
     const report = structuredClone(captured);
@@ -158,10 +213,12 @@ describe("legacy team report recency", () => {
       playerId: 8478499, playerName: "Adin Hill", teamAbbreviation: "VGK" });
   });
   it("does not broaden an exact game's empty report result", async () => {
-    query({ date: "2026-11-11" }); mocks.reports.mockResolvedValue([]);
+    const game = { id: 2026020296, date: "2026-11-11", homeTeamId: 54, awayTeamId: 7 };
+    query(game); mocks.reports.mockResolvedValue([]);
     const result = await request({ teamId: "54", gameId: "2026020296" });
     expect(result.body.reportScope.fallback).toBe(false);
     expect(mocks.reports).toHaveBeenCalledTimes(1);
+    expect(mocks.reports).toHaveBeenCalledWith(expect.anything(), { teamId: 54, date: game.date, gameId: game.id, games: [game] });
     expect(mocks.from).toHaveBeenCalledTimes(1);
     expect(mocks.from).toHaveBeenCalledWith("games");
   });

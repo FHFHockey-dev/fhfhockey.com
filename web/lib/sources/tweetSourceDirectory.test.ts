@@ -13,6 +13,21 @@ const check = (entries: TweetSourceCoverage[], teamIds = [6], publishedAt = sour
   entries, attribution: tweetClaimAttribution(source), publishedAt, asOf: "2026-10-16T13:00:00Z", teamIds, league: "NHL" });
 
 describe("dated original source directory", () => {
+  it("credits a native Fx repost only while its original body, account, ID and clock agree", () => {
+    const id = "2120699807933345894", name = "UtahMammoth_PR", body = "Forward Logan Cooley will not play tonight.";
+    const url = `https://x.com/${name}/status/${id}`, stored = `https://twitter.com/i/web/status/${id}`;
+    const at = "2026-11-12T02:06:49Z", relay = "GameDayNewsNHL";
+    const fx = { id, author: { screen_name: name }, reposted_by: { screen_name: relay },
+      raw_text: { text: body }, created_timestamp: Date.parse(at) / 1000 };
+    const native: any = { primaryTextSource: "ifttt_text", sourceUrl: stored, tweetUrl: stored, tweetId: id, tweetPostedAt: at,
+      sourceHandle: relay, rawText: `RT @${name}: ${body}`, metadata: { providerPostUrl: url }, rawPayload: { provider: "fxtwitter", fx } };
+    expect(tweetClaimAttribution(native)).toMatchObject({ relationship: "retweet", originalTweetId: id,
+      original: { handle: name.toLowerCase() }, relay: { handle: relay.toLowerCase() }, originalPublishedAt: at });
+    for (const changed of [{ id: "99" }, { raw_text: { text: body + " Later correction." } }, { author: { screen_name: relay } },
+      { created_timestamp: fx.created_timestamp + 1 }, { reposted_by: { screen_name: "Other" } }])
+      expect(tweetClaimAttribution({ ...native, rawPayload: { provider: "fxtwitter", fx: { ...fx, ...changed } } }).status).toBe("pending");
+    expect(tweetClaimAttribution({ ...native, rawPayload: { ...native.rawPayload, data: { id: "99" } } }).status).toBe("pending");
+  });
   it("distinguishes quoting relay, quoted author and actual selected claim origin", () => {
     expect(tweetClaimAttribution(source)).toMatchObject({ relay: { handle: "gamedaylines" }, original: { handle: "beatwriter" },
       quoted: { handle: "beatwriter" }, originalTweetId: "10", relationship: "quote", quoteEndorsement: "not_asserted" });
@@ -52,4 +67,20 @@ describe("dated original source directory", () => {
   it("treats reassigned handles with conflicting account identities as unresolved conflict", () => {
     expect(check([entry, { ...entry, id: "e2", account: { ...entry.account, accountKey: "x:id:999", accountId: "999" } }]).status).toBe("conflict");
   });
+});
+
+it("credits a native FxTwitter repost only after its exact one-pass delivery normalization", async () => {
+  const { verifiedFxSnapshotUrl } = await import("./tweetSourceDirectory");
+  const id = "2119590903828430888", url = "https://x.com/InStilettos_NHL/status/" + id;
+  const raw = "PP2: Hamilton, Evangelista, Gritsyuk, Meier &amp; Rodrigues";
+  const row = { tweetId: id, sourceUrl: "https://twitter.com/i/web/status/" + id, sourceHandle: "GameDayLines",
+    primaryTextSource: "ifttt_text" as const, rawText: "RT @InStilettos_NHL: " + raw.replace("&amp;", "&"),
+    tweetPostedAt: "2026-11-09T00:40:26Z", metadata: { providerPostUrl: url }, rawPayload: { provider: "fxtwitter",
+      fx: { id, author: {screen_name: "InStilettos_NHL"}, reposted_by: {screen_name: "GameDayLines"},
+        raw_text: {text:raw}, created_timestamp:1794184826 } } };
+  expect(verifiedFxSnapshotUrl(row)?.toLowerCase()).toBe(url.toLowerCase());
+  expect(verifiedFxSnapshotUrl({...row, rawText:row.rawText.replace("Meier", "Hughes")})).toBeNull();
+  expect(verifiedFxSnapshotUrl({...row, rawText:row.rawText.replace("RT @InStilettos_NHL", "RT @Other")})).toBeNull();
+  expect(verifiedFxSnapshotUrl({...row, rawPayload:{...row.rawPayload,fx:{...row.rawPayload.fx,
+    raw_text:{text:raw.replace("&amp;", "&amp;amp;")}}}})).toBeNull();
 });

@@ -12,15 +12,18 @@ import { createLunaEvaluationBatch } from "./fixtures/tweetLunaEvaluation";
 import { rehearseLunaEvaluation } from "../../scripts/rehearse-luna-evaluation";
 import { scoreLunaEvaluation } from "./tweetLunaEvaluationScoring";
 import { LUNA_EVIDENCE_BINDING_POLICY, proposeLunaEvidenceBindingReview } from "./tweetLunaEvidenceBinding";
-import type { FixtureIdentityRequest } from "./tweetIdentityProposal";
+import { prepareFixtureIdentityRequest, validateFixtureIdentityProposal, type FixtureIdentityRequest } from "./tweetIdentityProposal";
+import { offlineIdentityIndex, offlineIdentityMention, offlineIdentityReply, offlineIdentitySource } from "./fixtures/tweetIdentityOfflineFixture";
 import { recordLunaEvidenceBindingDecision, runRetainedTweetLunaReviewWithBinding } from "./tweetLunaBindingWorkflow";
 import { buildLunaReferenceInput, getLunaReferencePackage, LUNA_CORRECTION_CATEGORIES, LUNA_REFERENCE_PACKAGE, LUNA_REVIEW_RULES } from "./tweetLunaReference";
-import { identityDigest } from "./playerIdentitySnapshot";
+import { identityDigest, indexPlayerIdentitySnapshot } from "./playerIdentitySnapshot";
+import { projectSavedPlayerIdentityEvidence } from "./playerIdentitySnapshotEvidence";
 import { extractDurableTweetClaims, TWEET_CLAIM_EXTRACTION_VERSION } from "./tweetClaimExtraction";
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
 import { prepareTweetReviewPacket } from "./tweetReviewSidecar";
 import { DECISION_REFERENCE_SHA256, DECISION_STATEMENT_VERSION } from "./tweetDecisionReviewMapping";
-import { runRetainedTweetLunaReview, type LunaReviewInput } from "./tweetLunaReview";
+import { bilingualGameEvents } from "./bilingualGameReport";
+import { deriveLunaReportedPowerPlays, runRetainedTweetLunaReview, validateLunaGoalieStatuses, type LunaReviewInput } from "./tweetLunaReview";
 import { createLunaTransport, LUNA_MODEL, LUNA_RESERVATION_NANO_USD, priceLunaUsage } from "./tweetLunaTransport";
 import { openLunaLocalAdmission } from "./tweetLunaLocalStore";
 import { getPublicNewsClaimPresentation } from "lib/newsFeed";
@@ -28,10 +31,18 @@ import { getPublicNewsClaimPresentation } from "lib/newsFeed";
 const NOW = "2026-10-16T15:02:00Z";
 const dirs: string[] = [];
 afterEach(() => { for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true }); });
-function fixture(text = "BOS Jeremy Swayman starts tonight."): LunaReviewInput {
+function fixture(text = "BOS Jeremy Swayman starts tonight.", author?: string, statusId?: string, gameTeamIds?: number[], bilingual = false): LunaReviewInput {
   const f = qualifiedFixture(); f.source.rawText = text; f.source.rawPayload = { text };
-  f.source.metadata.interpretation.events = extractTweetPlayerEvents({ text, publishedAt: f.source.tweetPostedAt, includeClaimAnchors: true,
+  if (statusId) f.source.tweetId = statusId;
+  if (author) { f.source.sourceHandle = author; f.source.sourceUrl = `https://x.com/${author}/status/${f.source.tweetId}`; }
+  f.source.metadata.interpretation.events = extractTweetPlayerEvents({ text, publishedAt: f.source.tweetPostedAt, includeClaimAnchors: true, gameTeamIds,
     players: [{ playerId: 8478499, fullName: "Jeremy Swayman", lastName: "Swayman", position: "G", teamId: 6 }] });
+  if (bilingual) {
+    const reading = f.source.metadata.interpretation;
+    reading.identityContext = { basis: "publication_roster", sourcePublishedAt: f.source.tweetPostedAt };
+    reading.events = bilingualGameEvents(text, [{ playerId: 8478499, fullName: "Jeremy Swayman", lastName: "Swayman", position: "G", teamId: 6 }],
+      new Map([[6,f.game.id],[10,f.game.id]]), f.source.tweetPostedAt, f.game.date, author ?? null, [])?.events ?? [];
+  }
   const packet = prepareTweetReviewPacket({ source: f.source,
     receipt: { id: "receipt-1", eventTable: "line_source_ifttt_events", eventId: "event-1", receivedAt: f.source.observedAt,
       inputRow: { tweet_id: f.source.tweetId, text, tweet_created_at: f.source.tweetPostedAt, link_to_tweet: f.source.sourceUrl, raw_payload: f.source.rawPayload } },
@@ -41,7 +52,7 @@ function fixture(text = "BOS Jeremy Swayman starts tonight."): LunaReviewInput {
     playerId: c.canonicalPlayerIds[0]!, statement: "The source identifies Jeremy Swayman as starting in the game it discusses.",
     proposition: structuredClone({ fact: c.fact, scope: c.scope, modality: c.modality, effectiveAt: c.effectiveAt }), evidence: c.evidence }));
   const start = text.indexOf("Jeremy Swayman");
-  return { packet, statements, extractionVersion: TWEET_CLAIM_EXTRACTION_VERSION, decisions: true, identity: {
+  return { packet, statements, extractionVersion: bilingual ? packet.candidates[0]!.extractionVersion : TWEET_CLAIM_EXTRACTION_VERSION, decisions: true, identity: {
     evidence: { version: "saved-public-player-evidence-v1", cohort: "synthetic-integration",
       players: [{ nhlId: 8478499, registryId: 1, fullName: "Jeremy Swayman", lastName: "Swayman", position: "G", provenance: "synthetic", knownAt: "2026-10-01T00:00:00Z" }],
       aliases: [], memberships: [], completeness: { status: "partial", scope: "one synthetic identity", omittedRecords: null }, truncated: false },
@@ -85,6 +96,86 @@ function changeProposal(body: any, endpoint: string, edit: (value: any) => void)
   if (endpoint !== "responses") return;
   const value = JSON.parse(body.output[0].content[0].text); edit(value); body.output[0].content[0].text = JSON.stringify(value);
 }
+
+it("derives a source-linked private absence after validated identity on the ordinary review path", async () => {
+  // This existing synthetic transport fixture uses a status ID consistent with its own publication clock.
+  const id = ((BigInt(Date.parse("2026-10-16T15:00:00Z")) - BigInt("1288834974657")) << BigInt(22)).toString();
+  const make = (text: string, statusId = id) => {
+    const input = fixture(text, "Reporter", statusId); input.decisions = false;
+    (input.identity!.evidence as any).memberships = [{ nhlId: 8478499, teamId: 6, knownAt: "2026-10-01T00:00:00Z",
+      provenance: "synthetic roster", effective: { startsAt: "2026-10-01T00:00:00Z", endsAt: null,
+        basis: "independently_evidenced_effective_interval", provenance: "synthetic dated club" } }];
+    return input;
+  };
+  const sentence = "Jeremy Swayman is out at least a month.";
+  const h = harness(), result = await h.run(make(sentence));
+  expect(h.fetcher).toHaveBeenCalledTimes(1);
+  expect(result).toMatchObject({ status: "review_only", canPublish: false, canChangeStatus: false, canWriteAliases: false, goalieStatuses: [],
+    reportedAbsences: { version: "reported-absence-draft-v1", assignments: [{ playerId: 8478499, teamId: 6, gameId: null, canApply: false,
+      publishedAt: "2026-10-16T15:00:00Z", receivedAt: "2026-10-16T15:01:00Z", originalPostId: id,
+      evidence: { text: sentence.slice(0, -1) }, timeline: { minimum: 1, unit: "months", maximum: null, targetDate: null } }] } });
+  const noTeam = make(sentence); (noTeam.identity!.evidence as any).memberships = [];
+  for (const input of [noTeam, make(sentence, "1000"), make("Correction: " + sentence), make(sentence + " Jeremy Swayman will play tonight.")]) {
+    expect(await harness().run(input)).not.toHaveProperty("reportedAbsences");
+  }
+});
+
+it("keeps an explicitly reported IR move private and separate from the preceding recall", async () => {
+  const publishedAt = "2026-10-16T15:00:00Z", knownAt = "2026-10-01T00:00:00Z";
+  const id = ((BigInt(Date.parse(publishedAt)) - BigInt("1288834974657")) << BigInt(22)).toString();
+  const text = "ROSTER UPDATE\nThe #BostonBruins have recalled forward Another Player from the Providence Bruins (AHL).\nGoaltender Jeremy Swayman has been placed on IR retroactive to 10/12.";
+  const row = { nhlId: 8478499, teamId: 6, knownAt, effective: null, provenance: "retained NHL roster 20262027/6/8478499",
+    recordInterval: { seasonId: 20262027, createdAt: knownAt, endedAt: null, isCurrent: true } };
+  const run = (body: string, rows: typeof row[]) => {
+    const input = fixture(body, "Reporter", id); input.decisions = false;
+    (input.identity!.evidence as { memberships: typeof rows }).memberships = rows;
+    return harness().run(input);
+  };
+  expect(await run(text, [row])).toMatchObject({ status: "review_only", canPublish: false, canWriteAliases: false,
+    reportedRosterMoves: { assignments: [{ playerId: 8478499, move: "placed_on_ir", retroactiveAsReported: "10/12",
+      teamId: null, teamEvidence: { teamId: 6 }, gameId: null, publishedAt, receivedAt: "2026-10-16T15:01:00Z", canApply: false }] } });
+  for (const rows of [[], [{ ...row, knownAt: "2026-10-17T00:00:00Z" }], [row, { ...row, teamId: 8 }]])
+    expect(await run(text, rows)).not.toHaveProperty("reportedRosterMoves");
+  expect(await run(text + "\nCorrection pending.", [row])).not.toHaveProperty("reportedRosterMoves");
+});
+
+it("assigns the recall to its named player on the private worker without borrowing the second player's IR status", async () => {
+  const at = "2026-10-16T15:00:00Z";
+  const id = ((BigInt(Date.parse(at)) - BigInt("1288834974657")) << BigInt(22)).toString();
+  const text = "ROSTER UPDATE\nThe #BostonBruins have recalled goaltender Jeremy Swayman from the Providence Bruins (AHL).\nForward Another Player has been placed on IR.";
+  const input = fixture(text, "Reporter", id); input.decisions = false;
+  (input.identity!.evidence as { memberships: unknown[] }).memberships = [{ nhlId: 8478499, teamId: 6,
+    knownAt: "2026-10-01T00:00:00Z", effective: null, provenance: "retained NHL roster 20262027/6/8478499",
+    recordInterval: { seasonId: 20262027, createdAt: "2026-10-01T00:00:00Z", endedAt: null, isCurrent: true } }];
+  const result = await harness().run(input);
+  expect(result).toMatchObject({ status: "review_only", reportedRosterMoves: { assignments: [{ playerId: 8478499, move: "recalled",
+    gameId: null, retroactiveAsReported: null, canApply: false, subject: { text: "Jeremy Swayman" }, teamEvidence: { teamId: 6 } }] } });
+});
+
+it("keeps a coach's club attached only to a corroborated report at the original time", async () => {
+  const id = ((BigInt(Date.parse("2026-10-16T15:00:00Z")) - BigInt("1288834974657")) << BigInt(22)).toString();
+  const observed = "2026-10-01T00:00:00Z";
+  const row = { nhlId: 8478499, teamId: 6, knownAt: observed, effective: null,
+    provenance: "retained NHL roster 20262027/6/8478499",
+    recordInterval: { seasonId: 20262027, createdAt: observed, endedAt: null, isCurrent: true } };
+  const run = (text: string, records: unknown[]) => {
+    const input = fixture(text, "Reporter", id); input.decisions = false;
+    (input.identity!.evidence as any).memberships = records;
+    return harness().run(input);
+  };
+  const text = "#NHLBruins head coach Marco Sturm says Jeremy Swayman will be out 4-6 weeks.";
+  expect(await run(text, [row])).toMatchObject({ status: "review_only", canPublish: false, reportedAbsences: {
+    assignments: [{ playerId: 8478499, teamId: null, gameId: null, canApply: false, teamEvidence: { teamId: 6, basis: "club_coach_report",
+      scope: "this_report", reportingClub: "#NHLBruins", rosterKnownAt: observed }, timeline: { minimum: 4, maximum: 6 } }] } });
+  for (const records of [[], [{ ...row, knownAt: "2026-10-16T15:00:00.000001Z" }],
+    [{ ...row, recordInterval: { ...row.recordInterval, endedAt: "2026-10-16T15:00:00Z", isCurrent: false } }],
+    [{ ...row, provenance: "reporter's tweet" }], [row, { ...row, teamId: 8 }]]) {
+    expect(await run(text, records)).not.toHaveProperty("reportedAbsences");
+  }
+  expect(await run(text.replace("#NHLBruins", "#NHLJets"), [row])).not.toHaveProperty("reportedAbsences");
+  expect(await run(text.replace("Marco Sturm says", "disputes a reporter who says"), [row])).not.toHaveProperty("reportedAbsences");
+  expect(await run("Jeremy Swayman will be out 4-6 weeks. #NHLBruins", [row])).not.toHaveProperty("reportedAbsences");
+});
 
 describe("offline exact-quote binding review", () => {
   async function captured(text: string, quote: string, status = "confirmed", editInput?: (input: LunaReviewInput) => void) {
@@ -384,6 +475,19 @@ describe("bounded retained Luna caller", () => {
     const r = await h.run(input); expect(r.goalieStatuses[0]).toMatchObject({ verified: false, gameId: null, appliedOverride: null,
       policyFloorAfterAcceptance: status === "likely" ? 0.8 : status === "projected" ? 0.65 : null });
   });
+  it("keeps an explicit relative day in the local draft when the original clock cannot be independently verified", async () => {
+    const text = "Jeremy Swayman starts tomorrow.", input = fixture(text);
+    input.decisions = false;
+    const h = harness({ mutate: (body, endpoint) => changeProposal(body, endpoint, proposal => {
+      proposal.goalieStatuses = [{ occurrenceId: "subject", canonicalId: "nhl:8478499", status: "confirmed",
+        evidence: { start: 0, end: text.length, text } }];
+    }) });
+    const first = await h.run(input), again = await h.run(input);
+    expect(first.goalieStatuses[0]).toMatchObject({ status: "confirmed", verified: false, gameId: null, appliedOverride: null,
+      reportedDay: { relative: "tomorrow", date: null, evidence: { start: 22, end: 30, text: "tomorrow" } } });
+    expect(again.goalieStatuses).toEqual(first.goalieStatuses);
+    expect(again.attempts).toBe(0);
+  });
   it("reuses settled responses across processes without new dispatch", async () => {
     const h = harness(); const first = await h.run(), second = await h.run();
     expect(second.identity).toEqual(first.identity); expect(h.fetcher).toHaveBeenCalledTimes(2);
@@ -639,6 +743,40 @@ describe("versioned Luna starter/reference package (offline, no model accuracy c
     expect((await h.run(input)).status).toBe("held");
   });
 
+  it.each([
+    ["will start vs. Minnesota on Friday.", "confirmed", true],
+    ["is expected to start Friday in Montreal.", "projected", true],
+    ["will likely start Friday in Utah.", "likely", true],
+    ["is expected to start Friday in Montreal.", "confirmed", false],
+    ["was in the starter's crease at practice.", "confirmed", false],
+    ["will start vs. Minnesota on Friday. If cleared.", "confirmed", false],
+    ["will start Friday in Montreal unless injured.", "confirmed", false],
+    ["will start Friday in Montreal. Swayman will not start.", "confirmed", false],
+  ] as const)("checks the complete dated DFO goalie clause: %s as %s", (clause, status, accepted) => {
+    const heading = "Jeremy Swayman: Goalie Start: ", text = heading + "Swayman " + clause;
+    const start = heading.length, repeat = offlineIdentityMention(text, "Swayman", "name", start);
+    const prepared = prepareFixtureIdentityRequest({ enabled: true, index: offlineIdentityIndex([{
+      identity: { playerId: 8478499, fullName: "Jeremy Swayman", lastName: "Swayman", position: "G" },
+      verifiedAliases: [], memberships: [],
+    }]), source: { ...offlineIdentitySource(text), authorId: "DFOFantasy", originalPostId: "123", url: "https://x.com/DFOFantasy/status/123" },
+    mentions: [offlineIdentityMention(text, "Jeremy Swayman"), repeat] });
+    if (prepared.status !== "prepared") throw new Error(prepared.reason);
+    const id = "nhl:8478499", request = prepared.request;
+    const selected = validateFixtureIdentityProposal(request, offlineIdentityReply(request, () => ({ status: "matched", canonicalId: id })));
+    const end = text.includes(". If") ? text.indexOf(". If") + 1 : text.length;
+    const validate = () => validateLunaGoalieStatuses(request, selected, [{ occurrenceId: repeat.id, canonicalId: id, status,
+      evidence: { start, end, text: text.slice(start, end) } }]);
+    if (accepted) expect(validate()).toMatchObject([{ status, verified: false, teamId: null, gameId: null, appliedOverride: null }]);
+    else expect(validate).toThrow("goalie_conflict_or_correction_unresolved");
+  });
+
+  it("holds a DFO relay without the original reporter before dispatch", async () => {
+    const input = fixture("Jeremy Swayman: Goalie Start: Swayman will start vs. Minnesota on Friday.", "DFOFantasy");
+    const h = harness();
+    expect(await h.run(input)).toMatchObject({ status: "held", attempts: 0, holds: ["retained_packet_unresolved"] });
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
   it("holds conflicting repeated subjects even without an explicit correction marker", async () => {
     const text = "Jeremy Swayman starts tonight. Jeremy Swayman will not start tonight.", input = fixture(text);
     input.decisions = false; const start = text.lastIndexOf("Jeremy Swayman");
@@ -750,7 +888,8 @@ describe("frozen synthetic-only evaluation rehearsal", () => {
       if (endpoint === "responses") body.output[0].content[0].text = JSON.stringify({ ...observed,
         goalieStatuses: positiveControl ? entry.expected.goalie : observed.goalieStatuses });
     } });
-    const review = await h.run({ ...entry.input, decisions: false });
+    const recordedInput: LunaReviewInput = JSON.parse(readFileSync("../tasks/artifacts/luna-reference-package-2026-10-31/paid-evaluation/inputs/E01.json", "utf8"));
+    const review = await h.run({ ...recordedInput, decisions: false });
     expect(review.status).toBe("review_only");
     expect(review.identity).toEqual(observed.identity);
     expect(scoreLunaEvaluation({ ...entry.expected, decisions: null }, review)).toEqual({
@@ -785,7 +924,8 @@ describe("frozen synthetic-only evaluation rehearsal", () => {
       evidence.end = end; if (!period) evidence.text = evidence.text.slice(0, -1);
       body.output[0].content[0].text = JSON.stringify(proposal);
     } });
-    const review = await h.run(entry.input);
+    const recordedInput: LunaReviewInput = JSON.parse(readFileSync("../tasks/artifacts/luna-reference-package-2026-10-31/continuation-v4/inputs/E02.json", "utf8"));
+    const review = await h.run(recordedInput);
     expect(h.fetcher).toHaveBeenCalledTimes(1);
     expect(review.identity).toEqual(observed.identity);
     expect(review.status).toBe(valid ? "review_only" : "held");
@@ -869,4 +1009,198 @@ describe("frozen synthetic-only evaluation rehearsal", () => {
     expect(results[0].review.status).toBe("review_only");
     expect(results[0].labelMatch).toBe(false);
   });
+});
+
+it("retains a named player's reported game absence privately with the evidence available at publication", async () => {
+  const id = ((BigInt(Date.parse("2026-10-16T15:00:00Z")) - BigInt("1288834974657")) << BigInt(22)).toString();
+  const word = "Jeremy Swayman is day to day and will not play tomorrow vs. Devils.";
+  const run = (text: string, author = "Reporter", post = id) => {
+    const input = fixture(text, author, post);
+    input.decisions = false;
+    return harness().run(input);
+  };
+  expect(await run(word)).toMatchObject({ status: "review_only", canPublish: false, canChangeStatus: false, reportedGameAbsences: {
+    assignments: [{ playerId: 8478499, teamId: null, gameId: null, reportedOpponent: "Devils", reportedVenue: null,
+      relativeDay: "tomorrow", date: "2026-10-17", recovery: "day-to-day", canApply: false,
+      subject: { text: "Jeremy Swayman" }, predicate: { text: "will not play tomorrow vs. Devils" },
+      publishedAt: "2026-10-16T15:00:00Z", receivedAt: "2026-10-16T15:01:00Z" }] } });
+  for (const input of [word.replace("will not play tomorrow vs. Devils", "could miss tomorrow"), "Correction: " + word,
+    "Jeremy Swayman was listed as day to day before tonight's game.", word + "\nHe could still play.", "RT @Another: " + word]) {
+    expect(await run(input)).not.toHaveProperty("reportedGameAbsences");
+  }
+  expect(await run(word, "Reporter", "1000")).not.toHaveProperty("reportedGameAbsences");
+});
+
+it("attaches a private game only from the supported claim for this same player, predicate and dated club", async () => {
+  const id = ((BigInt(Date.parse("2026-10-16T15:00:00Z")) - BigInt("1288834974657")) << BigInt(22)).toString();
+  const make = () => {
+    const input = fixture("BOS medical update.\nJeremy Swayman is day to day and will not play tonight.", "Reporter", id, [6, 10]);
+    input.decisions = false;
+    (input.identity!.evidence as any).memberships = [{ nhlId: 8478499, teamId: 6, knownAt: "2026-10-01T00:00:00Z", provenance: "synthetic dated roster",
+      effective: { startsAt: "2026-10-01T00:00:00Z", endsAt: null, basis: "independently_evidenced_effective_interval", provenance: "synthetic effective dates" } }];
+    return input;
+  };
+  const input = make();
+  expect(input.packet.candidates[0]?.holds).toEqual([]);
+  const result = await harness().run(input);
+  expect(result).toMatchObject({ reportedGameAbsences: { assignments: [{ teamId: 6, gameId: 2026020010, gameEvidence: {
+    observationId: input.packet.candidates[0]!.observationId, startTime: "2026-10-16T23:00:00Z" }, canApply: false }] } });
+  const noMembership = make(); (noMembership.identity!.evidence as any).memberships = [];
+  expect(await harness().run(noMembership)).toMatchObject({ reportedGameAbsences: { assignments: [{ teamId: null, gameId: null }] } });
+  const unsupported = make(); unsupported.packet.candidates[0]!.holds.push("deterministic_support_unresolved");
+  const held = await harness().run(unsupported);
+  expect(JSON.stringify(held).includes('"gameEvidence":{"teamId":6')).toBe(false);
+});
+
+it("preserves a credited private starter, the exact quote and both clocks within the dated roster", async () => {
+  const publishedAt = "2026-10-16T15:00:00Z", knownAt = "2026-10-01T00:00:00Z";
+  const id = ((BigInt(Date.parse(publishedAt)) - BigInt("1288834974657")) << BigInt(22)).toString();
+  const report = "#NHLBruins Jim Montgomery confirms Jeremy Swayman will get the start tonight vs. the Maple Leafs";
+  const row = { nhlId: 8478499, teamId: 6, knownAt, effective: null, provenance: "retained NHL roster 20262027/6/8478499",
+    recordInterval: { seasonId: 20262027, createdAt: knownAt, endedAt: null, isCurrent: true } };
+  const run = (text: string, rows: typeof row[], truncate = false) => {
+    const input = fixture(text, "Reporter", id); input.decisions = false;
+    (input.identity!.evidence as { memberships: typeof rows }).memberships = rows;
+    const name = text.includes("Jeremy Swayman") ? "Jeremy Swayman" : "Swayman", start = text.indexOf(name);
+    input.identity!.mentions[0]!.span = { start, end: start + name.length, text: name };
+    const end = truncate ? text.indexOf(" tonight") : text.length;
+    return harness({ mutate: (body, endpoint) => changeProposal(body, endpoint, value => {
+      value.goalieStatuses = [{ occurrenceId: "subject", canonicalId: "nhl:8478499", status: "confirmed",
+        evidence: { start, end, text: text.slice(start, end) } }];
+    }) }).run(input);
+  };
+  expect(await run(report, [row])).toMatchObject({ status: "review_only", canPublish: false, goalieStatuses: [{ verified: false,
+    reportedStart: { playerId: 8478499, teamId: 6, gameId: null, speaker: "Jim Montgomery", opponent: "Maple Leafs",
+      evidence: { text: report }, originalPostId: id, sourceUrl: `https://x.com/Reporter/status/${id}`,
+      publishedAt, receivedAt: "2026-10-16T15:01:00Z", canApply: false } }] });
+  const surname = await run("Jim Montgomery confirms Swayman starts.", [row]);
+  expect(surname.goalieStatuses).toHaveLength(1);
+  expect(surname.goalieStatuses[0]).not.toHaveProperty("reportedStart");
+  for (const result of [await run(report, []), await run(report, [{ ...row, knownAt: "2026-10-17T00:00:00Z" }]),
+    await run(report, [row, { ...row, teamId: 8 }]), await run(report, [row], true),
+    await run(report + " if healthy.", [row]), await run(report + ". Correction: he is backing up.", [row])]) {
+    expect(result.goalieStatuses).toEqual([]);
+  }
+});
+
+describe("numbered power-play review drafts", () => {
+  const sourceTime = "2026-11-18T17:28:22.000Z", received = "2026-11-18T17:32:13.000Z";
+  const names = ["Tyler Bertuzzi", "Frank Nazar", "Roman Kantserov", "Patrick Kane", "Sam Rinzel"];
+  const ids = [8477479, 8483493, 8484390, 8474141, 8483506];
+  const report = "#Blackhawks power-play units:\n\nPP1:\nBertuzzi\nNazar-Kantserov-Kane\nRinzel";
+  function draft(text: string, teamId = 16, lastKnownAt = "2026-09-19T00:57:32.000Z", abstain = false) {
+    const evidence = { version: "saved-public-player-evidence-v1", cohort: "five test identities", aliases: [], truncated: false,
+      completeness: { status: "partial", scope: "five test identities", omittedRecords: null },
+      players: names.map((fullName, i) => ({ fullName, lastName: fullName.split(" ")[1], nhlId: ids[i], registryId: i + 1,
+        position: i === 4 ? "D" : "C", knownAt: "2026-09-01T00:00:00Z", provenance: "fixture registry" })),
+      memberships: ids.map((nhlId, i) => ({ nhlId, teamId, knownAt: i === 4 ? lastKnownAt : "2026-09-19T00:57:32.000Z", effective: null,
+        recordInterval: { createdAt: "2026-09-19T00:57:32.000Z", endedAt: null, isCurrent: true, seasonId: 20262027 },
+        provenance: `retained NHL roster 20262027/${teamId}/${nhlId}` })) };
+    const originalPostId = "2123106049615954290";
+    const source = { ...offlineIdentitySource(text, sourceTime), originalPostId, authorId: "CRoumeliotis",
+      url: `https://x.com/CRoumeliotis/status/${originalPostId}`, receivedAt: received };
+    const projection = projectSavedPlayerIdentityEvidence(evidence, { asOf: received, evaluation: { mode: "causal_as_of", sourcePublishedAt: sourceTime } });
+    const prepared = prepareFixtureIdentityRequest({ enabled: true, index: indexPlayerIdentitySnapshot(projection.snapshot), source,
+      mentions: names.map(name => offlineIdentityMention(text, name.split(" ")[1]!)) });
+    if (prepared.status !== "prepared") throw new Error(prepared.reason);
+    const identity = validateFixtureIdentityProposal(prepared.request, offlineIdentityReply(prepared.request, (_, i) =>
+      abstain && i === 2 ? { status: "ambiguous", canonicalId: null } : { status: "matched", canonicalId: `nhl:${ids[i]}` }));
+    return deriveLunaReportedPowerPlays(prepared.request, identity, projection);
+  }
+  it("retains the reported five in source order with a dated club and no game default", () => {
+    const [unit] = draft(report);
+    expect(unit).toMatchObject({ number: 1, teamId: 16, gameId: null, canApply: false, phase: "unspecified",
+      heading: { text: "PP1" }, originalPostId: "2123106049615954290", publishedAt: sourceTime, receivedAt: received });
+    expect(unit?.players.map(p => p.playerId)).toEqual(ids);
+    for (const player of unit!.players) expect(report.slice(player.span.start, player.span.end)).toBe(player.span.text);
+  });
+  it("joins spaced separators on the five names and preserves practice and penalty context", () => {
+    const row = "PP1: Bertuzzi – Nazar – Kantserov – Kane – Rinzel";
+    const game = "Nikita Nesterenko gets the call for high-sticking and the Blackhawks PP will get another look.\n\n" + row;
+    const practice = "PP units for the Blackhawks at practice:\n" + row + "\nReilly is on the PK\n#Blackhawks";
+    for (const [text, phase] of [[game, "in_game"], [practice, "practice"]] as const) {
+      const [unit] = draft(text);
+      expect(unit).toMatchObject({ teamId: 16, number: 1, phase, gameId: null, canApply: false });
+      expect(unit?.players.map(p => [p.playerId, p.span.text])).toEqual(ids.map((id, i) => [id, names[i]!.split(" ")[1]]));
+    }
+    expect(draft(game.replace("the Blackhawks PP", "the Ducks PP"))).toEqual([]);
+    expect(draft(practice.replace("#Blackhawks", "#NJDevils"))).toEqual([]);
+    expect(draft(practice.replace("is on the PK", "replaces Kane"))).toEqual([]);
+    expect(draft("RT @SomeoneElse: " + game)).toEqual([]);
+  });
+  it("withholds unnumbered, conditional, superseded, disputed and late-evidence fives", () => {
+    for (const text of [report.replace("PP1:", ""), report + "\nCorrection to follow", report.replace("PP1:", "5-on-3 PP1:"),
+      report + "\nPP1: Different group", report.replace("Kane", "Kane or Smith")]) expect(draft(text)).toEqual([]);
+    expect(draft(report, 12)).toEqual([]);
+    expect(draft(report, 16, "2026-11-18T17:32:11.000Z")).toEqual([]);
+    expect(draft(report, 16, undefined, true)).toEqual([]);
+  });
+});
+
+it("binds the translated positive to the same dated goalie twice, while keeping qualified names private", async () => {
+  const dated = "2026-10-16T15:00:00Z", knownAt = "2026-10-01T00:00:00Z";
+  const id = ((BigInt(Date.parse(dated)) - BigInt("1288834974657")) << BigInt(22)).toString();
+  const report = "Owen Beck sera en uniforme ce soir face aux Leafs, tandis que Jeremy Swayman sera le gardien partant.\n\nOwen Beck draws back into the lineup tonight against the Leafs, while Jeremy Swayman will get the start in net.";
+  async function run(text: string, opts: { late?: boolean; ambiguous?: boolean; clipped?: boolean; repeat?: boolean; bound?: boolean } = {}) {
+    const input = fixture(text, "Reporter", id, undefined, opts.bound); input.decisions = false;
+    const i = input.identity!, e = i.evidence as { memberships: unknown[] };
+    e.memberships = [{ nhlId: 8478499, teamId: 6, knownAt: opts.late ? NOW : knownAt, effective: null,
+      recordInterval: { seasonId: 20262027, createdAt: knownAt, endedAt: null, isCurrent: true }, provenance: "retained NHL roster 20262027/6/8478499" }];
+    const second = text.lastIndexOf("Jeremy Swayman");
+    i.mentions = [offlineIdentityMention(text,"Jeremy Swayman"), offlineIdentityMention(text,"Jeremy Swayman","name",second)];
+    return harness({ mutate: (body, endpoint) => changeProposal(body, endpoint, value => {
+      const [first, en] = value.identity.occurrences;
+      if (opts.ambiguous) Object.assign(first, { status: "ambiguous", canonicalId: null });
+      const end = opts.clipped ? second + 14 : text.indexOf(".", second);
+      value.goalieStatuses = [{ occurrenceId: en.occurrenceId, canonicalId: "nhl:8478499", status: "confirmed",
+        evidence: { start: second, end, text: text.slice(second, end) } }];
+      if (opts.repeat) value.goalieStatuses.push(value.goalieStatuses[0]);
+    }) }).run(input);
+  }
+  const result = await run(report);
+  expect(result).toMatchObject({ status: "review_only", goalieStatuses: [{ verified: false, status: "confirmed" }],
+    reportedGameAssignments: [{ playerId: 8478499, teamId: 6, gameId: null, status: "starter", canApply: false,
+      originalPostId: id, publishedAt: dated, receivedAt: "2026-10-16T15:01:00Z" }] });
+  expect(await run(report, { bound: true })).toMatchObject({ reportedGameAssignments: [{ playerId: 8478499, teamId: 6, gameId: 2026020010,
+    observationId: expect.any(String), canApply: false }] });
+  for (const opts of [{ late:true },{ ambiguous:true },{ clipped:true },{ repeat:true }]) {
+    expect(await run(report,opts)).not.toHaveProperty("reportedGameAssignments");
+  }
+  expect(await run(report.replace("sera le gardien partant","ne jouera pas ce soir"))).not.toHaveProperty("reportedGameAssignments");
+});
+
+it("keeps a game-time decision tentative, dated and private through the worker", async () => {
+  const at = "2026-10-16T15:00:00Z", knownAt = "2026-10-01T00:00:00Z";
+  const id = ((BigInt(Date.parse(at)) - BigInt("1288834974657")) << BigInt(22)).toString();
+  const row = { nhlId: 8478499, teamId: 6, knownAt, effective: null,
+    recordInterval: { seasonId: 20262027, createdAt: knownAt, endedAt: null, isCurrent: true }, provenance: "retained NHL roster 20262027/6/8478499" };
+  const report = "#NHLBruins Smith says Jeremy Swayman is a game-time decision tonight";
+  async function run(text: string, records = [row], held = false) {
+    const input = fixture(text, "Reporter", id);
+    input.decisions = false;
+    (input.identity!.evidence as { memberships: unknown[] }).memberships = records;
+    if (held) input.packet.holds.push("original_reporter_unresolved");
+    const worker = harness({ mutate: (body, endpoint) => changeProposal(body, endpoint, val => { val.goalieStatuses = []; }) });
+    return worker.run(input);
+  }
+  const result = await run(report);
+  expect(result).toMatchObject({ status: "review_only", reportedGameTimeDecisions: [{ playerId: 8478499, teamId: 6, gameId: null,
+    availability: "uncertain", status: "game_time_decision", canApply: false, originalPostId: id, sourceUrl: "https://x.com/Reporter/status/" + id,
+    subjectSpan: { text: "Jeremy Swayman" }, predicateSpan: { text: "is a game-time decision" }, publishedAt: at, receivedAt: "2026-10-16T15:01:00Z" }] });
+  const outlook = "Looks like Jeremy Swayman will play tonight.";
+  expect(await run(outlook)).toMatchObject({ status: "review_only", reportedLineupExpectations: [{
+    playerId: 8478499, status: "expected_in_lineup", availability: "uncertain", gameId: null, canApply: false,
+    subjectSpan: { text: "Jeremy Swayman" }, evidence: { text: "Looks like Jeremy Swayman will play" } }] });
+  for (const text of [outlook.replace(".", "?"), outlook.replace("tonight", "tonight if cleared"),
+    outlook + " He is out.", "Correction: " + outlook]) {
+    expect(await run(text)).not.toHaveProperty("reportedLineupExpectations");
+  }
+  const warmup = "Jeremy Swayman is taking part in warmups. \nHe is a game time decision";
+  expect(await run(warmup)).toMatchObject({ reportedGameTimeDecisions: [{ playerId: 8478499, status: "game_time_decision" }] });
+  for (const held of [warmup.replace("He is", "His teammate is"), "Yesterday:\n" + warmup]) {
+    expect(await run(held)).not.toHaveProperty("reportedGameTimeDecisions");
+  }
+  for (const other of [await run(report, [], true), await run(report, [{ ...row, knownAt: NOW }]), await run(report, [row, { ...row, teamId: 8 }]),
+    await run(report.replace("#NHLBruins", "#Habs")), await run(report + "?"), await run(report.replace(" is a", " was a")),
+    await run(report + ". He is out.")]) expect(other).not.toHaveProperty("reportedGameTimeDecisions");
 });

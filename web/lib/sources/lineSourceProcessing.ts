@@ -1,3 +1,5 @@
+import { goalieDateRevision, reportedGoalieStarts, verifiedGoaliePostTime } from "./tweetGoalieStartDate";
+import { tweetClaimAttribution } from "./tweetSourceDirectory";
 import moment from "moment-timezone";
 import { getPrimaryTextForSource, type ParsedLinesCccSource, type RowGoalieState } from "./linesCccIngestion";
 import { fetchRegisteredPlayerIdentities } from "./playerIdentity";
@@ -616,13 +618,25 @@ export function reviewTweetApplicability(candidates: ParsedLinesCccSource[], req
     const reason = !posted.isValid() ? "unknown_report_date"
       : sourceDate !== requestedDate ? "report_date_mismatch"
       : scope ? "relative_game_date_requires_review" : null;
+    const interpretation = (candidate.metadata?.temporalReview as { interpretation?: TweetInterpretation } | undefined)?.interpretation
+      ?? candidate.metadata?.interpretation as TweetInterpretation | undefined;
+    let starts: ReturnType<typeof reportedGoalieStarts> = [];
+    if (!scope?.historical && interpretation?.events?.some(event => event.kind === "goalie")) {
+      const attribution = tweetClaimAttribution(candidate);
+      starts = reportedGoalieStarts(text, interpretation, verifiedGoaliePostTime(attribution.originalUrl, attribution.originalPublishedAt), candidate.team?.id);
+    }
+    if (!scope && !reason && starts.length && interpretation) {
+      candidate.metadata = { ...candidate.metadata, interpretation: { ...interpretation, version: goalieDateRevision(interpretation.version), reportedGoalieDates: starts } };
+    }
     if (scope) {
-      const interpretation = (candidate.metadata?.temporalReview as { interpretation?: TweetInterpretation } | undefined)?.interpretation
-        ?? candidate.metadata?.interpretation as TweetInterpretation | undefined;
       if (interpretation) {
         const selected = scope.select(interpretation);
+        if (starts.length) {
+          selected.version = goalieDateRevision(interpretation.version);
+          selected.reportedGoalieDates = starts;
+        }
         const { units, events = [], unresolved } = selected;
-        if (scope.historical || units.length || events.length) {
+        if (scope.historical || units.length || events.length || starts.length) {
           // Keep a previously admitted starter only when that very claim survives date selection.
           const goalieStates: RowGoalieState[] = Array.isArray(candidate.metadata?.goalieStates) ? candidate.metadata.goalieStates : [];
           const starters = goalieStates.filter(state => state?.stored && state.source === "event" && state.role === "starter"
@@ -637,7 +651,7 @@ export function reviewTweetApplicability(candidates: ParsedLinesCccSource[], req
             interpretation: selected,
             goalieStates: admitted,
             powerPlayUnits: units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.players.map((player) => player.name)),
-            powerPlayUnitLabels: units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.number === 1 ? "pp1" : unit.number === 2 ? "pp2" : null),
+            powerPlayUnitLabels: units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.explicitNumber && unit.number === 1 ? "pp1" : unit.explicitNumber && unit.number === 2 ? "pp2" : null),
           };
           const names = (situation: string) => units.filter((unit) => unit.situation === situation).map((unit) => unit.players.map((player) => player.name));
           const orderedNames = (situation: string) => {
@@ -655,6 +669,11 @@ export function reviewTweetApplicability(candidates: ParsedLinesCccSource[], req
           candidate.unmatchedNames = unresolved.map(span => span.text);
           candidate.scratches = names("scratch").flat();
           candidate.injuries = names("injury").flat();
+          if (reason === "relative_game_date_requires_review" && starts.length && !units.length && !events.length) {
+            candidate.gameId = null;
+            candidate.nhlFilterReason = "source_dated_goalie_report";
+            continue;
+          }
           if (reason === "relative_game_date_requires_review" && (units.length || events.length)) {
             candidate.nhlFilterReason = "independent_current_claims_with_temporal_review";
             continue;

@@ -1,0 +1,13 @@
+HTTP/2 200 
+age: 0
+cache-control: private, no-store
+content-type: application/json; charset=utf-8
+date: Mon, 23 Nov 2026 15:15:39 GMT
+etag: "pflr282rg81i058"
+server: Vercel
+strict-transport-security: max-age=63072000
+x-matched-path: /api/v1/roster-schedule-optimizer/data
+x-vercel-cache: MISS
+x-vercel-id: iad1::iad1::wvhbr-1795446932904-82f184fc614e
+content-length: 2519627
+

@@ -1,11 +1,18 @@
+import { taggedGameTimeDecision } from "./reportedGameTimeDecision";
+import { AHL_CLUB_NAMES, bulletinNamesClub, readClubMedicalBulletin } from "./clubMedicalBulletin";
+import { requiresRelativeGameDateReview } from "./tweetInterpretation";
 import { tweetPublicationFromUrl } from "./tweetPublicationTime";
 export { tweetPublicationFromUrl };
 import { extractTweetPlayerEvents, type TweetPlayerEvent } from "./tweetPlayerEvents";
-import { teamsInfo } from "lib/teamsInfo";
+import { bilingualGameEvents } from "./bilingualGameReport";
+import { NHL_TEXT_HINTS, teamsInfo } from "lib/teamsInfo";
 import { easternReportDate, type ProjectionReport } from "./projectedLineups";
-import { tweetClaimAttribution } from "./tweetSourceDirectory";
+import { tweetClaimAttribution, verifiedFxSnapshotUrl } from "./tweetSourceDirectory";
+import { hasMixedMedicalMoves, reportedClubRosterMoves, rosterMoveClub } from "./reportedClubRosterMoves";
+import { isVerifiedRelayQuoteSummary, verifiedFxRelayQuoteClocks } from "./fxtwitterQueuePayload";
 import { BEAT_REPORTER_REVIEWS } from "lib/lines/beatReporters";
 import { inferTweetRosterNames, type TweetRosterScopedName } from "./tweetNameInference";
+import { bulletinNamesOpponent, expectedLineupBulletin, expectedLineupEvent, expectedLineupFitsGame, reportedLineupEntries } from "./reportedLineupEntry";
 import type { TweetNewsRosterEvidence } from "./tweetNewsRosterEvidence";
 import { normalizeIdentityName, type PlayerSlotRole } from "./playerIdentity";
 import { identityMentionPresent, interpretTweetUnits, lineupChangeEvents, playerPositionRole, segmentPlayerRow, surnameMentionPresent, tweetPipelineFlags, type TweetInitialsEvidence, type TweetInterpretation } from "./tweetInterpretation";
@@ -245,17 +252,6 @@ const NHL_HANDLE_HINTS: Record<string, string> = {
   smclaughlin9: "BOS",
 };
 
-const NHL_TEXT_HINTS: Record<string, string> = {
-  gohabsgo: "MTL",
-  habs: "MTL",
-  gobolts: "TBL",
-  bolts: "TBL",
-  flytogether: "ANA",
-  mnwild: "MIN",
-  nhlbruins: "BOS",
-  sabres: "BUF",
-};
-
 const NON_NHL_HANDLE_HINTS: Array<{
   pattern: RegExp;
   league: string;
@@ -273,19 +269,6 @@ const NON_NHL_HANDLE_HINTS: Array<{
   { pattern: /\bontarioreign\b/i, league: "AHL" },
 ];
 
-// AHL clubs by full name (also as one-word hashtags). Many carry an NHL location or nickname ("Colorado Eagles",
-// "Providence Bruins", "Iowa Wild"), so without this they label-match an NHL team. Bare nicknames are left out:
-// a quoted "Wolf Pack lines" relayed as "Rangers lines" is still the NHL club's post. A post that also names an NHL
-// club in words ("The Mammoth have signed … from the Rochester Americans") stays an NHL post.
-const AHL_CLUB_NAMES = [
-  "abbotsford canucks", "bakersfield condors", "belleville senators", "bridgeport islanders", "calgary wranglers",
-  "charlotte checkers", "chicago wolves", "cleveland monsters", "coachella valley firebirds", "colorado eagles",
-  "grand rapids griffins", "hartford wolf pack", "henderson silver knights", "hershey bears", "iowa wild", "laval rocket",
-  "lehigh valley phantoms", "manitoba moose", "milwaukee admirals", "ontario reign", "providence bruins",
-  "rochester americans", "rockford icehogs", "san diego gulls", "san jose barracuda", "springfield thunderbirds",
-  "syracuse crunch", "texas stars", "toronto marlies", "tucson roadrunners", "utica comets",
-  "wilkes barre scranton penguins", "wbs penguins",
-];
 const AHL_CLUB_PATTERN = new RegExp(`(?:^|\\s)#?(?:${AHL_CLUB_NAMES.map((name) => name.replace(/ /g, "\\s?")).join("|")})(?=\\s|$)`, "g");
 
 function countStructuredPlayerMentions(text: string): number {
@@ -361,6 +344,37 @@ function namesTeamInWords(normalizedText: string, team: TeamDirectoryEntry): boo
     .some((label) => includesNormalizedLabel(normalizedText, normalizeTextKey(label)));
 }
 
+function nhlMedicalBulletinTeam(text: string, teams: TeamDirectoryEntry[], context: TweetRosterContext,
+  source: Parameters<typeof verifiedFxSnapshotUrl>[0]) {
+  const { inferencePublishedAt, inferenceRosterByTeam } = context;
+  const publishedAt = normalizeTweetPostedAt(source.tweetPostedAt);
+  if (!publishedAt || !inferencePublishedAt || !inferenceRosterByTeam || normalizeTweetPostedAt(inferencePublishedAt) !== publishedAt) return null;
+  const bulletin = readClubMedicalBulletin(text);
+  let updates, clubs;
+  if (bulletin) {
+    updates = bulletin.updates;
+    clubs = teams.filter(team => bulletinNamesClub(bulletin.handle, team.name, team.abbreviation, inferencePublishedAt));
+  } else {
+    const url = verifiedFxSnapshotUrl(source);
+    if (!url || (source.enrichedText ?? source.rawText) !== text) return null;
+    const author = new URL(url).pathname.split("/")[1]!;
+    const report = reportedClubRosterMoves(text, author);
+    if (report?.basis !== "byline" || !report.moves.some(m => m.move === "recalled" && /\(AHL\)/iu.test(m.evidence.text))) return null;
+    updates = report.moves.filter(m => m.move === "placed_on_ir");
+    if (!updates.length) return null;
+    clubs = teams.filter(team => rosterMoveClub(report, team.id, inferencePublishedAt));
+  }
+  if (clubs.length !== 1) return null;
+  const club = clubs[0]!, roster = [...inferenceRosterByTeam.values()].flat();
+  for (const update of updates) {
+    if (update.clubName && normalizeTextKey(update.clubName) !== normalizeTextKey(club.shortName ?? "")) return null;
+    const key = normalizeIdentityName(update.subject.text);
+    const matches = roster.filter(player => normalizeIdentityName(player.fullName) === key);
+    if (new Set(matches.map(p => p.playerId)).size !== 1 || matches.some(player => player.teamId !== club.id)) return null;
+  }
+  return club;
+}
+
 function detectNonNhlLeague(text: string, teams: TeamDirectoryEntry[]): string | null {
   const normalized = normalizeTextKey(text);
   // The retained Ontario roster names its AHL opponent only as "COL".
@@ -382,6 +396,11 @@ const datedReturn = /^(?:RT\s+@\w+:\s*)?([^:\n]{3,50}):\s*(?:Line Change:\s*)?([
 function reviewDatedLineupReturn(source: ParsedLinesCccSource, teams: TeamDirectoryEntry[], roster: RosterNameEntry[], games?: Map<number, number>) {
   const interpretation = tweetPipelineFlags().interpretation ? source.metadata?.interpretation as TweetInterpretation | undefined : undefined;
   const text = getPrimaryTextForSource(source);
+  const expected = expectedLineupBulletin(text);
+  if (expected && source.team && source.gameId) {
+    const opponent = boundGameTeamIds(source.team, games)?.find(id => id !== source.team!.id);
+    if (!opponent || !expectedLineupFitsGame(expected, source.team.id, opponent, source.snapshotDate)) source.gameId = null;
+  }
   const match = datedReturn.exec(text);
   if (match) {
     const gameTeams = boundGameTeamIds(source.team ?? null, games);
@@ -406,6 +425,8 @@ function reviewDatedLineupReturn(source: ParsedLinesCccSource, teams: TeamDirect
 
 /** A legacy unbound report can be demonstrably filed under the opponent even when its original text is kept intact. */
 export function isDisputedRetainedProjectionSubject(report: Pick<ProjectionReport, "text" | "gameId" | "teamId" | "teamAbbreviation" | "originalUrl" | "interpretation">) {
+  const bulletin = expectedLineupBulletin(report.text);
+  if (bulletin && bulletinNamesOpponent(bulletin.opponent, report.teamId)) return true;
   if (report.gameId != null) return false;
   // Public text can lack its original RT prefix. Reconstruct it only for the verified Ontario reporter.
   const text = /^https:\/\/(?:x|twitter)\.com\/ReignInsider\/status\/\d+$/i.test(report.originalUrl ?? "")
@@ -676,24 +697,12 @@ function findLabelMatchedTeams(
   teams: TeamDirectoryEntry[],
 ): TeamDirectoryEntry[] {
   const normalized = normalizeTextKey(text);
-  return teams.filter((team) => {
-    const labels = [
-      team.name,
-      team.abbreviation,
-      team.shortName,
-      team.location,
-      `${team.location ?? ""} ${team.shortName ?? ""}`.trim(),
-      ...team.hashtags,
-    ]
-      .filter((value): value is string => Boolean(value))
-      .map((value) => normalizeTextKey(value))
-      .filter(Boolean);
-
-    return labels.some((label) => includesNormalizedLabel(normalized, label));
-  });
+  return teams.filter((team) => buildTeamTextLabels(team).some((label) => includesNormalizedLabel(normalized, label)));
 }
 
 function buildTeamTextLabels(team: TeamDirectoryEntry): string[] {
+  // The schedule placeholder generates the ordinary phrase "To be" as its location.
+  if (team.abbreviation === "TBD") return [];
   return [
     team.name,
     team.abbreviation,
@@ -1333,7 +1342,7 @@ function extractPowerPlayUnits(args: {
         units,
         labels:
           units.length === 2
-            ? ["pp1", "pp2"]
+            ? [null, null]
             : [detectPowerPlayUnitLabel(args.text)],
       };
     }
@@ -1345,11 +1354,11 @@ function extractPowerPlayUnits(args: {
       entry.unit.length === 10
         ? [
             {
-              label: "pp1" as PowerPlayUnitLabel,
+              label: null as PowerPlayUnitLabel,
               unit: entry.unit.slice(0, 5),
             },
             {
-              label: "pp2" as PowerPlayUnitLabel,
+              label: null as PowerPlayUnitLabel,
               unit: entry.unit.slice(5, 10),
             },
           ]
@@ -1359,14 +1368,7 @@ function extractPowerPlayUnits(args: {
 
   return {
     units: flattenedUnits.map((entry) => entry.unit),
-    labels:
-      flattenedUnits.length === 2
-        ? flattenedUnits.map(
-            (entry, index) => entry.label ?? (index === 0 ? "pp1" : "pp2"),
-          )
-        : flattenedUnits.map(
-            (entry) => entry.label ?? detectPowerPlayUnitLabel(args.text),
-          ),
+    labels: flattenedUnits.map((entry) => entry.label ?? (flattenedUnits.length === 1 ? detectPowerPlayUnitLabel(args.text) : null)),
   };
 }
 
@@ -1424,7 +1426,7 @@ const GOALIE_STATE_RANK: Record<string, number> = { confirmed: 0, likely: 1, pro
 export function buildRowGoalies(args: { interpretation: Pick<TweetInterpretation, "units" | "unresolved">; events: TweetPlayerEvent[];
   rosterEntries: Pick<RosterNameEntry, "playerId" | "position" | "fullName">[] }) {
   const goalieEntry = (playerId: number) => args.rosterEntries.find((entry) => entry.playerId === playerId && entry.position === "G");
-  const events = args.events.filter((event) => event.kind === "goalie" && goalieEntry(event.playerId));
+  const events = args.events.filter((event) => event.kind === "goalie" && goalieEntry(event.playerId) && !requiresRelativeGameDateReview(event.evidence.text));
   const ruledOut = new Set(events.filter((event) => event.state === "ruled_out").map((event) => event.playerId));
   for (const event of events) if (event.state !== "ruled_out") ruledOut.delete(event.playerId);
   const rank = (event: TweetPlayerEvent) => event.observation ? 3 : GOALIE_STATE_RANK[event.state] ?? 2;
@@ -1473,6 +1475,7 @@ function boundGameTeamIds(team: TeamDirectoryEntry | null, gameIdByTeamId?: Map<
 }
 
 function buildStructuredContent(args: {
+  reportTeamId?: number;
   publishedAt?: string | null;
   text: string;
   originalText?: string;
@@ -1484,6 +1487,9 @@ function buildStructuredContent(args: {
   rosterEntries: RosterNameEntry[];
   eventPlayers?: RosterNameEntry[];
   gameTeamIds?: number[];
+  creditedGameIds?: ReadonlyMap<number, number>;
+  reportDate?: string;
+  reportAuthor?: string | null;
 }): Pick<
   ParsedLinesCccSource,
   | "forwards"
@@ -1595,8 +1601,34 @@ function buildStructuredContent(args: {
   const interpretation = tweetPipelineFlags().interpretation ? interpretTweetUnits(original, args.rosterEntries) : null;
   const eventPlayers = interpretation ? (args.eventPlayers ?? args.rosterEntries).filter((player) =>
     surnameMentionPresent(args.text, player.lastName) || [player.fullName, ...(player.aliases ?? [])].some((name) => identityMentionPresent(args.text, name))) : [];
-  const playerEvents = interpretation ? extractTweetPlayerEvents({ text: original, players: eventPlayers, reviewSpans: args.reviewSpans, uniqueInitials: args.uniqueInitials, scopedNames: args.scopedNames, publishedAt: args.publishedAt ?? null,
-    includeClaimAnchors: process.env.TWEET_CLAIMS_MODE === "shadow", gameTeamIds: interpretation.context === "game" || interpretation.context === "unknown" ? args.gameTeamIds : undefined }).concat(lineupChangeEvents(original, interpretation.changes)) : [];
+  let playerEvents = interpretation ? extractTweetPlayerEvents({ text: original, players: eventPlayers, reviewSpans: args.reviewSpans, uniqueInitials: args.uniqueInitials, scopedNames: args.scopedNames, publishedAt: args.publishedAt ?? null,
+    includeClaimAnchors: process.env.TWEET_CLAIMS_MODE === "shadow",
+    creditedGameIds: args.publicationRoster && interpretation.context === "game" ? args.creditedGameIds : undefined, gameTeamIds: interpretation.context === "game" || interpretation.context === "unknown" ? args.gameTeamIds : undefined }).concat(lineupChangeEvents(original, interpretation.changes)) : [];
+  if (interpretation && args.publicationRoster && args.creditedGameIds && args.publishedAt && args.reportDate) {
+    const paired = bilingualGameEvents(original, eventPlayers, args.creditedGameIds, args.publishedAt, args.reportDate, args.reportAuthor ?? null, args.reviewSpans ?? []);
+    if (paired) {
+      playerEvents = [...playerEvents.filter(event => !paired.names.includes(event.playerName)), ...paired.events];
+      if (interpretation.changes) interpretation.changes = interpretation.changes.filter(change => !change.playersIn.some(p => paired.names.includes(p.name)
+        && !paired.events.some(e => e.playerId === p.playerId && e.state === "will_play")));
+    }
+  }
+  if (interpretation?.lineContext?.context === "game" && args.publicationRoster && args.publishedAt && args.gameTeamIds?.length === 2) {
+    const teamId = args.reportTeamId;
+    const opponentId = args.gameTeamIds.find(id => id !== teamId);
+    const entries = teamId && args.gameTeamIds.includes(teamId) && opponentId ? reportedLineupEntries(original, interpretation.changes, playerEvents, opponentId) : [];
+    for (const entry of entries) {
+      const matches = eventPlayers.filter(player => player.fullName === entry.playerName);
+      const player = matches.length === 1 ? matches[0] : null;
+      if (player?.playerId !== entry.playerId || player.teamId !== teamId || args.reviewSpans?.some(span =>
+        span.start < entry.evidence.end && entry.evidence.start < span.end)) continue;
+      const event = playerEvents.find(event => event.kind === "participation" && event.playerId === entry.playerId
+        && event.evidence.start === entry.evidence.start && event.evidence.end === entry.evidence.end);
+      if (event) {
+        event.teamId = player.teamId;
+        event.times = { observation: args.publishedAt, reference: null, applicability: "unresolved" };
+      }
+    }
+  }
   const participationObservations = interpretation ? [] : extractTweetPlayerEvents({ text: original, players: args.rosterEntries, reviewSpans: args.reviewSpans, publishedAt: args.publishedAt ?? null })
     .filter((event) => event.kind === "participation" && event.state === "observed" && event.modality === "negated");
   let goalieStates: RowGoalieState[] | null = null;
@@ -1617,7 +1649,7 @@ function buildStructuredContent(args: {
     goalies = rowGoalies.goalies;
     goalieStates = rowGoalies.states;
     powerPlayDetection.units = interpretation.units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.players.map((player) => player.name));
-    powerPlayDetection.labels = interpretation.units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.number === 1 ? "pp1" : unit.number === 2 ? "pp2" : null);
+    powerPlayDetection.labels = interpretation.units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.explicitNumber && unit.number === 1 ? "pp1" : unit.explicitNumber && unit.number === 2 ? "pp2" : null);
   }
   return {
     forwards,
@@ -1667,6 +1699,8 @@ export type TweetSourceProvenance = {
   publicationTimeBasis: "provider_timestamp" | "tweet_id_or_unknown";
   /** True only when publishedAt is the original post's own clock (not a relay's). */
   timestampIsOriginal: boolean;
+  /** The native DFO status carried this queue row's own ID, text and publication second. */
+  verifiedDfoBulletinId?: string;
   ingestedAt: string;
   ingestedAtBasis: "first_seen_at" | "received_at";
 };
@@ -1709,7 +1743,12 @@ export function buildTweetSourceProvenance(event: LinesCccIftttEventInput): Twee
         originalTweetId: null, relayTweetId: statusId, dedupKey: dedup(null, statusId), ...quoted, altTexts, ...base, timestampIsOriginal: false };
     }
     const repost = !!author && !sameHandle(author, account) && (!!repostedBy || !!wrapperId);
+    const verifiedDfo = sameHandle(author, "DFOFantasy") && sameHandle(author, account) && !repost && !quoted.quotedTweetId && statusId != null
+      && fx.id === statusId && event.tweet_id === statusId && fx.raw_text?.text === event.text && publishedAt != null
+      && Number.isSafeInteger(fx.created_timestamp) && fx.created_timestamp === Math.floor(Date.parse(publishedAt) / 1000)
+      && expectedLineupBulletin(event.text ?? "") !== null;
     return { provider: "fxtwitter", postKind: repost ? "repost" : quoted.quotedTweetId ? "quote" : "post",
+      ...(verifiedDfo ? { verifiedDfoBulletinId: statusId } : {}),
       originalAuthor: author, originalAuthorName: typeof fx.author?.name === "string" ? fx.author.name : null,
       relayAccount: repost ? repostedBy ?? account : null, originalTweetId: statusId, relayTweetId: repost ? wrapperId : null,
       dedupKey: dedup(statusId, null), ...quoted, altTexts, ...base, timestampIsOriginal: !!publishedAt };
@@ -1735,14 +1774,17 @@ type TweetRosterContext = {
 
 function interpretSourceRoster(args: TweetRosterContext & {
   text: string;
+  snapshotDate: string;
   teams: TeamDirectoryEntry[];
   rosterByTeam: Map<number, RosterNameEntry[]>;
   gameIdByTeamId?: Map<number, number>;
   classification: GameDayTweetsClassification;
+  nativePostId?: string | null;
   sourceHandles: Array<string | null | undefined>;
   originalAuthor?: string | null;
   publishedAt?: string | null;
   nonNhl: boolean;
+  bulletinTeam?: TeamDirectoryEntry | null;
   selectedQuote?: boolean;
 }) {
   const { text, teams, classification } = args;
@@ -1757,16 +1799,46 @@ function interpretSourceRoster(args: TweetRosterContext & {
   const inference = !args.nonNhl && dated ? inferTweetRosterNames({ text, teams, rosterByTeam: dated, beatTeamIds,
     postTeamId: resolveLinesCccTeam({ text, teams, classification })?.id }) : null;
   const established = teams.find((team) => team.id === inference?.establishedTeamId);
-  const review = inference?.review ?? [];
+  const initialReview = inference?.review ?? [];
   const auto = inference?.autoMatches ?? [];
   const scopedNames = inference?.scopedNames ?? [];
-  const hasNameEvidence = Boolean(inference?.teammateTeamId || auto.length || review.length || scopedNames.length);
+  const hasNameEvidence = Boolean(inference?.teammateTeamId || auto.length || initialReview.length || scopedNames.length);
   // Only the post itself can bind a new name reading to a team's game. Score the rosters at most once.
-  const team = args.nonNhl ? null : (hasNameEvidence ? established : null) ?? resolveLinesCccTeam({
+  let team = args.nonNhl ? null : args.bulletinTeam ?? (hasNameEvidence ? established : null) ?? resolveLinesCccTeam({
     text, teams, classification, rosterByTeam: roster, sourceHandles: hasNameEvidence ? [] : args.sourceHandles,
   });
+  const tagged = !team && !args.nonNhl && dated && publishedAt && tweetPipelineFlags().interpretation
+    ? taggedGameTimeDecision(text) : null;
+  if (tagged && dated) {
+    const entries = [...dated.values()].flat().filter(player => player.fullName === tagged.name);
+    if (entries.length === 1 && entries[0]!.teamId === tagged.teamId
+      && !initialReview.some(hit => hit.rawName === tagged.name || tagged.name.endsWith(" " + hit.rawName))) {
+      team = teams.find(t => t.id === tagged.teamId) ?? null;
+    }
+  }
   const uniqueInitials: TweetInitialsEvidence[] = auto.flatMap((hit) => hit.teamId == null ? [] :
     [{ text: hit.rawName, start: hit.start, end: hit.end, playerId: hit.playerId, teamId: hit.teamId }]);
+  const opponentId = boundGameTeamIds(team, args.gameIdByTeamId)?.find(id => id !== team?.id);
+  const expected = team && opponentId && dated && publishedAt && author === "dfofantasy" && args.nativePostId && tweetPipelineFlags().interpretation
+    ? expectedLineupEvent(text, { rosters: dated, teamId: team.id, opponentId, publishedAt, gameDate: args.snapshotDate,
+      postId: args.nativePostId, review: initialReview }) : null;
+  const review = expected ? [] : [...initialReview];
+  if (!expected && team && dated && publishedAt && author && hasMixedMedicalMoves(text)) {
+    const report = reportedClubRosterMoves(text, author);
+    if (report && rosterMoveClub(report, team.id, publishedAt)) {
+      const members = dated.get(team.id) ?? [];
+      for (const { subject } of report.moves) {
+        const name = normalizeIdentityName(subject.text);
+        const exact = members.filter(player => [player.fullName, ...(player.aliases ?? [])].some(value => normalizeIdentityName(value) === name));
+        if (new Set(exact.map(player => player.playerId)).size === 1 || review.some(span => span.start <= subject.start && span.end >= subject.end)) continue;
+        const candidates = exact.length ? exact : members.filter(player => player.lastName && name.endsWith(" " + normalizeIdentityName(player.lastName)));
+        // A matching surname can suggest a reviewer candidate, but cannot stand in for a different printed full name.
+        review.push({ rawName: subject.text, start: subject.start, end: subject.end, teamId: team.id,
+          reason: exact.length ? "ambiguous_name" : candidates.length ? "conflicting_context" : "no_dated_match",
+          candidatePlayerIds: [...new Set(candidates.map(p => p.playerId))] });
+      }
+    }
+  }
 
   // These aliases live for one source interpretation. Preserve the stored name and the exact source span.
   const scoped = new Map(roster);
@@ -1783,13 +1855,16 @@ function interpretSourceRoster(args: TweetRosterContext & {
   // while the evidence-aware parser and event extractor use the untouched text, including its offsets.
   let scanText = text;
   for (const hit of review) scanText = scanText.slice(0, hit.start) + " ".repeat(hit.end - hit.start) + scanText.slice(hit.end);
-  const matched = matchRosterNamesInTweet(scanText, rosterEntries);
   const goalieName = extractGoalieName(scanText);
   const goalieIdentity = goalieName ? resolveTweetNameToRosterEntry(goalieName, rosterEntries, "goalie") : null;
-  const structuredContent = buildStructuredContent({ text: scanText, originalText: text, classification, rosterEntries,
+  const structuredContent = buildStructuredContent({ reportTeamId: team?.id, reportDate: args.snapshotDate, reportAuthor: args.originalAuthor, text: scanText, originalText: text, classification, rosterEntries,
     publishedAt: dated ? publishedAt : args.publishedAt, publicationRoster: Boolean(dated), uniqueInitials, scopedNames,
-    reviewSpans: review, eventPlayers: [...scoped.values()].flat(), gameTeamIds: boundGameTeamIds(team, args.gameIdByTeamId) });
+    reviewSpans: review, eventPlayers: [...scoped.values()].flat(), creditedGameIds: args.gameIdByTeamId, gameTeamIds: boundGameTeamIds(team, args.gameIdByTeamId) });
   const interpreted = structuredContent.metadata?.interpretation as TweetInterpretation | undefined;
+  if (expected && interpreted) (interpreted.events ??= []).push(expected);
+  // A validated one-player bulletin has no second subject. "Draw back" does not name Oskar Bäck.
+  const matched = expected ? { matchedPlayerIds: [expected.playerId], matchedNames: [expected.playerName], unmatchedNames: [] }
+    : matchRosterNamesInTweet(scanText, rosterEntries);
   const mentionedIds = new Set([...matched.matchedPlayerIds, ...(interpreted?.events ?? []).map(event => event.playerId),
     ...(interpreted?.units ?? []).flatMap(unit => unit.players.map(player => player.playerId))]);
   // The News worker can run after a trade. Retain only the identities evidenced in this post.
@@ -1823,12 +1898,19 @@ export function buildLinesCccSourceFromIftttEvent(args: TweetRosterContext & {
   const nonNhlHandleMatch = detectNonNhlHandle({
     sourceHandles,
   });
-  const detectedNonNhlLeague =
-    detectNonNhlLeague(text, args.teams) ?? nonNhlHandleMatch?.league ?? null;
+  const textLeague = detectNonNhlLeague(text, args.teams);
+  const primarySource = {
+    tweetId, tweetUrl, sourceUrl: tweetUrl, sourceHandle: args.event.username ?? args.event.source_account,
+    primaryTextSource: "ifttt_text" as const, rawText: text || null, rawPayload: args.event.raw_payload,
+    tweetPostedAt: normalizeTweetPostedAt(args.event.tweet_created_at), metadata: { providerPostUrl: args.event.link_to_tweet },
+  };
+  const bulletinTeam = textLeague === "AHL" ? nhlMedicalBulletinTeam(text, args.teams, args, primarySource) : null;
+  const detectedNonNhlLeague = (bulletinTeam ? null : textLeague) ?? nonNhlHandleMatch?.league ?? null;
   const provenance = buildTweetSourceProvenance(args.event);
   const { team, rosterEntries, matched, goalieIdentity, structuredContent, inferenceMetadata } = interpretSourceRoster({
     ...args, text, classification, sourceHandles, nonNhl: Boolean(detectedNonNhlLeague),
-    originalAuthor: provenance.originalAuthor, publishedAt: args.event.tweet_created_at,
+    bulletinTeam, originalAuthor: provenance.originalAuthor, publishedAt: args.event.tweet_created_at,
+    nativePostId: provenance.verifiedDfoBulletinId,
   });
   const nhlFilterStatus: LinesCccNhlFilterStatus = !text
     ? "rejected_insufficient_text"
@@ -1853,25 +1935,20 @@ export function buildLinesCccSourceFromIftttEvent(args: TweetRosterContext & {
   const textSignals = buildTextSignals(text);
 
   const source: ParsedLinesCccSource = {
+    ...primarySource,
     snapshotDate: args.snapshotDate,
     observedAt: args.event.received_at,
-    tweetPostedAt: normalizeTweetPostedAt(args.event.tweet_created_at) ??
+    tweetPostedAt: primarySource.tweetPostedAt ??
       tweetPublicationFromUrl(args.event.link_to_tweet),
     tweetPostedLabel: args.event.created_at_label,
     gameId: team ? (args.gameIdByTeamId?.get(team.id) ?? null) : null,
     team,
-    sourceUrl: tweetUrl,
     sourceLabel: classification,
-    sourceHandle: args.event.username ?? args.event.source_account,
     authorName: args.event.username,
-    tweetId,
-    tweetUrl,
-    primaryTextSource: "ifttt_text",
     classification,
     detectedLeague: detectedNonNhlLeague ?? (team ? "NHL" : null),
     nhlFilterStatus,
     nhlFilterReason,
-    rawText: text || null,
     enrichedText: text || null,
     keywordHits: textSignals.keywordHits,
     matchedPlayerIds: matched.matchedPlayerIds,
@@ -1887,10 +1964,9 @@ export function buildLinesCccSourceFromIftttEvent(args: TweetRosterContext & {
           : [],
     scratches: structuredContent.scratches,
     injuries: structuredContent.injuries,
-    rawPayload: args.event.raw_payload,
     metadata: {
+      ...primarySource.metadata,
       iftttEventId: args.event.id,
-      providerPostUrl: args.event.link_to_tweet,
       iftttSource: args.event.source,
       iftttSourceAccount: args.event.source_account,
       publicationTimeBasis: normalizeTweetPostedAt(args.event.tweet_created_at)
@@ -1939,8 +2015,10 @@ export function refreshLinesCccSourceFromPrimaryText(args: TweetRosterContext & 
   });
   // An explicit league label on the relaying wrapper ("AHL Wolf Pack lines") still governs when the primary text is
   // the quoted original, which may carry only an NHL affiliate's tag (#NYR).
+  const primaryLeague = detectNonNhlLeague(text, args.teams);
+  const bulletinTeam = primaryLeague === "AHL" ? nhlMedicalBulletinTeam(text, args.teams, args, args.source) : null;
   const textLeague = [text, args.source.enrichedText, args.source.rawText]
-    .map((value) => (value ? detectNonNhlLeague(value, args.teams) : null))
+    .map(value => !value ? null : value.trim() === text ? (bulletinTeam ? null : primaryLeague) : detectNonNhlLeague(value, args.teams))
     .find((league) => league != null) ?? null;
   const detectedNonNhlLeague = textLeague ?? nonNhlHandleMatch?.league ?? null;
   const provenance = args.source.metadata?.sourceProvenance as TweetSourceProvenance | undefined;
@@ -1948,7 +2026,8 @@ export function refreshLinesCccSourceFromPrimaryText(args: TweetRosterContext & 
     ? args.source.quotedAuthorHandle ?? provenance?.quotedAuthor : provenance?.originalAuthor;
   const { team, rosterEntries, matched, goalieIdentity, structuredContent, inferenceMetadata } = interpretSourceRoster({
     ...args, text, classification, sourceHandles, nonNhl: Boolean(detectedNonNhlLeague),
-    originalAuthor, publishedAt: args.source.tweetPostedAt, selectedQuote: args.source.primaryTextSource === "quoted_oembed",
+    bulletinTeam, originalAuthor, snapshotDate: args.source.snapshotDate, publishedAt: args.source.tweetPostedAt, selectedQuote: args.source.primaryTextSource === "quoted_oembed",
+    nativePostId: text === args.source.rawText && args.source.primaryTextSource !== "quoted_oembed" ? provenance?.verifiedDfoBulletinId : null,
   });
   const metadata = { ...args.source.metadata };
   delete metadata.name_inference_review;
@@ -2350,7 +2429,8 @@ export function applyQuotedTweetPreference(args: {
     },
   };
 
-  if (!shouldPreferQuotedTweetText({ source: args.source, quotedTweet })) {
+  const verifiedSummary = isVerifiedRelayQuoteSummary(args.source, quotedTweet);
+  if (!verifiedSummary && !shouldPreferQuotedTweetText({ source: args.source, quotedTweet })) {
     return {
       ...nextSource,
       metadata: {
@@ -2362,7 +2442,7 @@ export function applyQuotedTweetPreference(args: {
 
   const preferredSource: ParsedLinesCccSource = {
     ...nextSource,
-    tweetPostedAt: quotedTweet.retrievalStatus === "x_api_success"
+    tweetPostedAt: verifiedSummary || quotedTweet.retrievalStatus === "x_api_success"
       ? normalizeTweetPostedAt(quotedTweet.quotedPostedAt)
       : tweetPublicationFromUrl(quotedTweet.quotedTweetUrl),
     tweetPostedLabel: quotedTweet.quotedPostedLabel,
@@ -2372,11 +2452,16 @@ export function applyQuotedTweetPreference(args: {
       ...nextSource.metadata,
       wrapperPostedAt: args.source.tweetPostedAt ?? null,
       wrapperPostedLabel: args.source.tweetPostedLabel ?? null,
-      publicationTimeBasis: quotedTweet.retrievalStatus === "x_api_success"
+      publicationTimeBasis: verifiedSummary || quotedTweet.retrievalStatus === "x_api_success"
         ? "provider_timestamp" : "tweet_id_or_unknown",
       preferredQuotedTweet: true,
     },
   };
+  const native = verifiedFxRelayQuoteClocks(preferredSource, getPrimaryTextForSource(preferredSource));
+  if (native) {
+    preferredSource.tweetPostedAt = native.originalPublishedAt;
+    preferredSource.metadata!.publicationTimeBasis = "provider_timestamp";
+  }
 
   return {
     ...preferredSource,
@@ -2473,7 +2558,7 @@ export function toLinesCccRow(args: {
     team_abbreviation: source.team?.abbreviation ?? null,
     team_name: source.team?.name ?? null,
     source: "lines_ccc",
-    source_url: source.sourceUrl ?? source.tweetUrl ?? null,
+    source_url: verifiedFxSnapshotUrl(source) ?? source.sourceUrl ?? source.tweetUrl ?? null,
     source_label: source.sourceLabel ?? source.classification ?? null,
     source_handle: source.sourceHandle ?? null,
     author_name: source.authorName ?? null,

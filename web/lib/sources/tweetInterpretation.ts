@@ -1,8 +1,9 @@
+import { isNonPlayerNameUse } from "./playerNameInProse";
 import { resolveTweetRosterIdentity } from "./tweetNameLexicon";
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
 import { breakIdentityTie, normalizeIdentityName, positionSlotRole, type PlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-11-19.1";
+export const TWEET_INTERPRETATION_VERSION = "2026-11-23.17";
 export type TweetInitialsEvidence = EvidenceSpan & { playerId: number; teamId: number };
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
@@ -48,6 +49,7 @@ export type TweetUnitChange = {
   evidence: EvidenceSpan;
 };
 export type TweetInterpretation = {
+  reportedGoalieDates?: import("./tweetGoalieStartDate").ReportedGoalieStart[];
   version: string;
   rosterRevision?: string;
   identityContext?: { basis: "current_membership" | "publication_roster"; sourcePublishedAt: string | null; eventRosterRevision: string; uniqueInitials?: TweetInitialsEvidence[] };
@@ -125,6 +127,28 @@ export function segmentPlayerRow(text: string, roster: PlayerIdentity[], row?: P
 }
 
 const PERIOD = String.raw`(?:1st|2nd|3rd|first|second|third)`;
+
+/** "Working with" a formation today identifies the personnel but supplies no game or session. */
+export function fiveForwardWorkHeading(text: string) {
+  const first = text.split("\n", 1)[0]!.replace(/^RT @[\w]{1,15}:\s*/i, "").trim();
+  return /^\s*PP\s*[12]\b/im.test(text)
+    ? /^([\w .'-]+?) working with a 5-forward power play on the top unit today\.?$/i.exec(first) : null;
+}
+
+/** A named penalty followed immediately by the reported numbered personnel. The spans address the original text. */
+export function reportedPowerPlayPenalty(text: string) {
+  if (!/^\s*PP\s*[12]\s*(?::|\bis\b)/im.test(text)) return null;
+  const lines = [...text.matchAll(/[^\r\n]+/g)].filter(line => line[0].trim());
+  const firstUnit = lines.findIndex(line => /^\s*PP\s*[12]\s*(?::|\bis\b)/i.test(line[0]));
+  if (firstUnit < 1 || firstUnit > 2 || !lines.slice(firstUnit).every(line => /^\s*PP\s*[12]\s*(?::|\bis\b)/i.test(line[0]))) return null;
+  if (firstUnit === 2 && !/^\s*\d+\s*[-–]\s*\d+\s+#/.test(lines[0]![0])) return null;
+  if (/\b(?:if|would|could|may|might|maybe|possibly|likely|expected|projected|practice|warmups?|yesterday|last|previous|earlier|tomorrow|replay|recap|postgame|final|correction|instead|(?:mon|tues|wednes|thurs|fri|satur|sun)day)\b|[?“”"]/i.test(text)) return null;
+  const narrative = lines[firstUnit - 1]!;
+  const penalty = narrative[0].match(/^\s*(?:RT\s+@[\w]+:\s*)?(((?:[\p{Lu}][\p{L}\p{M}.'’–-]*\s+){1,4})(?:to the box for|gets the call for|was called for)\s+(?:hooking|high[- ]sticking|slashing|holding))\b/u);
+  if (!penalty) return null;
+  const start = narrative.index + penalty[0].indexOf(penalty[1]!);
+  return { start, end: start + penalty[1]!.length, text: penalty[1]!, player: penalty[2]!.trim(), firstUnitStart: lines[firstUnit]!.index };
+}
 // "now" is deliberately absent: it marks a change, not when the change happened.
 const CONTEXT_CUES: Array<{ signal: TweetContextSignal["signal"]; pattern: RegExp }> = [
   { signal: "practice", pattern: /\b(?:practices?|practiced|practicing|morning skate|optional skate|training camp|camp groups?|practice groups?|split squad)\b/gi },
@@ -142,6 +166,8 @@ const CONTEXT_CUES: Array<{ signal: TweetContextSignal["signal"]; pattern: RegEx
  */
 export function detectTweetLineContext(text: string): TweetLineContextReading {
   const evidence: TweetContextSignal[] = [];
+  const penalty = reportedPowerPlayPenalty(text);
+  if (penalty) evidence.push({ signal: "in_game", start: penalty.start, end: penalty.end, text: penalty.text });
   for (const { signal, pattern } of CONTEXT_CUES) {
     for (const match of text.matchAll(pattern)) evidence.push({ signal, start: match.index!, end: match.index! + match[0].length, text: match[0] });
   }
@@ -168,7 +194,7 @@ const CHANGE_PATTERNS: Array<{ kind: "pp_replace" | "in_for" | "draws_in" | "dra
   { kind: "pp_replace", pattern: new RegExp(String.raw`(?<in>${NAME_LIST})\s+(?:replaces?|replacing|take over for|takes? over for)\s+(?<out>${NAME_LIST})(?:\s+on\s+(?<unit>${PP_UNIT.source}))?(?=[.!,;\n]|\s+(?:tonight|today|at|in)\b|$)`, "giu") },
   // "Jarvis in for Martinook tonight"
   { kind: "in_for", pattern: new RegExp(String.raw`(?<in>${NAME_LIST})\s+(?:(?:is|will be|goes|comes|draws|slides|steps)\s+)?(?:back\s+)?in for\s+(?<out>${NAME_LIST})(?=[.!,;\n]|\s+(?:tonight|today|vs\.?|against|at|on)\b|$)`, "giu") },
-  { kind: "draws_in", pattern: new RegExp(String.raw`(?<in>${NAME_LIST})\s+(?:will\s+)?(?:draws?|drawing|comes?|coming|goes|going|slides?)\s+(?:back\s+)?in(?:to)?\s+(?:the\s+)?(?:lineup|line-up)\b`, "giu") },
+  { kind: "draws_in", pattern: new RegExp(String.raw`(?<in>${NAME_LIST})\s+(?:(?<expected>(?:is|are)\s+(?:not\s+)?expected\s+to)\s+|will\s+)?(?:draws?|drawing|comes?|coming|goes|going|slides?)\s+(?:back\s+)?in(?:to)?\s+(?:the\s+)?(?:lineup|line-up)\b`, "giu") },
   { kind: "draws_out", pattern: new RegExp(String.raw`(?<out>${NAME_LIST})\s+(?:will\s+)?(?:draws?|drawing|comes?|coming|goes|going)\s+out\s+of\s+(?:the\s+)?(?:lineup|line-up)\b`, "giu") },
 ];
 const IN_OUT_LINE = /^\s*(IN|OUT)\b\s*[:▲▽△▼⬆⬇↑↓🔼🔽➕➖+\-–—]*\s*(.+?)\s*$/u;
@@ -215,7 +241,7 @@ function resolveNameList(list: string, offset: number, roster: PlayerIdentity[],
 }
 
 /** Partial and change-only lineup reports: PP swaps, "X in for Y", draws in/out and DFO IN ▲ / OUT ▽ lists. */
-export function extractTweetUnitChanges(text: string, roster: PlayerIdentity[]): TweetUnitChange[] {
+export function extractTweetUnitChanges(text: string, roster: PlayerIdentity[], unresolved?: TweetInterpretation["unresolved"]): TweetUnitChange[] {
   const changes: TweetUnitChange[] = [];
   const mentionsPp = /\b(?:power[ -]?play|pp\s*[12]?|power unit)\b/i.test(text);
   const taken: Array<[number, number]> = [];
@@ -239,6 +265,11 @@ export function extractTweetUnitChanges(text: string, roster: PlayerIdentity[]):
       if (groups.out) resolveNameList(groups.out, start + match[0].lastIndexOf(groups.out), roster, "out", change);
       if (!change.playersIn.length && !change.playersOut.length && !change.unresolved.length) continue;
       taken.push([start, end]);
+      if (groups.expected) {
+        // Review an unknown subject, but never apply a projected entry as a lineup change.
+        for (const { side: _side, ...issue } of change.unresolved) unresolved?.push({ ...issue, situation: null, number: null });
+        continue;
+      }
       changes.push(change);
     }
   }
@@ -292,6 +323,7 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     certainty: /\bconfirmed\b/i.test(text) ? "confirmed" : /\b(projected|expected)\b/i.test(text) ? "projected" : "reported",
     lineContext: detectTweetLineContext(text),
   };
+  if (result.context === "game" && !result.lineContext?.context && fiveForwardWorkHeading(text)) result.context = "unknown";
   if (/\b11\s*(?:f\b|forwards?\b)[^\n]{0,30}7\s*(?:d\b|defen[cs]emen\b)/i.test(text)) result.formation = { forwards: 11, defense: 7 };
   const introduction = text.split("\n", 1)[0] ?? "";
   const initialSituation: TweetUnit["situation"] | null = /\b(power[ -]?play|pp(?:\s*[12])?)\b/i.test(introduction) ? "pp" : /\b(penalty kill|pk[12])\b/i.test(introduction) ? "pk" : null;
@@ -318,6 +350,11 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     if (!line) {
       flush(); number = null; explicitNumber = false; sectionRole = null; explicitEsHeading = false;
       if (situation !== "pp" && situation !== "pk") situation = null;
+      continue;
+    }
+    // The change parser handles lineup-entry sentences, including unresolved players. The hyphen is not a pair delimiter.
+    if (/\b(?:draws?|comes?) (?:back )?into the line-up\b/i.test(line)) {
+      flush();
       continue;
     }
     const groupMatch = line.match(/\b(?:group|squad)\b\s+([a-z0-9]+)\b/i);
@@ -393,11 +430,24 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       && result.units.some((unit) => unit.group === group && (unit.situation === "es_forward" || unit.situation === "es_defense"))
       && (segmentPlayerRow(line, roster)?.every((hit) => playerPositionRole(hit.player) === "goalie") ?? true);
     const lineSituation = extras ? "scratch" : implicitGoalie ? "goalie" : situation;
-    const slashParts = line.includes("/") ? line.split(/\s*\/\s*/).map((part) => segmentPlayerRow(part, roster)) : null;
+    // A printed practice date can share its heading with a hashtag. Only player slashes denote alternatives.
+    const datedHeading = /\b(?:practice|morning skate)\b/i.test(line)
+      && !line.replace(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g, "").includes("/");
+    const slashParts = !datedHeading && line.includes("/") ? line.split(/\s*\/\s*/).map((part) => segmentPlayerRow(part, roster)) : null;
     // One resolved player per slash slot is a row delimiter. Multiple players in
     // one slot remain alternatives, rather than being merged into a full unit.
     const simpleSlash = slashParts?.every((part) => part?.length === 1);
     let hits = !slashParts || simpleSlash ? segmentPlayerRow(line, roster) : null;
+    if (!hits && heading && lineSituation === "pp" && explicitNumber && (number === 1 || number === 2)
+      && !slashParts && (/^is\s+/i.test(line) || /\s&(?:amp;)?\s/.test(line)) && reportedPowerPlayPenalty(text)) {
+      // Keep the original offsets across the copula and the provider's escaped ampersand.
+      const list = line.replace(/^is\s+|\s&(?:amp;)?(?=\s)/gi, part => " ".repeat(part.length));
+      const skaters = segmentPlayerRow(list, roster);
+      if (skaters?.length === 5 && skaters.every(hit => {
+        const role = playerPositionRole(hit.player);
+        return role === "es_forward" || role === "es_defense";
+      })) hits = skaters;
+    }
     // A shared name blocks the plain reading; without a heading, the row's own
     // players decide the slot: keep the one role under which every name fits.
     if (!hits && !explicitEsHeading && (!slashParts || simpleSlash) && lineSituation !== "pp" && lineSituation !== "pk"
@@ -531,7 +581,7 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     if (rowKind) { number = null; explicitNumber = false; }
   }
   flush();
-  const changes = extractTweetUnitChanges(text, roster);
+  const changes = extractTweetUnitChanges(text, roster, result.unresolved);
   if (changes.length) {
     result.changes = changes;
     for (const change of changes) for (const { side: _side, ...name } of change.unresolved) {
@@ -556,11 +606,9 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       evidence: { start: match.index!, end: match.index! + match[0].length, text: match[0] },
       reviewReason: resolutions.some((resolution) => resolution.status !== "matched") ? "ambiguous_identity" : kind === "substitution" ? "incomplete_replacement" : "unresolved_reference" });
   }
-  for (const kind of ["pp", "pk"] as const) {
-    for (const groupId of new Set(result.units.map((unit) => unit.group))) {
-      const units = result.units.filter((unit) => unit.situation === kind && unit.group === groupId && unit.complete);
-      if (units.length === 2 && units.every((unit) => unit.number == null)) units.forEach((unit, index) => { unit.number = index + 1; });
-    }
+  for (const groupId of new Set(result.units.map((unit) => unit.group))) {
+    const units = result.units.filter((unit) => unit.situation === "pk" && unit.group === groupId && unit.complete);
+    if (units.length === 2 && units.every((unit) => unit.number == null)) units.forEach((unit, index) => { unit.number = index + 1; });
   }
   // Standard projected lineups use four forward triplets and three defense pairs.
   // Explicit nonstandard or conflicting evidence remains available for review.
@@ -608,8 +656,8 @@ export function identityMentionPresent(text: string, name: string): boolean {
 const SURNAME_PHRASE_CONTINUATIONS: Record<string, RegExp> = { power: /^[\s‐‑–—−-]+(?:play|units?)(?!\p{L})/iu };
 
 /** True when the text right after a surname makes it a phrase such as "power play", not a name. */
-export function surnameReadsAsPhrase(surname: string, textAfter: string): boolean {
-  return SURNAME_PHRASE_CONTINUATIONS[normalizeIdentityName(surname)]?.test(textAfter) ?? false;
+export function surnameReadsAsPhrase(surname: string, textAfter: string, textBefore = ""): boolean {
+  return isNonPlayerNameUse(surname, textAfter, textBefore) || Boolean(SURNAME_PHRASE_CONTINUATIONS[normalizeIdentityName(surname)]?.test(textAfter));
 }
 
 /** A surname-only mention counts in any case unless it starts a phrase like "power play" or "power unit". */
@@ -620,7 +668,7 @@ export function surnameMentionPresent(text: string, surname: string): boolean {
     .replace(/[‐‑–—−-]/g, " ").replace(/\./g, "").replace(/\s+/g, " ");
   const pattern = new RegExp(`(?<![\\p{L}])${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}])`, "giu");
   for (const match of cased.matchAll(pattern)) {
-    if (surnameReadsAsPhrase(key, cased.slice(match.index! + match[0].length))) continue;
+    if (surnameReadsAsPhrase(key, cased.slice(match.index! + match[0].length), cased.slice(0, match.index))) continue;
     return true;
   }
   return false;

@@ -1,3 +1,4 @@
+import { compareInterpretationVersions } from "./interpretationVersion";
 import { teamsInfo } from "lib/teamsInfo";
 import { requiresRelativeGameDateReview, type EvidenceSpan, type TweetInterpretation } from "./tweetInterpretation";
 
@@ -55,7 +56,9 @@ export function lineReportTimeScope(text: string) {
   function select(original: TweetInterpretation): TweetInterpretation {
     const supported = (unit: TweetInterpretation["units"][number]) => Array.isArray(unit.evidence) && unit.evidence.length > 0
       && unit.evidence.every(span => current(span, true));
-    return { ...original, version: original.version.endsWith(temporalRevision) ? original.version : original.version + temporalRevision,
+    const baseVersion = original.version.replace(/-line-date\.\d{4}-\d{2}-\d{2}\.\d+$/, "");
+    const revision = baseVersion + temporalRevision;
+    return { ...original, version: compareInterpretationVersions(original.version, revision) > 0 ? original.version : revision,
       units: original.units.filter(supported), excludedUnits: original.excludedUnits?.filter(supported),
       events: original.events?.filter(event => current(event.evidence, false)) ?? [],
       changes: original.changes?.filter(change => current(change.evidence, false)),

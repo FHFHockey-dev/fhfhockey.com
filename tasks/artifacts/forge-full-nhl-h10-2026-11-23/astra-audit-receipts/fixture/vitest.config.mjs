@@ -1,0 +1,1 @@
+export default {'resolve': {'alias': {'lib': '/Users/tim/Code/fhfhockey.com/web/lib'}}, 'cacheDir': '/private/tmp/forge-readonly-audit-20261123.KIwY6H/fixture/cache', 'test': {'environment': 'node', 'maxWorkers': 1}}

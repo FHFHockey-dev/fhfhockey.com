@@ -1,6 +1,10 @@
+import { reportedGameAbsence, reportedAbsenceDate, gameAbsenceFields } from "./sources/reportedGameAbsence";
+import type { TweetPlayerEvent } from "./sources/tweetPlayerEvents";
 import { getTeamInfoById } from "./teamsInfo";
 import { lineReportTimeScope } from "./sources/lineReportTime";
 import type { NewsFeedItemRow, NewsFeedSourceProvenance } from "./newsFeed";
+import { pendingNewsAssignments, readTweetNewsRosterEvidence } from "./sources/tweetNewsRosterEvidence";
+import { reportedLineupEntries } from "./sources/reportedLineupEntry";
 import type { EvidenceSpan } from "./sources/tweetInterpretation";
 
 export type NewsLineupGame = { id: number; date: string; homeTeamId: number; awayTeamId: number };
@@ -57,4 +61,63 @@ export function selectPublishedNewsLineup(item: NewsFeedItemRow, game: NewsLineu
   const unresolved = Array.isArray(interpretation.unresolved)
     ? interpretation.unresolved.filter(value => !retainedSpan(value) || scope.current(value, true)) : [];
   return { newsLineup: { ...snapshot, interpretation: { ...interpretation, units, events, unresolved } }, matchup };
+}
+
+/** Verify a reported entry against the published card's frozen change and the original dated intake receipt. */
+export function selectReportedLineupEntries(item: NewsFeedItemRow, game: NewsLineupGame, review: NewsFeedSourceProvenance,
+  originalId: string, sourceUrl: string, postedAt: string) {
+  const snapshot = record(item.metadata?.newsLineup);
+  const binding = record(snapshot?.binding);
+  const retained = record(item.metadata?.retainedInterpretation);
+  const identity = record(retained?.identityContext);
+  if (!Number.isFinite(Date.parse(postedAt)) || typeof retained?.version !== "string" || identity?.basis !== "publication_roster" || typeof identity.sourcePublishedAt !== "string"
+    || Math.floor(Date.parse(identity.sourcePublishedAt) / 1000) !== Math.floor(Date.parse(postedAt) / 1000)
+    || record(snapshot?.interpretation)?.version !== retained?.version || publishedLineupGameId(item) !== game.id || binding?.sourceTweetId !== originalId
+    || ![game.homeTeamId, game.awayTeamId].includes(item.team_id!) || game.date !== easternDay.format(new Date(postedAt))
+    || review.review_status !== "pending" || (review.review_assignments != null && (!Array.isArray(review.review_assignments) || review.review_assignments.length > 0))
+    || record(retained?.lineContext)?.context !== "game" || !Array.isArray(retained?.changes)) return [];
+  const roster = readTweetNewsRosterEvidence({ metadata: review.metadata ?? null, parser_filter_status: review.parser_filter_status ?? null,
+    enriched_text: review.enriched_text ?? null, raw_text: review.raw_text ?? null, quoted_text: review.quoted_text ?? null });
+  const receiptUrl = roster?.source === "quoted" ? review.quoted_tweet_url : review.source_url;
+  if (!roster?.publishedAt || Math.floor(Date.parse(roster.publishedAt) / 1000) !== Math.floor(Date.parse(postedAt) / 1000)
+    || receiptUrl !== sourceUrl || lineReportTimeScope(roster.text)) return [];
+  return reportedLineupEntries(roster.text, retained.changes, retained.events, game.homeTeamId === item.team_id ? game.awayTeamId : game.homeTeamId).filter(entry => {
+    const players = roster.players.filter(player => player.fullName === entry.playerName);
+    return players.length === 1 && players[0]!.id === entry.playerId && players[0]!.team_id === item.team_id
+      && !roster.reviewSpans.some(span => span.start < entry.evidence.end && entry.evidence.start < span.end);
+  });
+}
+
+/** Recheck the original row before displaying a game absence, including cards stored by earlier interpreters. */
+export function selectReportedGameAbsences(item: NewsFeedItemRow, game: NewsLineupGame, review: NewsFeedSourceProvenance,
+  sourceUrl: string, postedAt: string, events: readonly TweetPlayerEvent[]) {
+  if (!events.some(e => e?.kind === "injury") || !pendingNewsAssignments(item.metadata, review)) return [];
+  const roster = readTweetNewsRosterEvidence({ metadata: review.metadata ?? null, parser_filter_status: review.parser_filter_status ?? null,
+    enriched_text: review.enriched_text ?? null, raw_text: review.raw_text ?? null, quoted_text: review.quoted_text ?? null });
+  if (!roster?.publishedAt || (roster.source === "quoted" ? review.quoted_tweet_url : review.source_url) !== sourceUrl
+    || Math.floor(Date.parse(roster.publishedAt) / 1000) !== Math.floor(Date.parse(postedAt) / 1000)) return [];
+  const retained = record(item.metadata?.retainedInterpretation);
+  const identity = record(retained?.identityContext);
+  if (identity?.basis !== "publication_roster" || typeof identity.sourcePublishedAt !== "string"
+    || Math.floor(Date.parse(identity.sourcePublishedAt) / 1000) !== Math.floor(Date.parse(postedAt) / 1000)) return [];
+  const carriedBy = /^RT @([\w]{1,15}):/iu.exec(roster.text);
+  if (carriedBy && !sourceUrl.toLowerCase().includes("/" + carriedBy[1]!.toLowerCase() + "/status/")) return [];
+  const opponent = game.homeTeamId === item.team_id ? game.awayTeamId : game.awayTeamId === item.team_id ? game.homeTeamId : null;
+  if (!opponent || publishedLineupGameId(item) !== game.id || lineReportTimeScope(roster.text)) return [];
+  return events.flatMap(e => {
+    if (e?.kind !== "injury" || e.reviewReason || e.observation || e.availability === "available" || e.state === "confirmed_return" || e.teamId !== item.team_id || e.resolutionBasis !== "full_name"
+      || !e.times?.observation || Math.floor(Date.parse(e.times.observation) / 1000) !== Math.floor(Date.parse(postedAt) / 1000)
+      || !e.evidence || !Number.isSafeInteger(e.evidence.start) || e.evidence.start < 0 || !Number.isSafeInteger(e.evidence.end) || roster.text.slice(e.evidence.start, e.evidence.end) !== e.evidence.text
+      || typeof e.playerName !== "string" || !e.evidence.text.startsWith(e.playerName + " ")
+      || events.some(other => other !== e && other?.playerId === e.playerId && (other.kind === "injury" || other.state === "will_play"))) return [];
+    const players = roster.players.filter(p => p.fullName === e.playerName);
+    if (players.length !== 1 || players[0]!.id !== e.playerId || players[0]!.team_id !== item.team_id
+      || roster.reviewSpans.some(span => span.start < e.evidence.end && span.end > e.evidence.start)) return [];
+    const start = e.evidence.start, end = start + e.playerName.length;
+    const missed = reportedGameAbsence(roster.text, start, end);
+    if (!missed || (missed.venueClubId && missed.venueClubId !== game.homeTeamId) || missed.predicate.end > e.evidence.end || missed.relative === "tomorrow" || (missed.opponentId && missed.opponentId !== opponent)
+      || reportedAbsenceDate(postedAt, item.team_id, missed.relative) !== game.date) return [];
+    return [{ playerId: e.playerId, start, relative: missed.relative,
+      fields: gameAbsenceFields(missed, game.date, { start, end, text: e.playerName }) }];
+  });
 }

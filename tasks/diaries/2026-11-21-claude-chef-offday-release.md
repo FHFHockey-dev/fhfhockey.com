@@ -149,3 +149,128 @@
 - TJ approved the scoped recovery: 14:14Z one GET → 200, run a294e2f3 (selected_games 0373–0377, 35–36 skaters/game, 10 team, 10 goalie), preflight PASS. Start Chart and Daily RSO serve all 5 under the run. Receipt recovery-1122/RECOVERY-RECEIPT.json. Not a natural-run pass; the failed scheduled run stays failed.
 - Master moved to 480bd5d71 (Codex records + auth superstyle, 10:41–10:56Z), which contains the route. BLSH E2-1 build freeze 14:10–15:10Z (builds only).
 - WGO lane local_85da83a0: TJ pivot → the scheduled path reads the 07:30Z standalone WGO output with a readiness check (exact finalized-game coverage, producer receipt, cutoff), totals checked separately, no coordinator WGO calls.
+- ~14:58Z TJ: Rankings owns the readiness SQL (20261118151903 is LIVE: schema_migrations confirms) → narrow forward migration, compatible during rollout; FORGE owns the standalone-WGO consumer; gate together for one build; required test: 504-row rewrite committing 500 then failing must defer. Tickets sent to the Rankings lane local_15e54587 and the WGO lane local_85da83a0 (with real job-9 audit rows). No production changes.
+- Rankings lane delivered the forward migration 20261122145409 (blob a0398d65), tests (PG15/17 incl. the 500-of-504 case), rollback 0d620303; uncommitted in the shared checkout. Chef approved the WGO writer sourceDigests edit (update-wgo-skaters is in the closure → new registration). Rollout: migration → web build before 07:30Z; rollback reverse.
+- Overlap with the Rankings publisher 558ea2fb4 (on 480bd5d71; touches update-wgo-skaters, the registry and closure modules): chose (b) per TJ's 'don't bundle the rest of K1'. The FORGE release (gate + writer digest + migration 20261122145409) builds on master 480bd5d71, never octoberBranch; the publisher rebuilds after. Asked Rankings to confirm the migration works without rankingsSourceDate.
+- 15:1xZ MASTER BLOCKED: TJ's #464 squash c2c46ceae (14:22Z) failed prod admission (closure 7ee3612e unregistered; dpl_FNseXHEz54ztvhSNKMu6imRf4Kbx ERROR); prod still on 480bd5d71 (dpl_A6wXhPbx…). Chef prepared a registration-only commit a9e08f854 on c2c46ceae (verifier receipt 96eaa4ce…, 243 modules, 0 findings; registry 28/28; typecheck 0; admission pass). Worktree /private/tmp/forge-daily-acceptance-route-20261121 is now detached at a9e08f854.
+- TJ approved the push at 15:10Z, then said E2-1 is NOT done → HOLD until the BLSH-E2-1-DONE note (env vars SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY being recreated). The WGO release must now build on c2c46ceae / a9e08f854.
+- WGO lane candidate B 3bb71b523 (on c2c46ceae; closure 3352c41d) NOT final: its FORGE gate lacks the digest match. Told the lane: base a9e08f854, digest recompute plus the 500-of-504 case on the FORGE path, the transition consequence. Rollout to bring to TJ: migration 20261122145409, then push (outside 07:30–10:55Z), after E2-1.
+- WGO lane final cut M 1b80214d1 (on c2c46ceae; closure af8b8d11, 244 modules; includes the digest match + 500-of-504 FORGE tests). R dropped. Asked for M′ rebased on a9e08f854 (two-step release). Chef ran the prod checks (read-only): Nov 19/21 games type 2 OFF (state refreshed 10:05:28Z by stage 1); per-side WGO rows 18/18 H/R for every game. Rankings harness: PG15 + PG17 both fixtures pass.
+- Rankings rollback file blob now 0a7367849273 (header ORDER note only). The gate now hard-depends on wgo_skater_date_digest → migration before deploy; rollback order FORGE web first. TJ asked for E2-1 Vercel walkthrough (E2-PLAN.md steps 1–2a/2b).
+- GATED combined candidate C = ebfdf1cd20190ce4d3dff33b81c2ef2cd0d20d54 (on M′ a86a99898 ← a9e08f854 ← c2c46ceae; + 4 Rankings files, blobs a0398d65/080d8efd/00bc9ce8/0a736784). FF of origin/master, merge-tree clean, closure af8b8d11 (registered in M′), prod admission PASS on C, typecheck 0, Rankings harness PG15+PG17 pass; vitest db/cron/registry/scripts 2,734 pass, 20 fail = scripts/blsh/nativeProcessCaptureBootstrap (identical failure set on a clean export of master; env/pins; untouched by C). Worktree /private/tmp/forge-daily-acceptance-route-20261121 detached at C.
+- 15:3xZ–15:42Z RELEASE (TJ approved the full sequence; E2-1 DONE at 15:35Z): (1) pushed a9e08f854 → dpl_BeEkh7JQsPFrPNwo7i4fMBPzqYU5 READY and aliased; smoke /api/v1/runs/latest 200. (2) Migration 20261122145409 applied in one transaction (exit 0): ledger row present, digest fn service_role only, readiness has sourceDigests, digest(11-21) rows 504. (3) Pushed ebfdf1cd2 at 15:40:56Z; build watch running. (4) pg_cron job 431 = Mon 11-23 11:15Z control acceptance. Remove 429/430/431 after Nov 27 (approval). TJ disconnecting (plane).
+- 17:55Z DONE: ebfdf1cd2 → dpl_96LYjEUwPL7LZ2tuXXciaUbG6ngm READY and aliased; smoke 200. Done note posted. Next natural evidence: Mon 07:30Z job 9 digests → 10:05Z gate → 11:15Z job 431.
+- 18:2xZ TJ 'do those open tasks': octoberBranch was already synced locally (d18e2b557 at 18:13Z, tree == master 43ad7037; not pushed, remote 01d615abf). Unscheduled spent job 429; created job 432 (Nov 28 12:00Z) to unschedule 430, 431 and itself. The local Nov 27 task now notes 432.
+
+## 2026-11-23 00:14Z (Sun 19:14 EST): octoberBranch push + RSO decision
+- TJ approved both. Vercel api (CLI 65.14.0, npx cache): fhfhockey, functions-fhfhockey, cms-fhfhockey, fhfhockey.com all previewDeploymentsDisabled=true, prodBranch master; web/functions unlinked. No GitHub workflow runs on push.
+- Pushed octoberBranch 01d615abf..d18e2b557 (tree = master ebfdf1cd2). Newest deployment before: ebfdf1cd2 set 15:40:56Z. After-check (Vercel + GitHub status/deployments) in scratchpad deps-after.json.
+- TJ pop-up: Detailed RSO "Ship, gate closed": one candidate (identity fix + participation overlay + checker v2) for ~Nov 28, review-before-use stays on. Ticket sent to identity-fix lane local_da2a675c: rebuild on ebfdf1cd2, recompute closure (01131f2a stale), gates, reader behaviour, exact push step for TJ.
+- After-check (+100 s): newest Vercel deployment still the ebfdf1cd2 set (15:40:56Z); GitHub status 0, check-runs 0, deployments 0 for d18e2b557. No builds.
+
+## 2026-11-23 00:26Z: Detailed RSO release (TJ pop-up "Push tonight")
+- Candidate 989ee767c (lane local_da2a675c; report in side-session-notes rso-rc-2026-11-22/REPORT.md). Chef re-verified in a clean export: closure 3611475f… recomputed equal; production admission pass; typecheck exit 0; registry+admission 42/42; forgeEnvScope.test fails identically on master ebfdf1cd2 (pre-existing, 4th withForgeEnv caller forge-replay-run).
+- Pushed master ebfdf1cd2..989ee767c at 00:26Z. Rollback: promote dpl_96LYjEUwPL7LZ2tuXXciaUbG6ngm (ebfdf1cd2).
+- octoberBranch synced locally: merge 9773fb82f, tree = 989ee767c. Not pushed.
+- Build: fhfhockey dpl_AtQxwfvRY59rQuKvrPsFppS5mfxJ READY (00:33Z), cms/functions/fhfhockey.com CANCELED. fhfhockey.com alias -> dpl_AtQx (989ee767c). Smoke /api/v1/runs/latest 200 (status ready). Next: Mon 10:05Z natural run now runs on 989ee767c; 11:15Z job 431 checks it.
+
+## 2026-11-23 13:26Z: octoberBranch pushed; Monday acceptance read
+- Preview settings re-read (4 linked, all previewDisabled, prod master). Pushed octoberBranch d18e2b557..9773fb82f at 13:26Z; no-build check in background.
+- Job 431 (11:15Z) = 422 FAIL on one check: pipeline_stages_complete, because of an extra row projection_execution:kill:562de285… (complete). Every other check passed: 11 stages complete, 1 full_slate run 0203c9b0 succeeded (created 10:16Z), all 7 games in writer/Start Chart/Daily RSO, upstream_skater_sources complete 10:05:56 (WGO gate passed, on 989ee767c).
+- Cause: the 10:20Z pipeline call (req …b1b911321117) hit "Task timed out after 240 seconds" at 10:24:27 (2.6 min before its first log after start). The 10:30Z slot recorded the kill receipt, resumed, and the stage completed 10:38. First owner-keyed kill receipt on record. Exec stage took 22 min (Nov 13: 26, Nov 9: 21; others 4–12).
+- Not marked verified. Decision for TJ: accept a designed kill+resume, or stay strict and wait for a clean run.
+- octoberBranch push 9773fb82f: no new Vercel deployment (newest still the 989ee767c set), GitHub status/checks/deployments 0. In sync with origin.
+
+## 2026-11-23 13:40Z: TJ answers (stay strict); Monday readback
+- Cause of the kill: prod DB stall 10:20:12–10:23:09Z (all jobs hung; update-season-stats failed 179 s). The pipeline's withNhlOffSeasonSkip waited it out (unbounded loader, reason "[object Object]"); the 180 s budget starts after it, so Vercel killed at 240 s.
+- Scheduled read-only checks (TJ): job 433 forge-daily-acceptance-20261124 (11:15Z, run 11-24/src 11-23) and 434 -20261125 (run 11-25/src 11-24); each unschedules itself. SQL: tasks/artifacts/wgo-handoff-fix-2026-11-22/release/cron-20261124-25.sql. Job 432 still removes 430/431 on Nov 28.
+- Started lane preflight-timeout-fix (local_8d254c04): local repro + smallest fix, no push.
+- Monday readback: WGO receipt update-all-wgo-skaters 07:31Z sourceDigests[2026-11-22] = {md5 9e2957fa…, rows 180}, equal to wgo_skater_date_digest now. Run 0203c9b0 (git 989ee767c) wrote all 7 games (36/36/36/36/36/36/35 skaters; 35 = team 28 has 17), 2 goalies each, 10:16–10:17Z. Start Chart: selects 0203c9b0, all 7 games. Daily RSO: first read (13:34Z) served no bridge ("Interim FORGE projections could not be read", transient); second read 13:35Z served all 7 games under 0203c9b0. First puck 00:00Z; nothing missing, no recovery needed.
+- Daily RSO miss diagnosis (TJ yes): no runtime log line (route swallows the bridge error in planning.ts catch). Request logs: 13:34:24Z and 13:35:42Z both 200 MISS. loadForgeDailyBridgeForecasts has a fixed readDeadline = min(planning deadline, start + 6000 ms) covering runs → proof → skaters/goalies paging; the passing read took 5.98 s end to end. Inferred cause: required bridge reads overran 6 s → PlanningReadDeadlineError → catch → 200 with no forecasts ("Interim FORGE projections could not be read"). Not proven (error not logged). Fix options for TJ: log error class + branch timings; give required reads a share of the 20 s planning budget; return a retryable signal instead of an empty set.
+- Read-limit fix (lane local_7eb54ac0) 699e90b7d: Chef verified (FF of 989ee767c, closure 3611475f unchanged, admission pass, 4 files 273/273, typecheck 0). TJ "Push now". Pushed 989ee767c..699e90b7d 14:06Z; fhfhockey dpl_3YSPKvYEfcxBBnwMCPawFhvf3ixM READY 14:11Z, 3 cancels; alias -> 699e90b7d. Smoke Daily RSO 11-23: 200 in 8.07 s, bridge serves all 7 games under 0203c9b0. Rollback: dpl_AtQxwfvRY59rQuKvrPsFppS5mfxJ (989ee767c).
+- octoberBranch synced locally 6078d02af (tree = 699e90b7d), not pushed. Preflight lane told to base on 699e90b7d.
+- Preflight-timeout fix (lane local_8d254c04) 9ac6f4bcc: Chef verified (FF of 699e90b7d, closure 23af25d3 recomputed, admission pass, 5 files 192/192, typecheck 0). TJ "Push now". Pushed 14:17Z; fhfhockey dpl_Hbn2jb4XdfnKdiQetqNpzbxJ19NV READY 14:23Z + 3 cancels. Rollback: dpl_3YSPKvYEfcxBBnwMCPawFhvf3ixM (699e90b7d). Tue 10:05Z natural run is the first on closure 23af25d3; job 433 checks it at 11:15Z.
+- octoberBranch pushed 9773fb82f..6f56b16f8 (tree = 9ac6f4bcc) at 14:18Z; 0 deployments, 0 GitHub statuses/checks.
+
+## 2026-11-23 10:55 EST · Full-NHL H1–H10 (Chef)
+- Request: a frozen all-32-team H1–H10 denominator from dated roster, transaction and schedule evidence, reusing the v2 `buildOpportunities`; then a plan for one shadow issuance. Local only.
+- Live: master and alias = 9ac6f4bcc (dpl_Hbn2jb4X READY); octoberBranch = 6f56b16f8.
+- Preserved Astra's audit receipts from /private/tmp/forge-readonly-audit-20261123.KIwY6H to tasks/artifacts/forge-full-nhl-h10-2026-11-23/astra-audit-receipts/: 20 files plus MANIFEST.sha256. The fixture's node_modules symlink and cache were excluded. No private league data.
+- Overlap: rso-superstyle parked FORGE coverage ("skip for now"); its FORGE-COVERAGE-EVIDENCE.md is input. Told it that coverage moved here.
+- Codex Luna lanes own aliases (web/lib/sources); no roster-affiliation owner was found.
+- Staffed forge-h10-denominator (local_c1a61d2b): worktree /private/tmp/forge-h10-denominator-20261123 from 9ac6f4bcc.
+- Daily acceptance stays separate: job 433 Tue 6:15 am EST, then 434, then 430 Fri.
+- 11:0x EST · TJ widened the scope to the full outcome: local producer (skater and goalie if-playing, H1–H10, gaps not zeros, immutable revisions, retry dedupe), hosted nightly and material-update scheduling, the exact hosted shadow packet for approval, then hosted proof plus a signed-in RSO Add/Drop between an owned and an unowned player.
+- Not complete until the hosted rows and the RSO decision both verify. The Daily and pregame feeds and the review gate stay as they are.
+- Sent the scope to forge-h10-denominator. Its worktree already has an uncommitted denominator.ts, tests and a freeze script.
+- Blocker it flags: the real ledger needs full-season games, roster timestamps and an official transactions feed. None of these has been fetched.
+- 12:2x EST · Verified H10 candidate dad247c77 (5 commits on 9ac6f4bcc, worktree /private/tmp/forge-h10-denominator-20261123). Vitest lib/forge-v2: 207 passed, 19 PG-skipped; typecheck exit 0.
+- TJ approved the bounded read. Ran it once read-only (4 s); CSVs in hosted-packet/read-results-20261123/.
+- Findings:
+  - forge_v2_private is NOT applied in prod, so the shadow needs a migration;
+  - zero forge_roster_events since Oct 1;
+  - rosters still show Larkin DET and Dach/Montembeault MTL, with no trade cards for them, so the Larkin trade is unverified;
+  - no WGO ingest clock columns.
+- Sent the lane: goalies in scope, a retention design (about 18 GB/yr), cron cadence, the local real-data dry run, and a corrected packet.
+- 13:0x EST · Verified H10 rev 3 3c93551a3: Vitest lib/forge-v2 211 passed / 25 PG-skipped; typecheck exit 0; closure 23af25d3.
+- Real-data G2 with the NHL API overlay: 804 players / 8,040 keys, identical to Astra's set.
+- TJ approved the goalie read; ran it once: 821 lines, 26 unmapped (teams join).
+- TJ's decisions, relayed to the lane:
+  - D1: FxTwitter in the material path via the existing poller. A tweet triggers an official recheck only; it never moves a player on its own. Availability overlay; Codex owns web/lib/sources.
+  - Q2: monthly partitions by issuance time, plus an archive rehearsal (export, checksum, restore, reconcile, backtest).
+  - Q3: per-dispatch HMAC with a dedicated secret and idempotent retries, no bearer fallback.
+  - The 07:45Z update-players run is still undecided.
+
+## 15:50 EST Mon 11-23 — production PostgREST incident (diagnosed, read-only)
+- The RSO lane reported 503s ("current transaction is aborted"). With TJ's approval: Supabase logs plus one read-only DB session.
+- Site-wide incident, not RSO-specific: statement timeouts 14:57–15:10 EST, then 255 aborted-transaction errors across about 40 tables 15:10–15:17. Postgres fast shutdown/restart at 15:29:58 (initiator unknown); PostgREST back at 15:30. Clean since 15:35.
+- Healthy at 15:45: 22/60 connections, no stuck sessions or locks.
+- Evidence: side-session-notes/…/rso-superstyle-2026-11-23/PROD-READ-FAILURE-CHEF-DIAGNOSIS.md.
+- Open: which statements timed out (not read). PostgREST is 12.0.2.
+
+- Cause found (16:0x EST): see diagnosis file; unbounded player_baselines read from a local dev server.
+- The statements that timed out (8 s limit) were almost all one PostgREST read: `player_baselines?select=player_id,player_name,position_code,snapshot_date,win_l5,win_l10,win_l20,win_season_prev,win_career&snapshot_date=eq.2026-11-22`. That is every player's baselines for a date, with five wide window columns.
+- It ran 24 times between 14:55 and 15:10 EST, taking 14–20 s each (≥11 returned 500). All 24 came from supabase-js-node on a residential Comcast connection: a local Next dev server or script on TJ's Mac, not Vercel.
+- Code: web/lib/sustainability/entitySurfaceServer.ts fetchPlayerBaselinesForSnapshot (lines ~186–201). Its callers need 1 player (entity bands and history) or `limit` players (scores list), but the function fetches the whole date. The same code is on origin/master, so production /trendsSandbox skater views can trigger it too.
+- Chain: repeated 14–20 s reads, then statement timeouts, then PostgREST 12.0.2 pooled connections stuck in aborted transactions, then site-wide 500s from 15:10 to 15:17.
+- Fix proposal: filter by the needed player ids (`.in("player_id", ids)`, index player_id+snapshot_date exists), plus a regression test. Separately, the PostgREST version is a Supabase dashboard setting (TJ).
+
+## 16:3x EST Mon 11-23 — H10 rev 4 verified; TJ decisions
+- Rev 4 c1240356b: vitest forge-v2 228 passed / 41 skipped (no PG); typecheck 0; eslint 0 (34 files); closure 23af25d3.
+- TJ (pop-ups):
+  - read #3 run once (now done: results in lane hosted-packet/read-results-news-20261123, 385 cards, max 774 any-card/72 h);
+  - migrations go with the release;
+  - prepare one combined release (H10 + baselines fix), with named approvals for SHA, push, secret, env and cron;
+  - retention adopted (current + 2 hot, archive from M+3).
+- Baselines fix lane: local_4d8579aa (baselines-read-fix).
+- G2c asked of the H10 lane (500-limit overflow, 109 author-less cards).
+- Next: both commits, then the combined candidate on origin/master, gates, then the approval pop-up.
+
+## 17:1x EST Mon 11-23 — combined candidate prep
+- H10 final 3260cc022: vitest forge-v2 237 passed / 43 skipped; typecheck 0; eslint 0 (36); closure 23af25d3. The official-appearance lift rule is TJ-approved.
+- origin/master = c868bdee3 (RSO release by the RSO lane; TJ restarted the DB at about 20:30Z).
+- `git merge-tree origin/master 3260cc022` is clean (tree 46feb8a19).
+- Baselines fix c261b8052 (octoberBranch): the source applies to master cleanly. The test has 3 conflicts because bc23e04cc is unreleased and must stay out.
+  Asked baselines-read-fix (local_4d8579aa) for master-based blobs, gated in a clean export.
+- Codex mailbox: incident cause + 109 author-less cards provenance item posted.
+- Next: blobs, then commit-tree the candidate on c868bdee3, then gates (vitest, typecheck, eslint, closure/admission, CSS pure), then the TJ release pop-ups.
+- 17:2x: H10 final release SHA 829258397 (adds the route-level lift test and the packet). merge-tree with origin/master is clean (tree ecd269864). Drop the lane diary from the candidate. Waiting on the baselines master blobs.
+
+## 22:4xZ Mon 11-23 — H10 + baselines release (TJ approved steps 1–4 by pop-up)
+- Candidate 7db94da1d on c868bdee3. Tree: merge of H10 829258397 + baselines fix master blobs (src 3b6667e9 = c261b8052 patch on master; test 2755cf74), lane diary dropped.
+  - Gates in a clean export: typecheck 0; eslint 0 (38 files); vitest 3,162 passed, 20 failed (4 BLSH/qualify script files, identical on a clean c868bdee3 export); closure 23af25d3; admission pass.
+- (1) Migrations 20261029235656/20261123200000/20261123210000/20261123220000 applied in one transaction at 22:41Z (exit 0). Readback: 4 ledger rows; 5 parents × 10 months; service_role-only grants; tick not service-executable; everything empty; no jobs.
+- (2) Vault forge_h10_dispatch_secret created (48 chars, generated locally, never printed, local file deleted). Vercel production FORGE_H10_DISPATCH_SECRET, FORGE_H10_SHADOW_ENABLED=true, APPROVAL_ID=tj-2026-11-23-h10-shadow, APPROVED_AT set before the push.
+- (3) Pushed 7db94da1d to master at 22:42Z; build watch running. Rollback dpl_E1UnbKn7Frn4GpN8WoUGV3SvUD9g.
+- Next: READY, smoke (runs/latest + unsigned POST refused), schedule the nightly job only, then watch 09:00Z Tue. Then sync octoberBranch (ours-merge, with TJ).
+- 23:13Z: dpl_DqDt4r9NeKUQsBfAUmwEkPNyb3Zm READY on 7db94da1d, fhfhockey.com aliased; cms and functions not building.
+- Smoke (23:14Z): /api/v1/runs/latest 200 (0.66 s). Unsigned POST /api/v1/db/forge-h10-shadow returned 400 invalid_dispatch. The secret check (503) comes before it, so the secret is loaded.
+- 23:14:36Z: pg_cron job 466 forge-h10-shadow-nightly `*/15 8-12 * * *` active. Readback: only that job (no material job), cron tz default GMT, 0 dispatches, 0 vintages. No manual run.
+- First natural run: Tue 09:00Z (4:00 am EST). One-time read-only task forge-h10-first-night-read fires at 09:50Z with the lane's first-night-verify.sql (being drafted).
+  Report: keys vs freeze per kind and horizon, missing/extra/duplicate, numeric coverage, cutoff, run id, elapsed, load. Daily FORGE (job 433) is NOT evidence for H10.
+- Pending: octoberBranch sync from master 7db94da1d (TJ go + no-build watch).
+- 01:xxZ Tue: H10 lane committed the first-night verify SQL f3695ee76 (read-only check clean; rehearsed 7,320/7,320 skater + 720/720 goalie keys, and the seeded defects were found).
+  The scheduled task now pins that commit and runs from the notes folder.
+  - Section 06 per-reason gap tallies live only in pg_net responses (about 6 h).
+  - EVERY row will show no_uncertainty_available: skater distribution omitted, participation model unavailable, goalie start probability not modelled. All declared, but the original requirement asks for uncertainty, so H10 can't pass on that until it's built. Raised with TJ.
+- TJ: "Yes, add them" + a full uncertainty brief (50%/90% intervals per key, conditional vs participation kept separate, chronological holdout validation vs a baseline, runtime/storage, joint-outcome fantasy band later). Relayed verbatim to the H10 lane. Tonight’s run, the verifier and Daily/RSO stay unchanged.

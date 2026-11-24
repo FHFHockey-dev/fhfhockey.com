@@ -211,3 +211,13 @@ Prepare this now. No production changes, credential rotation, key staging, migra
 Renew 24 hours (Recommended)
 
 (Answer to the lapse pop-up at 05:43Z; ASAP on until ~05:44Z Nov 23. Never authorizes production changes.)
+
+## BLSH E2 follow-up · Nov 22 (answer)
+
+"Check options next time": before E2-2, BLSH Chef brings TJ the options for the Supabase integration's remaining access to `functions-fhfhockey`.
+
+## ASAP rule renewal · Nov 23 04:5xZ (verbatim)
+
+Renew 24 hours (Recommended)
+
+(ASAP on until ~05:44Z Nov 24 / 12:44 am EST. Never authorizes production changes.)

@@ -302,3 +302,43 @@ describe("beat reporters in the authority seed (TJ-reviewed list)", () => {
     for (const relay of RELAY_ACCOUNTS) expect(authorityTier(relay)).toBe("unknown");
   });
 });
+
+describe("native relay quote publication", () => {
+  const carrierId = "2121034003314810881", originalId = "2121033710149521799";
+  const carrierUrl = `https://x.com/GameDayLines/status/${carrierId}`, originalUrl = `https://x.com/InStilettos_NHL/status/${originalId}`;
+  const originalAt = "2026-11-13T00:13:38.000Z", relayAt = "2026-11-13T00:14:47.000Z", seenAt = "2026-11-13T00:16:14.910297Z";
+  const words = "PP1: L. Hughes & J. Hughes", wrapper = "Devils units";
+  function fixture() {
+    return { team: { id: 1 }, primaryTextSource: "quoted_oembed", rawText: `${wrapper} ${originalUrl}`, quotedRawText: words, quotedEnrichedText: words,
+      sourceHandle: "GameDayLines", tweetId: carrierId, tweetPostedAt: originalAt, observedAt: "2026-11-13T00:16:15.000Z",
+      quotedTweetId: originalId, quotedAuthorHandle: "InStilettos_NHL", quotedTweetUrl: originalUrl,
+      metadata: { providerPostUrl: carrierUrl, quotedRetrievalStatus: "fxtwitter_payload", wrapperPostedAt: relayAt, publicationTimeBasis: "provider_timestamp",
+        sourceProvenance: { provider: "fxtwitter", postKind: "quote", originalAuthor: "GameDayLines", originalTweetId: carrierId,
+          quotedTweetId: originalId, quotedAuthor: "InStilettos_NHL", timestampIsOriginal: true } },
+      rawPayload: { provider: "fxtwitter", first_seen_at: seenAt,
+        quote: {id:originalId,url:originalUrl,author_handle:"InStilettos_NHL",text:words,created_at:originalAt},
+        fx: {id:carrierId,url:carrierUrl,author:{screen_name:"GameDayLines"},raw_text:{text:wrapper},created_timestamp:1794528887,
+          quote:{id:originalId,url:originalUrl,author:{screen_name:"InStilettos_NHL"},raw_text:{text:"PP1: L. Hughes &amp; J. Hughes"},created_timestamp:1794528818}}} };
+  }
+  const read = (s: ReturnType<typeof fixture>, text = words) => produceLineEvidence(s as any, {
+    text, teamId:1, originalUrl, provenance:{originalTweetId:originalId,relayTweetId:carrierId}, interpretation:{units:[]}
+  } as any, []).context.publication;
+  it("retains the reporter's provider clock, the separate carrier clock and both source identities", () => {
+    expect(read(fixture())).toMatchObject({originalIdentity:originalId,originalPublishedAt:originalAt,relayPublishedAt:relayAt,
+      originalAuthor:"InStilettos_NHL",evidence:[`fxtwitter:quoted_status:${originalId}`,`fxtwitter:carrier_status:${carrierId}`]});
+  });
+  it("requires agreement across the native statuses, selected text, clocks, author, and first sighting", () => {
+    for (const change of [
+      s=>s.rawPayload.fx.quote.id=carrierId, s=>s.rawPayload.fx.quote.created_timestamp++, s=>s.rawPayload.fx.created_timestamp++,
+      s=>s.rawPayload.quote.created_at=relayAt, s=>s.rawPayload.quote.created_at="2026-11-13T00:13:38.500Z",
+      s=>s.rawPayload.fx.quote.author.screen_name="otherReporter",
+      s=>s.rawPayload.fx.quote.url=carrierUrl, s=>s.quotedTweetUrl=carrierUrl, s=>s.rawPayload.quote.text=wrapper,
+      s=>s.rawPayload.fx.quote.raw_text.text=words.replace("&","&amp;amp;"), s=>s.rawText=wrapper,
+      s=>s.rawPayload.first_seen_at=originalAt, s=>s.observedAt="2026-11-13T00:16:14.910296Z", s=>s.tweetPostedAt=relayAt,
+      s=>s.metadata.quotedRetrievalStatus="oembed_success", s=>s.primaryTextSource="ifttt_text", s=>s.rawPayload.provider="ifttt",
+    ] as Array<(s: ReturnType<typeof fixture>)=>unknown>) {
+      const source=fixture(); change(source); expect(read(source)).toBeUndefined();
+    }
+    expect(read(fixture(), wrapper)).toBeUndefined();
+  });
+});

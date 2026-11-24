@@ -1,5 +1,11 @@
+import { qualifyStoredReturn, reportedLineupExpectation } from "./lineupReturnEvidence";
+import { verifiedGameTimeDecision } from "./reportedGameTimeDecision";
+import { reportedPracticeDepth } from "./reportedPracticeDepth";
+import { hasNonPlayerSubject } from "./playerNameInProse";
+import { readGoalieStartDay, verifiedGoaliePostTime } from "./tweetGoalieStartDate";
 import { isNewsRelayAccount, sanitizePublicNewsText } from "lib/newsFeed";
-import { completeEvenStrengthUnits, type TweetInterpretation, type TweetUnit } from "./tweetInterpretation";
+import { completeEvenStrengthUnits, detectTweetLineContext, fiveForwardWorkHeading, reportedPowerPlayPenalty, type TweetInterpretation, type TweetUnit } from "./tweetInterpretation";
+import { tweetPublicationFromUrl } from "./tweetPublicationTime";
 import { lineReportTimeScope } from "./lineReportTime";
 
 export type ProjectionReport = {
@@ -15,6 +21,9 @@ export type ProjectionReport = {
   interpretedAt?: string;
   originalUrl: string | null;
   verifiedOriginalAuthor?: string;
+  reportedPracticeDepth?: TweetUnit[];
+  reportedLineupExpectations?: Array<{ playerId: number; playerName: string; status: "possible_return" | "expected_in_lineup" }>;
+  reportedInGamePP?: Array<{ number: number; players: TweetUnit["players"] }>;
   reviewReason?: "conflicting_claims";
   text: string;
   interpretation: TweetInterpretation;
@@ -65,6 +74,8 @@ function validUnit(unit: TweetUnit) {
 export function selectProjectedUnitSets(reports: ProjectionReport[]): ProjectedUnitSet[] {
   const sets: ProjectedUnitSet[] = [];
   const usable = reports.filter((report) => report.publishedAt && Number.isFinite(Date.parse(report.publishedAt)) && easternReportDate(report.publishedAt) === report.date);
+  const duringPlay = new Set(usable.filter(report => report.interpretation.lineContext?.phase === "in_game"
+    || reportedPowerPlayPenalty(report.text)).map(report => report.key));
   for (const report of usable) {
     for (const group of new Set(report.interpretation.units.map((unit) => unit.group))) {
       const units = report.interpretation.units.filter((unit) => unit.group === group && validUnit(unit));
@@ -73,13 +84,15 @@ export function selectProjectedUnitSets(reports: ProjectionReport[]): ProjectedU
         sets.push({ key: `${scope(report, group)}:es`, situation: "es", group, units: es, reports: [report], publishedAt: report.publishedAt! });
       }
       for (const situation of ["pp", "pk"] as const) {
-        const own = units.filter((unit) => unit.situation === situation);
+        if (situation === "pp" && duringPlay.has(report.key)) continue;
+        const own = units.filter((unit) => unit.situation === situation && (situation !== "pp" || unit.explicitNumber));
         if (own.length === 2 && own.some((unit) => unit.number === 1) && own.some((unit) => unit.number === 2)) {
           sets.push({ key: `${scope(report, group)}:${situation}`, situation, group, units: own, reports: [report], publishedAt: report.publishedAt! });
           continue;
         }
         if (own.length !== 1 || !own[0]!.explicitNumber || ![1, 2].includes(own[0]!.number ?? 0) || (report.gameId == null && !report.session) || !report.originalPublishedAt) continue;
         const candidates = usable.filter((other) => other.key !== report.key && scope(other, group) === scope(report, group)
+          && (situation !== "pp" || !duringPlay.has(other.key))
           && other.originalPublishedAt && Number.isFinite(Date.parse(other.originalPublishedAt)) && Number.isFinite(Date.parse(report.originalPublishedAt!))
           && easternReportDate(other.originalPublishedAt) === other.date && easternReportDate(report.originalPublishedAt!) === report.date
           && Math.abs(Date.parse(other.originalPublishedAt) - Date.parse(report.originalPublishedAt!)) <= 90 * 60_000);
@@ -115,16 +128,71 @@ export function publicProjectionReport(report: ProjectionReport): ProjectionRepo
   const scope = lineReportTimeScope(report.text);
   const reading = scope?.historical ? scope.select(report.interpretation) : report.interpretation;
   const sourceOnly = scope?.historical && !reading.units.length && !reading.events?.length;
+  const noGame = sourceOnly || (reading.context === "game" && fiveForwardWorkHeading(report.text)
+    && !detectTweetLineContext(report.text).context);
   const originalUrl = verifiedOriginalTweetUrl(report.originalUrl);
   const original = originalUrl?.match(/^https:\/\/x\.com\/([^/]+)\/status\/(\d+)$/);
   const verifiedOriginalAuthor = original && report.provenance?.attributionStatus === "resolved" && report.provenance.originalTweetId === original[2]
     ? original[1] : undefined;
-  return { ...report, gameId: sourceOnly ? null : report.gameId, provenance: undefined, originalUrl, verifiedOriginalAuthor,
+  const postTime = tweetPublicationFromUrl(originalUrl);
+  const reportedInGamePP = verifiedOriginalAuthor && postTime && report.originalPublishedAt && !report.reviewReason
+    && reading.identityContext?.basis === "publication_roster" && reading.identityContext.sourcePublishedAt
+    && Date.parse(reading.identityContext.sourcePublishedAt) === Date.parse(report.originalPublishedAt)
+    && reading.lineContext?.phase === "in_game" && !scope?.historical && reportedPowerPlayPenalty(report.text)
+    && Math.floor(Date.parse(postTime) / 1000) === Math.floor(Date.parse(report.originalPublishedAt) / 1000)
+    ? reading.units.filter(unit => {
+      if (unit.situation !== "pp" || !unit.explicitNumber || ![1, 2].includes(unit.number ?? 0) || !validUnit(unit)
+        || unit.evidence.length !== 5 || reading.units.filter(other => other.situation === "pp" && other.number === unit.number).length !== 1) return false;
+      const first = unit.evidence[0]!.start;
+      const lineStart = report.text.lastIndexOf("\n", first - 1) + 1;
+      const lineEnd = report.text.indexOf("\n", first);
+      const prefix = report.text.slice(lineStart, first).trim();
+      return /^PP\s*([12])\s*(?::|is)$/i.exec(prefix)?.[1] === String(unit.number)
+        && unit.evidence.every((span, i) => span.start >= (i ? unit.evidence[i - 1]!.end : first) && span.end > span.start
+          && (lineEnd < 0 || span.end <= lineEnd) && report.text.slice(span.start, span.end) === span.text);
+    }).map(unit => ({ number: unit.number!, players: unit.players })) : [];
+  const dated = reading.reportedGoalieDates;
+  const validSourceClock = verifiedGoaliePostTime(originalUrl, report.originalPublishedAt);
+  const starts = Array.isArray(dated) && verifiedOriginalAuthor && validSourceClock && !scope?.historical && !report.reviewReason && (reading.context === "game" || reading.context === "unknown")
+    ? dated.filter(start => {
+      if (!Number.isSafeInteger(start?.playerId) || start.playerId <= 0 || typeof start.playerName !== "string"
+        || typeof start.subject?.text !== "string" || !start.evidence || !start.day) return false;
+      if (![start.playerName, start.playerName.split(" ").at(-1)].some(name => name?.toLowerCase() === start.subject.text?.toLowerCase())) return false;
+      const day = readGoalieStartDay(report.text, start.subject, start.evidence, report.originalPublishedAt, report.teamId);
+      return day?.date && day.date === start.day.date && day.relative === start.day.relative && day.timezone === start.day.timezone
+        && day.evidence.start === start.day.evidence?.start && day.evidence.end === start.day.evidence?.end
+        && day.evidence.text === start.day.evidence?.text;
+    }) : [];
+  const undisputed = starts.filter(start => !starts.some(other => other.day.date === start.day.date && other.playerId !== start.playerId));
+  const decisionSource = verifiedOriginalAuthor && !report.reviewReason && !scope?.historical && postTime && report.originalPublishedAt
+    && reading.identityContext?.basis === "publication_roster" && reading.identityContext.sourcePublishedAt
+    && Date.parse(reading.identityContext.sourcePublishedAt) === Date.parse(report.originalPublishedAt)
+    && Math.floor(Date.parse(postTime) / 1000) === Math.floor(Date.parse(report.originalPublishedAt) / 1000)
+    && Date.parse(report.receivedAt) >= Date.parse(report.originalPublishedAt);
+  const events = reading.events?.flatMap(event => qualifyStoredReturn(event, report.text) ?? []);
+  const expectations = decisionSource ? events?.flatMap(event => {
+    const anchor = event.claimAnchor;
+    if (event.teamId !== report.teamId || !anchor || anchor.subjectSpan.text !== event.playerName || event.observation || event.reviewReason
+      || event.modality !== "tentative" || event.availability !== "uncertain" || !event.times?.observation
+      || Date.parse(event.times.observation) !== Date.parse(report.originalPublishedAt!)) return [];
+    const source = reportedLineupExpectation(report.text, anchor.subjectSpan.start, anchor.subjectSpan.end);
+    if (!source || source.subjectSpan.text !== event.playerName
+      || !(event.kind === "participation" && event.state === "projected" && source.status === "expected_in_lineup"
+        || event.kind === "injury" && event.state === "possible_return" && source.status === "possible_return")) return [];
+    return [{ playerId: event.playerId, playerName: event.playerName, status: source.status }];
+  }) : [];
+  const practiceDepth = verifiedOriginalAuthor && report.gameId == null && !report.reviewReason
+    && report.originalPublishedAt && Date.parse(report.receivedAt) >= Date.parse(report.originalPublishedAt)
+    ? reportedPracticeDepth(reading, report.teamId, report.text, originalUrl, report.originalPublishedAt) : [];
+  return { ...report, reportedLineupExpectations: expectations?.length ? expectations : undefined, reportedPracticeDepth: practiceDepth.length ? practiceDepth.map(unit => ({ ...unit, evidence: [] })) : undefined, gameId: noGame ? null : report.gameId, provenance: undefined, originalUrl, verifiedOriginalAuthor,
+    reportedInGamePP: reportedInGamePP.length ? reportedInGamePP : undefined,
     text: report.text.split("\n").map((line) => sanitizePublicNewsText(line)).join("\n"),
-    interpretation: { ...reading, version: report.interpretation.version, context: sourceOnly ? "unknown" : reading.context,
+    interpretation: { ...reading, ...(dated ? { reportedGoalieDates: undisputed } : {}), version: report.interpretation.version, context: noGame ? "unknown" : reading.context,
       rosterRevision: undefined, identityContext: undefined, unresolved: [], relationships: undefined,
-      units: reading.units.map((unit) => ({ ...unit, evidence: [] })),
-      events: reading.events?.map((event) => ({ ...event, evidence: { ...event.evidence, offsetBasis: "unsanitized_source" as const, text: sanitizePublicNewsText(event.evidence.text) } })),
+      units: reading.units.map((unit) => ({ ...unit, number: unit.situation === "pp" && !unit.explicitNumber ? null : unit.number, evidence: [] })),
+      events: events?.filter(event => !hasNonPlayerSubject(event, report.text) && (event.state !== "game_time_decision"
+        || decisionSource && event.teamId === report.teamId && event.times?.observation && report.originalPublishedAt
+          && Date.parse(event.times.observation) === Date.parse(report.originalPublishedAt) && verifiedGameTimeDecision(event, report.text))).map((event) => ({ ...event, evidence: { ...event.evidence, offsetBasis: "unsanitized_source" as const, text: sanitizePublicNewsText(event.evidence.text) } })),
     },
   };
 }

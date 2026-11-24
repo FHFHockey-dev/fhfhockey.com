@@ -100,10 +100,12 @@ export function sourceAttribution(source: ParsedLinesCccSource, text: string): S
   const relayTweetId = found.relayTweetId ?? found.originalTweetId;
   const relayAccount = found.originalAuthor;
   // The relay's own post: the source is the quoted original when there is one, else attribution is pending.
-  if (quotesOriginal) return { originalAuthor: quotedAuthor, relayAccount, originalTweetId: quotedTweetId, relayTweetId, timestampIsOriginal: false,
+  const selectedCarrier = source.rawPayload?.provider === "fxtwitter" && mapped?.postKind === "quote"
+    && source.primaryTextSource != null && source.primaryTextSource !== "quoted_oembed";
+  if (quotesOriginal && !selectedCarrier) return { originalAuthor: quotedAuthor, relayAccount, originalTweetId: quotedTweetId, relayTweetId, timestampIsOriginal: false,
     evidence: [...found.evidence.filter((item) => item !== "direct_post"), "relay_quoted_original"], relayOnly: false, quotesOriginal };
   return { originalAuthor: null, relayAccount, originalTweetId: null, relayTweetId, timestampIsOriginal: false,
-    evidence: [...found.evidence.filter((item) => item !== "direct_post"), "relay_original_unidentified"], relayOnly: true, quotesOriginal: false };
+    evidence: [...found.evidence.filter((item) => item !== "direct_post"), selectedCarrier ? "relay_carrier_text" : "relay_original_unidentified"], relayOnly: true, quotesOriginal: false };
 }
 
 function rawAttribution(source: ParsedLinesCccSource, text: string): RawAttribution {

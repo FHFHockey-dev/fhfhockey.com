@@ -1,3 +1,4 @@
+import { verifiedFxSnapshotUrl } from "./tweetSourceDirectory";
 import { createHash } from "node:crypto";
 import type { ParsedLinesCccSource } from "./linesCccIngestion";
 import { getPrimaryTextForSource, isDisputedRetainedProjectionSubject, toLinesCccRow } from "./linesCccIngestion";
@@ -9,6 +10,8 @@ import { capturePlayerForecastSourceRows, type ForecastLineSourceRow } from "lib
 import { persistTweetClaimSources } from "./tweetClaimRegistry";
 import { isRelayAccount } from "lib/lines/authority";
 import { compareInterpretationVersions, isDatedInterpretationVersion } from "./interpretationVersion";
+import { expectedLineupBulletin, expectedLineupFitsGame } from "./reportedLineupEntry";
+import type { LineGame } from "../lines/types";
 
 export function projectedSetsToForecastRows(sets: ProjectedUnitSet[]): ForecastLineSourceRow[] {
   const groups = new Map<string, ProjectedUnitSet[]>();
@@ -218,7 +221,7 @@ export function projectionReportFromSource(source: ParsedLinesCccSource): Projec
   const usesOriginal = source.primaryTextSource === "quoted_oembed";
   const originalUrl = usesOriginal
     ? verifiedOriginalTweetUrl(source.quotedTweetUrl ?? null, source.quotedAuthorHandle)
-    : verifiedOriginalTweetUrl(source.sourceUrl ?? null);
+    : verifiedFxSnapshotUrl(source) ?? verifiedOriginalTweetUrl(source.sourceUrl ?? null);
   const publishedAt = source.tweetPostedAt && Number.isFinite(Date.parse(source.tweetPostedAt)) ? source.tweetPostedAt : null;
   const date = publishedAt ? easternReportDate(publishedAt) : source.snapshotDate;
   const originalId = originalUrl?.match(/\/status\/(\d+)/)?.[1];
@@ -402,32 +405,54 @@ function currentProjectionReadings(reports: ProjectionReport[], otherVersions: P
     if (!showDisputedSources) return [];
     return [{ ...report, gameId: disputedBinding ? null : report.gameId, ...(factConflicts.has(report.key) ? {reviewReason:"conflicting_claims" as const} : {}),
       interpretation: { ...report.interpretation, context: "unknown" as const,
-      certainty: "reported" as const, units: [], excludedUnits: [], events: [], changes: [], relationships: [], unresolved: [] } }];
+      certainty: "reported" as const, units: [], excludedUnits: [], reportedGoalieDates: undefined, events: [], changes: [], relationships: [], unresolved: [] } }];
   });
 }
 
-export async function fetchTweetProjectionReports(supabase: any, args: { teamId?: number; gameId?: number; date: string; internal?: boolean }): Promise<ProjectionReport[]> {
+export async function fetchTweetProjectionReports(supabase: any, args: { teamId?: number; gameId?: number; date: string; internal?: boolean; snapshotTeamIds?: number[];
+  games?: ReadonlyArray<Pick<LineGame, "id" | "date" | "homeTeamId" | "awayTeamId">> }): Promise<ProjectionReport[]> {
   if (!tweetPipelineFlags().publishing) return [];
+  // The polling snapshot page reads at most one page of team reports and one of
+  // revision headers. An incomplete revision set cannot support a starter label.
+  const snapshotTeams = args.snapshotTeamIds;
+  const teams = snapshotTeams ?? (args.teamId ? [args.teamId] : []);
   const rows = await fetchAllSupabasePages<{ payload: ProjectionReport }>(({ from, to }) => {
     let query = supabase.from("tweet_projection_reports").select("payload").eq("report_date", args.date);
     // A newer interpretation can withdraw a game or move the subject to another team.
     // The exact-key archive used by the publisher keeps its original SQL scope.
-    if (args.teamId) query = query.eq("team_id", args.teamId);
+    if (teams.length === 1) query = query.eq("team_id", teams[0]);
+    else if (teams.length) query = query.in("team_id", teams);
     if (args.internal && args.gameId) query = query.eq("game_id", args.gameId);
     return query.order("report_key", { ascending: true }).range(from, to);
-  });
+  }, snapshotTeams ? { limit: 101 } : undefined);
+  if (snapshotTeams && rows.length > 100) throw new Error("Game goalie report read is incomplete");
   const reports = rows.map(({ payload }) => payload).sort((a, b) => Date.parse(b.interpretedAt ?? b.receivedAt) - Date.parse(a.interpretedAt ?? a.receivedAt)
     || a.key.localeCompare(b.key));
   // Publication must read the requested exact key and its own retained lineage.
   if (args.internal) return reports;
   // Look up version/lineage only for other teams. Their full interpretations stay in storage.
-  const otherVersions = args.teamId && reports.some(report => report.originalUrl || report.provenance?.relayTweetId)
-    ? await fetchAllSupabasePages<ProjectionVersion>(({ from, to }) =>
-        supabase.from("tweet_projection_reports").select("url:payload->>originalUrl,relay:payload->provenance->>relayTweetId,version:interpretation_version")
-          .eq("report_date", args.date).neq("team_id", args.teamId).order("report_key").range(from, to))
+  const otherVersions = teams.length && reports.some(report => report.originalUrl || report.provenance?.relayTweetId)
+    ? await fetchAllSupabasePages<ProjectionVersion>(({ from, to }) => {
+        let query = supabase.from("tweet_projection_reports").select("url:payload->>originalUrl,relay:payload->provenance->>relayTweetId,version:interpretation_version").eq("report_date", args.date);
+        for (const teamId of teams) query = query.neq("team_id", teamId);
+        return query.order("report_key").range(from, to);
+      }, snapshotTeams ? { limit: 501 } : undefined)
     : [];
+  if (snapshotTeams && otherVersions.length > 500) throw new Error("Game goalie report revisions are incomplete");
   const unique = new Map<string, ProjectionReport>();
-  for (const report of currentProjectionReadings(reports, otherVersions, true)) {
+  for (let report of currentProjectionReadings(reports, otherVersions, true)) {
+    const bulletin = report.gameId && expectedLineupBulletin(report.text);
+    if (bulletin) {
+      const game = args.games?.find(item => item.id === report.gameId);
+      const opponent = game?.homeTeamId === report.teamId ? game.awayTeamId : game?.awayTeamId === report.teamId ? game.homeTeamId : null;
+      // Legacy copies predate the schedule check. Keep them available by date when a game cannot be supported.
+      const qualified = game ? opponent && game.date === report.date && expectedLineupFitsGame(bulletin, report.teamId, opponent, game.date)
+        : report.interpretation.events?.some(event => event.kind === "participation" && event.state === "projected"
+          && event.playerName === bulletin.fullName && event.teamId === report.teamId && event.effectiveDate === report.date
+          && event.modality === "tentative" && event.availability === "uncertain" && event.evidence.text === bulletin.evidence.text);
+      if (!qualified) report = { ...report, gameId: null, interpretation: { ...report.interpretation, context: "unknown",
+        events: [], units: [], changes: [], relationships: [] } };
+    }
     if (args.gameId && args.gameId !== report.gameId) continue;
     if (isDisputedRetainedProjectionSubject(report)) continue;
     const side = report.reviewReason === "conflicting_claims" ? report.key : `${report.teamId}:${publicDisplayIdentity(report)}`;

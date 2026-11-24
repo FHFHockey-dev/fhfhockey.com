@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import type { EntryRevision, EntryView, GameLinesResponse, GameTeamLines, LineClaim, LineGame, PPDecision, PPEndReason, SelectedLineUnit } from "lib/lines/types";
+import type { EntryRevision, EntryView, GameGoalieReport, GameLinesResponse, GameTeamLines, LineClaim, LineGame, PPDecision, PPEndReason, SelectedLineUnit } from "lib/lines/types";
 import type { TweetUnit } from "lib/sources/tweetInterpretation";
 import SourceFeed from "./SourceFeed";
 import { ORIGINAL_SOURCE_PENDING, formatTime, gameLabel, originalPostUrl, reviewReasonsCopy, revisionReasonCopy, shortDate, sourceAuthor } from "./reviewReasonCopy";
@@ -274,6 +274,46 @@ function UpdateList({ team, games, selectedGameId }: { team: GameTeamLines; game
   </>;
 }
 
+function GoalieReport({ report }: { report: GameGoalieReport }) {
+  return <article className={styles.card}>
+    <p className={styles.itemTitle}>{report.starter ? `${report.starter.playerName} · reported ${report.starter.status} starter` : "Starter unverified"}</p>
+    <p className={styles.rawText}>{report.text}</p>
+    <p className={styles.muted}>{report.originalUrl
+      ? <a href={report.originalUrl} target="_blank" rel="noreferrer">{report.author ? `@${report.author}` : "Original report"}</a>
+      : "Original source link pending"} · {report.postedAt ? <>Posted <time dateTime={report.postedAt}>{formatTime(report.postedAt)}</time></> : "Original post time unavailable"}
+      {report.receivedAt && <> · Received <time dateTime={report.receivedAt}>{formatTime(report.receivedAt)}</time></>}</p>
+  </article>;
+}
+
+function PregameDecisions({ team }: { team: GameTeamLines }) {
+  const reports = team.gameTimeDecisionReports;
+  if (reports === null) return <p role="status">Pregame availability reports are temporarily unavailable.</p>;
+  if (!reports?.length) return null;
+  return <section aria-label={team.abbreviation + " pregame availability reports"} className={styles.group}>
+    <h3>Pregame availability · {team.abbreviation}</h3>
+    {reports.map(report => <article key={report.originalUrl + report.playerId}>
+      <strong>{report.playerName} · Game-time decision</strong>
+      <p><a href={report.originalUrl} target="_blank" rel="noreferrer">@{report.author}</a> · Posted <time dateTime={report.postedAt}>{formatTime(report.postedAt)}</time>
+        {" · Received "}<time dateTime={report.receivedAt}>{formatTime(report.receivedAt)}</time></p>
+    </article>)}
+  </section>;
+}
+
+function GameGoalies({ team }: { team: GameTeamLines }) {
+  const reports = team.goalieReports;
+  if (reports === undefined) return null;
+  return <section aria-label={`${team.abbreviation} goalie reports`} className={styles.group}>
+    <h3>Goalie reports · {team.abbreviation}</h3>
+    {reports === null ? <p role="status">Goalie reports are temporarily unavailable.</p>
+      : !reports.length ? <p className={styles.muted}>No goalie report for this game yet.</p>
+      : <>{new Set(reports.flatMap(report => report.starter ? [report.starter.playerId] : [])).size > 1 &&
+          <p className={styles.notice}>These reports name different starters. See each report’s source and time.</p>}
+        <GoalieReport report={reports[0]!} />
+        {reports.length > 1 && <details className={styles.history}><summary>Other goalie reports ({reports.length - 1})</summary>
+          {reports.slice(1).map(report => <GoalieReport key={report.key} report={report} />)}</details>}</>}
+  </section>;
+}
+
 type TabKey = "updates" | "feed";
 function Sidebar({ team, games, selectedGameId }: { team: GameTeamLines; games: LineGame[]; selectedGameId: number | null }) {
   const narrow = useNarrow();
@@ -332,7 +372,7 @@ export default function GameLineSnapshots({ data, onGameChange }: { data: GameLi
     {!game && <p role="status" className={styles.stateEmpty}>No live or upcoming game for this team.{data.games.length ? " Earlier games are in the list above." : ""}</p>}
     {game?.phase === "unknown" && <p role="status" className={styles.stateWarn}>We can&apos;t read the game state right now, so the lineup isn&apos;t locked yet.</p>}
     {data.teams.map((team) => <section aria-label={`${team.abbreviation} lines`} key={`${game?.id}:${team.teamId}`} className={styles.layout}>
-      <Entry team={team} games={data.games} entryView={data.entryView} />
+      <div><Entry team={team} games={data.games} entryView={data.entryView} /><PregameDecisions team={team} /><GameGoalies team={team} /></div>
       <Sidebar team={team} games={data.games} selectedGameId={game?.id ?? null} />
     </section>)}
   </section>;

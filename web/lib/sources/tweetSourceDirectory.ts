@@ -1,3 +1,4 @@
+import { tweetPublicationFromUrl } from "./tweetPublicationTime";
 import { isNewsRelayAccount } from "lib/newsFeed";
 import type { ParsedLinesCccSource } from "./linesCccIngestion";
 
@@ -46,8 +47,60 @@ function post(url: string | null | undefined): { account: SourceAccountReference
   } catch { return null; }
 }
 
+type TweetAttributionSource = Pick<ParsedLinesCccSource, "primaryTextSource" | "rawPayload" | "metadata"
+  | "tweetId" | "sourceUrl" | "tweetUrl" | "rawText" | "enrichedText" | "quotedTweetUrl" | "quotedTweetId"
+  | "quotedAuthorHandle" | "sourceHandle" | "tweetPostedAt">;
+
+/** Preserve the provider's original public URL on the primary snapshot when all four witnesses agree. */
+export function verifiedFxSnapshotUrl(source: TweetAttributionSource): string | null {
+  if (source.primaryTextSource !== "ifttt_text" || source.rawPayload?.provider !== "fxtwitter") return null;
+  const provided = typeof source.metadata?.providerPostUrl === "string" ? post(source.metadata.providerPostUrl) : null;
+  const fx = source.rawPayload.fx as { id?: unknown; author?: { screen_name?: unknown }; reposted_by?: { screen_name?: unknown };
+    raw_text?: { text?: unknown }; created_timestamp?: unknown } | undefined;
+  const byline = fx?.author?.screen_name;
+  const text = fx?.raw_text?.text;
+  if (!provided || !fx || typeof byline !== "string" || isNewsRelayAccount(byline)
+    || provided.id !== source.tweetId || fx.id !== provided.id || provided.account.handle !== byline.toLowerCase()
+    || typeof text !== "string" || !text.trim() || /^\s*RT\s+@/i.test(text)) return null;
+  const stored = [source.sourceUrl, source.tweetUrl].filter((value): value is string => Boolean(value));
+  if (!stored.length || !stored.every(value =>
+    /^https:\/\/(?:www\.)?(?:twitter|x)\.com\/i\/web\/status\/(\d+)\/?$/i.exec(value)?.[1] === provided.id
+      || post(value)?.url.toLowerCase() === provided.url.toLowerCase())) return null;
+  const selected = source.enrichedText ?? source.rawText;
+  const wrapper = selected?.match(/^RT @([A-Za-z0-9_]{1,15}):\s*([\s\S]*)$/);
+  if (wrapper && wrapper[1]!.toLowerCase() !== byline.toLowerCase()) return null;
+  const body = wrapper ? wrapper[2] : selected;
+  // x-timeline-poll unescapes the native text once before storing its compatibility wrapper.
+  const deliveryText = text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  if (body !== text && body !== deliveryText) {
+    // The poller appends the linked quote to its compatibility text. Only that
+    // exact suffix can differ from the native status whose byline we credit.
+    const quoted = post(source.quotedTweetUrl);
+    if (!quoted || quoted.id === provided.id || quoted.id !== source.quotedTweetId ||
+      quoted.account.handle !== source.quotedAuthorHandle?.toLowerCase() ||
+      (body !== `${text} ${source.quotedTweetUrl}` && body !== `${deliveryText} ${source.quotedTweetUrl}`)) return null;
+  }
+  const handle = source.sourceHandle?.replace(/^@/, "").toLowerCase();
+  const relay = fx.reposted_by?.screen_name;
+  if (handle !== byline.toLowerCase() && (typeof relay !== "string" || relay.toLowerCase() !== handle || !wrapper)) return null;
+  const clock = typeof fx.created_timestamp === "string" && /^\d+$/.test(fx.created_timestamp)
+    ? Number(fx.created_timestamp) : fx.created_timestamp;
+  if (typeof clock !== "number" || !Number.isSafeInteger(clock)
+    || Math.floor(Date.parse(source.tweetPostedAt ?? "") / 1000) !== clock
+    || Math.floor(Date.parse(tweetPublicationFromUrl(provided.url) ?? "") / 1000) !== clock) return null;
+  if (source.rawPayload.data != null) {
+    const expanded = source.rawPayload.data as { id?: unknown };
+    let attribution: TweetClaimAttribution;
+    try { attribution = tweetClaimAttribution(source); } catch { return null; }
+    if (expanded.id !== provided.id || attribution.originalTweetId !== provided.id
+      || attribution.original?.handle !== provided.account.handle
+      || (attribution.originalPublishedAt != null && Math.floor(Date.parse(attribution.originalPublishedAt) / 1000) !== clock)) return null;
+  }
+  return provided.url;
+}
+
 /** Uses verified post relationships, never the first @mention or a relay byline. */
-export function tweetClaimAttribution(source: ParsedLinesCccSource): TweetClaimAttribution {
+export function tweetClaimAttribution(source: TweetAttributionSource): TweetClaimAttribution {
   const storedUrl = source.tweetUrl ?? source.sourceUrl;
   const provided = typeof source.metadata?.providerPostUrl === "string" ? post(source.metadata.providerPostUrl) : null;
   // Intake normalizes a named provider link to /i/web/status/<id>. Recover the supplied
@@ -67,7 +120,7 @@ export function tweetClaimAttribution(source: ParsedLinesCccSource): TweetClaimA
   let relationship: TweetClaimAttribution["relationship"] = usesQuote ? "quote" : original ? "direct" : "unresolved";
   let originalPublishedAt = original ? source.tweetPostedAt ?? null : null;
   const payload = source.rawPayload as any;
-  if (!usesQuote && payload?.data?.id === source.tweetId) {
+  if (!usesQuote && source.tweetId && payload?.data?.id === source.tweetId) {
     const reference = payload.data.referenced_tweets?.find((entry: any) => entry.type === "retweeted");
     const tweet = payload.includes?.tweets?.find((entry: any) => entry.id === reference?.id);
     const author = payload.includes?.users?.find((entry: any) => entry.id === tweet?.author_id);
@@ -81,7 +134,20 @@ export function tweetClaimAttribution(source: ParsedLinesCccSource): TweetClaimA
       relationship = "retweet";
     } else if (reference) original = null;
   }
-  return { relay: validWrapper?.account ?? null, original: original?.account ?? null, quoted: validQuote?.account ?? null,
+  let relay = validWrapper?.account ?? null;
+  if (!original && !usesQuote && payload?.provider === "fxtwitter" && payload.data == null) {
+    // The poller can retain both the native status and its delivery wrapper without an expanded X API record.
+    const native = post(verifiedFxSnapshotUrl(source));
+    if (native) {
+      const delivery = source.sourceHandle?.replace(/^@/, "").toLowerCase();
+      const repost = delivery && delivery !== native.account.handle && payload.fx?.reposted_by?.screen_name?.toLowerCase() === delivery;
+      original = native;
+      originalPublishedAt = source.tweetPostedAt ?? null;
+      relationship = repost ? "retweet" : "direct";
+      relay = repost ? account(delivery) : null;
+    }
+  }
+  return { relay, original: original?.account ?? null, quoted: validQuote?.account ?? null,
     originalTweetId: original?.id ?? null, originalUrl: original?.url ?? null, status: original ? "resolved" : "pending",
     originalPublishedAt: original ? originalPublishedAt : null,
     relationship: original ? relationship : "unresolved", quoteEndorsement: "not_asserted" };

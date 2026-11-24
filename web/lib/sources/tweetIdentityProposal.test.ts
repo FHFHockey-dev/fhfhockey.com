@@ -4,7 +4,8 @@ import https from "node:https";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { buildTweetIdentityHints, exactIdentitySpan, prepareFixtureIdentityRequest, proposeFixtureTweetIdentities,
+import { identityDigest } from "./playerIdentitySnapshot";
+import { validateFixtureIdentityProposal, buildTweetIdentityHints, exactIdentitySpan, prepareFixtureIdentityRequest, proposeFixtureTweetIdentities,
   type FixtureIdentityMention, type FixtureIdentityRequest, type FixtureIdentityTransport } from "./tweetIdentityProposal";
 import { offlineIdentityIndex, offlineIdentityMention, offlineIdentityRecords, offlineIdentityReply, offlineIdentitySource } from "./fixtures/tweetIdentityOfflineFixture";
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
@@ -121,6 +122,74 @@ describe("default-off fixture identity proposals", () => {
 });
 
 describe("fail-closed source and response binding", () => {
+  describe("DFO bulletins with an explicitly repeated subject", () => {
+    const bulletin = (text = "Sam Vale: Injury: Vale (illness) will not play.") => {
+      const source = { ...offlineIdentitySource(text), authorId: "DFOFantasy", originalPostId: "123",
+        url: "https://x.com/DFOFantasy/status/123" };
+      return { enabled: true, index, source, mentions: [offlineIdentityMention(text, "Sam Vale"),
+        offlineIdentityMention(text, "Vale", "name", "Sam Vale".length)] };
+    };
+    const reply = (header: string | null, subject: string | null): FixtureIdentityTransport => async r =>
+      offlineIdentityReply(r, (_, i) => {
+        const canonicalId = i === 0 ? header : subject;
+        return { status: canonicalId ? "matched" : "ambiguous", canonicalId };
+      });
+    it("accepts the source-named player or an abstention and holds a namesake swap", async () => {
+      const args = bulletin();
+      expect(await proposeFixtureTweetIdentities({ ...args, transport: reply("nhl:1003", "nhl:1003") }))
+        .toMatchObject({ status: "proposed", proposals: [{ canonicalId: "nhl:1003" }, { canonicalId: "nhl:1003" }] });
+      expect(await proposeFixtureTweetIdentities({ ...args, transport: reply("nhl:1003", null) }))
+        .toMatchObject({ status: "proposed", proposals: [{ canonicalId: "nhl:1003" }, { status: "ambiguous" }] });
+      for (const transport of [reply("nhl:1003", "nhl:1002"), reply(null, "nhl:1003")]) {
+        expect(await proposeFixtureTweetIdentities({ ...args, transport })).toMatchObject({ status: "held" });
+      }
+    });
+    it.each([
+      "Sam Vale: Injury: Vale Jr. will practice.",
+      "Sam Vale: Injury: Vale (his brother) will practice.",
+      "Sam Vale: Injury: Vale will practice. Correction follows.",
+      "Sam Vale: Injury: Later, Vale will practice.",
+      "Sam Vale: Quote: Vale will practice.",
+    ])("keeps unsupported wording in review: %s", async text => {
+      expect(await proposeFixtureTweetIdentities({ ...bulletin(text), transport: reply("nhl:1003", "nhl:1003") }))
+        .toMatchObject({ status: "held" });
+    });
+    it("requires the original account and post and an unambiguous full name", async () => {
+      const args = bulletin(), transport = reply("nhl:1003", "nhl:1003");
+      for (const changed of [{ authorId: "other" }, { url: "https://x.com/other/status/123" }, { originalPostId: "124" }]) {
+        expect(await proposeFixtureTweetIdentities({ ...args, source: { ...args.source, ...changed }, transport })).toMatchObject({ status: "held" });
+      }
+      const namesakes = offlineIdentityIndex([...offlineIdentityRecords, {
+        identity: { playerId: 1010, fullName: "Sam Vale", lastName: "Vale" }, verifiedAliases: [], memberships: [],
+      }]);
+      expect(await proposeFixtureTweetIdentities({ ...args, index: namesakes, transport })).toMatchObject({ status: "held" });
+    });
+    it("retains a conflict with explicit membership evidence", async () => {
+      const args = bulletin("Sam Vale: Injury: Vale will play for T11.");
+      args.mentions[1]!.teamHint = { teamId: 11, evidence: offlineIdentityMention(args.source.text, "T11").span };
+      for (const chosen of ["nhl:1002", "nhl:1003"]) {
+        expect(await proposeFixtureTweetIdentities({ ...args, transport: reply("nhl:1003", chosen) })).toMatchObject({ status: "held" });
+      }
+    });
+  });
+  it("keeps a close spelling available for review without accepting it over an exact surname", async () => {
+    const args = {
+      ...fixture("North missed practice.", ["North"]),
+      index: offlineIdentityIndex([...offlineIdentityRecords, {
+        identity: { playerId: 1006, fullName: "Alex Worth", lastName: "Worth" }, verifiedAliases: [], memberships: [],
+      }]),
+    };
+    const wrong = await proposeFixtureTweetIdentities({ ...args, transport: async request => {
+      expect(request.content.occurrences[0]!.candidateSet.candidates.map(c => c.basis)).toEqual(["surname", "fuzzy"]);
+      return select(request, "nhl:1006");
+    } });
+    expect(wrong).toMatchObject({ status: "held", proposals: [] });
+    expect(await proposeFixtureTweetIdentities({ ...args, transport: async request => select(request, "nhl:1001") }))
+      .toMatchObject({ status: "proposed", proposals: [{ canonicalId: "nhl:1001" }] });
+    expect(await proposeFixtureTweetIdentities({ ...args, transport: async request => offlineIdentityReply(request,
+      () => ({ status: "ambiguous", canonicalId: null })) }))
+      .toMatchObject({ status: "proposed", proposals: [{ status: "ambiguous", canonicalId: null }] });
+  });
   it.each(["nhl:91", "registry:91", "nhl:9999", "nhl:1002"])("rejects wrong namespace, registry confusion or another occurrence's ID: %s", async canonicalId => {
     const result = await proposeFixtureTweetIdentities({ ...fixture(), transport: async request => select(request, canonicalId) });
     expect(result).toMatchObject({ status: "held", proposals: [] });
@@ -288,4 +357,25 @@ describe("ambiguity, source interpretation and prompt-injection boundaries", () 
     const bytes = readFileSync(new URL("./decisionsReference/adapter.mjs", import.meta.url));
     expect(createHash("sha256").update(new Uint8Array(bytes)).digest("hex")).toBe("055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1");
   });
+});
+
+it("omits only the bare pronoun in a new request and rejects assigning it in an intact historical request", () => {
+  const text = "Kevin He is skating. He will miss practice.";
+  const roster = offlineIdentityIndex([{ identity: { playerId: 8484864, fullName: "Kevin He", lastName: "He" }, verifiedAliases: [], memberships: [] }]);
+  const mentions = [offlineIdentityMention(text, "Kevin He"), offlineIdentityMention(text, "He", "name", text.indexOf(".") + 1)];
+  const prepared = prepareFixtureIdentityRequest({ enabled: true, source: offlineIdentitySource(text), index: roster, mentions });
+  expect(prepared.status).toBe("prepared");
+  if (prepared.status !== "prepared") throw Error("fixture request held");
+  expect(prepared.request.content.occurrences.map(o => o.span.text)).toEqual(["Kevin He"]);
+  expect(prepareFixtureIdentityRequest({ enabled: true, index: roster, source: offlineIdentitySource(text), mentions: mentions.slice(1) }))
+    .toMatchObject({ status: "held", reason: "no_named_occurrences" });
+  const evaluation = "He checks a lot of boxes for us.";
+  expect(prepareFixtureIdentityRequest({ enabled: true, index: roster, source: offlineIdentitySource(evaluation),
+    mentions: [offlineIdentityMention(evaluation, "He")] })).toMatchObject({ status: "held", reason: "no_named_occurrences" });
+  const first = prepared.request.content.occurrences[0]!;
+  const content = { ...prepared.request.content, occurrences: [first, { ...first, ...mentions[1]! }] };
+  const legacy = { content, hash: identityDigest(content) };
+  expect(() => validateFixtureIdentityProposal(legacy, select(legacy, "nhl:8484864"))).toThrow("identity_prose_is_not_a_subject");
+  const abstained = offlineIdentityReply(legacy, (_, i) => i ? { status: "not_player", canonicalId: null } : { status: "matched", canonicalId: "nhl:8484864" });
+  expect(validateFixtureIdentityProposal(legacy, abstained).occurrences.map(o => o.status)).toEqual(["matched", "not_player"]);
 });

@@ -120,6 +120,21 @@ describe("NewsCard", () => {
     expect(screen.queryByText(/source report/i)).toBeNull();
   });
 
+  it("shows a verified lineup entry once with its opponent and original alongside an unresolved detail", () => {
+    const url = "https://x.com/CanadiensMTL/status/2119117441355714780";
+    const text = "Owen Beck draws back into the lineup";
+    const entry = { playerId: 8483424, playerName: "Owen Beck", evidence: { text, start: 0, end: text.length } };
+    const { container } = render(<NewsCard item={makeItem({
+      team_abbreviation: "MTL", blurb: text, source_label: "CanadiensMTL", source_account: "CanadiensMTL", source_url: url,
+      source_posted_at: "2026-11-07T17:19:03Z", lineup_matchup: { gameId: 2026020268, opponent: "Toronto Maple Leafs" },
+      reported_lineup_entries: [entry], metadata: { interpretation: { version: "retained", unresolved: [{ reason: "invalid_extraction" }], events: [] } },
+    })} />);
+    expect(screen.getAllByText("Owen Beck · Reported in lineup vs. Toronto Maple Leafs")).toHaveLength(1);
+    expect(screen.getByText("Other player details not verified")).toBeTruthy();
+    expect(container.querySelector(`a[href="${url}"]`)).toBeTruthy();
+    expect(container.querySelector("time")?.dateTime).toBe("2026-11-07T17:19:03Z");
+  });
+
   it("renders team and category once while promoting authoritative detail", () => {
     const { container } = render(
       <NewsCard compact rail item={makeItem()} />,
@@ -417,6 +432,52 @@ describe("NewsCard", () => {
     expect(screen.queryByText(UNVERIFIED)).toBeNull();
   });
 
+  it("labels the two Philadelphia goalies by their reported roles", () => {
+    const starter = "Vladar starts in net,";
+    const backup = "Woll backs him up.";
+    const text = `${starter} ${backup}`;
+    const events = [
+      { playerId: 8478435, playerName: "Dan Vladar", goalieRole: "starter", evidence: { start: 0, end: starter.length, text: starter } },
+      { playerId: 8479361, playerName: "Joseph Woll", goalieRole: "backup", evidence: { start: starter.length + 1, end: text.length, text: backup } },
+    ].map(event => ({ ...event, kind: "goalie", state: "confirmed", modality: "affirmative", availability: "unknown" }));
+    render(<NewsCard item={makeItem({ blurb: text, metadata: { interpretation: { version: "retained", events, unresolved: [] } } })} />);
+    expect(screen.getByText("Dan Vladar · Confirmed starter")).toBeTruthy();
+    expect(screen.getByText("Joseph Woll · Confirmed backup")).toBeTruthy();
+    expect(screen.queryByText("Joseph Woll · Confirmed starter")).toBeNull();
+  });
+
+  it.each([
+    ["Alberts Šmits is out 2-3 more months.", "Alberts Šmits is out 2-3 more months.", "“is out 2-3 more months.”"],
+    ["If Alberts Šmits is out tonight, the Rangers will recall someone.", "Alberts Šmits is out tonight", "Source report"],
+    ["Alberts Šmits is out tonight and Thursday.", "Alberts Šmits is out tonight", "Source report"],
+    ["Alberts Šmits was out last week.", "Alberts Šmits was out last week.", "“was out last week.”"],
+  ])("retains the source's qualifications when showing a player's availability: %s", (blurb, text, expected) => {
+    const posted = "2026-11-21T16:03:26Z";
+    const name = "Alberts Šmits";
+    const start = blurb.indexOf(text);
+    const out = blurb.indexOf("out");
+    const event = { playerId: 8485957, playerName: name, teamId: 3, kind: "injury", state: "unknown",
+      modality: "affirmative", availability: "out", times: { observation: posted }, evidence: { start, end: start + text.length, text },
+      claimAnchor: { subjectSpan: { start, end: start + name.length, text: name }, predicateSpan: { start: out, end: out + 3, text: "out" } } };
+    render(<NewsCard item={makeItem({ blurb, source_posted_at: posted, metadata: { interpretation: { version: "retained", events: [event], unresolved: [] } } })} />);
+    expect(screen.getByText(`${name} · ${expected}`)).toBeTruthy();
+  });
+
+  it.each([
+    ["backup", "projected", "tentative", "is the projected backup", "Projected backup"],
+    ["backup", "likely", "tentative", "is the likely backup", "Likely backup"],
+    ["backup", "ruled_out", "negated", "will not dress as the backup", "Goalie status reported"],
+    [undefined, "confirmed", "affirmative", "is the backup", "Goalie status reported"],
+    [undefined, "projected", "tentative", "could dress", "Goalie status reported"],
+    ["starter", "ruled_out", "negated", "will not start", "Not starting"],
+  ])("renders a goalie report with role %s and state %s", (goalieRole, state, modality, wording, expected) => {
+    const text = `Ville Husso ${wording}.`;
+    const event = { playerId: 8478024, playerName: "Ville Husso", kind: "goalie", state, goalieRole,
+      modality, availability: "unknown", evidence: { start: 0, end: text.length, text } };
+    render(<NewsCard item={makeItem({ blurb: text, metadata: { interpretation: { version: "retained", events: [event], unresolved: [] } } })} />);
+    expect(screen.getByText(`Ville Husso · ${expected}`)).toBeTruthy();
+  });
+
 
   it.each(["NYR", "TOR", "ZZZ"])("uses %s's palette for the shared full and mini snapshot grids", (abbreviation) => {
     const item = makeItem({ team_abbreviation: abbreviation, category: "LINE COMBINATION", subcategory: "PRACTICE LINES", team_id: 13,
@@ -459,6 +520,17 @@ describe("NewsCard", () => {
     expect(screen.getByText("Historical Player")).toBeTruthy();
     expect(screen.getByText(/Partial snapshot/)).toBeTruthy();
     expect(screen.queryByText("Unverified")).toBeNull();
+  });
+
+  it("labels a power play from a validated practice snapshot in the headline", () => {
+    const item = makeItem({ category: "LINE COMBINATION", subcategory: "POWER PLAY", team_id: 13,
+      metadata: lineupMeta([["pp", 1, ["A", "B", "C", "D", "E"]]], { context: "practice" }) });
+    const { rerender } = render(<NewsCard item={item} />);
+    expect(screen.getByRole("heading", { name: "FLA practice power play" })).toBeTruthy();
+    rerender(<NewsCard compact rail item={item} />);
+    expect(screen.getByRole("heading", { name: "FLA practice power play" })).toBeTruthy();
+    rerender(<NewsCard item={{ ...item, metadata: {} }} />);
+    expect(screen.getByRole("heading", { name: "FLA power play" })).toBeTruthy();
   });
 
   it("shows all five supplied PP players and preserves source/time metadata", () => {

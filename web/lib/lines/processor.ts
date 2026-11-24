@@ -72,12 +72,12 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
     let playerDirectory: PlayerIdentity[] = [], memberships: EventMembership[] = [], aliases: ApprovedEventAlias[] = [];
     if (ids.length) {
       const [rosters, directory, approved] = await Promise.all([
-        fetchAllSupabasePages<any>(({ from, to }) => supabase.from("rosters").select("playerId,teamId,created_at,ended_at").in("playerId", ids).order("playerId").order("teamId").order("created_at").range(from, to)),
+        fetchAllSupabasePages<any>(({ from, to }) => supabase.from("rosters").select("playerId,teamId,seasonId,created_at,ended_at").in("playerId", ids).order("playerId").order("teamId").order("created_at").range(from, to)),
         fetchAllSupabasePages<any>(({ from, to }) => supabase.from("players").select("id,fullName,lastName,position").in("id", ids).order("id").range(from, to)),
         fetchAllSupabasePages<any>(({ from, to }) => supabase.from("lineup_player_name_aliases").select("alias,player_id,created_at,updated_at").in("player_id", ids).order("player_id").order("alias").range(from, to)),
       ]);
       playerDirectory = directory.map((row) => ({ playerId: row.id, fullName: row.fullName, lastName: row.lastName, position: row.position }));
-      memberships = rosters.map((row) => ({ playerId: row.playerId, teamId: row.teamId, from: row.created_at, until: row.ended_at, evidenceId: `roster:${row.playerId}:${row.teamId}:${row.created_at}:${row.ended_at ?? "open"}` }));
+      memberships = rosters.map((row) => ({ playerId: row.playerId, teamId: row.teamId, seasonId: row.seasonId, from: row.created_at, until: row.ended_at, evidenceId: `roster:${row.playerId}:${row.teamId}:${row.created_at}:${row.ended_at ?? "open"}` }));
       aliases = approved.map((row) => ({ raw: row.alias, playerId: row.player_id, approvedAt: row.created_at, revisedAt: row.updated_at, evidenceId: `approved_alias:${row.player_id}:${row.alias}:${row.created_at}` }));
     }
     const claims: LineClaim[] = [];

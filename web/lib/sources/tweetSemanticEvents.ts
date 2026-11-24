@@ -27,6 +27,7 @@ export type TweetSemanticObservation = Immutable<{
   evidence: { start: number; end: number; text: string };
   scope: TweetSemanticScope | null;
   fact: TweetSemanticFact | null;
+  reportedDay?: import("./tweetGoalieStartDate").GoalieStartDay;
   effectiveAt: string | null;
   modality: "asserted" | "uncertain" | "projected" | "observation";
   /** Supplied by existing identity/completeness/applicability gates, never source reputation. */

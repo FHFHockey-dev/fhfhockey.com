@@ -1,10 +1,15 @@
+import { reportedPracticeDepth } from "./reportedPracticeDepth";
+import type { TweetInterpretation } from "./tweetInterpretation";
+import { readBilingualGameReport } from "./bilingualGameReport";
 import { resolvePlayerIdentity } from "./playerIdentity";
 import { identityMentionPresent, tweetPipelineFlags } from "./tweetInterpretation";
 import { readTweetNewsRosterEvidence, type TweetNewsRosterEvidence } from "./tweetNewsRosterEvidence";
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
+import { hasMixedMedicalMoves, selectClubRosterMoves } from "./reportedClubRosterMoves";
 import {
   buildNewsFeedHeadline,
   getPublicNewsSourceAttribution,
+  newsReportBlurb,
   normalizeNewsCategory,
   normalizeNewsText,
 } from "lib/newsFeed";
@@ -108,6 +113,7 @@ export type TweetNewsAutomationCandidate = {
 
 export function getTweetNewsCandidateSource(
   row: TweetNewsAutomationReviewRow,
+  blurb: string,
 ): {
   sourceUrl: string | null;
   sourceLabel: string | null;
@@ -120,6 +126,7 @@ export function getTweetNewsCandidateSource(
       source_url: row.source_url,
       tweet_url: row.tweet_url,
       metadata: row.metadata,
+      blurb,
     },
     provenance: {
       source_handle: row.source_handle,
@@ -127,6 +134,7 @@ export function getTweetNewsCandidateSource(
       source_url: row.source_url,
       tweet_url: row.tweet_url,
       quoted_tweet_url: row.quoted_tweet_url,
+      quoted_text: row.quoted_text,
       metadata: row.metadata,
     },
   });
@@ -145,6 +153,8 @@ type Evidence = {
 };
 
 type AutomationContext = {
+  moves: ReturnType<typeof selectClubRosterMoves>;
+  mixed: boolean;
   roster: TweetNewsRosterEvidence | null;
   text: string;
   exclusionRuleId: string | null;
@@ -216,8 +226,9 @@ function hasLineupStructure(text: string): boolean {
   );
 }
 
-function matchesExclusion(text: string): string | null {
+function matchesExclusion(text: string, qualifiedNhlMedical: boolean): string | null {
   for (const rule of tweetNewsExclusionRules) {
+    if (qualifiedNhlMedical && rule.id === "non-nhl-leagues") continue;
     const matchText =
       rule.id === "non-nhl-leagues"
         ? text.split(/(?:[.!?](?:\s|$)|\r?\n)/, 1)[0] ?? text
@@ -453,19 +464,19 @@ export function publicClaimInterpretation(
 }
 
 /** The source report's units bound to its team and the snapshot's NHL game; validated again at render. */
-function newsLineupFromReviewRow(row: TweetNewsAutomationReviewRow): NewsLineupSnapshot | null {
+function newsLineupFromReviewRow(row: TweetNewsAutomationReviewRow, roster: TweetNewsRosterEvidence | null,
+  sourceUrl: string | null): NewsLineupSnapshot | null {
   const gameId = row.metadata?.retainedGameId;
-  return buildNewsLineupSnapshot({ interpretation: row.metadata?.retainedInterpretation, teamId: row.team_id,
+  const interpretation = row.metadata?.retainedInterpretation as Partial<TweetInterpretation> | undefined;
+  const snapshot = buildNewsLineupSnapshot({ interpretation, teamId: row.team_id,
     gameId: typeof gameId === "number" ? gameId : null, sourceTweetId: row.tweet_id ?? null });
-}
-
-function buildBlurb(text: string): string {
-  const normalized = normalizeNewsText(text)
-    .replace(/https?:\/\/\S+/gi, "")
-    .trim();
-  return normalized.length > 280
-    ? `${normalized.slice(0, 277)}...`
-    : normalized;
+  if (!snapshot || !interpretation || !sourceUrl || !roster?.publishedAt || gameId != null || row.review_status !== "pending") return snapshot;
+  const depth = reportedPracticeDepth(interpretation, row.team_id, roster.text, sourceUrl, roster.publishedAt, roster.reviewSpans);
+  if (depth.length) {
+    snapshot.interpretation.units = [...interpretation.units!, ...depth];
+    snapshot.binding.sourceTweetId = sourceUrl.match(/\/status(?:es)?\/(\d+)/)?.[1] ?? row.tweet_id;
+  }
+  return snapshot;
 }
 
 function extractCandidatePhrases(text: string): string[] {
@@ -578,8 +589,13 @@ function buildAutomationContext(args: {
   const text = roster?.text ?? getReviewText(args.row);
   if (!text.trim()) return null;
 
-  const exclusionRuleId = matchesExclusion(text);
   const manualAssignments = resolveManualAssignments(args.row, roster);
+  const mixed = hasMixedMedicalMoves(text);
+  const source = mixed ? getTweetNewsCandidateSource(args.row, newsReportBlurb(text)).sourceUrl : null;
+  const moves = mixed && args.row.review_status === "pending" && !manualAssignments.length
+    ? selectClubRosterMoves(roster, args.row.team_id, source, args.row.tweet_id) : [];
+  const placements = moves.filter(m => m.move === "placed_on_ir");
+  const exclusionRuleId = matchesExclusion(text, placements.length > 0);
   const phraseMatches = matchTweetNewsPhrases(text);
   const matchedPlayers = roster?.players ?? resolveMentionedPlayers({
     row: args.row,
@@ -603,7 +619,11 @@ function buildAutomationContext(args: {
     .filter((match) => hasRequiredEvidence(match.requiredEvidence, evidence))
     .flatMap((match) => {
       let players = matchedPlayers;
-      if (admittedPassages && !PLAYER_EVENT_CATEGORIES.has(match.category)) {
+      if (mixed && match.ruleId === "transaction-roster-move") {
+        const recalled = moves.filter(m => m.move === "recalled" && match.phrase === "recalled");
+        players = players.filter(p => recalled.some(m => m.playerId === p.id));
+        if (!players.length) return [];
+      } else if (admittedPassages && !PLAYER_EVENT_CATEGORIES.has(match.category)) {
         const regex = new RegExp(match.regex, "i");
         const passages = admittedPassages.filter(passage => regex.test(normalizeForMatch(passage)));
         if (!passages.length) return [];
@@ -613,6 +633,19 @@ function buildAutomationContext(args: {
       if (roster && PLAYER_EVENT_CATEGORIES.has(match.category) && !assignment.playerIds.length) return [];
       return [assignment];
     });
+  if (placements.length) ruleAssignments.push({
+    id: "auto-club-ir-placement", ruleId: "club-ir-placement", category: "INJURY", subcategory: "INJURY UPDATE",
+    playerIds: placements.map(m => m.playerId), playerNames: placements.map(m => m.playerName),
+    highlightPhrases: placements.map(m => m.subject.text), notes: "The original report places the named player on injured reserve.",
+    requiredEvidence: ["team", "player"], confidence: "auto", autoPublish: true,
+  });
+  for (const move of moves.filter(m => m.move === "reassigned" || m.move === "claimed_off_waivers" || m.move === "activated_off_ir" && !ruleAssignments.some(a =>
+    a.category === "RETURN" && a.playerIds.includes(m.playerId)))) {
+    const ruleId = `club-${move.move}`;
+    ruleAssignments.push({ id: `auto-${ruleId}`, ruleId, category: "TRANSACTION", subcategory: move.move === "claimed_off_waivers" ? "WAIVERS" : "ROSTER MOVE",
+      playerIds: [move.playerId], playerNames: [move.playerName], highlightPhrases: [move.subject.text],
+      notes: move.evidence.text, requiredEvidence: ["team", "player"], confidence: "auto", autoPublish: true });
+  }
 
   return {
     roster,
@@ -623,7 +656,7 @@ function buildAutomationContext(args: {
     matchedPlayers,
     preliminaryLineupCard,
     evidence,
-    ruleAssignments,
+    ruleAssignments, moves, mixed,
   };
 }
 
@@ -659,7 +692,15 @@ export function buildTweetNewsAutomationCandidate(args: {
         metadata: args.row.metadata,
       })
     : null;
+  const paired = !context.manualAssignments.length && readBilingualGameReport(context.text)?.pairs.length;
+  const fullText = normalizeNewsText(context.text).replace(/https?:\/\/\S+/gi, "").trim();
+  const blurb = paired && fullText.length <= 600 ? fullText : newsReportBlurb(context.text);
+  const source = getTweetNewsCandidateSource(args.row, blurb);
+  const claimInterpretation = publicClaimInterpretation(args.row.metadata);
+  const timedAbsence = Array.isArray(claimInterpretation?.events)
+    && claimInterpretation.events.some(event => event?.kind === "injury" && event.timeline?.purpose === "absence" && event.timeline.unit);
   const shouldPublish =
+    (!(timedAbsence || context.mixed) || Boolean(source.sourceUrl) || context.manualAssignments.length > 0) &&
     (!tweetPipelineFlags().interpretation || tweetPipelineFlags().publishing) &&
     (!primaryAssignment.requiredEvidence.includes("player") || primaryAssignment.playerIds.length > 0) &&
     (!primaryAssignment.requiredEvidence.includes("goalie") || primaryAssignment.playerIds.length > 0) &&
@@ -677,27 +718,29 @@ export function buildTweetNewsAutomationCandidate(args: {
             : args.row.team_id,
         }))
       : [];
+  for (const move of context.moves) {
+    if (!playerAssignments.some(p => p.playerId === move.playerId))
+      playerAssignments.push({ playerId: move.playerId, playerName: move.playerName, teamId: move.teamId });
+  }
   const metadata: Record<string, unknown> = {
     ...tweetNewsItemMetadata(args.row),
     automation: {
       source: "tweet_news_phrase_dictionary",
       generatedAt: nowIso,
       primaryRuleId: primaryAssignment.ruleId,
+      ...(context.moves.length || paired ? { rosterReportAssignments: reviewAssignments } : {}),
       phraseMatches: context.phraseMatches,
       evidence: context.evidence,
       autoPublish: shouldPublish,
     },
   };
-  const claimInterpretation = publicClaimInterpretation(args.row.metadata);
   if (claimInterpretation) metadata.interpretation = claimInterpretation;
-  const newsLineup = newsLineupFromReviewRow(args.row);
+  const newsLineup = newsLineupFromReviewRow(args.row, context.roster, source.sourceUrl);
   if (newsLineup) metadata.newsLineup = newsLineup;
 
   if (lineupCard) {
     metadata.lineupCard = lineupCard;
   }
-  const source = getTweetNewsCandidateSource(args.row);
-
   return {
     reviewItemId: args.row.id,
     sourceTweetId: args.row.tweet_id,
@@ -713,7 +756,7 @@ export function buildTweetNewsAutomationCandidate(args: {
       subcategory: primaryAssignment.subcategory,
       teamAbbreviation: args.row.team_abbreviation,
     }),
-    blurb: buildBlurb(context.text),
+    blurb,
     category: primaryAssignment.category,
     subcategory: primaryAssignment.subcategory,
     cardStatus: shouldPublish ? "published" : "draft",
@@ -744,7 +787,8 @@ export function buildTweetNewsAmbiguousCandidate(args: {
       ? "missing_required_evidence"
       : "no_dictionary_match";
   const nowIso = args.nowIso ?? new Date().toISOString();
-  const matchedPlayerAssignments = context.matchedPlayers.map((player) => ({
+  const players = context.mixed ? context.matchedPlayers.filter(p => context.moves.some(m => m.playerId === p.id)) : context.matchedPlayers;
+  const matchedPlayerAssignments = players.map((player) => ({
     playerId: player.id,
     playerName: player.fullName,
     teamId: player.team_id,
@@ -757,7 +801,7 @@ export function buildTweetNewsAmbiguousCandidate(args: {
       source: "tweet_news_phrase_dictionary",
       generatedAt: nowIso,
       ambiguityReason,
-      dictionaryGap: true,
+      dictionaryGap: !context.mixed,
       phraseMatches: context.phraseMatches,
       candidatePhrases: extractCandidatePhrases(context.text),
       missingRequiredEvidence: getMissingRequiredEvidence(
@@ -768,15 +812,16 @@ export function buildTweetNewsAmbiguousCandidate(args: {
       autoPublish: false,
     },
   };
+  const blurb = newsReportBlurb(context.text);
+  const source = getTweetNewsCandidateSource(args.row, blurb);
   const claimInterpretation = publicClaimInterpretation(args.row.metadata);
   if (claimInterpretation) metadata.interpretation = claimInterpretation;
-  const newsLineup = newsLineupFromReviewRow(args.row);
+  const newsLineup = newsLineupFromReviewRow(args.row, context.roster, source.sourceUrl);
   if (newsLineup) metadata.newsLineup = newsLineup;
 
   if (context.preliminaryLineupCard) {
     metadata.lineupCard = context.preliminaryLineupCard;
   }
-  const source = getTweetNewsCandidateSource(args.row);
 
   return {
     reviewItemId: args.row.id,
@@ -791,7 +836,7 @@ export function buildTweetNewsAmbiguousCandidate(args: {
       row: args.row,
       playerNames: matchedPlayerAssignments.map((player) => player.playerName),
     }),
-    blurb: buildBlurb(context.text),
+    blurb,
     category,
     subcategory,
     cardStatus: "draft",

@@ -19,3 +19,13 @@
 - The closure scanner follows `import type`. `planningDataTransport.ts` and `workspaceSchema.ts` are in the closure.
 - `currentPlanningTime()` is `Date.now()` outside a current read, so tests resolving old fixtures need fake timers.
 - RosterScheduleOptimizer.test.tsx mocks `restrictRsoForecast`; the mock now targets `rsoUseResolver`.
+
+## 2026-11-22: release candidate (Chef ticket; TJ "Ship, gate closed")
+- Rebuilt on origin/master `ebfdf1cd2` by cherry-pick, with no conflicts: participation `775c72b40 c2b4c639b fb7252592 e87aef54f`, then identity `339acf34b 24cbe90af`. The old registration was dropped.
+- Closure `3611475f…` (244 modules, 0 findings). Receipt `tasks/artifacts/rso-release-candidate-2026-11-22/24cbe90af….json`. Registered in **candidate `989ee767c`**.
+- Review-before-use stays ON (empty catalog). No push yet.
+- Gates (full-tree export of 989ee767c): admission pass, typecheck exit 0, eslint exit 0, Vitest 96 files 3059 passed / 8 skipped / 1 failed. The failure is `forgeEnvScope`, which fails the same way on master.
+- Gate-closed table: Detailed RSO is labelled but denied on every target. Daily RSO serves the same numbers as master; the bridge applies no participation.
+- Report: side-session-notes/local_091a3ca0…/rso-rc-2026-11-22/REPORT.md. Sent to Chef.
+- **State: waiting on TJ's push approval.** Push step: confirm `ls-remote` still prints ebfdf1cd2, then `git push origin 989ee767c…:refs/heads/master` from the worktree (fast-forward, no force).
+- Gotcha: gates need a full-tree export. `web/` alone lacks `supabase/` (typecheck) and `tasks/` (registry receipts).

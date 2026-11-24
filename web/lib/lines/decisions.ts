@@ -1,5 +1,6 @@
 import type { ParsedLinesCccSource } from "lib/sources/linesCccIngestion";
 import type { ProjectionReport } from "lib/sources/projectedLineups";
+import { verifiedFxRelayQuoteClocks } from "lib/sources/fxtwitterQueuePayload";
 import { detectTweetLineContext, type EvidenceSpan, type TweetContextSignal, type TweetLineContextReading, type TweetUnit } from "lib/sources/tweetInterpretation";
 import { teamsInfo } from "lib/teamsInfo";
 import { NHL_TEAM_TIMEZONES_BY_ID } from "lib/xg/travelFatigue";
@@ -97,10 +98,14 @@ export function produceLineEvidence(source: ParsedLinesCccSource, report: Projec
   const posted = source.tweetPostedAt && /(?:Z|[+-]\d{2}:\d{2})$/i.test(source.tweetPostedAt) ? source.tweetPostedAt : null;
   // A relay's own post (no identified original) is still dated by its own provider clock; the claim keeps no author.
   const relayHandle = attribution.relayOnly ? report.originalUrl?.match(/^https:\/\/(?:x|twitter)\.com\/([^/]+)\//)?.[1] ?? null : null;
-  const publication = trusted && posted && originalIdentity && (attribution.timestampIsOriginal && attribution.originalAuthor || relayHandle && isRelayAccount(relayHandle))
+  const quote = verifiedFxRelayQuoteClocks(source, text);
+  const selectedQuote = quote && trusted && posted && Date.parse(quote.originalPublishedAt) === Date.parse(posted)
+    && originalIdentity === quote.originalIdentity && attribution.originalAuthor === quote.originalAuthor.toLowerCase()
+    && attribution.quotesOriginal && attribution.relayTweetId === source.tweetId ? quote : undefined;
+  const publication = selectedQuote ?? (trusted && posted && originalIdentity && (attribution.timestampIsOriginal && attribution.originalAuthor || relayHandle && isRelayAccount(relayHandle))
     ? { originalPublishedAt: posted, relayPublishedAt: attribution.relayOnly ? posted : null, originalIdentity, originalAuthor: attribution.originalAuthor ?? relayHandle!,
       evidence: [`publication_basis:${source.metadata?.publicationTimeBasis}`, ...attribution.evidence, ...(attribution.relayOnly ? ["relay_own_post_clock"] : [])] }
-    : undefined;
+    : undefined);
   // Unattributed relay posts and FHFHockey's own (non-quoting) posts never confirm anything.
   const mayConfirm = !attribution.relayOnly && !(NO_CONFIRMATION_AUTHORS.includes(attribution.originalAuthor ?? "") && !attribution.quotesOriginal);
   const weight = attribution.relayOnly ? RELAY_ONLY_WEIGHT : authorityWeight(tier);

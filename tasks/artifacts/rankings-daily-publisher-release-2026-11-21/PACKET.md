@@ -1,5 +1,10 @@
 # Release approval packet: Rankings daily publisher · Nov 21 2026, rebuilt Nov 22
 
+> **Superseded Nov 22, 08:22 CST.** TJ merged `#464` (`c2c46ceae`, squash of `octoberBranch`), which put the whole publisher, the guard tests and the BLSH fix on master. Candidate `558ea2fb4` is obsolete; the migrations below are live.
+>
+> The production build of `c2c46ceae` (`dpl_FNseXHEz54ztvhSNKMu6imRf4Kbx`) **failed FORGE build admission**: master's closure `7ee3612e…` is unregistered. Production still serves `480bd5d71`. Master can't deploy until a registration for its final closure lands; FORGE Chef's WGO release, built on `c2c46ceae`, is the planned carrier.
+
+
 **Rebuilt Nov 22 08:10 CST** after master moved to `480bd5d71` (FORGE acceptance route, Nov 21 records, auth-page styling). None of those files overlap the candidate. The publisher patch is identical (same patch-id), the FORGE closures are unchanged on both sides, and the registration was re-verified against the new commit. Every gate below was re-run on the rebuilt candidate.
 
 **Candidate `558ea2fb4b8efc86b249179bbdb192fd242be809`**, three commits on production master `480bd5d710ce316e4cf5570eb32784e764910b7f`. It is local only, under `refs/candidates/rankings-daily-publisher`.
@@ -104,6 +109,23 @@ One `list_migrations` metadata call and three SELECTs, run in sequence with `sta
   - Nov 19: 784 players; 4 of 4 (17:52:01.746 ≤ 17:53:44.258 UTC).
 - **First-run blocker, now observed.** 0 of 432 (Nov 19) and 0 of 73 (Nov 21) 5v5 rolling rows share a stamp with their support row. The largest gaps are 0.77 s and 39.1 s.
 - **Out of lane, flagged.** Nov 21 has only 73 5v5 rolling rows, written 08:15–08:18 UTC, against a 14-game slate (roughly 500 expected). Nov 21's rolling data looks incomplete as of 14:16 UTC.
+
+## Migrations applied Nov 22 (TJ approved "Apply migrations now")
+
+| UTC | Version | Result |
+|---|---|---|
+| 14:19:19 | `20261118151903_rankings_publication_readiness` | Applied in one transaction (`statement_timeout` 60 s, `lock_timeout` 5 s); sha256 `a553fbd6…` checked before applying. |
+| 14:19:50 | `20261118160000_rankings_daily_dispatch` | Same; sha256 `f64cc60f…`. |
+
+- **How it ran.** The files came from candidate `558ea2fb4`, applied with `psql \i` through the session pooler `aws-0-us-east-1.pooler.supabase.com:5432`. The direct host is IPv6-only and didn't resolve on this network.
+- **History rows.** Each is recorded under its exact version with the whole file as one `statements` entry. The stored text lacks the file's final newline (md5 `a2fb0b14…` and `aac615bb…`), because `$(cat …)` strips it. The executed SQL was the exact file.
+- **Readback, all as expected.**
+  - `latest_ranking_publication_cutoff(20262027)` = **2026-11-19**.
+  - The ledger is empty, has RLS on, and gives `service_role` select, insert and update but no delete.
+  - `ranking_dispatch_existing_5v5_rows` is valid.
+  - `anon` and `authenticated` have no execute on any new function; `service_role` can claim.
+  - 0 non-complete markers; 0 lock waiters.
+- **Effect on the live app.** `480bd5d71` never references these objects, so serving is unchanged. Rollout steps 1–3 below are done.
 
 ## Rollout order (each step needs its own approval)
 
