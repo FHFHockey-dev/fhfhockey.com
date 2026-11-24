@@ -1182,6 +1182,35 @@ describe("/api/v1/forge/players", () => {
       expect(projectionRunIds).toEqual([]);
     });
 
+    it("keeps a proven skater run with no rows on its scheduled date (H6)", async () => {
+      const date = "2026-11-16";
+      const projectionRunIds = install({
+        runs: [
+          { run_id: "today", as_of_date: date },
+          { run_id: "yesterday", as_of_date: "2026-11-15" },
+          { run_id: "tomorrow", as_of_date: "2026-11-17" },
+        ],
+        projections: [skater("yesterday", 2026020200, 1), skater("tomorrow", 2026020400, 2)],
+        gamesOnDate: 6,
+        gamesAfterDate: 40,
+      });
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date } } as any, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({
+        runId: "today", asOfDate: date, requestedDate: date, fallbackApplied: false,
+        reason: "proven_run_has_no_rows", data: [],
+        serving: { resolvedDate: date, strategy: "requested_date" },
+        scanSummary: { status: "empty", blockingIssueCount: 1 },
+        diagnostics: { state: "empty", reason: "proven_run_has_no_rows", scheduledGames: 6,
+          runProof: { runId: "today", basis: "captured_snapshot" } },
+      });
+      expect(requireLatestSucceededRunIdMock.mock.calls).toEqual([["proven", date, 1]]);
+      expect(fromMock.mock.calls.filter(([table]) => table === "forge_runs")).toHaveLength(1);
+      expect(projectionRunIds).toEqual(["today"]);
+    });
+
     it("serves an exact-date proven run's rows", async () => {
       install({ runs: [{ run_id: "today", as_of_date: "2026-11-16" }, { run_id: "yesterday", as_of_date: "2026-11-15" }],
         projections: [skater("today", 2026020200, 1), skater("yesterday", 2026020100, 2)], gamesOnDate: 1 });

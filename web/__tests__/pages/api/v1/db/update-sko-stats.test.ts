@@ -354,6 +354,10 @@ describe("/api/v1/db/update-sko-stats helpers", () => {
     // Game 1: an assist on a goal scored after he changed off (on-ice GF 0).
     const window = [game(1, 0, 0, 0), game(1, 2, 1, 0), game(0, 1, 0, 0)];
     expect(pooled(window)).toEqual({ ipp: 50, reason: null });
+    expect(pooled([game(1, 1, 0, 0), game(1, 1, 0, 0)])).toEqual({
+      ipp: 100,
+      reason: null,
+    });
     expect(pooled([game(1, 0, 0, 0)])).toEqual({
       ipp: null,
       reason: "single_game_window",
