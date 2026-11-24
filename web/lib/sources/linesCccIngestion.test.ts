@@ -2508,3 +2508,67 @@ it("keeps a confirmed goalie start out of identity review only for its exact dat
     vi.unstubAllEnvs();
   }
 });
+
+it("clears only the native DFO occurrence review while retaining the original medical interpretation", () => {
+  vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+  const at = "2026-11-20T17:15:20.000Z", id = "2123827547238789494";
+  const native = "Albert Johansson: Injury: Johansson (undisclosed) will return vs. the Islanders on Saturday. https://t.co/6FkRj6ewug";
+  const teams = buildTeamDirectory([
+    { id: 17, abbreviation: "DET", name: "Detroit Red Wings", logo: "" },
+    { id: 2, abbreviation: "NYI", name: "New York Islanders", logo: "" },
+  ]);
+  const players = [
+    { playerId: 8481607, fullName: "Albert Johansson", lastName: "Johansson", teamId: 17, position: "D" },
+    { playerId: 8483679, fullName: "Anton Johansson", lastName: "Johansson", teamId: 17, position: "D" },
+  ];
+  const linked = "https://x.com/DFOFantasy/status/" + id;
+  function run(text: string, options: { authored?: boolean; clock?: number; quote?: boolean; enriched?: string; differentEmbedId?: boolean; roster?: typeof players } = {}) {
+    const roster = options.roster ?? players;
+    const rosterByTeam = new Map([[17, roster]]);
+    const context = { teams, snapshotDate: "2026-11-20", rosterByTeam, inferenceRosterByTeam: rosterByTeam, inferencePublishedAt: at };
+    const fx = { id, created_timestamp: options.clock ?? 1795194920, raw_text: { text }, author: { screen_name: "DFOFantasy" },
+      ...(options.quote ? { quote: { id: "1234" } } : {}) };
+    let source = buildLinesCccSourceFromIftttEvent({ ...context, event: { id, source: "fxtwitter", source_account: "DFOFantasy",
+      username: "DFOFantasy", text, tweet_id: id, link_to_tweet: linked, tweet_created_at: at, created_at_label: null,
+      received_at: "2026-11-20T17:16:07Z", raw_payload: options.authored === false ? {} : { provider: "fxtwitter", fx } } });
+    if (options.enriched) {
+      source = applyLinesCccWrapperOEmbed({ source, oembedData: { text: options.enriched, postedAt: at, postedLabel: null,
+        sourceTweetUrl: options.differentEmbedId ? linked + "1" : linked, authorHandle: "DFOFantasy", authorName: null } });
+      source = refreshLinesCccSourceFromPrimaryText({ ...context, source });
+    }
+    const row = toLinesCccRow({ source, rosterEntries: roster });
+    return { review: collectUnresolvedNamesFromLineRows([row]), events: (row.metadata?.interpretation as TweetInterpretation).events,
+      witness: row.metadata?.resolvedDfoHeadingOccurrence, rosterEvidence: row.metadata?.intakeRosterEvidence, gameId: row.game_id, context, source };
+  }
+  try {
+    const unauthenticated = run(native, { authored: false });
+    for (const output of [run(native), run(native, { enriched: native.replace("https://t.co/", "pic.twitter.com/") })]) {
+      expect(output.review).toHaveLength(0);
+      expect(output.witness).toEqual({ sourceId: id, publishedAt: at, playerId: 8481607, teamId: 17, role: "es_defense",
+        headingSpan: { start: 0, end: 16, text: "Albert Johansson" }, bodySpan: { start: 26, end: 35, text: "Johansson" } });
+      expect(output.events).toEqual(unauthenticated.events);
+      expect(output.events).toMatchObject([{ playerId: 8481607, kind: "injury", state: "unknown",
+        availability: "unknown", evidence: { start: 0, end: 25, text: "Albert Johansson: Injury:" } }]);
+      expect(output.gameId).toBeNull();
+      expect(output.rosterEvidence).toMatchObject({ reviewSpans: [{ start: 26, end: 35 }] });
+      const current = refreshLinesCccSourceFromPrimaryText({ ...output.context, source: output.source });
+      expect(current.metadata?.resolvedDfoHeadingOccurrence).toEqual(output.witness);
+      const stale = refreshLinesCccSourceFromPrimaryText({ ...output.context, source: { ...current, enrichedText: "", rawText: "" } });
+      expect(stale.metadata?.resolvedDfoHeadingOccurrence).toBeUndefined();
+    }
+    for (const output of [
+      run(native, { authored: false }), run(native, { clock: 1795194921 }), run(native, { quote: true }),
+      run(native.replace("on Saturday.", "on Saturday and Johansson will not.")),
+      run(native.replace("on Saturday.", "on Saturday. Correction: it was Anton Johansson.")),
+      run(native, { enriched: native.replace("6FkRj6ewug", "unverified") }),
+      run(native, { enriched: native, differentEmbedId: true }),
+      run(native, { roster: [players[0]!, { ...players[1]!, fullName: "Albert Johansson" }] }),
+    ]) {
+      expect(output.review.some(review => review.raw_name === "Johansson")).toBe(true);
+      expect(output.witness).toBeUndefined();
+      expect(output.events?.some(event => event.evidence.start === 26 && event.state === "confirmed_return")).toBeFalsy();
+    }
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});
