@@ -11,7 +11,9 @@ import { contentHash } from "./hash.server";
 import { PostgresHistoryStore, SqlConnection } from "./history.server";
 import { DET, H10_SEASON, LARKIN, DACH, MONTEMBEAULT, MTL, syntheticLeague, syntheticTrade } from "./h10Fixtures";
 import { h10QueueId, h10Scopes, H10_BOUNDS, readbackH10, runH10Issuance, H10RunInput } from "./h10Producer.server";
-import { capturePreparedLedger } from "./pipeline.server";
+import { capturePreparedLedger, preparedLedgerRecords } from "./pipeline.server";
+import { H10Ledger, H10_BATCH_ROWS } from "./h10Batch.server";
+import { targetKey } from "./identity";
 import { createRefreshState, enqueueRefresh, planScheduledRefresh } from "./refresh";
 import { advanceLock, observeHorizonEpisodes } from "./schedule";
 
@@ -219,7 +221,7 @@ describe.runIf(Boolean(bin))("FORGE H1–H10 nightly batched issuance matches th
     started = true;
     admin = new Pool({ host: socket, port: 65465, user: "forge_v2_fixture", database: "postgres", max: 2 });
     await admin.query("create role anon; create role authenticated; create role service_role login");
-    for (const name of ["batched", "scalar"]) {
+    for (const name of ["batched", "scalar", "late_batched", "late_scalar", "injected"]) {
       await admin.query(`create database ${name}`);
       const owner = new Pool({ host: socket, port: 65465, user: "forge_v2_fixture", database: name, max: 1 });
       await owner.query(await readFile(migration, "utf8"));
@@ -261,4 +263,57 @@ describe.runIf(Boolean(bin))("FORGE H1–H10 nightly batched issuance matches th
     // The batched runner needs a small fraction of the scalar statements for the same night.
     expect(statements[0] * 5).toBeLessThan(statements[1]);
   }, 600000);
+
+  const issue = (pool: Pool, extra: Partial<H10RunInput> = {}) => runH10Issuance({ db: pool as unknown as SqlConnection, store: new PostgresHistoryStore(pool as unknown as SqlConnection),
+    artifacts: { put: async () => { throw new Error("no_artifact_writes_expected"); } }, denominator, schedule: league.schedule, logs: league.logs, clock: () => new Date().toISOString(), trigger: "daily",
+    config: { evidenceClass: "fixture", approvalEvidenceId: "fixture-h10-parity", approvedAt: iso(T - 60 * MIN), codeVersion: "local-test", maximumTrainingExamples: 1500 }, ...extra });
+
+  // Chef review 1: a queue whose jobs are all terminal but not published (here enqueued after every lock) is still
+  // claimed, so its missing_refresh events are recorded exactly as the scalar runner records them.
+  it("records the lock-passed events of a late call, as the scalar runner does", async () => {
+    const late = () => new Date(T + 30 * 86400000).toISOString();
+    const reports = [await issue(pools[2], { clock: late }), await issue(pools[3], { clock: late, scalarQueue: true })];
+    expect(reports[0].jobs).toEqual({ expired: 1380 });
+    expect(reports[0]).toEqual(reports[1]);
+    const events = async (pool: Pool) => (await pool.query("select id, scope_key, payload from forge_v2_private.forge_v2_records where kind = 'history_event' order by id")).rows;
+    const [batched, scalar] = [await events(pools[2]), await events(pools[3])];
+    expect(batched).toHaveLength(1380);
+    expect(batched.every(row => JSON.parse(row.payload).reason === "missing_refresh:lock_passed")).toBe(true);
+    expect(batched).toEqual(scalar);
+  }, 600000);
+
+  // Chef review 2: one record whose ledger write always fails (a missing predecessor, say) fails only its own key; the
+  // statement that carried it is retried one record at a time, and its 20-odd queue peers publish.
+  it("fails only the key whose ledger record cannot be written; its batch peers publish", async () => {
+    const { scopes } = h10Scopes(denominator, new Map(league.schedule.map(game => [game.gameId, game])));
+    const target = scopes.find(scope => scope.horizon === 3)!, targetScope = targetKey(target), queueId = h10QueueId(target.teamId, target.horizon);
+    let refused = 0;
+    const injected = { query: (text: string, values?: unknown[]) => {
+      if (/insert into forge_v2_private\.forge_v2_records/.test(text) && Array.isArray(values?.[1])) {
+        const kinds = values![1] as string[], scopeKeys = values![2] as string[];
+        if (kinds.some((kind, i) => kind === "opportunity" && scopeKeys[i] === targetScope)) { refused += 1; return Promise.reject(new Error("injected_FORGE_V2_PREDECESSOR_MISSING")); }
+      }
+      return pools[4].query(text, values);
+    } } as unknown as SqlConnection;
+    const report = await runH10Issuance({ db: injected, store: new PostgresHistoryStore(injected), artifacts: { put: async () => { throw new Error("no_artifact_writes_expected"); } },
+      denominator, schedule: league.schedule, logs: league.logs, clock: () => new Date().toISOString(), trigger: "daily",
+      config: { evidenceClass: "fixture", approvalEvidenceId: "fixture-h10-parity", approvedAt: iso(T - 60 * MIN), codeVersion: "local-test", maximumTrainingExamples: 1500 } });
+    expect(refused).toBe(2); // the batch statement, then the record on its own
+    expect(report.jobs).toEqual({ published: 1379, pending: 1 });
+    const jobs = (await pools[4].query("select state from forge_v2_private.forge_v2_work_queue where id = $1", [queueId])).rows[0].state.jobs as Array<{ scope: { playerId: number }; status: string; attempts: number; reason: string | null }>;
+    const bad = jobs.filter(job => job.scope.playerId === target.playerId), peers = jobs.filter(job => job.scope.playerId !== target.playerId);
+    expect(bad).toEqual([expect.objectContaining({ status: "pending", attempts: 1, reason: "failed:injected_FORGE_V2_PREDECESSOR_MISSING" })]);
+    expect(peers.length).toBeGreaterThan(15);
+    expect(peers.every(job => job.status === "published")).toBe(true);
+    expect((await pools[4].query("select count(*)::int n from forge_v2_private.forge_v2_vintages where player_id = $1 and game_id = $2", [target.playerId, target.gameId])).rows[0].n).toBe(0);
+  }, 600000);
+
+  // Chef review nit: a ledger pass past its budget still writes its first chunk, so every call makes progress.
+  it("writes the first ledger chunk even past the budget, then stops", async () => {
+    const { scopes } = h10Scopes(denominator, new Map(league.schedule.map(game => [game.gameId, game])));
+    const records = preparedLedgerRecords({ opportunities: scopes.slice(0, 30).map(scope => ({ value: { ...scope, observedAt: iso(T - MIN) }, predecessor: null })), episodes: [], locks: [], events: [] });
+    const result = await new H10Ledger(pools[4] as unknown as SqlConnection).capture(records, Date.now() - 1);
+    expect(result).toEqual({ errors: new Map(), stopped: true });
+    expect((await pools[4].query("select count(*)::int n from forge_v2_private.forge_v2_records where id = any($1::text[])", [records.map(r => r.id)])).rows[0].n).toBe(H10_BATCH_ROWS);
+  }, 60000);
 });

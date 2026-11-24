@@ -77,7 +77,8 @@ export async function runH10GoalieIssuance(input: H10GoalieRunInput) {
       try { await store.publish(vintage); return null; }
       catch (error) {
         if (attempt >= delays.length) return `publish_failed:${(error instanceof Error ? error.message : "unknown").slice(0, 60)}`;
-        if (!events && input.stopAfterMs !== undefined && Date.now() + delays[attempt] > input.stopAfterMs) return DEADLINE;
+        // The first key of a call always finishes its retries, so every call makes progress.
+        if (!events && processed > 1 && input.stopAfterMs !== undefined && Date.now() + delays[attempt] > input.stopAfterMs) return DEADLINE;
         await new Promise(resolve => setTimeout(resolve, delays[attempt]));
       }
     }

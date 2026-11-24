@@ -196,14 +196,17 @@ export async function runH10Issuance(input: H10RunInput): Promise<H10RunReport> 
     const savedRevision = changed ? await store.saveQueue(queueId, current?.revision ?? 0, next) : current!.revision;
     // Prepared inputs for every open job whose scope is in this denominator.
     const byKey = new Map(queueScopes.map(scope => [targetKey(scope), scope]));
-    // Nightly: a queue whose every job is terminal has nothing to claim, prepare or acknowledge.
-    if (daily && next.jobs.every(job => terminal(job.status))) {
+    // Nightly: a queue whose every job published has nothing to claim, prepare, record or acknowledge. A failed or
+    // expired job (including one enqueued after its lock) still goes through the claim, which records its
+    // missing_refresh event exactly as the scalar runner does.
+    if (daily && next.jobs.every(job => job.status === "published")) {
       for (const job of next.jobs) report.jobs[job.status] = (report.jobs[job.status] ?? 0) + 1;
       report.queues.finished += 1;
-      if (next.jobs.every(job => job.status === "published")) report.queues.complete += 1;
+      report.queues.complete += 1;
       continue;
     }
-    const predecessors = await latestVintages(db, queueScopes);
+    const open = !daily || next.jobs.some(job => !terminal(job.status));
+    const predecessors = open ? await latestVintages(db, queueScopes) : new Map<string, string>();
     const prepared = new Map<string, PreparedIssuance>();
     for (const job of next.jobs) {
       if (terminal(job.status) || !byKey.has(targetKey(job.scope))) continue;

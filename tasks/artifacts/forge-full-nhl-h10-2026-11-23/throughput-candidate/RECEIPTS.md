@@ -43,19 +43,20 @@ The fixture is the saved 11-23 packet (real reads, 32 official rosters) with `--
 | Run | Calls to complete | Call times (s) | Statements per call | Peak statements/s | Peak in flight | Published | Forecast sha256 |
 |---|---:|---|---|---:|---:|---:|---|
 | Current code (648730faa), no latency, unpaced | 2 | 200.5, 108.8 | not metered | not metered | not metered | 8,040 | `6495509c…4890` |
-| **Candidate, 10 ms per statement, 30/s** | **3** | **200.2, 200.3, 165.0 (565.5 total)** | 3,493 / 4,460 / 4,614 | **29** | **1** | **8,040** | `6495509c…4890` (same) |
+| **Candidate with review fixes, 10 ms per statement, 30/s** | **3** | **200.6, 200.1, 165.5 (566.2 total)** | 3,480 / 4,416 / 4,630 | **29** | **1** | **8,040** | `6495509c…4890` (same) |
 
 - The 4th tick answered from the completion marker in 13 ms.
 - Verifier (`first-night-verify.sql` on that DB): every class and H1–H10 has 0 missing, 0 extra, 0 duplicate and 0 unpublished. The missing, extra and duplicate CSVs are empty.
 - The forecast digest covers class, player, game, team, horizon, model, cutoff and means. It equals the current code's digest.
-- THROUGHPUT-ANALYSIS measured 3.65 skaters/s for the scalar path at 10 ms. The candidate's first call issued 4,700 skaters (23.5/s) while paced at 30 statements/s.
-- Goalies stay scalar. The third call re-walks the 379 goalies already issued (about 5 statements each) before issuing the remaining 341. That is the row 4/9 tail; it was not needed to reach 4 calls.
+- The first candidate commit (a01439f44) gave the same result: 200.2 + 200.3 + 165.0 s, the same digest, verifier zeros.
+- THROUGHPUT-ANALYSIS measured 3.65 skaters/s for the scalar path at 10 ms. The fixed candidate's first call issued 4,675 skaters (23.3/s) while paced at 30 statements/s.
+- Goalies stay scalar. The third call re-walks the 371 goalies already issued (about 5 statements each) before issuing the remaining 349. That is the row 4/9 tail; it was not needed to reach 4 calls.
 
 Files: `baseline-current-code-no-latency.json`, `candidate-10ms-30ps.json`, `candidate-verify-05-reconcile.txt`.
 
 ## Tests (proof steps 3 and 4)
 
-`LC_ALL=en_US.UTF-8 FORGE_V2_POSTGRES_BIN=… npm test -- --fileParallelism=false lib/forge-v2 __tests__/pages/api/v1/db/forge-h10-shadow.test.ts` → **28 files, 299 tests passed** (`suites.txt`). Typecheck 0; eslint 0 on every changed file.
+`LC_ALL=en_US.UTF-8 FORGE_V2_POSTGRES_BIN=… npm test -- --fileParallelism=false lib/forge-v2 __tests__/pages/api/v1/db/forge-h10-shadow.test.ts` → **28 files, 302 tests passed** (`suites.txt`). Typecheck 0; eslint 0 on every changed file.
 
 Without `LC_ALL`, the disposable Postgres refuses to start ("postmaster became multithreaded"). That is an environment issue, not a test failure.
 
@@ -68,6 +69,21 @@ New tests:
 
   The batched run uses fewer than one fifth of the scalar statements.
 - **`h10Route.test.ts`: "nightly batches after lost responses".** A committed statement's response is dropped after (A) a multi-key vintage insert, (C) a multi-key receipt insert and the acknowledgement CAS, each on a different queue. The night completes with 1,380 vintages, 1,380 keys, 1,380 sequences and 1,380 receipts. Every affected key keeps its original id, sequence and output hash, plus the original receipt time after C and after the CAS. Only the lost CAS fails its call.
+
+Chef review fixes (second commit), each with a test in `h10Producer.test.ts`:
+
+- **Late call: terminal queues are still claimed.**
+  - The nightly skip now applies only to queues whose jobs all published.
+  - A queue with failed or expired jobs goes through the claim. That includes jobs enqueued after their lock.
+  - The claim records the `missing_refresh` events, as the scalar runner does.
+  - Test "records the lock-passed events of a late call": 1,380 expired jobs. The reports and the history-event records are identical to the scalar runner's.
+- **One bad key fails alone.**
+  - When the ledger chunk, the draft read or the sequence block throws, the statement is retried one record or key at a time.
+  - Only the key whose own retry fails is failed.
+  - Test "fails only the key whose ledger record cannot be written": one opportunity record always refused. The batch statement and that single record are each refused once. Result: 1,379 published, and only that key pending a retry; its 20-plus queue peers published.
+- **Nits.**
+  - The ledger writes its first chunk even past the budget. Test "writes the first ledger chunk even past the budget": 25 of 30 records written, then stopped.
+  - The first goalie key of a call always finishes its retries. No dedicated test.
 
 Changed existing assertions, both in `h10Route.test.ts`:
 

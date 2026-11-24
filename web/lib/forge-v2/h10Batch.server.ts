@@ -59,7 +59,9 @@ export class H10Ledger {
   /** Stored rows read from the database (chain heads): durable tuples. */
   seed(rows: readonly StoredTuple[]) { for (const row of rows) this.verified.set(row.id, tupleOf(row)); }
   /** Errors by record id (absent: verified). Records keep their order, so a predecessor is in the same or an earlier
-   * statement. `stopAfterMs` is checked before each write; the ids not attempted come back as `stopped`. */
+   * statement. A statement that throws is retried one record at a time, in order, so only a bad record fails.
+   * `stopAfterMs` is checked before each write after the first (every call makes progress); the records not attempted
+   * come back as `stopped`. */
   async capture(records: readonly LedgerRecord[], stopAfterMs?: number): Promise<{ errors: Map<string, string>; stopped: boolean }> {
     const errors = new Map<string, string>(), pending: LedgerRecord[] = [], wanted = new Map<string, string>();
     for (const record of records) {
@@ -68,10 +70,7 @@ export class H10Ledger {
       if (wanted.has(record.id) || this.verified.get(record.id) === tuple) continue;
       wanted.set(record.id, tuple); pending.push(record);
     }
-    for (let i = 0; i < pending.length; i += H10_BATCH_ROWS) {
-      if (stopAfterMs !== undefined && Date.now() > stopAfterMs) return { errors, stopped: true };
-      const chunk = pending.slice(i, i + H10_BATCH_ROWS);
-      try {
+    const write = async (chunk: LedgerRecord[]) => {
         await this.db.query(`insert into ${RECORDS} (id,kind,scope_key,predecessor_id,payload)
           select id,kind,scope_key,predecessor_id,payload from unnest($1::text[],$2::text[],$3::text[],$4::text[],$5::text[]) with ordinality as t(id,kind,scope_key,predecessor_id,payload,ord)
           order by ord on conflict do nothing`,
@@ -82,7 +81,17 @@ export class H10Ledger {
           if (stored.get(record.id) === wanted.get(record.id)) this.verified.set(record.id, wanted.get(record.id)!);
           else errors.set(record.id, "Immutable record identity conflict");
         }
-      } catch (error) { for (const record of chunk) errors.set(record.id, message(error, "ledger_capture_failed")); }
+    };
+    for (let i = 0; i < pending.length; i += H10_BATCH_ROWS) {
+      if (i > 0 && stopAfterMs !== undefined && Date.now() > stopAfterMs) return { errors, stopped: true };
+      const chunk = pending.slice(i, i + H10_BATCH_ROWS);
+      try { await write(chunk); }
+      catch (error) {
+        if (chunk.length === 1) { errors.set(chunk[0].id, message(error, "ledger_capture_failed")); continue; }
+        for (const record of chunk) {
+          try { await write([record]); } catch (single) { errors.set(record.id, message(single, "ledger_capture_failed")); }
+        }
+      }
     }
     return { errors, stopped: false };
   }
@@ -184,8 +193,18 @@ export async function runH10QueueBatch(input: H10BatchInput): Promise<H10BatchRe
   for (const w of work) try { validPlan(w.job); } catch (error) { fail(w, message(error, "prepared_issuance_failed")); }
 
   // Stored drafts: a retried job republishes its original draft, never re-issues.
-  try {
-    const drafts = await readDrafts(db, unresolved().map(w => w.job.issuanceKey));
+  // A read that throws is retried one key at a time, so only a key whose own read fails is failed.
+  const draftKeys = unresolved().map(w => w.job.issuanceKey);
+  let drafts: Map<string, Vintage | Error>;
+  try { drafts = await readDrafts(db, draftKeys); }
+  catch {
+    drafts = new Map();
+    for (const key of draftKeys) {
+      try { for (const [k, v] of await readDrafts(db, [key])) drafts.set(k, v); }
+      catch (error) { drafts.set(key, error instanceof Error ? error : new Error("prepared_issuance_failed")); }
+    }
+  }
+  {
     for (const w of unresolved()) {
       const existing = drafts.get(w.job.issuanceKey);
       if (existing instanceof Error) fail(w, existing.message);
@@ -195,7 +214,7 @@ export async function runH10QueueBatch(input: H10BatchInput): Promise<H10BatchRe
         else { w.draft = existing; w.reused = true; }
       }
     }
-  } catch (error) { for (const w of unresolved()) fail(w, message(error, "prepared_issuance_failed")); }
+  }
 
   // Ledger observations, per job and in the scalar order: the opportunity first (it survives missing or invalid inputs),
   // then, for valid inputs, the episode and lock. A job whose observation is not verified fails with that reason.
@@ -240,7 +259,13 @@ export async function runH10QueueBatch(input: H10BatchInput): Promise<H10BatchRe
       const { rows } = await db.query<{ sequence: string }>("select nextval('forge_v2_private.forge_v2_issuance_sequence')::text as sequence from generate_series(1,$1::int)", [predicted.length]);
       sequences = rows.map(row => Number(row.sequence)).sort((a, b) => a - b);
       if (sequences.length !== predicted.length || sequences.some(s => !Number.isSafeInteger(s) || s < 1)) throw new Error("Issuance sequence exhausted");
-    } catch (error) { for (const { w } of predicted) fail(w, message(error, "prepared_issuance_failed")); }
+    } catch {
+      // One value per key, in claim order (the scalar reservation), so only a key whose own reservation fails is failed.
+      sequences = [];
+      for (const [index, { w }] of predicted.entries()) {
+        try { sequences[index] = await store.reserveSequence(); } catch (error) { fail(w, message(error, "prepared_issuance_failed")); }
+      }
+    }
     predicted.forEach(({ w, means, limitations }, index) => {
       if (w.result) return;
       const prepared = w.issuance!, plan = w.job, scope = plan.scope, generatedAt = input.clock();
