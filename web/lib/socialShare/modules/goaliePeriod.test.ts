@@ -82,6 +82,23 @@ describe("goalie of the period", () => {
     expect(custom.data!.period).toMatchObject({ through: "2026-10-20", label: "2026-10-19 to 2026-10-23" });
     expect(custom.pageNotes).toHaveLength(1);
   });
+  it("keeps a later TGV week off a season card cut back to the last complete night", () => {
+    const result = buildGoaliePeriod({
+      ...base, settings: { ...settings, period: "season" }, period: seasonPeriod(weeks, "2026-10-30"),
+      scheduled: [...scheduled, { id: 3, date: "2026-10-26", homeTeamId: NJD, awayTeamId: NYR, final: false }],
+      tgv: {
+        weeks,
+        goalies: [...tgv.goalies, { ...tgv.goalies[0], week: 5 }],
+        league: [...tgv.league, { ...tgv.league[0], week: 5 }],
+      },
+    });
+    expect(result.state).toBe("ready");
+    expect(result.data!.period.through).toBe("2026-10-22");
+    expect(result.data!.period.weeks.map(week => week.week)).toEqual([4]);
+    const goalie = result.data!.rows.find(row => row.goalieId === 1)!;
+    expect(goalie.tgv.series).toEqual([{ week: 4, selected: true, ranking: "Elite", points: 20 }]);
+    expect(goalie.tgv.points).toBe(20);
+  });
   it("still blocks an older gap, and is missing when no night is reported", () => {
     const older = buildGoaliePeriod({ ...base, reported: reported.filter(game => !(game.gameId === 1 && game.team === "NYR")) });
     expect(older.state).toBe("partial");

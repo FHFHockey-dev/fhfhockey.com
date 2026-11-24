@@ -176,7 +176,12 @@ export function buildGoaliePeriod(input: GoaliePeriodInput): SharePostLoadResult
   const cut = completeThrough(scheduleNights(input.scheduled, input.reported), input.period.through);
   if (!cut.trimmed.length) return buildPeriodResult(input);
   if (!cut.through) return { ...buildPeriodResult(input), state: "missing", reasons: [`No night in ${input.period.label} is fully reported yet.`], data: null };
-  const result = buildPeriodResult({ ...input, period: periodThrough(input.period, cut.through), appearances: datedThrough(input.appearances, cut.through), reported: datedThrough(input.reported, cut.through), scheduled: datedThrough(input.scheduled, cut.through) });
+  const through = cut.through;
+  const tgv = input.tgv && { ...input.tgv, weeks: input.tgv.weeks.filter(week => week.start <= through) };
+  const result = buildPeriodResult({
+    ...input, period: periodThrough(input.period, through), appearances: datedThrough(input.appearances, through),
+    reported: datedThrough(input.reported, through), scheduled: datedThrough(input.scheduled, through), tgv,
+  });
   return { ...result, pageNotes: [completeThroughNote(cut)!] };
 }
 function buildPeriodResult(input: GoaliePeriodInput): SharePostLoadResult<GoaliePeriodData> {
