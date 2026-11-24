@@ -114,7 +114,7 @@ function intervalPhase(input: H10RouteInput, value: Frozen, built: Awaited<Retur
     seasonId: input.config.seasonId, maximumTrainingExamples: input.config.maximumTrainingExamples, clock: () => new Date().toISOString(), stopAfterMs: input.now + input.config.budgetMs });
 }
 const summary = (report: Awaited<ReturnType<typeof runH10Issuance>>) => ({ denominatorSha256: report.denominatorSha256, asOf: report.asOf, trigger: report.trigger, scopes: report.scopes, goalieKeys: report.goalieKeys,
-  gaps: report.gaps.reduce((map, gap) => ({ ...map, [gap.reason]: (map[gap.reason] ?? 0) + 1 }), {} as Record<string, number>), jobs: report.jobs, queues: report.queues, training: report.training, complete: report.complete });
+  gaps: report.gaps.reduce((map, gap) => ({ ...map, [gap.reason]: (map[gap.reason] ?? 0) + 1 }), {} as Record<string, number>), jobs: report.jobs, queues: report.queues, training: report.training, finished: report.finished, complete: report.complete });
 
 /** Refuse to freeze a short or broken read: it would close every open episode and cache "complete" for the night. */
 export function h10DenominatorGuard(denominator: FrozenDenominator, previous: FrozenDenominator | null, minimumPlayers: number, expectedTeams = 32, seasonEndsSoon = false): string | null {
@@ -151,6 +151,9 @@ export async function handleH10Shadow(input: H10RouteInput): Promise<{ status: n
     if (input.now < instant(todayCutoff)) return { status: 200, body: { success: true, status: "skipped", reason: "before_nightly_cutoff", cutoff: todayCutoff } };
     const done = await input.db.query<{ payload: string }>(`select payload from ${RECORDS} where kind = 'affiliation' and scope_key = $1 limit 1`, [`forge-h10-nightly-complete:${date}`]);
     if (done.rows[0]) return { status: 200, body: { success: true, status: "complete", cached: true, ...JSON.parse(done.rows[0].payload) } };
+    // A finished night with failed or expired skater jobs is final but never complete; later ticks report it as is.
+    const short = await input.db.query<{ payload: string }>(`select payload from ${RECORDS} where kind = 'affiliation' and scope_key = $1 limit 1`, [`forge-h10-nightly-incomplete:${date}`]);
+    if (short.rows[0]) return { status: 200, body: { success: false, status: "incomplete", cached: true, ...JSON.parse(short.rows[0].payload) } };
     const yesterday = await frozen(input.db, `forge-h10-nightly:${previousDate}`), yesterdayMaterial = await frozen(input.db, `forge-h10-material:${previousDate}`);
     let value = await frozen(input.db, nightlyScope);
     // The cutoff is the freeze time: everything read then was received by then (source clocks are last-observed stamps).
@@ -194,13 +197,19 @@ export async function handleH10Shadow(input: H10RouteInput): Promise<{ status: n
     if (contentHash([current.logs, current.goalieLogs]) !== value.logsHash) return { status: 409, body: { success: false, status: "failed", reason: "logs_changed_after_freeze", denominatorSha256: value.denominator.denominatorSha256 } };
     const report = await issue(input, value, current.logs, "daily", [...keysOf(yesterday?.denominator), ...keysOf(yesterdayMaterial?.denominator)]);
     if (report.refused) return { status: 409, body: { success: false, status: "failed", reason: report.refused, training: report.training } };
-    const goalies = report.complete ? await goaliePhase(input, value, current, "daily") : null;
-    const intervals = report.complete && goalies?.complete === true ? await intervalPhase(input, value, current, date, value.denominator.asOf!) : null;
-    const complete = report.complete && goalies?.complete === true && intervals?.complete === true;
-    const intervalSummary = intervals?.skipped ? { skipped: intervals.skipped } : complete ? await intervalCoverage(input.db, value.denominator) : null;
-    if (complete) await new PostgresHistoryStore(input.db).appendRecord(`forge-h10-nightly-complete:${date}:${report.denominatorSha256}`, "affiliation",
-      `forge-h10-nightly-complete:${date}`, { denominatorSha256: report.denominatorSha256, asOf: report.asOf, jobs: report.jobs, goalies: goalies ? { published: goalies.published, reused: goalies.reused, gaps: goalies.gaps.length } : null,
-        ...(intervalSummary ? { intervals: { calibrationId: intervals?.calibrationId ?? null, ...intervalSummary } } : {}) });
+    // Goalies and intervals run once every skater queue has finished, whether or not every skater job published.
+    const goalies = report.finished ? await goaliePhase(input, value, current, "daily") : null;
+    const intervals = report.finished && goalies?.complete === true ? await intervalPhase(input, value, current, date, value.denominator.asOf!) : null;
+    const finished = report.finished && goalies?.complete === true && intervals?.complete === true, complete = finished && report.complete;
+    const intervalSummary = intervals?.skipped ? { skipped: intervals.skipped } : finished ? await intervalCoverage(input.db, value.denominator) : null;
+    const marker = { denominatorSha256: report.denominatorSha256, asOf: report.asOf, jobs: report.jobs, goalies: goalies ? { published: goalies.published, reused: goalies.reused, gaps: goalies.gaps.length } : null,
+      ...(intervalSummary ? { intervals: { calibrationId: intervals?.calibrationId ?? null, ...intervalSummary } } : {}) };
+    if (complete) await new PostgresHistoryStore(input.db).appendRecord(`forge-h10-nightly-complete:${date}:${report.denominatorSha256}`, "affiliation", `forge-h10-nightly-complete:${date}`, marker);
+    else if (finished) {
+      await new PostgresHistoryStore(input.db).appendRecord(`forge-h10-nightly-incomplete:${date}:${report.denominatorSha256}`, "affiliation", `forge-h10-nightly-incomplete:${date}`,
+        { ...marker, reason: "skater_jobs_failed_or_expired" });
+      return { status: 200, body: { success: false, status: "incomplete", reason: "skater_jobs_failed_or_expired", ...summary(report), goalies, intervals } };
+    }
     return { status: 200, body: { success: true, status: complete ? "complete" : "continued", ...summary(report), goalies, intervals,
       ...(official ? { official: { clubs: official.rosters.length, complete: official.complete, failures: official.failures, newMoves: official.newMoves.map(m => ({ playerId: m.playerId, from: m.fromTeamId, to: m.toTeamId })) } } : {}) } };
   }
@@ -285,9 +294,9 @@ export async function handleH10Shadow(input: H10RouteInput): Promise<{ status: n
   }
   const built = await inputs(input, asOf, true, moves);
   const report = await issue(input, value, built.logs, { material: events }, [...keysOf(nightly.denominator), ...keysOf(previous?.denominator)], evidence);
-  const goalies = report.complete ? await goaliePhase(input, value, built, { material: events }, evidence) : null;
-  const intervals = report.complete && goalies?.complete === true ? await intervalPhase(input, value, built, date, nightly.denominator.asOf!) : null;
-  const complete = report.complete && goalies?.complete === true && intervals?.complete === true;
-  return { status: 200, body: { success: true, status: complete ? "complete" : "continued", moved: moved.length, availability: rosterEvents.length, ...summary(report), goalies, intervals,
-    ...newsBody, ...(complete ? await overlay(value.denominator) : {}) } };
+  const goalies = report.finished ? await goaliePhase(input, value, built, { material: events }, evidence) : null;
+  const intervals = report.finished && goalies?.complete === true ? await intervalPhase(input, value, built, date, nightly.denominator.asOf!) : null;
+  const finished = report.finished && goalies?.complete === true && intervals?.complete === true, complete = finished && report.complete;
+  return { status: 200, body: { success: complete || !finished, status: complete ? "complete" : finished ? "incomplete" : "continued", moved: moved.length, availability: rosterEvents.length, ...summary(report), goalies, intervals,
+    ...newsBody, ...(finished ? await overlay(value.denominator) : {}) } };
 }

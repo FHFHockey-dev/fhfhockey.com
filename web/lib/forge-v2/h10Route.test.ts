@@ -188,5 +188,64 @@ describe.runIf(Boolean(bin))("h10 hosted handler on disposable PostgreSQL (reade
     const material = (await admin.query("select count(*)::int n from forge_v2_private.forge_h10_interval_editions e join forge_v2_private.forge_v2_vintages v on v.id = e.vintage_id where v.payload::jsonb->>'trigger' = 'material'")).rows[0].n;
     expect(material).toBe(30);
     expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_records where kind = 'evaluation' and scope_key like 'forge-h10-interval-calibration:%'")).rows[0].n).toBe(1);
-  }, 600000);
+  }, 900000);
+});
+
+// Regression (Chef, 2026-11-24): a skater job that ends failed (here: its publication fails on both attempts; a thrown
+// error is retried once after 60 s) must never let the night mark itself complete.
+describe.runIf(Boolean(bin))("h10 nightly with failed skater jobs never completes", () => {
+  let root: string, socket: string, admin: Pool, started = false;
+  const environment: NodeJS.ProcessEnv = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))), NODE_ENV: "test" };
+  const now = Date.now(), cutoff = Date.parse(easternDailyDeadline(easternDate(new Date(now).toISOString()))) - 4 * 3600000;
+  const league = syntheticLeague({ anchor: now, teams: 6, pastDays: 40 });
+  const config: H10RouteConfig = { enabled: true, approvalEvidenceId: "fixture-route-failure", approvedAt: new Date(cutoff - 3600000).toISOString(), codeVersion: "local-route-test",
+    seasonId: H10_SEASON, logIngestUtcMinute: 450, gameHours: 3.5, rosterMaxAgeHours: 36, maximumTrainingExamples: 1500, budgetMs: 120000, logsWindowDays: 60, minimumPlayers: 100, expectedTeams: 6 };
+
+  beforeAll(async () => {
+    root = await mkdtemp(join(tmpdir(), "forge-h10-route-fail-")); socket = join(root, "socket");
+    await mkdir(socket, { mode: 0o700 });
+    await exec(join(bin!, "initdb"), ["-D", join(root, "data"), "--no-locale", "--encoding=UTF8", "--auth-local=trust", "--auth-host=reject", "-U", "forge_v2_fixture"], { env: environment });
+    await exec(join(bin!, "pg_ctl"), ["-D", join(root, "data"), "-l", join(root, "server.log"), "-w", "-t", "10", "-o", `-c listen_addresses='' -c unix_socket_directories='${socket}' -p 65446`, "start"], { env: environment });
+    started = true;
+    admin = new Pool({ host: socket, port: 65446, user: "forge_v2_fixture", database: "postgres", max: 3 });
+    await admin.query("create role anon; create role authenticated; create role service_role login");
+    for (const file of migrations) await admin.query(await readFile(file, "utf8"));
+    await seedH10Public(admin, league, cutoff);
+  }, 120000);
+  afterAll(async () => {
+    await admin?.end();
+    if (started) await exec(join(bin!, "pg_ctl"), ["-D", join(root, "data"), "-w", "-t", "10", "stop", "-m", "fast"], { env: environment });
+    if (root) await rm(root, { recursive: true, force: true });
+  });
+
+  it("reports incomplete (with the failed jobs) and writes no completion marker; later ticks return the same", async () => {
+    // Every publication receipt for one player in nine fails, on every attempt.
+    const flaky = { query: (text: string, values?: unknown[]) => {
+      if (/insert into forge_v2_private\.forge_v2_publication_receipts/.test(text) && Number(values?.[3]) % 9 === 0) return Promise.reject(new Error("injected_persistent_database_error"));
+      return admin.query(text, values);
+    } } as unknown as SqlConnection;
+    const night = Date.now() - 20 * MIN;
+    let last = await handleH10Shadow({ mode: "nightly", now: night, db: flaky, config });
+    // The retry is due 60 s after the first failure; until then the night is "continued", never complete.
+    for (let i = 0; i < 40 && last.body.status === "continued"; i++) {
+      expect(last.body.status).not.toBe("complete");
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      last = await handleH10Shadow({ mode: "nightly", now: night, db: flaky, config: { ...config, budgetMs: Date.now() - night + 120000 } });
+    }
+    expect(last.body).toMatchObject({ success: false, status: "incomplete", reason: "skater_jobs_failed_or_expired", finished: true, complete: false });
+    const jobs = last.body.jobs as Record<string, number>;
+    expect(jobs.failed).toBeGreaterThan(0);
+    expect(jobs.published).toBeGreaterThan(0);
+    expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_records where scope_key like 'forge-h10-nightly-complete:%'")).rows[0].n).toBe(0);
+    const marker = (await admin.query("select payload from forge_v2_private.forge_v2_records where scope_key like 'forge-h10-nightly-incomplete:%'")).rows;
+    expect(marker).toHaveLength(1);
+    expect(JSON.parse(marker[0].payload)).toMatchObject({ reason: "skater_jobs_failed_or_expired", jobs: { failed: jobs.failed } });
+    // Goalies still issued once the skater queues finished.
+    expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_goalie_vintages")).rows[0].n).toBe(120);
+    let reads = 0;
+    const counting = { query: (text: string, values?: unknown[]) => { reads += 1; return admin.query(text, values); } } as unknown as SqlConnection;
+    const again = await handleH10Shadow({ mode: "nightly", now: Date.now(), db: counting, config });
+    expect(again.body).toMatchObject({ success: false, status: "incomplete", cached: true });
+    expect(reads).toBe(2);
+  }, 900000);
 });

@@ -84,8 +84,12 @@ export interface H10RunReport {
   denominatorSha256: string; asOf: Instant; trigger: string; scopes: number; goalieKeys: number; gaps: H10Gap[];
   training: { examples: number; available: number; skipped: Record<string, number>; modelVersion: string | null };
   ledger: { episodeRecords: number; lockRecords: number };
-  queues: { total: number; processed: number; complete: number; rotated: number };
+  /** `finished`: every job terminal; `complete`: every job published (no failed or expired job). */
+  queues: { total: number; processed: number; finished: number; complete: number; rotated: number };
   jobs: Record<string, number>;
+  /** Every processed queue is terminal and nothing stopped early (a later call has nothing left to do). */
+  finished: boolean;
+  /** Finished, and every job published. A failed or expired job never counts as complete. */
   complete: boolean;
   /** Set when the run wrote nothing because its inputs cannot support an issuance. */
   refused?: string;
@@ -108,7 +112,7 @@ export async function runH10Issuance(input: H10RunInput): Promise<H10RunReport> 
   if (!model) return { denominatorSha256: denominator.denominatorSha256, asOf, trigger: input.trigger === "daily" ? "daily" : "material", scopes: scopes.length, goalieKeys,
     gaps: scopes.map(s => ({ playerId: s.playerId, gameId: s.gameId, teamId: s.teamId, horizon: s.horizon, playerClass: "skater" as const, reason: "training_below_minimum_support" })),
     training: { examples: training.training.length, available: training.available, skipped: training.skipped, modelVersion: null }, ledger: { episodeRecords: 0, lockRecords: 0 },
-    queues: { total: 0, processed: 0, complete: 0, rotated: 0 }, jobs: {}, complete: false, refused: "training_below_minimum_support" };
+    queues: { total: 0, processed: 0, finished: 0, complete: 0, rotated: 0 }, jobs: {}, finished: false, complete: false, refused: "training_below_minimum_support" };
 
   // 1. Ledger: one observation over the full denominator, captured before any queue work (idempotent).
   const keys = scopes.map(targetKey);
@@ -143,7 +147,7 @@ export async function runH10Issuance(input: H10RunInput): Promise<H10RunReport> 
   const opportunityHeads = new Map((await heads<Opportunity>(db, "opportunity", keys)).map(row => [row.scopeKey, row]));
   const report: H10RunReport = { denominatorSha256: denominator.denominatorSha256, asOf, trigger: input.trigger === "daily" ? "daily" : `material:${input.trigger.material.map(event => event.id).join(",")}`,
     scopes: scopes.length, goalieKeys, gaps: [], training: { examples: training.training.length, available: training.available, skipped: training.skipped, modelVersion: model?.version ?? null },
-    ledger: { episodeRecords: episodeObservations.length, lockRecords: lockObservations.length }, queues: { total: groups.size, processed: 0, complete: 0, rotated: 0 }, jobs: {}, complete: false };
+    ledger: { episodeRecords: episodeObservations.length, lockRecords: lockObservations.length }, queues: { total: groups.size, processed: 0, finished: 0, complete: 0, rotated: 0 }, jobs: {}, finished: false, complete: false };
   const today = easternDate(asOf);
   let stoppedEarly = false;
   for (const [queueId, queueScopes] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
@@ -185,10 +189,12 @@ export async function runH10Issuance(input: H10RunInput): Promise<H10RunReport> 
     current = await store.loadQueue(queueId);
     next = restoreRefreshState(current!.state, H10_BOUNDS);
     for (const job of next.jobs) report.jobs[job.status] = (report.jobs[job.status] ?? 0) + 1;
-    if (next.jobs.every(job => terminal(job.status))) report.queues.complete += 1;
+    if (next.jobs.every(job => terminal(job.status))) report.queues.finished += 1;
+    if (next.jobs.every(job => job.status === "published")) report.queues.complete += 1;
   }
   report.gaps = gaps.sort((a, b) => a.teamId - b.teamId || a.horizon - b.horizon || a.playerId - b.playerId);
-  report.complete = !stoppedEarly && report.queues.complete === report.queues.processed;
+  report.finished = !stoppedEarly && report.queues.finished === report.queues.processed;
+  report.complete = report.finished && report.queues.complete === report.queues.processed;
   return report;
 }
 
