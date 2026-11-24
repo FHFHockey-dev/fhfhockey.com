@@ -76,14 +76,17 @@ describe("four-week grid alternate view", () => {
 
   it("excludes unknown weeks from means and includes covered zero-game weeks", () => {
     expect(buildFourWeekDetailAverages(teams, [1, 2])).toEqual([
-      { weekNumber: 1, gamesPlayed: 4, offNights: 2 },
-      { weekNumber: 2, gamesPlayed: 4, offNights: 2 },
+      { weekNumber: 1, gamesPlayed: 4, offNights: 2, teamCount: 2 },
+      { weekNumber: 2, gamesPlayed: 4, offNights: 2, teamCount: 1 },
     ]);
     const bye = team(2, [{ weekNumber: 2, gamesPlayed: 0, offNights: 0, opponents: [], scheduleCoverage: { known: 7, expected: 7 } }]);
     expect(buildFourWeekDetailCells(bye, [2])[0].gamesPlayed).toBe(0);
-    expect(buildFourWeekDetailAverages([teams[0], bye], [2])).toEqual([
-      { weekNumber: 2, gamesPlayed: 2, offNights: 1 },
+    expect(buildFourWeekDetailAverages([teams[0], bye, team(3, [])], [2])).toEqual([
+      { weekNumber: 2, gamesPlayed: 2, offNights: 1, teamCount: 2 },
     ]);
-    expect(buildFourWeekDetailAverages([], [1])[0].gamesPlayed).toBeNull();
+    const unknown = team(3, [{ weekNumber: 1, gamesPlayed: 0, offNights: 0, opponents: [], scheduleCoverage: { known: 0, expected: 0 } }]);
+    expect(buildFourWeekDetailAverages([unknown], [1])).toEqual([
+      { weekNumber: 1, gamesPlayed: null, offNights: null, teamCount: 0 },
+    ]);
   });
 });

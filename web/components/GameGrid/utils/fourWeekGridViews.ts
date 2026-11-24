@@ -45,7 +45,7 @@ export const buildFourWeekDetailCells = (
 export const buildFourWeekDetailAverages = (
   teams: TeamDataWithTotals[],
   weekNumbers: number[],
-): Array<{ weekNumber: number; gamesPlayed: number | null; offNights: number | null }> => {
+): Array<{ weekNumber: number; gamesPlayed: number | null; offNights: number | null; teamCount: number }> => {
 
   return weekNumbers.map((weekNumber) => {
     const totals = teams.reduce(
@@ -53,7 +53,8 @@ export const buildFourWeekDetailAverages = (
         const week = team.weeks.find(
           (candidate) => candidate.weekNumber === weekNumber,
         );
-        if (week && (week.scheduleCoverage != null && week.scheduleCoverage.known === week.scheduleCoverage.expected)) {
+        const coverage = week?.scheduleCoverage;
+        if (week && coverage && coverage.expected > 0 && coverage.known === coverage.expected) {
           acc.gamesPlayed += week.gamesPlayed;
           acc.offNights += week.offNights;
           acc.known++;
@@ -65,6 +66,7 @@ export const buildFourWeekDetailAverages = (
 
     return {
       weekNumber,
+      teamCount: totals.known,
       gamesPlayed: totals.known ? totals.gamesPlayed / totals.known : null,
       offNights: totals.known ? totals.offNights / totals.known : null,
     };

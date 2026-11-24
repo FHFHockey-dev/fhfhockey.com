@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ExtendedWeekData, GameData, TeamDataWithTotals } from "lib/NHL/types";
@@ -138,7 +138,31 @@ describe("FourWeekGrid", () => {
     const beta = screen.getByRole("link", { name: "Open Beta Team HQ" }).closest("tr")!;
     expect(beta.cells[1].querySelector("strong")?.textContent).toBe("Schedule unavailable");
     const average = screen.getByText("AVG").closest("tr")!;
-    expect(Array.from(average.cells).slice(1).map((cell) => cell.textContent)).toEqual(["—", "—", "—", "—"]);
+    for (const cell of Array.from(average.cells).slice(1, 4)) {
+      expect(within(cell).getByText("—")).toBeTruthy();
+      expect(within(cell).getByText("0 teams")).toBeTruthy();
+    }
+    expect(within(average.cells[4]).getByText("0.0G / 0.0O")).toBeTruthy();
+    expect(within(average.cells[4]).getByText("1 team")).toBeTruthy();
+  });
+
+  it("labels each weekly mean with the number of teams that have complete schedules", () => {
+    const week = (weekNumber: number, gamesPlayed: number, offNights: number, known: number) => ({
+      weekNumber, gamesPlayed, offNights, opponents: [], scheduleCoverage: { known, expected: 7 },
+    });
+    const rows = [
+      { ...teams[0], weeks: [week(1, 4, 2, 7), week(2, 3, 1, 7)] },
+      { ...teams[1], weeks: [week(1, 0, 0, 7), week(2, 7, 4, 2)] },
+      { ...teams[1], teamId: 3, teamAbbreviation: "GAM", weeks: [week(1, 2, 1, 4), week(2, 2, 0, 7)] },
+    ];
+    render(<FourWeekGrid teamDataArray={rows} />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand four-week columns" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Weekly Detail" }));
+    const average = screen.getByText("AVG").closest("tr")!;
+    expect(within(average.cells[1]).getByText("2.0G / 1.0O")).toBeTruthy();
+    expect(within(average.cells[1]).getByText("2 teams")).toBeTruthy();
+    expect(within(average.cells[2]).getByText("2.5G / 0.5O")).toBeTruthy();
+    expect(within(average.cells[2]).getByText("2 teams")).toBeTruthy();
   });
 
   it("preserves sorting through expansion and collapse", () => {

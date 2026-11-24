@@ -15,7 +15,7 @@ import { formatOpportunity, type TeamOpportunity } from "./scheduleOpportunity";
 import { getFourWeekAverages } from "./scheduleSummary";
 import { toFourWeekMetricBands } from "./fourWeekMetricBands";
 import type { FourWeekCalendar } from "./useFourWeekSchedule";
-import { buildFourWeekDetailCells } from "./fourWeekGridViews";
+import { buildFourWeekDetailAverages, buildFourWeekDetailCells } from "./fourWeekGridViews";
 import styles from "./FourWeekGrid.module.scss";
 
 type Props = {
@@ -92,6 +92,7 @@ export default function FourWeekGrid({ loading = false, teamDataArray, calendar,
         <p>
           <strong>Show details</strong> adds GP, OFF (off-night games) and OPP% (opponents&rsquo; points %; lower is easier).
           Cell colours run green (best) to gold to red (worst); &ldquo;—&rdquo; means missing.
+          Weekly Detail averages include teams with a complete schedule for that week. A confirmed bye counts as zero.
         </p>
         {/* Window and schedule status: metadata, last and set apart like the Opponent source line */}
         {calendar && <p className={rankStyles.infoSource}>{shortDate(calendar.start)} – {shortDate(calendar.end)} · {loading ? "loading schedule…" : calendar.error ?? (calendar.knownDays === calendar.expectedDays ? "schedule complete" : "schedule incomplete; affected totals unavailable")}</p>}
@@ -110,7 +111,12 @@ export default function FourWeekGrid({ loading = false, teamDataArray, calendar,
           </>}</tr></thead>
           <tbody>
             {loading || !teamDataArray.length ? <LoadingRows columns={expanded ? weekly ? 5 : 6 : 3} rowHeight={37} waiting={loading} /> : <>
-            <tr className={styles.averagesRow}><td>AVG</td>{expanded && weekly ? [1, 2, 3, 4].map((n) => <td key={n}>—</td>) : <>
+            <tr className={styles.averagesRow}><td>AVG</td>{expanded && weekly ? buildFourWeekDetailAverages(teamDataArray, [1, 2, 3, 4]).map((week) => (
+              <td key={week.weekNumber}>
+                <strong>{week.teamCount === 0 ? "—" : `${formatOpportunity(week.gamesPlayed)}G / ${formatOpportunity(week.offNights)}O`}</strong>
+                <span className={styles.opponentList}>{week.teamCount} {week.teamCount === 1 ? "team" : "teams"}</span>
+              </td>
+            )) : <>
               {expanded && <><td>{formatOpportunity(averages.gamesPlayed)}</td><td>{formatOpportunity(averages.offNights)}</td><td>{averages.avgOpponentPointPct == null ? "—" : `${(averages.avgOpponentPointPct * 100).toFixed(1)}%`}</td></>}
               <td>{formatOpportunity(scoreMean)}</td><td />
             </>}</tr>
