@@ -397,4 +397,8 @@ Each item needs TJ's separate approval to release. None is a migration applied, 
   - `skaterJobsFailed`, `skaterJobsExpired`, `skaterGaps`;
   - `goalieGaps`, including `publish_failed:*` after retries and `issuance_lock_closed`;
   - `goalieKeysUnaccounted`: expected goalie keys neither published nor declared.
+- **Ambiguous publication** (TJ, before release approval): the receipt write commits, then the response is lost. Regression test `h10 nightly after a lost publication response`, in `h10Route.test.ts`, on disposable Postgres. It passed on `e6c947ab5` with **no production change**:
+  - Skaters retry through the queue on a later tick. Attempt 2 finds the stored draft, and its receipt predates the attempt, so it is acknowledged as a recovered publication (`pipeline.server.ts:378`, `refresh.ts:348–350`).
+  - Goalies retry in the call on the same vintage.
+  - Per affected key: one vintage, one receipt, the original id and output hash. Overall: one vintage, one receipt and one issuance sequence per key (1,380 skater, 120 goalie). The night is `complete` with 1,380 published and no failed job or gap.
 - **Retries.** Bounded, same-draft (never a second edition): skaters get 3 attempts at least 60 s apart; goalies get 3 in-call attempts, 1 s and then 4 s apart. Regression tests are in `h10Route.test.ts`.

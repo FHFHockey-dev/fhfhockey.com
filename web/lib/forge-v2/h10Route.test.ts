@@ -281,3 +281,88 @@ describe.runIf(Boolean(bin))("h10 nightly with failed skater jobs never complete
     expect(reads).toBe(2);
   }, 900000);
 });
+
+// Ambiguous publication (TJ, 2026-11-24): the receipt write commits, then the response is lost, so the worker sees an
+// error and retries through its normal path (skaters: the queue, at a later tick; goalies: the in-call retry). The retry
+// must reuse the original edition: exactly one vintage and one receipt per key, same id and bytes, no extra sequence,
+// and the night's status must reflect what actually published.
+describe.runIf(Boolean(bin))("h10 nightly after a lost publication response", () => {
+  let root: string, socket: string, admin: Pool, started = false;
+  const environment: NodeJS.ProcessEnv = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))), NODE_ENV: "test" };
+  const now = Date.now(), cutoff = Date.parse(easternDailyDeadline(easternDate(new Date(now).toISOString()))) - 4 * 3600000;
+  const league = syntheticLeague({ anchor: now, teams: 6, pastDays: 40 });
+  const config: H10RouteConfig = { enabled: true, approvalEvidenceId: "fixture-route-lost-response", approvedAt: new Date(cutoff - 3600000).toISOString(), codeVersion: "local-route-test",
+    seasonId: H10_SEASON, logIngestUtcMinute: 450, gameHours: 3.5, rosterMaxAgeHours: 36, maximumTrainingExamples: 1500, budgetMs: 120000, logsWindowDays: 60, minimumPlayers: 100, expectedTeams: 6 };
+
+  beforeAll(async () => {
+    root = await mkdtemp(join(tmpdir(), "forge-h10-route-lost-")); socket = join(root, "socket");
+    await mkdir(socket, { mode: 0o700 });
+    await exec(join(bin!, "initdb"), ["-D", join(root, "data"), "--no-locale", "--encoding=UTF8", "--auth-local=trust", "--auth-host=reject", "-U", "forge_v2_fixture"], { env: environment });
+    await exec(join(bin!, "pg_ctl"), ["-D", join(root, "data"), "-l", join(root, "server.log"), "-w", "-t", "10", "-o", `-c listen_addresses='' -c unix_socket_directories='${socket}' -p 65463`, "start"], { env: environment });
+    started = true;
+    admin = new Pool({ host: socket, port: 65463, user: "forge_v2_fixture", database: "postgres", max: 3 });
+    await admin.query("create role anon; create role authenticated; create role service_role login");
+    for (const file of migrations) await admin.query(await readFile(file, "utf8"));
+    await seedH10Public(admin, league, cutoff);
+  }, 120000);
+  afterAll(async () => {
+    await admin?.end();
+    if (started) await exec(join(bin!, "pg_ctl"), ["-D", join(root, "data"), "-w", "-t", "10", "stop", "-m", "fast"], { env: environment });
+    if (root) await rm(root, { recursive: true, force: true });
+  });
+
+  it("retries a committed-but-unacknowledged publication to the original edition (skaters via the queue, goalies in call) and completes", async () => {
+    const goalie = league.roster.find(p => p.position === "G")!.playerId;
+    const lost = new Map<string, { cls: string; outputHash: string }>(); // vintage id → what the first (committed) write stored
+    const lossy = { query: async (text: string, values?: unknown[]) => {
+      const skater = /insert into forge_v2_private\.forge_v2_publication_receipts/.test(text), goalieReceipt = /insert into forge_v2_private\.forge_v2_goalie_publication_receipts/.test(text);
+      const id = String(values?.[0]);
+      const target = skater ? Number(values?.[3]) % 11 === 2
+        : goalieReceipt ? Number((await admin.query("select player_id from forge_v2_private.forge_v2_goalie_vintages where id = $1", [id])).rows[0]?.player_id) === goalie : false;
+      const result = await admin.query(text, values); // the write commits (autocommit)
+      if (target && !lost.has(id)) {
+        const table = skater ? "forge_v2_vintages" : "forge_v2_goalie_vintages";
+        const stored = (await admin.query(`select output_hash from forge_v2_private.${table} where id = $1`, [id])).rows[0];
+        lost.set(id, { cls: skater ? "skater" : "goalie", outputHash: stored.output_hash });
+        throw new Error("injected_lost_response_after_commit");
+      }
+      return result;
+    } } as unknown as SqlConnection;
+    const night = Date.now() - 20 * MIN;
+    let last = await handleH10Shadow({ mode: "nightly", now: night, db: lossy, config });
+    for (let i = 0; i < 60 && last.body.status === "continued"; i++) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      last = await handleH10Shadow({ mode: "nightly", now: night, db: lossy, config: { ...config, budgetMs: Date.now() - night + 120000 } });
+    }
+    const skaterLost = [...lost.values()].filter(x => x.cls === "skater").length, goalieLost = [...lost.values()].filter(x => x.cls === "goalie").length;
+    expect(skaterLost).toBeGreaterThan(0);
+    expect(goalieLost).toBeGreaterThan(0);
+    // The status reflects what published: every key issued, so complete, with no failed job and no gap.
+    expect(last.body).toMatchObject({ status: "complete", complete: true, jobs: { published: 1380 } });
+    expect(last.body.jobs).not.toHaveProperty("failed");
+    expect((last.body.goalies as { gaps: unknown[]; published: number; reused: number }).gaps).toEqual([]);
+    expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_records where scope_key like 'forge-h10-nightly-complete:%'")).rows[0].n).toBe(1);
+    // By key: one vintage, one receipt, the original edition (same id and bytes), one issuance sequence.
+    for (const [id, first] of lost) {
+      const [V, R] = first.cls === "skater" ? ["forge_v2_vintages", "forge_v2_publication_receipts"] : ["forge_v2_goalie_vintages", "forge_v2_goalie_publication_receipts"];
+      const key = (await admin.query(`select player_id, game_id from forge_v2_private.${V} where id = $1`, [id])).rows[0];
+      const rows = (await admin.query(`select v.id, v.output_hash, v.issuance_key, v.issuance_sequence, r.vintage_id as receipt, r.output_hash as receipt_hash
+        from forge_v2_private.${V} v left join forge_v2_private.${R} r on r.vintage_id = v.id where v.player_id = $1 and v.game_id = $2`, [key.player_id, key.game_id])).rows;
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ id, output_hash: first.outputHash, receipt: id, receipt_hash: first.outputHash });
+      expect((await admin.query(`select count(*)::int n from forge_v2_private.${R} where vintage_id = $1`, [id])).rows[0].n).toBe(1);
+    }
+    // The skater retries went through the queue's normal path: attempt 2 published the original edition, recognised as a
+    // publication that predates the attempt (pipeline.server.ts recoveredPublication, refresh.ts validation).
+    const skaterIds = [...lost].filter(([, x]) => x.cls === "skater").map(([id]) => id);
+    const jobs = (await admin.query("select state from forge_v2_private.forge_v2_work_queue")).rows.flatMap(r => (typeof r.state === "string" ? JSON.parse(r.state) : r.state).jobs as Array<{ vintageId: string | null; status: string; attempts: number; recoveredPublication?: { vintage: { id: string } } }>);
+    const retried = jobs.filter(j => j.vintageId && skaterIds.includes(j.vintageId));
+    expect(retried).toHaveLength(skaterIds.length);
+    expect(retried.every(j => j.status === "published" && j.attempts === 2 && j.recoveredPublication?.vintage.id === j.vintageId)).toBe(true);
+    // Overall: no second edition anywhere (one vintage per issued key) and every vintage has its one receipt.
+    for (const [V, R, n] of [["forge_v2_vintages", "forge_v2_publication_receipts", 1380], ["forge_v2_goalie_vintages", "forge_v2_goalie_publication_receipts", 120]] as const) {
+      expect((await admin.query(`select count(*)::int v, count(distinct (player_id, game_id))::int k, count(distinct issuance_sequence)::int s,
+        (select count(*)::int from forge_v2_private.${R}) r from forge_v2_private.${V}`)).rows[0]).toEqual({ v: n, k: n, s: n, r: n });
+    }
+  }, 900000);
+});
