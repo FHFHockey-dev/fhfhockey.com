@@ -312,12 +312,17 @@ describe("update-team-ctpi-daily (CTPI v2 writer)", () => {
     expect(writtenRows()).toEqual(expected);
   });
 
-  it("rejects duplicate destination identities before the first write", async () => {
+  it("rejects a duplicate destination in the next batch before the first write", async () => {
     setGames(pooledFixture());
     const real = materialization.materializeRecentTeamFormCandidateSnapshot;
     vi.spyOn(materialization, "materializeRecentTeamFormCandidateSnapshot").mockImplementation((args) => {
       const result = real(args);
-      return { ...result, rows: [...result.rows, result.rows[0]] };
+      expect(result.rows.length).toBeGreaterThan(0);
+      const rows = Array.from({ length: 500 }, (_, index) => ({
+        ...result.rows[0],
+        team: `TEAM${index}`,
+      }));
+      return { ...result, rows: [...rows, rows[0]] };
     });
     vi.spyOn(console, "error").mockImplementation(() => {});
 
@@ -325,6 +330,26 @@ describe("update-team-ctpi-daily (CTPI v2 writer)", () => {
 
     expect(res.statusCode).toBe(500);
     expect(res.body.error).toContain("Duplicate CTPI destination identity");
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects a blank materialized destination identity before any write", async () => {
+    setGames(pooledFixture());
+    const real = materialization.materializeRecentTeamFormCandidateSnapshot;
+    vi.spyOn(materialization, "materializeRecentTeamFormCandidateSnapshot").mockImplementation((args) => {
+      const result = real(args);
+      expect(result.rows.length).toBeGreaterThan(0);
+      const rows = result.rows.map((row, index) =>
+        index === 0 ? { ...row, team: " " } : row,
+      );
+      return { ...result, rows };
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const res = await invoke();
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toContain("Invalid CTPI destination identity");
     expect(mocks.upsert).not.toHaveBeenCalled();
   });
 });

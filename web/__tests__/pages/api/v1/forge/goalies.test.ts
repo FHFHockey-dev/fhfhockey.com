@@ -380,6 +380,37 @@ describe("/api/v1/forge/goalies", () => {
       expect(reads).toEqual([]);
     });
 
+    it("keeps a proven goalie run with no rows on its scheduled date (H6)", async () => {
+      const date = "2026-02-07";
+      latestMock.mockResolvedValueOnce({ runId: "run-123", proof: CAPTURED });
+      const reads = installRuns(
+        [
+          released("run-123", date, { metrics: { goalie_rows: 0 } }),
+          released("run-122", "2026-02-06"),
+          released("run-124", "2026-02-08"),
+        ],
+        { "run-122": [fallbackGoalie], "run-124": [fallbackGoalie] },
+        6,
+        40,
+      );
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date, fallbackToLatestWithData: "true" } } as any, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({
+        runId: "run-123", asOfDate: date, requestedDate: date, fallbackApplied: false,
+        reason: "proven_run_has_no_rows", data: [],
+        serving: { resolvedDate: date, strategy: "requested_date" },
+        scanSummary: { status: "empty", blockingIssueCount: 1 },
+        diagnostics: { fallback: { enabled: false, applied: false },
+          runProof: { runId: "run-123", basis: "captured_snapshot" },
+          emptyResultAnalysis: { isEmpty: true, reason: "proven_run_has_no_rows", verifiedScheduledGames: 6 } },
+      });
+      expect(latestMock.mock.calls).toEqual([[date]]);
+      expect(fromMock.mock.calls.filter(([table]) => table === "forge_runs")).toHaveLength(1);
+      expect(reads).toEqual(["run-123"]);
+    });
+
     it.each([
       ["a verified off-day", 0, 40, "no_games", "No NHL games are scheduled on 2026-02-07."],
       ["a date whose schedule is not stored", 0, 0, "no_proven_run_for_date", "FORGE goalie projections are not available for the 2026-02-07 slate."],

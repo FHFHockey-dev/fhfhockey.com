@@ -1270,6 +1270,9 @@ describe("goalieMatrix", () => {
         projected_gsaa_per_60: 3, confirmed_status: true,
       }];
       const oldTeam = byId(await buildGoalieMatrixSurface(request()), 1);
+      expect(
+        rangeCalls.find((call) => call.table === "goalie_start_projections")?.orders.map(({ key }) => key)
+      ).toEqual(["game_date", "game_id", "player_id"]);
       expect(oldTeam.metrics.start_share.rawValue).toBe(0.5);
       expect(oldTeam.role).toMatchObject({ seasonStartShare: null, startShareLast10: null, startProbability: null, confirmedStatus: null });
       expect(oldTeam.warnings).toContain("mismatched_team_start_projection");

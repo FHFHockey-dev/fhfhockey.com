@@ -84,4 +84,26 @@ describe("comparison band", () => {
     // The chart loads lazily (S8), so wait for its toggles.
     expect(await screen.findAllByRole("button", { name: /^Toggle .* reference$/ }, { timeout: 5000 })).toHaveLength(7);
   });
+
+  it("renders positive, negative and rounded-zero differences with the matching sign", () => {
+    mockFetchPlayerGameLogForStat.mockReset().mockResolvedValue([]);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><WigoComparisonMatrix
+      data={[
+        { label: "Goals", DIFF: 20 },
+        { label: "Assists", DIFF: -20 },
+        { label: "Points", DIFF: 0.4 }
+      ]}
+      isLoadingAggData={false} aggDataError={null} playerId={1} currentSeasonId={20252026}
+      leftTimeframe="STD" rightTimeframe="CA" onCompare={vi.fn()}
+    /></QueryClientProvider>);
+
+    const differenceRow = screen.getByText("DIFF").closest("tr")!;
+    const cells = within(differenceRow).getAllByRole("cell");
+    const actual = (["Goals", "Assists", "Points"] as const).map(label => {
+      const cell = cells[BAND_METRICS.indexOf(label)];
+      return [cell.textContent, cell.getAttribute("data-diff-sign")];
+    });
+    expect(actual).toEqual([["+20%", "positive"], ["-20%", "negative"], ["0%", null]]);
+  });
 });
