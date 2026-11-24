@@ -78,11 +78,11 @@ export class PostgresHistoryStore {
     if (committed.rows[0]?.id !== vintage.id || committed.rows[0]?.output_hash !== hash) throw new Error("Idempotency conflict: issuance bytes changed");
     const receipt = claim ? await this.db.query<{ admitted: number }>(`${guard}, inserted as (
       insert into forge_v2_private.forge_v2_publication_receipts (vintage_id,output_hash,confirmed_at,witness)
-      select $1,$10,clock_timestamp(),'committed_readback' from admitted where $3::bigint>0 and $6::text::jsonb->>'id'=$1 on conflict (vintage_id) do nothing returning vintage_id), fenced as (
+      select $1,$10,clock_timestamp(),'committed_readback' from admitted where $3::bigint>0 and $6::text::jsonb->>'id'=$1 on conflict do nothing returning vintage_id), fenced as (
       update forge_v2_private.forge_v2_work_queue set revision=revision+1,updated_at=clock_timestamp()
       where id=$7 and exists(select 1 from inserted) returning revision)
       select count(*)::int as admitted from admitted`, [...values, hash])
-      : await this.db.query("insert into forge_v2_private.forge_v2_publication_receipts (vintage_id,output_hash,confirmed_at,witness) values ($1,$2,clock_timestamp(),'committed_readback') on conflict (vintage_id) do nothing", [vintage.id, hash]);
+      : await this.db.query("insert into forge_v2_private.forge_v2_publication_receipts (vintage_id,output_hash,confirmed_at,witness) values ($1,$2,clock_timestamp(),'committed_readback') on conflict do nothing", [vintage.id, hash]);
     if (claim && receipt.rows[0]?.admitted !== 1) throw new Error("Refresh publication claim lost");
     const result = await this.get(vintage.id);
     if (!result) throw new Error("Publication acknowledgement unavailable");
@@ -132,7 +132,7 @@ export class PostgresHistoryStore {
     if (!id.trim() || !scopeKey.trim()) throw new Error("Record identity required");
     const bytes = canonicalJson(payload);
     if (kind === "read_context") return this.appendReadContext(id, scopeKey, payload, predecessorId);
-    await this.db.query(`insert into forge_v2_private.forge_v2_records (id,kind,scope_key,predecessor_id,payload) values ($1,$2,$3,$4,$5) on conflict (id) do nothing`, [id, kind, scopeKey, predecessorId, bytes]);
+    await this.db.query(`insert into forge_v2_private.forge_v2_records (id,kind,scope_key,predecessor_id,payload) values ($1,$2,$3,$4,$5) on conflict do nothing`, [id, kind, scopeKey, predecessorId, bytes]);
     const { rows } = await this.db.query<{ kind: string; scope_key: string; predecessor_id: string | null; content_hash: string }>("select kind,scope_key,predecessor_id,content_hash from forge_v2_private.forge_v2_records where id=$1", [id]);
     if (rows[0]?.content_hash !== contentHash(payload) || rows[0]?.kind !== kind || rows[0]?.scope_key !== scopeKey || rows[0]?.predecessor_id !== predecessorId) throw new Error("Immutable record identity conflict");
   }
@@ -211,7 +211,7 @@ export class PostgresHistoryStore {
       ), inserted as (
         insert into forge_v2_private.forge_v2_records (id,kind,scope_key,predecessor_id,payload)
         select id,kind,scope_key,predecessor_id,payload from proposed where id not in (select id from existing)
-        on conflict (id) do nothing returning id
+        on conflict do nothing returning id
       ), verified as (
         select (select count(*) from proposed) as wanted, (select count(*) from existing)+(select count(*) from inserted) as captured
       ) update forge_v2_private.forge_v2_work_queue q set state=$3::jsonb,

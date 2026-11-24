@@ -1,0 +1,703 @@
+{
+  "version": "forge-h10-real-dry-run-v2",
+  "asOf": "2026-11-23T17:20:00.000Z",
+  "inputs": {
+    "games": 1344,
+    "rosters": 1337,
+    "logs": 14435,
+    "goalieLines": 821,
+    "mapped": {
+      "schedule": 1344,
+      "evidence": 1337,
+      "logs": 13571,
+      "goalieLogs": 795
+    },
+    "dropped": {
+      "roster_never_officially_seen_listed_unverified": 498,
+      "log_club_not_in_game": 864,
+      "goalie_line_alias_club_without_game": 26
+    }
+  },
+  "rostersOnly": {
+    "sha": "915981b8dc6110ea7288fbbfa5c3a369bb9a078258cce726822ba288b32448df",
+    "counts": [
+      {
+        "playerClass": "goalie",
+        "players": 73,
+        "keys": 730
+      },
+      {
+        "playerClass": "skater",
+        "players": 730,
+        "keys": 7300
+      }
+    ],
+    "guard": null,
+    "unresolved": 534,
+    "unresolvedReasons": {
+      "unverified_affiliation": 534
+    },
+    "vsAstra": {
+      "players": 803,
+      "keys": 8030,
+      "astraPlayersMatched": 801,
+      "astraPlayersMissing": 1,
+      "traded": {
+        "8477946": "unverified_affiliation",
+        "8478470": 8,
+        "8481523": 8
+      }
+    }
+  },
+  "exactKeysVsAstra": {
+    "mine": 8040,
+    "astra": 8040,
+    "identical": true,
+    "onlyMine": [],
+    "onlyAstra": [],
+    "onlyMineCount": 0,
+    "onlyAstraCount": 0
+  },
+  "withOfficialNhl": {
+    "sha": "66aa7c08dd348aa8ff7ced8b0ea0243920d5318df3913e495e23b8af43877dd1",
+    "counts": [
+      {
+        "playerClass": "goalie",
+        "players": 73,
+        "keys": 730
+      },
+      {
+        "playerClass": "skater",
+        "players": 731,
+        "keys": 7310
+      }
+    ],
+    "guard": null,
+    "conflicts": [
+      {
+        "playerId": 8477946,
+        "reason": "roster_unverified_affiliation_after_transaction",
+        "teamIds": [
+          17
+        ],
+        "revisions": [
+          "rosters:17:2026-11-23T17:20:00.000Z"
+        ]
+      }
+    ],
+    "vsAstra": {
+      "players": 804,
+      "keys": 8040,
+      "astraPlayersMatched": 804,
+      "astraPlayersMissing": 0,
+      "traded": {
+        "8477946": 8,
+        "8478470": 17,
+        "8481523": 17
+      }
+    },
+    "byHorizon": [
+      {
+        "horizon": 1,
+        "skaters": 731,
+        "goalies": 73
+      },
+      {
+        "horizon": 2,
+        "skaters": 731,
+        "goalies": 73
+      },
+      {
+        "horizon": 3,
+        "skaters": 731,
+        "goalies": 73
+      },
+      {
+        "horizon": 4,
+        "skaters": 731,
+        "goalies": 73
+      },
+      {
+        "horizon": 5,
+        "skaters": 731,
+        "goalies": 73
+      },
+      {
+        "horizon": 6,
+        "skaters": 731,
+        "goalies": 73
+      },
+      {
+        "horizon": 7,
+        "skaters": 731,
+        "goalies": 73
+      },
+      {
+        "horizon": 8,
+        "skaters": 731,
+        "goalies": 73
+      },
+      {
+        "horizon": 9,
+        "skaters": 731,
+        "goalies": 73
+      },
+      {
+        "horizon": 10,
+        "skaters": 731,
+        "goalies": 73
+      }
+    ]
+  },
+  "routeNightlySweep": {
+    "sweepAt": "2026-11-23T19:51:33.000Z",
+    "clubs": 32,
+    "officialPlayers": 804,
+    "moves": {
+      "total": 10,
+      "clubChange": 3,
+      "verifiedUnstampedSameClub": 2,
+      "notInRosters": 1,
+      "unstampedOtherClub": 1,
+      "departures": [
+        {
+          "playerId": 8478424,
+          "from": 14
+        },
+        {
+          "playerId": 8480326,
+          "from": 17
+        },
+        {
+          "playerId": 8484268,
+          "from": 23
+        }
+      ],
+      "trio": {
+        "8477946": {
+          "id": "forge-h10-official-move:8477946:none->8:after:none",
+          "playerId": 8477946,
+          "fromTeamId": null,
+          "toTeamId": 8,
+          "position": "F",
+          "firstObservedAt": "2026-11-23T19:51:33.000Z",
+          "rosterSha256": "cdcadd8aea55f8ceb815fe2cb19003d2413718c697a318dd5ef41eedd7a97f0d",
+          "abbrev": "MTL",
+          "after": null
+        },
+        "8478470": {
+          "id": "forge-h10-official-move:8478470:8->17:after:none",
+          "playerId": 8478470,
+          "fromTeamId": 8,
+          "toTeamId": 17,
+          "position": "G",
+          "firstObservedAt": "2026-11-23T19:51:33.000Z",
+          "rosterSha256": "0248ff024e279848eea3c4a64b202b6b65a113a13d76e960aff234aa784d41b0",
+          "abbrev": "DET",
+          "after": null
+        },
+        "8481523": {
+          "id": "forge-h10-official-move:8481523:8->17:after:none",
+          "playerId": 8481523,
+          "fromTeamId": 8,
+          "toTeamId": 17,
+          "position": "F",
+          "firstObservedAt": "2026-11-23T19:51:33.000Z",
+          "rosterSha256": "0248ff024e279848eea3c4a64b202b6b65a113a13d76e960aff234aa784d41b0",
+          "abbrev": "DET",
+          "after": null
+        }
+      }
+    },
+    "denominator": {
+      "sha": "724527300964c70460edb0dc982eea6db4c184ae16569797c7455218ea47bee1",
+      "counts": [
+        {
+          "playerClass": "goalie",
+          "players": 72,
+          "keys": 720
+        },
+        {
+          "playerClass": "skater",
+          "players": 732,
+          "keys": 7320
+        }
+      ],
+      "players": 804,
+      "unresolved": 531,
+      "conflicts": 3,
+      "guard": null
+    },
+    "vsAstraPlayers": {
+      "same": 800,
+      "onlySwept": 3,
+      "onlyAstra": 3,
+      "differentClub": 1
+    },
+    "exactKeysVsAstra": {
+      "swept": 8040,
+      "astra": 8040,
+      "common": 8000
+    }
+  },
+  "goalies": {
+    "ms": 988,
+    "goalieLinesRead": 795,
+    "published": 730,
+    "numeric": 730,
+    "nonNumeric": 0,
+    "gaps": 0,
+    "training": {
+      "examples": 739,
+      "available": 739,
+      "skipped": {
+        "noPriorReceipt": 10,
+        "inconsistentValues": 5
+      },
+      "modelVersion": "d7612c3bec82ed315c097c764208602b1de3ebe999d2260422a77dd728b2d68d"
+    },
+    "gapReasons": {},
+    "coverage": {
+      "denominatorSha256": "66aa7c08dd348aa8ff7ced8b0ea0243920d5318df3913e495e23b8af43877dd1",
+      "expected": 8040,
+      "numeric": 730,
+      "nonNumeric": 0,
+      "missing": 7310,
+      "playersWithAllTen": 73,
+      "byHorizon": [
+        {
+          "horizon": 1,
+          "expected": 804,
+          "numeric": 73,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 2,
+          "expected": 804,
+          "numeric": 73,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 3,
+          "expected": 804,
+          "numeric": 73,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 4,
+          "expected": 804,
+          "numeric": 73,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 5,
+          "expected": 804,
+          "numeric": 73,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 6,
+          "expected": 804,
+          "numeric": 73,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 7,
+          "expected": 804,
+          "numeric": 73,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 8,
+          "expected": 804,
+          "numeric": 73,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 9,
+          "expected": 804,
+          "numeric": 73,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 10,
+          "expected": 804,
+          "numeric": 73,
+          "nonNumeric": 0
+        }
+      ],
+      "stray": 0
+    },
+    "saves": {
+      "min": 23.34444897705026,
+      "median": 24.073998489512743,
+      "max": 24.153922344428462
+    },
+    "montembeault": [
+      {
+        "gameId": 2026020394,
+        "teamId": 17,
+        "SAVES": 23.362647275834146,
+        "SHOTS_AGAINST": 26.23256333131348,
+        "GOALS_ALLOWED": 2.869916055479333,
+        "WIN": 0.5182181721987927,
+        "SHUTOUT": 0.039877319050255135
+      },
+      {
+        "gameId": 2026020407,
+        "teamId": 17,
+        "SAVES": 24.084053938528335,
+        "SHOTS_AGAINST": 27.006251122999902,
+        "GOALS_ALLOWED": 2.9221971844715675,
+        "WIN": 0.4819073088273641,
+        "SHUTOUT": 0.04274705851723751
+      },
+      {
+        "gameId": 2026020417,
+        "teamId": 17,
+        "SAVES": 23.388199346520196,
+        "SHOTS_AGAINST": 26.26313620294687,
+        "GOALS_ALLOWED": 2.8749368564266753,
+        "WIN": 0.5172002486137334,
+        "SHUTOUT": 0.03987462244566982
+      },
+      {
+        "gameId": 2026020436,
+        "teamId": 17,
+        "SAVES": 23.377057179929654,
+        "SHOTS_AGAINST": 26.247325524899278,
+        "GOALS_ALLOWED": 2.870268344969624,
+        "WIN": 0.517335268732387,
+        "SHUTOUT": 0.04005149579236109
+      },
+      {
+        "gameId": 2026020450,
+        "teamId": 17,
+        "SAVES": 23.4264287852814,
+        "SHOTS_AGAINST": 26.31270867398098,
+        "GOALS_ALLOWED": 2.8862798886995797,
+        "WIN": 0.5160843661020668,
+        "SHUTOUT": 0.039524804617441546
+      },
+      {
+        "gameId": 2026020464,
+        "teamId": 17,
+        "SAVES": 24.11312156669097,
+        "SHOTS_AGAINST": 27.043572124486936,
+        "GOALS_ALLOWED": 2.9304505577959645,
+        "WIN": 0.48142293344478154,
+        "SHUTOUT": 0.04350759984343405
+      },
+      {
+        "gameId": 2026020496,
+        "teamId": 17,
+        "SAVES": 24.134565810276897,
+        "SHOTS_AGAINST": 27.070088705125944,
+        "GOALS_ALLOWED": 2.935522894849047,
+        "WIN": 0.4799121389940227,
+        "SHUTOUT": 0.04371987755157749
+      },
+      {
+        "gameId": 2026020510,
+        "teamId": 17,
+        "SAVES": 23.382699467010045,
+        "SHOTS_AGAINST": 26.256552478566682,
+        "GOALS_ALLOWED": 2.873853011556637,
+        "WIN": 0.5174177060484586,
+        "SHUTOUT": 0.039876922231447814
+      },
+      {
+        "gameId": 2026020521,
+        "teamId": 17,
+        "SAVES": 23.402207185518225,
+        "SHOTS_AGAINST": 26.28025224056099,
+        "GOALS_ALLOWED": 2.878045055042765,
+        "WIN": 0.5166884446317784,
+        "SHUTOUT": 0.039838683593608655
+      },
+      {
+        "gameId": 2026020538,
+        "teamId": 17,
+        "SAVES": 23.384497819928022,
+        "SHOTS_AGAINST": 26.257232807792608,
+        "GOALS_ALLOWED": 2.872734987864586,
+        "WIN": 0.517170029508081,
+        "SHUTOUT": 0.039982093472786966
+      }
+    ]
+  },
+  "issuance": {
+    "ms": 278163,
+    "statements": 154251,
+    "complete": true,
+    "jobs": {
+      "published": 7310
+    },
+    "gaps": {},
+    "training": {
+      "examples": 2000,
+      "available": 13391,
+      "skipped": {
+        "outcomeAfterCutoff": 0,
+        "noPriorReceipt": 180,
+        "invalidValues": 0
+      },
+      "modelVersion": "4b24abd6294392ee99df18bb1164c855d4e369510afb54407a8985a8636112bd"
+    },
+    "ledger": {
+      "episodeRecords": 7310,
+      "lockRecords": 169
+    }
+  },
+  "readback": {
+    "vintages": 7310,
+    "receiptMismatches": 0,
+    "coverage": {
+      "denominatorSha256": "66aa7c08dd348aa8ff7ced8b0ea0243920d5318df3913e495e23b8af43877dd1",
+      "expected": 8040,
+      "numeric": 7310,
+      "nonNumeric": 0,
+      "missing": 730,
+      "playersWithAllTen": 731,
+      "byHorizon": [
+        {
+          "horizon": 1,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 2,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 3,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 4,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 5,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 6,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 7,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 8,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 9,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 10,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        }
+      ],
+      "stray": 0
+    },
+    "spread": {
+      "players": 731,
+      "distinctForecastsPerPlayer": {
+        "8": 24,
+        "9": 205,
+        "10": 502
+      },
+      "playersAtMostTwoDistinct": 0,
+      "scoreRange": {
+        "min": 0.012395360283633305,
+        "median": 0.08533367173119899,
+        "max": 0.1436145421686721
+      }
+    },
+    "nonNumericReasons": {}
+  },
+  "storage": {
+    "tables": [
+      {
+        "relname": "forge_v2_artifacts",
+        "rows": 0,
+        "bytes": "16384"
+      },
+      {
+        "relname": "forge_v2_goalie_publication_receipts",
+        "rows": 618,
+        "bytes": "303104"
+      },
+      {
+        "relname": "forge_v2_goalie_vintages",
+        "rows": 619,
+        "bytes": "1810432"
+      },
+      {
+        "relname": "forge_v2_publication_receipts",
+        "rows": 7319,
+        "bytes": "3555328"
+      },
+      {
+        "relname": "forge_v2_records",
+        "rows": 14799,
+        "bytes": "18194432"
+      },
+      {
+        "relname": "forge_v2_vintages",
+        "rows": 7319,
+        "bytes": "21037056"
+      },
+      {
+        "relname": "forge_v2_work_queue",
+        "rows": 320,
+        "bytes": "6152192"
+      }
+    ],
+    "vintagePayload": {
+      "rows": 7310,
+      "rawBytes": 24171461,
+      "gzipBytes": 1550500
+    },
+    "recordPayload": {
+      "rows": 14789,
+      "rawBytes": 7674107,
+      "gzipBytes": 221506
+    },
+    "payloadOnlyBytes": {
+      "vintages": {
+        "pglz": 15007744,
+        "lz4": 15007744
+      },
+      "records": {
+        "pglz": 8445952,
+        "lz4": 8445952
+      }
+    }
+  },
+  "larkin": [
+    {
+      "gameId": 2026020379,
+      "teamId": 8,
+      "opponentId": 26,
+      "home": true,
+      "horizon": 1,
+      "G": 0.19944478425892306,
+      "A": 0.32914167600479605,
+      "SOG": 1.5994959423389197
+    },
+    {
+      "gameId": 2026020397,
+      "teamId": 8,
+      "opponentId": 21,
+      "home": false,
+      "horizon": 2,
+      "G": 0.19659134919497087,
+      "A": 0.31113596877957506,
+      "SOG": 1.5510467227722853
+    },
+    {
+      "gameId": 2026020415,
+      "teamId": 8,
+      "opponentId": 54,
+      "home": false,
+      "horizon": 3,
+      "G": 0.19654265949802932,
+      "A": 0.31104855867542736,
+      "SOG": 1.5508562587535661
+    },
+    {
+      "gameId": 2026020435,
+      "teamId": 8,
+      "opponentId": 68,
+      "home": false,
+      "horizon": 4,
+      "G": 0.19708543810531484,
+      "A": 0.31201923271571624,
+      "SOG": 1.5530028954639699
+    },
+    {
+      "gameId": 2026020445,
+      "teamId": 8,
+      "opponentId": 14,
+      "home": true,
+      "horizon": 5,
+      "G": 0.1988769851438997,
+      "A": 0.3282296708543705,
+      "SOG": 1.5960490873437059
+    },
+    {
+      "gameId": 2026020465,
+      "teamId": 8,
+      "opponentId": 13,
+      "home": true,
+      "horizon": 6,
+      "G": 0.19898565171020063,
+      "A": 0.32840510360365777,
+      "SOG": 1.596694242307431
+    },
+    {
+      "gameId": 2026020478,
+      "teamId": 8,
+      "opponentId": 9,
+      "home": true,
+      "horizon": 7,
+      "G": 0.19893321301897576,
+      "A": 0.32832049836538035,
+      "SOG": 1.5963820805186435
+    },
+    {
+      "gameId": 2026020486,
+      "teamId": 8,
+      "opponentId": 54,
+      "home": true,
+      "horizon": 8,
+      "G": 0.1988842151254995,
+      "A": 0.3282413560818014,
+      "SOG": 1.5960918053526816
+    },
+    {
+      "gameId": 2026020500,
+      "teamId": 8,
+      "opponentId": 24,
+      "home": true,
+      "horizon": 9,
+      "G": 0.20007214443646196,
+      "A": 0.33013586011915325,
+      "SOG": 1.6035368726077603
+    },
+    {
+      "gameId": 2026020515,
+      "teamId": 8,
+      "opponentId": 29,
+      "home": false,
+      "horizon": 10,
+      "G": 0.1970086452848649,
+      "A": 0.3118823925485247,
+      "SOG": 1.5526960723893293
+    }
+  ]
+}

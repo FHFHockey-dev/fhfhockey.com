@@ -131,7 +131,10 @@ export interface PreparedIssuance {
   featureVersion: string;
   codeVersion: string;
   cohort: string;
-  evidenceClass: "fixture" | "retrospective_reconstruction";
+  evidenceClass: "fixture" | "retrospective_reconstruction" | "prospective_shadow";
+  /** Required for `prospective_shadow`: names the approval that admits a private shadow issuance. A shadow run may also
+   * omit the per-issuance joint distribution (means-only vintages). Public serving is never issuable here. */
+  shadow?: { approvalEvidenceId: string; omitJointDistribution: boolean };
   predecessorId: string | null;
   /** Required for linked reentry/closed episode and replacement lock observations. */
   episodePredecessor?: HorizonEpisode;
@@ -177,7 +180,8 @@ async function assertClaim(input: PreparedRunInput): Promise<void> {
 
 function validatePrepared(plan: RefreshPlan, prepared: PreparedIssuance): void {
   const { context, episode, lock, accepted } = prepared, scope = plan.scope;
-  if (!["fixture", "retrospective_reconstruction"].includes(prepared.evidenceClass)) throw new Error("development_pipeline_cannot_issue_prospective_or_public_evidence");
+  if (!["fixture", "retrospective_reconstruction", "prospective_shadow"].includes(prepared.evidenceClass)
+    || prepared.evidenceClass === "prospective_shadow" && !prepared.shadow?.approvalEvidenceId?.trim()) throw new Error("development_pipeline_cannot_issue_prospective_or_public_evidence");
   assertTarget(context); assertTarget(episode);
   const cutoff = instant(context.inputCutoffAt);
   if (targetKey(context) !== targetKey(scope) || targetKey(episode) !== targetKey(scope) || episode.horizon !== scope.horizon || !episode.id || !lock.id || lock.gameId !== scope.gameId
@@ -239,7 +243,8 @@ export async function runPreparedIssuance(input: PreparedRunInput): Promise<Prep
   const existing = await input.store.getDraft(input.plan.issuanceKey);
   if (existing) {
     if (existing.issuanceAttempt && !input.claim) throw new Error("queued_draft_requires_current_claim");
-    if (!sameIssuedScope(existing, input.plan) || !["fixture", "retrospective_reconstruction"].includes(existing.evidenceClass)) throw new Error("stored_draft_scope_or_authority_mismatch");
+    if (!sameIssuedScope(existing, input.plan) || !["fixture", "retrospective_reconstruction", "prospective_shadow"].includes(existing.evidenceClass)
+      || existing.evidenceClass === "prospective_shadow" && input.prepared?.evidenceClass !== "prospective_shadow") throw new Error("stored_draft_scope_or_authority_mismatch");
     return publishDraft(input, existing, true);
   }
   // This population observation survives rejected/missing models and source gaps.
@@ -253,12 +258,12 @@ export async function runPreparedIssuance(input: PreparedRunInput): Promise<Prep
   let means: CategoryMeans, limitations: string[];
   try {
     const prediction = prepared.model ? predictConditional(prepared.model, prepared.context) : { means: Object.fromEntries(CATEGORIES.map(c => [c, unavailable("conditional_model_unavailable")])) as CategoryMeans, limitations: prepared.context.limitations };
-    means = prediction.means; limitations = [...prediction.limitations, "private_development_unqualified"];
+    means = prediction.means; limitations = [...prediction.limitations, prepared.evidenceClass === "prospective_shadow" ? "prospective_shadow_unqualified" : "private_development_unqualified"];
   } catch { return { state: "unavailable", reason: "conditional_model_generation_failed", retryable: false }; }
   const participation = predictParticipation(prepared.participationModel, prepared.context);
   const calibration = calibrationReference(prepared, input.plan);
-  let distribution: Component<ArtifactReference> = unavailable("joint_model_unavailable");
-  if (prepared.model) {
+  let distribution: Component<ArtifactReference> = unavailable(prepared.shadow?.omitJointDistribution ? "joint_distribution_omitted_in_shadow" : "joint_model_unavailable");
+  if (prepared.model && !prepared.shadow?.omitJointDistribution) {
     const body = prepared.calibration?.payload;
     const profiles = calibration.state === "available" && body?.schemaVersion === "profile-calibration-bundle-v1" ? Object.values(body.profiles).map(entry => entry.profile) : [prepared.scoring];
     const support = (selected: ScoringProfile[]): Category[] => {

@@ -1,0 +1,139 @@
+{
+  "version": "forge-h10-news-replay-v1",
+  "read": {
+    "cards": 385,
+    "published": 385,
+    "firstUpdate": "2026-11-16T18:00:11.316Z",
+    "lastUpdate": "2026-11-23T21:00:11.313Z",
+    "maxCardsReadInOneCall": 192,
+    "routeCap": 5000,
+    "pageSize": 500
+  },
+  "limits": [
+    "latest card state only: earlier revisions invisible, first-seen times are upper bounds",
+    "membership is the end-of-week rosters state",
+    "official state at every recheck is the 11-23 19:51Z read"
+  ],
+  "estimates": {
+    "appearanceFirstObservedAt": "ESTIMATE, not live acceptance: the first material tick at or after the inferred WGO receipt (07:30 UTC after start + 3.5 h). The hosted route stamps the time it first reads the line.",
+    "participation": "ESTIMATE: read #3's skater lines carry no time on ice, so a line counts as participation; a goalie line needs a start or shots against. The hosted read requires time on ice > 0."
+  },
+  "snapshots": {
+    "total": 385,
+    "bySignal": {
+      "confirmed_return": 8,
+      "goalie_confirmed_start": 83,
+      "goalie_expected_start": 3,
+      "lineup_report": 141,
+      "membership_report": 46,
+      "out": 37,
+      "questionable": 41,
+      "scratch": 26
+    },
+    "byTier": {
+      "beat": 240,
+      "team": 16,
+      "unknown": 129
+    },
+    "noSourceAccount": {
+      "cards": 109,
+      "bySignal": {
+        "confirmed_return": 1,
+        "goalie_confirmed_start": 25,
+        "goalie_expected_start": 2,
+        "lineup_report": 4,
+        "membership_report": 25,
+        "out": 14,
+        "questionable": 18,
+        "scratch": 20
+      }
+    },
+    "availabilityReports": {
+      "total": 339,
+      "credible": 241,
+      "notCredibleBySignal": {
+        "confirmed_return:unknown": 2,
+        "goalie_confirmed_start:unknown": 31,
+        "goalie_expected_start:unknown": 2,
+        "lineup_report:unknown": 7,
+        "out:unknown": 15,
+        "questionable:unknown": 19,
+        "scratch:unknown": 22
+      }
+    },
+    "namingPlayersOutsideDenominator": 11
+  },
+  "membership": {
+    "reports": 46,
+    "ticks": 273,
+    "ticksWithRecheck": 64,
+    "officialGets": 113,
+    "maxGetsPerTick": 4,
+    "getsByDay": {
+      "2026-11-16": 12,
+      "2026-11-17": 16,
+      "2026-11-18": 12,
+      "2026-11-19": 14,
+      "2026-11-20": 16,
+      "2026-11-21": 18,
+      "2026-11-22": 17,
+      "2026-11-23": 8
+    },
+    "confirmedMoves": [
+      {
+        "playerId": 8477946,
+        "from": null,
+        "to": 8,
+        "firstObservedAt": "2026-11-16T19:35:00.000Z"
+      },
+      {
+        "playerId": 8484821,
+        "from": null,
+        "to": 20,
+        "firstObservedAt": "2026-11-17T00:05:00.000Z"
+      },
+      {
+        "playerId": 8481133,
+        "from": 13,
+        "to": 23,
+        "firstObservedAt": "2026-11-18T19:35:00.000Z"
+      },
+      {
+        "playerId": 8479333,
+        "from": null,
+        "to": 28,
+        "firstObservedAt": "2026-11-23T18:05:00.000Z"
+      }
+    ],
+    "atEnd": {
+      "pending": 3,
+      "confirmed": 2,
+      "reflected": 24,
+      "expired": 15
+    }
+  },
+  "overlays": {
+    "atEnd": {
+      "keys": 271,
+      "players": 91,
+      "byAvailability": {
+        "available": 120,
+        "out": 150,
+        "questionable": 1
+      },
+      "byRole": {
+        "confirmed_starter": 3,
+        "not_confirmed_starter": 4
+      },
+      "withConflicts": 0,
+      "annotated": 113
+    },
+    "liftedByOfficialAppearance": {
+      "players": 5,
+      "outKeysWithoutAppearanceRule": 200
+    },
+    "revisionsOverWeek": 321,
+    "perDay": 45
+  },
+  "effectiveCards": 385
+}

@@ -1,0 +1,224 @@
+{
+  "version": "forge-h10-local-producer-proof-v1",
+  "evidenceClass": "fixture",
+  "generatedAt": "2026-11-23T17:10:27.403Z",
+  "host": "local disposable PostgreSQL 17 (unix socket)",
+  "denominator": {
+    "sha256": "02fd8d35f5b416bd442a1602f1b1ec04a200ea63a6683e54975b8b1b9ac85133",
+    "counts": [
+      {
+        "playerClass": "goalie",
+        "players": 73,
+        "keys": 730
+      },
+      {
+        "playerClass": "skater",
+        "players": 731,
+        "keys": 7310
+      }
+    ],
+    "keys": 8040,
+    "players": 804,
+    "buildMs": 81
+  },
+  "firstPass": {
+    "queuesProcessed": 40,
+    "complete": false,
+    "ms": 40328,
+    "sql": {
+      "statements": 31823,
+      "writes": 13110,
+      "sequence": 920,
+      "reads": 17793
+    }
+  },
+  "resumed": {
+    "complete": true,
+    "ms": 244110,
+    "jobs": {
+      "published": 7310
+    },
+    "gaps": 730,
+    "gapReasons": [
+      "goalie_target_unsupported"
+    ],
+    "training": {
+      "examples": 2000,
+      "available": 13824,
+      "skipped": {
+        "outcomeAfterCutoff": 0,
+        "noPriorReceipt": 576,
+        "invalidValues": 0
+      },
+      "modelVersion": "8b88dc36dc3753059694015517c023698cc8c7cc77aaa2b64c5692a87274b3b5"
+    }
+  },
+  "fullRunSql": {
+    "statements": 149286,
+    "writes": 52330,
+    "sequence": 7310,
+    "reads": 89646
+  },
+  "rerun": {
+    "ms": 4297,
+    "vintagesBefore": 7310,
+    "vintagesAfter": 7310,
+    "recordsBefore": 14780,
+    "recordsAfter": 14780,
+    "complete": true
+  },
+  "readback": {
+    "ms": 158,
+    "vintages": 7310,
+    "receiptMismatches": 0,
+    "coverage": {
+      "expected": 8040,
+      "numeric": 7310,
+      "nonNumeric": 0,
+      "missing": 730,
+      "playersWithAllTen": 731,
+      "byHorizon": [
+        {
+          "horizon": 1,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 2,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 3,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 4,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 5,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 6,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 7,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 8,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 9,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        },
+        {
+          "horizon": 10,
+          "expected": 804,
+          "numeric": 731,
+          "nonNumeric": 0
+        }
+      ],
+      "stray": 0
+    },
+    "skaterPlayers": 731,
+    "spread": {
+      "players": 731,
+      "distinctForecastsPerPlayer": {
+        "7": 114,
+        "8": 318,
+        "9": 184,
+        "10": 115
+      },
+      "playersAtMostTwoDistinct": 0,
+      "scoreRange": {
+        "min": 0.0006488378922040461,
+        "median": 0.0023362248945137942,
+        "max": 0.014635959576182023
+      }
+    },
+    "nonNumericReasons": {}
+  },
+  "tables": [
+    {
+      "relname": "forge_v2_artifacts",
+      "rows": 0,
+      "bytes": "16384"
+    },
+    {
+      "relname": "forge_v2_publication_receipts",
+      "rows": 7330,
+      "bytes": "3522560"
+    },
+    {
+      "relname": "forge_v2_records",
+      "rows": 14801,
+      "bytes": "18333696"
+    },
+    {
+      "relname": "forge_v2_vintages",
+      "rows": 7330,
+      "bytes": "21045248"
+    },
+    {
+      "relname": "forge_v2_work_queue",
+      "rows": 321,
+      "bytes": "7675904"
+    }
+  ],
+  "queues": {
+    "queues": 320,
+    "bytes": "1125932",
+    "largest": 3589,
+    "largest_text": 31319
+  },
+  "perKeyComputeMs": {
+    "training_2000": 31,
+    "training_8000": 126.5,
+    "training_13824": 224.8
+  },
+  "scale": {
+    "nights": 30,
+    "seedMs": 68451,
+    "rows": {
+      "records": 443400,
+      "vintages": 219300
+    },
+    "episodeHeads": {
+      "executionMs": 294,
+      "topNode": "Gather"
+    },
+    "opportunityHeads": {
+      "executionMs": 326,
+      "topNode": "Gather"
+    },
+    "latestVintagesPerQueue": {
+      "executionMs": 3,
+      "topNode": "Unique"
+    },
+    "readback": {
+      "executionMs": 94,
+      "topNode": "Gather"
+    }
+  }
+}
