@@ -64,15 +64,35 @@ test("off-night edge: dates refetch a recomputed order, chips and 0% print, gaps
   await expect(square.getByTestId("off-night-legend")).toContainText("Rest of week");
   await expect(page.getByTestId("post-evidence")).toContainText("Top 2 of 2 teams with games");
   await expect(square).toHaveAttribute("data-export-token", /off-night-edge-rest-of-week\|off-night-edge\|/);
-  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+  const download = page.getByRole("button", { name: "Download PNG", exact: true });
+  await expect(download).toBeEnabled();
   if (renders) await page.locator("main, body").first().screenshot({ path: `${renders}/${renderName}-rest-of-week-page.png` });
   if (renders) await square.screenshot({ path: `${renders}/${renderName}-rest-of-week-card.png` });
 
-  // A changed setting reloads the post on its own, and export follows the new edition.
   await openOptions(page);
-  await page.getByLabel("Dates").selectOption("weekly");
-  await expect(square.getByTestId("off-night-legend")).toContainText("Full week");
+  const weeklyRequest = (url: URL) => url.pathname === "/api/v1/social-share/posts/off-night-edge"
+    && url.searchParams.get("period") === "this-week" && url.searchParams.get("dates") === "weekly";
+  let weeklyPending = false, releaseWeekly!: () => void;
+  const weeklyGate = new Promise<void>(resolve => { releaseWeekly = resolve; });
+  await page.route(weeklyRequest, async route => {
+    if (route.request().method() === "GET") {
+      weeklyPending = true;
+      await weeklyGate;
+    }
+    await route.fallback();
+  });
+  try {
+    await page.getByLabel("Dates").selectOption("weekly");
+    await expect.poll(() => weeklyPending).toBe(true);
+    await expect(download).toBeDisabled();
+    releaseWeekly();
+    await expect(square.getByTestId("off-night-legend")).toContainText("Full week");
+  } finally {
+    releaseWeekly();
+    await page.unroute(weeklyRequest);
+  }
   await expect(square).toHaveAttribute("data-export-token", /off-night-edge-weekly\|off-night-edge\|/);
+  await expect(download).toBeEnabled();
   expect(requested.some(search => search.includes("dates=weekly"))).toBe(true);
 });
 

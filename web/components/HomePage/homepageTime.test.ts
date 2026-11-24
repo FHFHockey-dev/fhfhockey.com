@@ -40,6 +40,18 @@ describe("homepage game times without moment-timezone", () => {
     expect(formatLocalPlayoffStart("2026-11-02T00:07:00Z", "America/Winnipeg")).toBe("11-1-2026 | 7:07PM CDT");
   });
 
+  it.each([
+    ["2026-11-01T05:30:00Z", "1:30 AM EDT", "11-1-2026 | 1:30AM EDT"],
+    ["2026-11-01T06:00:00Z", "1:00 AM EST", "11-1-2026 | 1AM EST"],
+    ["2027-03-14T06:59:00Z", "1:59 AM EST", "3-14-2027 | 1:59AM EST"],
+    ["2027-03-14T07:00:00Z", "3:00 AM EDT", "3-14-2027 | 3AM EDT"],
+    ["2026-12-31T05:00:00Z", "12:00 AM EST", "12-31-2026 | 12AM EST"],
+    ["2026-10-18T16:00:00Z", "12:00 PM EDT", "10-18-2026 | 12PM EDT"],
+  ])("formats New York game times at the DST and day-period edges (%s)", (instant, start, playoff) => {
+    expect(formatLocalStartTime(instant, "America/New_York")).toBe(start);
+    expect(formatLocalPlayoffStart(instant, "America/New_York")).toBe(playoff);
+  });
+
   it("keeps the clock and changes only the zone label elsewhere", () => {
     // Intl names zones without North American abbreviations by offset (GMT+1 where moment says BST).
     const instant = "2027-06-01T18:30:00Z";

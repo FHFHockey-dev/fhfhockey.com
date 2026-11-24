@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { bshBoardModule, buildBshBoard, trimLateNights, type BshBoardSettings, type SkaterSeason } from "../lib/socialShare/modules/bshBoard";
+import { bshBoardModule, buildBshBoard, STALE_SETTINGS_NOTE, trimLateNights, type BshBoardSettings, type SkaterSeason } from "../lib/socialShare/modules/bshBoard";
 import { buildCategoryBlueprint, categoryBlueprintModule, type CategoryBlueprintSettings } from "../lib/socialShare/modules/categoryBlueprint";
 import { parseShareSettings, UNKNOWN_EVIDENCE, type AnyShareModule, type SharePostLoadResult } from "../lib/socialShare/modules/contract";
 import { buildNightlyFloor, nightlyFloorModule, type NightlyFloorSettings } from "../lib/socialShare/modules/nightlyFloor";
@@ -115,11 +115,34 @@ test("BSH Board risers and fallers state their comparison side by side, and stal
     const active = bshSettings({ view: (query.get("view") ?? "leaders") as BshBoardSettings["view"] });
     return edition("bsh-board", active, buildBshBoard(fictional, active));
   });
-  await openOptions(page);
-  await page.locator("label", { hasText: /^View/ }).locator("select").selectOption("movers");
-  // The view reloads the post on its own.
   const square = page.getByTestId("share-square");
-  await expect(square).toContainText("L10 vs previous 10");
+  const download = page.getByRole("button", { name: "Download PNG", exact: true });
+  await expect(download).toBeEnabled();
+  await openOptions(page);
+  const moversRequest = (url: URL) => url.pathname === "/api/v1/social-share/posts/bsh-board"
+    && url.searchParams.get("period") === "rolling" && url.searchParams.get("view") === "movers";
+  let moversPending = false, releaseMovers!: () => void;
+  const moversGate = new Promise<void>(resolve => { releaseMovers = resolve; });
+  await page.route(moversRequest, async route => {
+    if (route.request().method() === "GET") {
+      moversPending = true;
+      await moversGate;
+    }
+    await route.fallback();
+  });
+  try {
+    await page.locator("label", { hasText: /^View/ }).locator("select").selectOption("movers");
+    await expect.poll(() => moversPending).toBe(true);
+    await expect(square).toContainText(STALE_SETTINGS_NOTE);
+    await expect(download).toBeDisabled();
+    releaseMovers();
+    await expect(square).toContainText("L10 vs previous 10");
+  } finally {
+    releaseMovers();
+    await page.unroute(moversRequest);
+  }
+  await expect(square).toHaveAttribute("data-export-token", /\["view","movers"\]/);
+  await expect(download).toBeEnabled();
   await expect(page.getByTestId("post-evidence")).toContainText("the previous 10 appearances");
   await expect(square.getByTestId("board-up")).toContainText("Fictional Riser");
   await expect(square.getByTestId("board-down")).toContainText("Fictional Faller");
