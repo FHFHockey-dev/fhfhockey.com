@@ -191,6 +191,18 @@ const reservesWithheldNote = (count: number) =>
 const trimmedNote = (kept: number, total: number) =>
   `Interim projections were trimmed to the first ${kept} of ${total} player-games to fit the planning response; later games stay schedule-only.`;
 
+/** Keep proof metadata only for revisions represented by these rows. Run indices are stable across trims. */
+function withBridgeRows(wire: BridgeForecastWire, rows: WireRow[]): BridgeForecastWire {
+  if (!wire.proofs?.length) return { ...wire, rows };
+  const revisions = new Set(rows.map(row => wire.runs[row[2]][0]));
+  const proofs = wire.proofs.filter(proof => revisions.has(`${FORGE_DAILY_BRIDGE_VERSION}:${proof.runId}`));
+  return { ...wire, rows, proofs: proofs.length ? proofs : undefined };
+}
+
+// The optional field's encoded size inside the wire object, including its separating comma.
+const proofFieldBytes = (proofs: BridgeForecastWire["proofs"]) =>
+  proofs === undefined ? 0 : jsonUtf8Bytes({ proofs }) - 1;
+
 /**
  * Fits a whole response body within `budget` exact UTF-8 bytes. `envelope` must embed the wire as given. When the full
  * body is too large, it keeps the earliest wire rows (they are in game-time order) and says so in the wire's
@@ -201,21 +213,32 @@ export function fitBridgeWire<T>(wire: BridgeForecastWire | null, envelope: (wir
   if (jsonUtf8Bytes(full) <= budget) return full;
   // Reserve rows go first and all together, so a trim never keeps reserves for early games only.
   const reserves = wire ? wire.rows.filter(row => isReserveLine(row[8])).length : 0;
-  if (wire && reserves) return fitBridgeWire({ ...wire, limitations: [...wire.limitations, reservesWithheldNote(reserves)],
-    rows: wire.rows.filter(row => !isReserveLine(row[8])) }, envelope, budget);
+  if (wire && reserves) return fitBridgeWire({
+    ...withBridgeRows(wire, wire.rows.filter(row => !isReserveLine(row[8]))),
+    limitations: [...wire.limitations, reservesWithheldNote(reserves)],
+  }, envelope, budget);
   if (wire && wire.rows.length > 1) {
     const total = wire.rows.length, prefix = [0];
     for (const row of wire.rows) prefix.push(prefix[prefix.length - 1] + jsonUtf8Bytes(row));
     // Exact: each kept row adds its bytes and, after the first, a comma; the note likewise after any limitation.
     const empty = jsonUtf8Bytes(envelope({ ...wire, rows: [] })) + (wire.limitations.length ? 1 : 0);
-    const size = (kept: number) => empty + jsonUtf8Bytes(trimmedNote(kept, total)) + prefix[kept] + kept - 1;
+    const originalProofBytes = wire.proofs?.length ? proofFieldBytes(wire.proofs) : 0;
+    const size = (kept: number) => {
+      const proofDelta = originalProofBytes
+        ? proofFieldBytes(withBridgeRows(wire, wire.rows.slice(0, kept)).proofs) - originalProofBytes
+        : 0;
+      return empty + jsonUtf8Bytes(trimmedNote(kept, total)) + prefix[kept] + kept - 1 + proofDelta;
+    };
     let low = 0, high = total - 1;
     while (low < high) {
       const mid = Math.ceil((low + high) / 2);
       if (size(mid) <= budget) low = mid; else high = mid - 1;
     }
     if (low > 0) {
-      const fitted = envelope({ ...wire, limitations: [...wire.limitations, trimmedNote(low, total)], rows: wire.rows.slice(0, low) });
+      const fitted = envelope({
+        ...withBridgeRows(wire, wire.rows.slice(0, low)),
+        limitations: [...wire.limitations, trimmedNote(low, total)],
+      });
       if (jsonUtf8Bytes(fitted) <= budget) return fitted;
     }
   }

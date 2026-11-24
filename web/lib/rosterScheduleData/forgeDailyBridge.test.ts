@@ -1134,6 +1134,60 @@ describe("FORGE daily bridge", () => {
       expect(expandBridgeForecasts(body.bridgeForecasts, { players: [], games: [] })).toEqual([]);
     });
 
+    const proofWire = (): BridgeForecastWire => {
+      const wire = wireOf(0);
+      wire.runs.push(["forge-daily-bridge-v1:r2", ...wire.runs[0].slice(1)] as BridgeForecastWire["runs"][number]);
+      wire.proofs = [
+        { runId: "r", basis: "captured_snapshot", releaseSha: null, closureSha256: null },
+        { runId: "r2", basis: "verified_producer_closure", releaseSha: "a".repeat(40), closureSha256: "b".repeat(64) },
+      ];
+      wire.rows = [
+        ["s1", "1", 0, "2026-10-20T23:00:00.000Z", { GOALS: 0.25 }, null, false, null],
+        ["s1", "2", 0, "2026-10-21T23:00:00.000Z", { GOALS: 0.25 }, null, false, null],
+        ["s2", "2", 1, "2026-10-21T23:00:00.000Z", { GOALS: 0.25 }, null, false, null],
+      ];
+      return wire;
+    };
+
+    it("drops the proof of a reserve-only run when trimming all reserves", () => {
+      const wire = proofWire(), envelope = envelopeWith({ name: "Åsa" });
+      wire.rows[2].push("skater:no_forge_line");
+      const keptRows = wire.rows.slice(0, 2);
+      const expected = {
+        ...wire, rows: keptRows, proofs: wire.proofs!.slice(0, 1),
+        limitations: [...wire.limitations,
+          "FORGE reserve lines for 1 player-games were withheld to fit the planning response, so players outside FORGE's projected lineups are not covered and a pickup search here is not complete."],
+      };
+      const budget = jsonUtf8Bytes(envelope(expected));
+      expect(jsonUtf8Bytes(envelope(wire))).toBeGreaterThan(budget);
+
+      const body = fitBridgeWire(wire, envelope, budget);
+      expect(body).toEqual(envelope(expected));
+      expect(jsonUtf8Bytes(body)).toBe(budget);
+      expect(expandBridgeForecasts(body?.bridgeForecasts, { players, games })).toEqual(
+        expandBridgeForecasts(expected, { players, games }),
+      );
+    });
+
+    it.each([true, false])("drops the proof of the later run at the exact UTF-8 prefix limit (keep earlier proof: %s)", keepEarlierProof => {
+      const wire = proofWire(), envelope = envelopeWith({ name: "Örjan Lindström" });
+      if (!keepEarlierProof) wire.proofs = wire.proofs!.slice(1);
+      const expected = {
+        ...wire, rows: wire.rows.slice(0, 2), proofs: keepEarlierProof ? wire.proofs!.slice(0, 1) : undefined,
+        limitations: [...wire.limitations,
+          "Interim projections were trimmed to the first 2 of 3 player-games to fit the planning response; later games stay schedule-only."],
+      };
+      const budget = jsonUtf8Bytes(envelope(expected));
+      expect(jsonUtf8Bytes(envelope(wire))).toBeGreaterThan(budget);
+
+      const body = fitBridgeWire(wire, envelope, budget);
+      expect(body).toEqual(envelope(expected));
+      expect(jsonUtf8Bytes(body)).toBe(budget);
+      expect(expandBridgeForecasts(body?.bridgeForecasts, { players, games })).toEqual(
+        expandBridgeForecasts(expected, { players, games }),
+      );
+    });
+
     it("drops the bridge when no row fits, and rejects an envelope that cannot fit at all", () => {
       const wire = wireOf(5), envelope = envelopeWith({ players: [{ name: "Ведерников" }] });
       const bare = jsonUtf8Bytes(envelope(null));
@@ -1161,7 +1215,7 @@ describe("No FORGE line: labelled unknown (decisions 3, 47; supersedes TJ's opti
       expect(row.startProbability).toBeNull();
       expect(row.limitations.at(-1)).toBe(RESERVE_FORECAST_NOTES["skater:no_forge_line"]);
     }
-    expect(limitations.some(text => text.startsWith("No FORGE line: 1 players (2 player-games)"))).toBe(true);
+    expect(limitations).toContain("No FORGE line: 1 players (2 player-games) have no current FORGE line. Their contributions stay unknown unless accepted news confirms a skater is out for that game, when known values count 0; a player's last FORGE line, where one exists, is kept as his \"if he plays\" line and never counts.");
   });
 
   it("gives no 0 when a withheld run may hold his team's newer line, and says so", () => {
@@ -1262,13 +1316,13 @@ describe("FORGE reserve lines in the bridge", () => {
   const note = (forecast: { limitations: string[] }) => forecast.limitations.at(-1);
   const points = (stats: Record<string, number | null>) => stats.POINTS;
 
-  it("gives a player outside the lineup his conditional line, counting 0 with a labelled unknown participation", () => {
+  it("gives a player outside the lineup his conditional line, leaving unknown participation uncounted", () => {
     const { forecasts, limitations } = buildForgeDailyBridgeForecasts(reserveInputs(), players, games, now, 20262027, policy);
     const s2 = forecasts.filter(row => row.playerId === "s2");
     expect(s2.map(row => row.gameId)).toEqual(["1", "2"]);
     for (const row of s2) {
       expect(row.conditionalStats).toMatchObject({ GOALS: 0.2, ASSISTS: 0.27, POINTS: 0.47 });
-      expect(Object.values(row.stats).every(value => value === null || value === 0)).toBe(true);
+      expect(Object.values(row.stats).every(value => value === null)).toBe(true);
       expect(row.appearanceProbability).toBeNull();
       expect(row.startProbability).toBeNull();
       expect(note(row)).toBe(RESERVE_FORECAST_NOTES["skater:no_lineup_evidence"]);
@@ -1277,7 +1331,7 @@ describe("FORGE reserve lines in the bridge", () => {
     // The lineup line wins for s1: no reserve label and his own expectation.
     const s1 = forecasts.filter(row => row.playerId === "s1");
     expect(s1.every(row => reserveCodeOf(row) === null && points(row.stats)! > 0)).toBe(true);
-    expect(limitations.some(text => text.startsWith("FORGE reserve lines: 1 skaters"))).toBe(true);
+    expect(limitations).toContain("FORGE reserve lines: 1 skaters outside FORGE's projected lineup carry an \"if he dresses\" line (2 player-games); accepted news confirming the lineup lets that line count. Confirmed out or same-game FORGE roster evidence that the skater is out counts 0 for known values; otherwise the contribution stays unknown. 2 goalie-games use an \"if he starts\" line with an unknown start chance.");
   });
 
   describe("exact-game reserve rows (Astra 2026-11-23: MacKinnon, Makar, Quinn Hughes, Demidov)", () => {
@@ -1479,7 +1533,7 @@ describe("FORGE reserve lines in the bridge", () => {
     const tight = buildForgeDailyBridgeForecasts(reserveInputs(), [...players, g3], games, now, 20262027, policy, undefined, Math.floor((full + lineupBytes) / 2));
     expect(tight.forecasts.some(row => reserveCodeOf(row))).toBe(false);
     expect(tight.forecasts.length).toBe(built.forecasts.filter(row => !reserveCodeOf(row)).length);
-    expect(tight.limitations.some(text => /^FORGE reserve lines for \d+ player-games were withheld/.test(text))).toBe(true);
+    expect(tight.limitations.find(text => /^FORGE reserve lines for \d+ player-games were withheld/.test(text))).toMatch(/; "no FORGE line" rows are withheld with them\.$/);
   });
 
   describe("a week of runs, one per date (FORGE_PROJECTION_DAYS_AHEAD = 6)", () => {
