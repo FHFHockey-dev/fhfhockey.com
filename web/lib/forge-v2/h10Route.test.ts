@@ -34,7 +34,7 @@ describe("h10 route configuration", () => {
 
 const exec = promisify(execFile);
 const bin = process.env.FORGE_V2_POSTGRES_BIN;
-const migrations = ["20261029235656_forge_v2_immutable_history.sql", "20261123200000_forge_v2_goalie_h10.sql", "20261123210000_forge_v2_h10_partitions_archive.sql"].map(name => resolve(__dirname, "../../..", "supabase/migrations", name));
+const migrations = ["20261029235656_forge_v2_immutable_history.sql", "20261123200000_forge_v2_goalie_h10.sql", "20261123210000_forge_v2_h10_partitions_archive.sql", "20261124000000_forge_h10_interval_editions.sql"].map(name => resolve(__dirname, "../../..", "supabase/migrations", name));
 const MIN = 60000;
 
 describe.runIf(Boolean(bin))("h10 hosted handler on disposable PostgreSQL (reader SQL, nightly freeze, resume, material)", () => {
@@ -110,6 +110,32 @@ describe.runIf(Boolean(bin))("h10 hosted handler on disposable PostgreSQL (reade
     expect(again.body).toMatchObject({ status: "complete", cached: true });
     expect(reads).toBe(1);
     expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_vintages")).rows[0].n).toBe(1380);
+    // Uncertainty: one immutable interval edition per published vintage, naming the night's one stored calibration.
+    const calibrations = (await admin.query("select id, payload from forge_v2_private.forge_v2_records where kind = 'evaluation' and scope_key like 'forge-h10-interval-calibration:%'")).rows;
+    expect(calibrations).toHaveLength(1);
+    const editions = (await admin.query("select player_class, payload from forge_v2_private.forge_h10_interval_editions")).rows.map(r => ({ cls: r.player_class, e: JSON.parse(r.payload) }));
+    expect(editions.filter(x => x.cls === "skater")).toHaveLength(1380);
+    expect(editions.filter(x => x.cls === "goalie")).toHaveLength(120);
+    expect(new Set(editions.map(x => x.e.calibration.id))).toEqual(new Set([calibrations[0].id]));
+    const sample = editions.find(x => x.cls === "skater")!.e, vintage = JSON.parse((await admin.query("select payload from forge_v2_private.forge_v2_vintages where id = $1", [sample.vintageId])).rows[0].payload);
+    expect(sample).toMatchObject({ conditionalOn: "official_appearance", combination: "marginal_per_category_not_summable", inputCutoffAt: vintage.inputCutoffAt, modelVersion: vintage.modelVersion, horizon: vintage.horizon });
+    for (const c of Object.keys(vintage.means)) expect(sample.categories[c].point).toEqual(vintage.means[c]);
+    const bands = editions.flatMap(x => Object.values(x.e.categories as Record<string, { intervals: { state: string; value?: Array<{ level: number; lower: number; upper: number }>; reason?: string } }>));
+    expect(bands.filter(b => b.intervals.state === "available").every(b => b.intervals.value![0].lower <= b.intervals.value![0].upper && b.intervals.value![1].lower <= b.intervals.value![0].lower && b.intervals.value![1].upper >= b.intervals.value![0].upper)).toBe(true);
+    expect(bands.filter(b => b.intervals.state !== "available").every(b => typeof b.intervals.reason === "string" && b.intervals.reason.length > 0)).toBe(true);
+    // The rebuilt kernel reproduces every stored point forecast and model version (no silent drift).
+    expect(bands.some(b => ["point_forecast_mismatch", "model_version_mismatch", "model_unavailable_at_cutoff"].includes(b.intervals.reason ?? ""))).toBe(false);
+    expect(bands.filter(b => b.intervals.state === "available").length).toBeGreaterThan(bands.length / 2);
+    const marker = JSON.parse((await admin.query("select payload from forge_v2_private.forge_v2_records where scope_key like 'forge-h10-nightly-complete:%'")).rows[0].payload);
+    expect(marker.intervals).toMatchObject({ calibrationId: calibrations[0].id, skater: { keys: 1380, editions: 1380, keysWithoutEdition: 0 }, goalie: { keys: 120, editions: 120, keysWithoutEdition: 0 } });
+    // Editions are immutable, first-write-wins, and must name an existing vintage with its hash.
+    await expect(admin.query("update forge_v2_private.forge_h10_interval_editions set payload = payload")).rejects.toThrow(/IMMUTABLE/);
+    const copy = { ...sample, vintageId: "vintage:missing", id: "h10-interval:vintage:missing" };
+    await expect(admin.query("insert into forge_v2_private.forge_h10_interval_editions (id, vintage_id, player_class, player_id, game_id, payload) values ($1, $2, 'skater', $3, $4, $5)",
+      [copy.id, copy.vintageId, copy.playerId, copy.gameId, JSON.stringify(copy)])).rejects.toThrow(/INTERVAL_VINTAGE_MISSING/);
+    await admin.query("insert into forge_v2_private.forge_h10_interval_editions (id, vintage_id, player_class, player_id, game_id, payload) values ($1, $2, 'skater', $3, $4, $5)",
+      [sample.id, sample.vintageId, sample.playerId, sample.gameId, JSON.stringify({ ...sample, generatedAt: new Date().toISOString() })]);
+    expect((await admin.query("select count(*)::int n from forge_v2_private.forge_h10_interval_editions where vintage_id = $1", [sample.vintageId])).rows[0].n).toBe(1);
   }, 600000);
 
   it("turns a roster move and an injury event into material revisions for exactly those players", async () => {
@@ -140,5 +166,9 @@ describe.runIf(Boolean(bin))("h10 hosted handler on disposable PostgreSQL (reade
     expect((await call("material")).body).toMatchObject({ status: "complete" });
     const added = (await admin.query("select player_id::int, count(*)::int n from forge_v2_private.forge_v2_vintages where payload::jsonb->>'trigger' = 'material' group by 1 order by 1")).rows;
     expect(added).toEqual([LARKIN, injured, second].sort((a, b) => a - b).map(id => ({ player_id: id, n: 10 })));
+    // Material revisions get their own editions; earlier editions stay as issued.
+    const material = (await admin.query("select count(*)::int n from forge_v2_private.forge_h10_interval_editions e join forge_v2_private.forge_v2_vintages v on v.id = e.vintage_id where v.payload::jsonb->>'trigger' = 'material'")).rows[0].n;
+    expect(material).toBe(30);
+    expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_records where kind = 'evaluation' and scope_key like 'forge-h10-interval-calibration:%'")).rows[0].n).toBe(1);
   }, 600000);
 });

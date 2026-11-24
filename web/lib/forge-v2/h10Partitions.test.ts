@@ -12,7 +12,7 @@ import { ARCHIVE_TABLES, exportPartition, partitionDigest, restorePartition } fr
 
 const exec = promisify(execFile);
 const bin = process.env.FORGE_V2_POSTGRES_BIN;
-const files = ["20261029235656_forge_v2_immutable_history.sql", "20261123200000_forge_v2_goalie_h10.sql", "20261123210000_forge_v2_h10_partitions_archive.sql"]
+const files = ["20261029235656_forge_v2_immutable_history.sql", "20261123200000_forge_v2_goalie_h10.sql", "20261123210000_forge_v2_h10_partitions_archive.sql", "20261124000000_forge_h10_interval_editions.sql"]
   .map(name => resolve(__dirname, "../../..", "supabase/migrations", name));
 
 /** Migration 20261123210000 on disposable PostgreSQL: monthly partitions by issuance time, cross-partition
@@ -56,6 +56,7 @@ describe.runIf(Boolean(bin))("h10 monthly partitions and archive on disposable P
     await expect(admin.query(await readFile(files[2], "utf8"))).rejects.toThrow(/forge_v2_partitions_require_empty_tables/);
     await admin.query("rollback");
     await admin.query(await readFile(files[2], "utf8"));
+    await admin.query(await readFile(files[3], "utf8")); // interval editions (additive, applies on live tables)
     expect(await count(`select count(*)::int n from pg_inherits i join pg_class c on c.oid = i.inhparent where c.relname = 'forge_v2_vintages'`)).toBeGreaterThanOrEqual(2);
   });
 

@@ -22,8 +22,11 @@ import { H10_ROUTE, beginH10Dispatch, finishH10Dispatch, verifyH10Dispatch } fro
 import { realRows, verified } from "./forge-h10-real-inputs";
 
 const exec = promisify(execFile);
-const [packet, outDir] = process.argv.slice(2), bin = process.env.FORGE_V2_POSTGRES_BIN;
-if (!packet || !outDir || !bin) throw new Error("usage: <packet-dir> <out-dir> with FORGE_V2_POSTGRES_BIN");
+const [packet, outDir, flag] = process.argv.slice(2), bin = process.env.FORGE_V2_POSTGRES_BIN;
+if (!packet || !outDir || !bin) throw new Error("usage: <packet-dir> <out-dir> [--intervals] with FORGE_V2_POSTGRES_BIN");
+// --intervals: also apply the interval-editions migration (20261124000000), so the night issues uncertainty too; the
+// summary then carries per-dispatch times and storage for an A/B against a run without it.
+const INTERVALS = flag === "--intervals";
 const PORT = 65461, SECRET = "local-rehearsal-h10-dispatch-signing-key-0123456789";
 const STUBS = `
 create schema extensions; create extension pgcrypto schema extensions; create extension pg_stat_statements schema extensions;
@@ -61,7 +64,7 @@ async function main() {
   try {
     await admin.query("create role anon; create role authenticated; create role service_role login");
     await admin.query(STUBS);
-    for (const name of MIGRATIONS) await admin.query(await readFile(resolve(__dirname, "../..", "supabase/migrations", name), "utf8"));
+    for (const name of [...MIGRATIONS, ...(INTERVALS ? ["20261124000000_forge_h10_interval_editions.sql"] : [])]) await admin.query(await readFile(resolve(__dirname, "../..", "supabase/migrations", name), "utf8"));
     await admin.query("insert into vault.decrypted_secrets values ('forge_h10_dispatch_secret', $1)", [SECRET]);
     await admin.query("select extensions.pg_stat_statements_reset()");
     const config = h10RouteConfig({ FORGE_H10_SHADOW_ENABLED: "true", FORGE_H10_SHADOW_APPROVAL_ID: "local-first-night-rehearsal-not-an-approval", FORGE_H10_SHADOW_APPROVED_AT: "2026-11-23T22:00:00Z",
@@ -79,7 +82,7 @@ async function main() {
       const headers = Object.fromEntries(Object.entries(request.headers as Record<string, string>).map(([k, v]) => [k.toLowerCase(), v]));
       const auth = verifyH10Dispatch({ method: "POST", path: new URL(request.url).pathname, query: {}, headers, body: request.body }, SECRET, Date.now());
       if (!auth.ok) throw new Error(`rehearsal_signature_refused:${JSON.stringify(auth.body)}`);
-      const begun = await beginH10Dispatch(db, auth.dispatch);
+      const begun = await beginH10Dispatch(db, auth.dispatch), dispatchStarted = Date.now();
       let status = 200, body: Record<string, unknown>;
       if (!begun.ok) { status = begun.status; body = begun.body as Record<string, unknown>; }
       else {
@@ -90,7 +93,8 @@ async function main() {
         } finally { await finishH10Dispatch(db, auth.dispatch.dispatchId, outcome); }
       }
       await admin.query("insert into net._http_response (id, status_code, content_type, content, timed_out) values ($1, $2, 'application/json', $3, false)", [request.id, status, JSON.stringify(body!)]);
-      const entry = { tick: result, httpStatus: status, status: body!.status, reason: body!.reason ?? null, runKey: auth.dispatch.runKey, scopes: body!.scopes ?? null, jobs: body!.jobs ?? null, gaps: body!.gaps ?? null };
+      const entry = { tick: result, httpStatus: status, status: body!.status, reason: body!.reason ?? null, runKey: auth.dispatch.runKey, scopes: body!.scopes ?? null, jobs: body!.jobs ?? null, gaps: body!.gaps ?? null,
+        ms: Date.now() - dispatchStarted, intervals: body!.intervals ?? null };
       (summary.dispatches as unknown[]).push(entry);
       process.stdout.write(`${JSON.stringify(entry)}\n`);
       return entry;
@@ -106,6 +110,15 @@ async function main() {
     // A later tick after completion: the route answers from the completion marker, as production ticks to 12:45Z will.
     await tick();
     summary.complete = await verify("2-complete", runDate);
+    // Storage after one full night: every forge_v2_private table (partitions folded into their parent), with indexes.
+    await admin.query("analyze");
+    summary.storage = (await admin.query(`select coalesce(p.relname, c.relname) as table_name, sum(c.reltuples)::bigint as rows_estimate,
+        sum(pg_total_relation_size(c.oid))::bigint as bytes_with_indexes, sum(pg_indexes_size(c.oid))::bigint as index_bytes
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace left join pg_inherits i on i.inhrelid = c.oid left join pg_class p on p.oid = i.inhparent
+      where n.nspname = 'forge_v2_private' and c.relkind = 'r' group by 1 order by 3 desc`)).rows;
+    if (INTERVALS) summary.intervalEditions = (await admin.query(`select player_class, count(*)::int as editions, sum(octet_length(payload))::bigint as payload_bytes,
+        (select octet_length(payload) from forge_v2_private.forge_v2_records where kind = 'evaluation' limit 1) as calibration_record_bytes
+      from forge_v2_private.forge_h10_interval_editions group by 1 order by 1`)).rows;
 
     // Known defects, seeded directly as the owner with triggers off (replica): every check must see exactly these.
     await admin.query("begin; set local session_replication_role = replica");

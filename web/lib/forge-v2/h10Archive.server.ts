@@ -20,12 +20,13 @@ import { CATEGORIES } from "./contracts";
 import { canonicalJson } from "./identity";
 import { contentHash } from "./hash.server";
 
-export const ARCHIVE_TABLES = ["forge_v2_vintages", "forge_v2_publication_receipts", "forge_v2_goalie_vintages", "forge_v2_goalie_publication_receipts", "forge_v2_records"] as const;
+export const ARCHIVE_TABLES = ["forge_v2_vintages", "forge_v2_publication_receipts", "forge_v2_goalie_vintages", "forge_v2_goalie_publication_receipts", "forge_v2_records", "forge_h10_interval_editions"] as const;
 export type ArchiveTable = typeof ARCHIVE_TABLES[number];
 const ORDER: Record<ArchiveTable, string> = {
   forge_v2_vintages: "inserted_at, id", forge_v2_goalie_vintages: "inserted_at, id",
   forge_v2_publication_receipts: "inserted_at, vintage_id", forge_v2_goalie_publication_receipts: "inserted_at, vintage_id",
   forge_v2_records: "recorded_at, ordinal",
+  forge_h10_interval_editions: "inserted_at, id",
 };
 /** "2026-11" → the partition of `table` holding rows inserted in that UTC month. */
 export const partitionOf = (table: ArchiveTable, month: string) => {

@@ -23,6 +23,7 @@ import { PostgresHistoryStore, SqlConnection } from "./history.server";
 import { buildH10Training, H10GameLog, H10_RECIPE } from "./h10Features";
 import { H10RunInput, runH10Issuance } from "./h10Producer.server";
 import { runH10GoalieIssuance } from "./h10GoalieProducer.server";
+import { intervalCoverage, runIntervalPhase } from "./h10IntervalStore.server";
 import { h10InputsFromRows, H10InputRows, H10_SQL, readH10Rows } from "./h10Reader.server";
 import { easternDailyDeadline, easternDate, MaterialEvent } from "./refresh";
 import { CONDITIONING, ScheduleGame, TARGET_VERSION } from "./contracts";
@@ -106,6 +107,12 @@ async function goaliePhase(input: H10RouteInput, value: Frozen, built: Awaited<R
     trigger, stopAfterMs: input.now + input.config.budgetMs, evidence,
     config: { evidenceClass: "prospective_shadow", approvalEvidenceId: input.config.approvalEvidenceId, codeVersion: input.config.codeVersion, maximumTrainingExamples: input.config.maximumTrainingExamples } });
 }
+/** Interval editions for the run's published vintages (migration 20261124000000); calibrated once per night at the
+ * nightly cutoff. Skipped, writing nothing, until the migration is applied. */
+function intervalPhase(input: H10RouteInput, value: Frozen, built: Awaited<ReturnType<typeof inputs>>, date: string, calibrationAsOf: Instant) {
+  return runIntervalPhase({ db: input.db, denominator: value.denominator, date, calibrationAsOf, logs: built.logs, goalieLogs: built.goalieLogs, schedule: built.schedule,
+    seasonId: input.config.seasonId, maximumTrainingExamples: input.config.maximumTrainingExamples, clock: () => new Date().toISOString(), stopAfterMs: input.now + input.config.budgetMs });
+}
 const summary = (report: Awaited<ReturnType<typeof runH10Issuance>>) => ({ denominatorSha256: report.denominatorSha256, asOf: report.asOf, trigger: report.trigger, scopes: report.scopes, goalieKeys: report.goalieKeys,
   gaps: report.gaps.reduce((map, gap) => ({ ...map, [gap.reason]: (map[gap.reason] ?? 0) + 1 }), {} as Record<string, number>), jobs: report.jobs, queues: report.queues, training: report.training, complete: report.complete });
 
@@ -188,10 +195,13 @@ export async function handleH10Shadow(input: H10RouteInput): Promise<{ status: n
     const report = await issue(input, value, current.logs, "daily", [...keysOf(yesterday?.denominator), ...keysOf(yesterdayMaterial?.denominator)]);
     if (report.refused) return { status: 409, body: { success: false, status: "failed", reason: report.refused, training: report.training } };
     const goalies = report.complete ? await goaliePhase(input, value, current, "daily") : null;
-    const complete = report.complete && goalies?.complete === true;
+    const intervals = report.complete && goalies?.complete === true ? await intervalPhase(input, value, current, date, value.denominator.asOf!) : null;
+    const complete = report.complete && goalies?.complete === true && intervals?.complete === true;
+    const intervalSummary = intervals?.skipped ? { skipped: intervals.skipped } : complete ? await intervalCoverage(input.db, value.denominator) : null;
     if (complete) await new PostgresHistoryStore(input.db).appendRecord(`forge-h10-nightly-complete:${date}:${report.denominatorSha256}`, "affiliation",
-      `forge-h10-nightly-complete:${date}`, { denominatorSha256: report.denominatorSha256, asOf: report.asOf, jobs: report.jobs, goalies: goalies ? { published: goalies.published, reused: goalies.reused, gaps: goalies.gaps.length } : null });
-    return { status: 200, body: { success: true, status: complete ? "complete" : "continued", ...summary(report), goalies,
+      `forge-h10-nightly-complete:${date}`, { denominatorSha256: report.denominatorSha256, asOf: report.asOf, jobs: report.jobs, goalies: goalies ? { published: goalies.published, reused: goalies.reused, gaps: goalies.gaps.length } : null,
+        ...(intervalSummary ? { intervals: { calibrationId: intervals?.calibrationId ?? null, ...intervalSummary } } : {}) });
+    return { status: 200, body: { success: true, status: complete ? "complete" : "continued", ...summary(report), goalies, intervals,
       ...(official ? { official: { clubs: official.rosters.length, complete: official.complete, failures: official.failures, newMoves: official.newMoves.map(m => ({ playerId: m.playerId, from: m.fromTeamId, to: m.toTeamId })) } } : {}) } };
   }
   // Material: changes since the latest nightly freeze (today's after 04:00 ET, otherwise the previous night's).
@@ -276,7 +286,8 @@ export async function handleH10Shadow(input: H10RouteInput): Promise<{ status: n
   const built = await inputs(input, asOf, true, moves);
   const report = await issue(input, value, built.logs, { material: events }, [...keysOf(nightly.denominator), ...keysOf(previous?.denominator)], evidence);
   const goalies = report.complete ? await goaliePhase(input, value, built, { material: events }, evidence) : null;
-  const complete = report.complete && goalies?.complete === true;
-  return { status: 200, body: { success: true, status: complete ? "complete" : "continued", moved: moved.length, availability: rosterEvents.length, ...summary(report), goalies,
+  const intervals = report.complete && goalies?.complete === true ? await intervalPhase(input, value, built, date, nightly.denominator.asOf!) : null;
+  const complete = report.complete && goalies?.complete === true && intervals?.complete === true;
+  return { status: 200, body: { success: true, status: complete ? "complete" : "continued", moved: moved.length, availability: rosterEvents.length, ...summary(report), goalies, intervals,
     ...newsBody, ...(complete ? await overlay(value.denominator) : {}) } };
 }
