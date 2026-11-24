@@ -1805,11 +1805,13 @@ function resolvedNameReviewFragments(args: {
   review: readonly { start: number; end: number }[];
 }) {
   const { text, teamId, publishedAt, roster, ordinary, interpretation, review } = args;
+  if (!interpretation.excludedUnits?.length
+    && !interpretation.unresolved.some(issue => issue.situation === "goalie" && issue.reason === "missing_player")) return [];
   const players = [...roster.values()].flat();
   const ordinaryPlayers = [...ordinary.values()].flat();
   const keys = (p: RosterNameEntry) => [p.fullName, p.lastName, ...(p.aliases ?? []), ...(p.roleAliases ?? []).map(a => a.alias)]
     .map(normalizeIdentityName);
-  return (interpretation.excludedUnits ?? []).flatMap(unit => {
+  const forwards = (interpretation.excludedUnits ?? []).flatMap(unit => {
     if (unit.situation !== "es_forward" || unit.complete || unit.players.length !== 2 || unit.evidence.length !== 2) return [];
     const [first, second] = unit.evidence;
     if (!first || !second || first.end >= second.start
@@ -1831,6 +1833,31 @@ function resolvedNameReviewFragments(args: {
     });
     return isResolved ? [{ start, end, text: fragment, publishedAt, teamId, playerIds: ids }] : [];
   });
+
+  const starts = interpretation.unresolved.flatMap(issue => {
+    if (issue.situation !== "goalie" || issue.reason !== "missing_player" || issue.candidates?.length) return [];
+    const { start, end, text: fragment } = issue;
+    const subject = /^(.+?)[ \t]+starts$/iu.exec(fragment)?.[1];
+    const lineStart = text.lastIndexOf("\n", start - 1) + 1;
+    const lineEnd = text.indexOf("\n", end);
+    if (!subject || text.slice(start, end) !== fragment
+      || text.slice(lineStart, lineEnd === -1 ? text.length : lineEnd).trim() !== fragment
+      || review.some(span => span.start < end && span.end > start)) return [];
+    const whole = normalizeIdentityName(fragment);
+    if ([...players, ...ordinaryPlayers].some(player => keys(player).includes(whole))) return [];
+    const name = normalizeIdentityName(subject);
+    const matches = players.filter(player => keys(player).includes(name));
+    const goalie = matches[0];
+    if (matches.length !== 1 || !goalie || goalie.teamId !== teamId || playerPositionRole(goalie) !== "goalie"
+      || ![goalie.fullName, goalie.lastName].some(canonical => normalizeIdentityName(canonical) === name)
+      || ordinaryPlayers.some(player => player.playerId !== goalie.playerId && keys(player).includes(name))) return [];
+    const event = interpretation.events?.some(event => event.kind === "goalie" && event.state === "confirmed"
+      && event.goalieRole === "starter" && event.modality === "affirmative" && !event.observation && !event.reviewReason
+      && event.playerId === goalie.playerId && event.teamId === teamId && event.times?.observation === publishedAt
+      && event.evidence.start === start && event.evidence.end === end && event.evidence.text === fragment);
+    return event ? [{ start, end, text: fragment, publishedAt, teamId, playerIds: [goalie.playerId] }] : [];
+  });
+  return [...forwards, ...starts];
 }
 
 function interpretSourceRoster(args: TweetRosterContext & {
@@ -1937,7 +1964,7 @@ function interpretSourceRoster(args: TweetRosterContext & {
     })),
     reviewSpans: review.map(({ start, end }) => ({ start, end })),
   } : null;
-  const resolvedFragments = team && dated && publishedAt && interpreted?.excludedUnits?.length
+  const resolvedFragments = team && dated && publishedAt && interpreted
     ? resolvedNameReviewFragments({ text, teamId: team.id, publishedAt, roster: dated, ordinary: roster, interpretation: interpreted, review }) : [];
   const queueReview = team && established?.id === team.id && dated && interpreted?.units.length && review.length
     ? reviewsOutsideSavedLineupAliases(review, interpreted.units, text, team.id, dated.get(team.id) ?? []) : review;

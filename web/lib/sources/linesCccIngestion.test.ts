@@ -2457,3 +2457,54 @@ it("keeps separate surname reviews after a saved alias resolves its own lineup c
     vi.unstubAllEnvs();
   }
 });
+
+it("keeps a confirmed goalie start out of identity review only for its exact dated occurrence", () => {
+  vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+  try {
+    const teams = buildTeamDirectory([
+      { id: 10, abbreviation: "TOR", name: "Toronto Maple Leafs", logo: "" },
+      { id: 26, abbreviation: "LAK", name: "Los Angeles Kings", logo: "" },
+    ]);
+    const player = (playerId: number, fullName: string, lastName: string, position = "G", teamId = 10, aliases?: string[]) =>
+      ({ playerId, teamId, fullName, lastName, position, aliases });
+    const stolarz = player(8476932, "Anthony Stolarz", "Stolarz");
+    const bobrovsky = player(8475683, "Sergei Bobrovsky", "Bobrovsky");
+    const roster = [stolarz, bobrovsky, player(1, "Max Cowan", "Cowan", "F"),
+      player(2, "Auston Matthews", "Matthews", "F"), player(3, "Jack Roslovic", "Roslovic", "F")];
+    const at = "2026-11-14T23:43:49.000Z";
+    const makeRow = (extra: typeof roster = [], dated = true) => {
+      const ordinary = new Map([[10, roster]]);
+      const dateRoster = new Map([[10, roster.concat(extra.filter(p => p.teamId === 10))],
+        [26, extra.filter(p => p.teamId === 26)]]);
+      const text = "#Leafs warm-up lines\nCowan-Matthews-Roslovic\nStolarz starts\nUnknown starts\nBobrovsky";
+      const source = buildLinesCccSourceFromIftttEvent({ teams, snapshotDate: "2026-11-14",
+        rosterByTeam: ordinary, inferenceRosterByTeam: dated ? dateRoster : undefined, inferencePublishedAt: at,
+        event: { id: "confirmed-goalie", source: "fxtwitter", source_account: "GameDayLines", username: "GameDayLines", text,
+          link_to_tweet: null, tweet_id: null, tweet_created_at: at, created_at_label: null, received_at: at, raw_payload: {} } });
+      return toLinesCccRow({ source, rosterEntries: roster });
+    };
+    const queue = (row: ReturnType<typeof makeRow>) => collectUnresolvedNamesFromLineRows([row]).map(r => r.raw_name);
+    const row = makeRow();
+    expect(row.goalie_1_player_id).toBe(stolarz.playerId);
+    const interpretation = row.metadata!.interpretation as TweetInterpretation;
+    expect(interpretation.events).toContainEqual(expect.objectContaining({
+      kind: "goalie", state: "confirmed", goalieRole: "starter", playerId: stolarz.playerId,
+      evidence: expect.objectContaining({ text: "Stolarz starts" }),
+    }));
+    expect(interpretation.units.some(u => u.situation === "goalie" && u.players.some(p => p.playerId === bobrovsky.playerId))).toBe(true);
+    expect(queue(row)).not.toContain("Stolarz starts");
+    expect(queue(row)).toContain("Unknown starts");
+    expect(queue(makeRow([], false))).toContain("Stolarz starts");
+    expect(queue(makeRow([player(99, "Other Stolarz", "Stolarz")]))).toContain("Stolarz starts");
+    expect(queue(makeRow([player(99, "Other Stolarz", "Stolarz", "G", 26)]))).toContain("Stolarz starts");
+    expect(queue(makeRow([{ ...player(99, "Another Player", "Player"), aliases: ["Stolarz starts"] }]))).toContain("Stolarz starts");
+    const stale = structuredClone(row);
+    (stale.metadata!.intakeRosterEvidence as { publishedAt: string }).publishedAt = "2026-11-15T23:43:49.000Z";
+    expect(queue(stale)).toContain("Stolarz starts");
+    const noEvent = structuredClone(row);
+    (noEvent.metadata!.interpretation as TweetInterpretation).events = [];
+    expect(queue(noEvent)).toContain("Stolarz starts");
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});

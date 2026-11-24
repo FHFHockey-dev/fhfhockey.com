@@ -445,6 +445,16 @@ export function collectUnresolvedNamesFromLineRows(
             && proof.start === issue.start && proof.end === issue.end && proof.text === issue.text
             && Array.isArray(proof.playerIds) && proof.playerIds.length === 2
             && proof.playerIds[0] === issue.candidates?.[0] && proof.playerIds[1] === issue.candidates?.[1])) continue;
+        if (verified && issue.reason === "missing_player" && issue.situation === "goalie" && !issue.candidates?.length
+          && primaryText!.slice(issue.start, issue.end) === issue.text
+          && proofs.some(proof => proof?.publishedAt === roster.publishedAt && proof?.teamId === row.team_id
+            && proof.start === issue.start && proof.end === issue.end && proof.text === issue.text
+            && Array.isArray(proof.playerIds) && proof.playerIds.length === 1
+            && roster.players.some(player => player.id === proof.playerIds[0] && player.team_id === row.team_id && player.position === "G")
+            && interpretation.events?.some(event => event.kind === "goalie" && event.state === "confirmed" && event.goalieRole === "starter"
+              && event.modality === "affirmative" && !event.observation && !event.reviewReason
+              && event.playerId === proof.playerIds[0] && event.teamId === row.team_id && event.times?.observation === roster.publishedAt
+              && event.evidence.start === issue.start && event.evidence.end === issue.end && event.evidence.text === issue.text))) continue;
         addName(issue.text, issue.reason, { evidence: { start: issue.start, end: issue.end, text: issue.text }, sourcePublishedAt: interpretation.identityContext?.sourcePublishedAt ?? null, sourceOrdinal: issue.number ?? null, situation: issue.situation ?? null, candidates: issue.candidates ?? [], reviewKind: issue.reason === "ambiguous" ? "ambiguous_identity" : issue.reason === "invalid_extraction" ? "invalid_extraction" : "missing_membership" });
       }
       continue;
