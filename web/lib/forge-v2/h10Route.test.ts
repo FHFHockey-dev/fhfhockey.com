@@ -191,8 +191,8 @@ describe.runIf(Boolean(bin))("h10 hosted handler on disposable PostgreSQL (reade
   }, 900000);
 });
 
-// Regression (Chef, 2026-11-24): a skater job that ends failed (here: its publication fails on both attempts; a thrown
-// error is retried once after 60 s) must never let the night mark itself complete.
+// Regression (Chef, 2026-11-24): a night with any key not issued (a failed or expired skater job, or a goalie gap such
+// as a publication that failed all its retries) must never mark itself complete; transient errors retry to one edition.
 describe.runIf(Boolean(bin))("h10 nightly with failed skater jobs never completes", () => {
   let root: string, socket: string, admin: Pool, started = false;
   const environment: NodeJS.ProcessEnv = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))), NODE_ENV: "test" };
@@ -218,34 +218,52 @@ describe.runIf(Boolean(bin))("h10 nightly with failed skater jobs never complete
     if (root) await rm(root, { recursive: true, force: true });
   });
 
-  it("reports incomplete (with the failed jobs) and writes no completion marker; later ticks return the same", async () => {
-    // Every publication receipt for one player in nine fails, on every attempt.
-    const flaky = { query: (text: string, values?: unknown[]) => {
-      if (/insert into forge_v2_private\.forge_v2_publication_receipts/.test(text) && Number(values?.[3]) % 9 === 0) return Promise.reject(new Error("injected_persistent_database_error"));
+  it("retries transient publish errors to one edition, and reports persistent ones as incomplete (never complete); later ticks repeat it", async () => {
+    // Skaters: every receipt for one player in nine fails on every attempt; for another one in nine, only the first.
+    // Goalies: every receipt of one goalie fails (all three in-call attempts); another goalie's first receipt fails once.
+    const [persistentGoalie, transientGoalie] = league.roster.filter(p => p.position === "G").map(p => p.playerId);
+    const failedOnce = new Set<string>();
+    const flaky = { query: async (text: string, values?: unknown[]) => {
+      if (/insert into forge_v2_private\.forge_v2_publication_receipts/.test(text)) {
+        const player = Number(values?.[3]), id = String(values?.[0]);
+        if (player % 9 === 0) throw new Error("injected_persistent_database_error");
+        if (player % 9 === 1 && !failedOnce.has(id)) { failedOnce.add(id); throw new Error("injected_transient_database_error"); }
+      }
+      if (/insert into forge_v2_private\.forge_v2_goalie_publication_receipts/.test(text)) {
+        const id = String(values?.[0]), player = Number((await admin.query("select player_id from forge_v2_private.forge_v2_goalie_vintages where id = $1", [id])).rows[0]?.player_id);
+        if (player === persistentGoalie) throw new Error("injected_persistent_database_error");
+        if (player === transientGoalie && !failedOnce.has(id)) { failedOnce.add(id); throw new Error("injected_transient_database_error"); }
+      }
       return admin.query(text, values);
     } } as unknown as SqlConnection;
     const night = Date.now() - 20 * MIN;
     let last = await handleH10Shadow({ mode: "nightly", now: night, db: flaky, config });
-    // The retry is due 60 s after the first failure; until then the night is "continued", never complete.
-    for (let i = 0; i < 40 && last.body.status === "continued"; i++) {
-      expect(last.body.status).not.toBe("complete");
+    // Skater retries are due 60 s apart (three attempts); until the night finishes it is "continued", never complete.
+    for (let i = 0; i < 60 && last.body.status === "continued"; i++) {
       await new Promise(resolve => setTimeout(resolve, 5000));
       last = await handleH10Shadow({ mode: "nightly", now: night, db: flaky, config: { ...config, budgetMs: Date.now() - night + 120000 } });
     }
-    expect(last.body).toMatchObject({ success: false, status: "incomplete", reason: "skater_jobs_failed_or_expired", finished: true, complete: false });
-    const jobs = last.body.jobs as Record<string, number>;
-    expect(jobs.failed).toBeGreaterThan(0);
-    expect(jobs.published).toBeGreaterThan(0);
+    const keys = JSON.parse((await admin.query("select payload from forge_v2_private.forge_v2_records where scope_key like 'forge-h10-nightly:%'")).rows[0].payload).denominator.keys as Array<{ playerId: number; playerClass: string }>;
+    const persistentSkaterKeys = keys.filter(k => k.playerClass === "skater" && k.playerId % 9 === 0).length, persistentGoalieKeys = keys.filter(k => k.playerId === persistentGoalie).length;
+    expect(persistentSkaterKeys).toBeGreaterThan(0);
+    expect(last.body).toMatchObject({ success: false, status: "incomplete", reason: "keys_not_issued", finished: true, complete: false,
+      shortfall: { skaterJobsFailed: persistentSkaterKeys, goalieGaps: { "publish_failed:injected_persistent_database_error": persistentGoalieKeys } } });
     expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_records where scope_key like 'forge-h10-nightly-complete:%'")).rows[0].n).toBe(0);
     const marker = (await admin.query("select payload from forge_v2_private.forge_v2_records where scope_key like 'forge-h10-nightly-incomplete:%'")).rows;
     expect(marker).toHaveLength(1);
-    expect(JSON.parse(marker[0].payload)).toMatchObject({ reason: "skater_jobs_failed_or_expired", jobs: { failed: jobs.failed } });
-    // Goalies still issued once the skater queues finished.
-    expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_goalie_vintages")).rows[0].n).toBe(120);
+    expect(JSON.parse(marker[0].payload)).toMatchObject({ reason: "keys_not_issued", shortfall: { skaterJobsFailed: persistentSkaterKeys } });
+    // Transient failures were retried to exactly one edition per key: one vintage, one receipt, every key published.
+    for (const [V, R, players] of [["forge_v2_vintages", "forge_v2_publication_receipts", "player_id % 9 = 1"], ["forge_v2_goalie_vintages", "forge_v2_goalie_publication_receipts", `player_id = ${transientGoalie}`]]) {
+      const row = (await admin.query(`select count(*)::int vintages, count(distinct (player_id, game_id))::int keys, count(r.vintage_id)::int receipts
+        from forge_v2_private.${V} v left join forge_v2_private.${R} r on r.vintage_id = v.id where ${players}`)).rows[0];
+      expect(row.vintages).toBeGreaterThan(0);
+      expect(row).toEqual({ vintages: row.keys, keys: row.keys, receipts: row.keys });
+    }
+    expect(failedOnce.size).toBeGreaterThan(0);
     let reads = 0;
     const counting = { query: (text: string, values?: unknown[]) => { reads += 1; return admin.query(text, values); } } as unknown as SqlConnection;
     const again = await handleH10Shadow({ mode: "nightly", now: Date.now(), db: counting, config });
-    expect(again.body).toMatchObject({ success: false, status: "incomplete", cached: true });
+    expect(again.body).toMatchObject({ success: false, status: "incomplete", cached: true, reason: "keys_not_issued" });
     expect(reads).toBe(2);
   }, 900000);
 });

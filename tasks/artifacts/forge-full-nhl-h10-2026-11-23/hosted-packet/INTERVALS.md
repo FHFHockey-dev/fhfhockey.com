@@ -118,6 +118,17 @@ Bands by method in the holdout:
 
 **Reading:** the policy is safe and clearly labelled. The evidence so far suggests it leaves goalie 90% sharpness on the table at H1–H7. Revisiting that is a policy decision for TJ, not an automatic switch.
 
+**Decision and revisit condition** (TJ, 2026-11-24: "Keep the policy as built … Revisit goalie 90% once there's enough fresh evidence across H1–H7, not after every cutoff"). Policy v1 stands. The revisit threshold is predeclared here; it is not a per-cutoff switch.
+- **Fresh evidence only.** Prospective editions issued after release, scored against realized starts. Only games after 2026-11-22, the last games the v1 selection or this receipt saw.
+- **Trigger.** At least 150 distinct goalie starts at **every** horizon H1–H7, counted from the editions' kept candidate bands (`candidateIntervals`) against the issued baseline bands.
+- **Test, per horizon, once the trigger is met:**
+  - the v1 paired bootstrap rule, pooled over the three count categories (SAVES, SHOTS_AGAINST, GOALS_ALLOWED), each start's difference being the mean over its categories;
+  - a one-sided bound at 1 − 0.05/7 (Bonferroni across the seven horizons);
+  - WIN and SHUTOUT are excluded, because both methods give them identical bands.
+- **Containment.** A horizon qualifies only if the candidate 90% band also contains the 50% band in at least 95% of its scored starts.
+- **Outcome.** A proposed policy v2 for TJ. Nothing switches automatically, and no past edition is rewritten.
+- **Expected timing.** At roughly 14–16 goalie starts per horizon per night, 150 per horizon takes about 10–12 nights of realized outcomes, plus up to two weeks before H7 games happen. So not before mid-December.
+
 ## Same-cutoff parity and hosted time budget (final candidate)
 
 Receipt: `interval-frozen-parity.json`.
@@ -140,7 +151,20 @@ Receipt: `interval-frozen-parity.json`.
 - **Worst call.** 200.3 s with bands, against 200.8 s without. The issuance step's own budget check sets the worst call, not the bands. Every call is under the 300 s function limit.
 - **Budget guard.** The interval calibration starts only with at least 60 s of budget left (`CALIBRATION_RESERVE_MS`); otherwise the call ends "continued" and the next call starts with it. The route test drives this deferral through tight budgets. In C the phase started with 61 s left and ran.
 - **Hosted ceiling.** A call can run to the 200 s budget plus one calibration started at the edge (≤ 60 s reserve by construction). It stays under 300 s unless the host is more than 2.5× slower than this laptop on the calibration. **None of this was measured on Vercel.**
-- **Not usable for parity.** An earlier attempt also froze the issuance clock. The skater job leases are checked against the database's real clock, so every skater job failed. The route still reported the night "complete", because failed jobs count as finished. That is an existing behaviour, not caused by the bands, and the verifier would show it as 7,320 missing. **Fixed in this candidate:** the run report separates `finished` (every queue terminal) from `complete` (every job published). A finished night with any failed or expired skater job writes `forge-h10-nightly-incomplete:<date>` and reports `incomplete`, never `complete`; later ticks return it cached. The regression test in `h10Route.test.ts` (one player in nine fails publication on both attempts) fails on the old rule and passes on the new one.
+- **Not usable for parity.** An earlier attempt also froze the issuance clock. The skater job leases are checked against the database's real clock, so every skater job failed. The route still reported the night "complete", because failed jobs count as finished. That is an existing behaviour, not caused by the bands, and the verifier would show it as 7,320 missing. **Fixed in this candidate** (TJ: judge a night only by the key-by-key check):
+- The run report separates `finished` (every queue terminal) from `complete` (every job published).
+- A night is `complete` only if every frozen key was issued. Any failed or expired skater job, any skater gap, or any goalie gap (lock closed, schedule fields, thin training, publish failed after its retries) writes `forge-h10-nightly-incomplete:<date>` and reports `incomplete` with a `shortfall` by cause. Later ticks return it cached.
+- **Bounded retries within the night.** A thrown publish error is retryable.
+  - **Skaters:** 3 attempts (was 2), at least 60 s apart, so at the next nightly ticks.
+  - **Goalies:** 3 attempts within the call, after 1 s and then 4 s. Before this, a goalie publish error aborted the dispatch.
+  - Both retry the **same** draft or vintage bytes. The vintage insert is first-write-wins with a byte readback and the receipt is unique, so a retry can never create a second edition.
+  - Non-retryable results (missing or invalid inputs, lock passed, model failure) are deterministic, so they are not retried.
+- **Regression test** (`h10Route.test.ts`, own disposable Postgres):
+  - one player in nine fails publication on every attempt, and another fails only the first;
+  - one goalie fails every attempt, and another fails once.
+  - Expected and observed: `incomplete` with exact counts (`skaterJobsFailed`, goalie `publish_failed`), no complete marker, the incomplete marker, and the cached repeat.
+  - The transient cases end with exactly one vintage and one receipt per key.
+  - The earlier persistent-only version of this test failed on the old rule.
 
 ## Full-night rehearsal (runtime and storage)
 

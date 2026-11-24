@@ -113,6 +113,13 @@ function intervalPhase(input: H10RouteInput, value: Frozen, built: Awaited<Retur
   return runIntervalPhase({ db: input.db, denominator: value.denominator, date, calibrationAsOf, logs: built.logs, goalieLogs: built.goalieLogs, schedule: built.schedule,
     seasonId: input.config.seasonId, maximumTrainingExamples: input.config.maximumTrainingExamples, clock: () => new Date().toISOString(), stopAfterMs: input.now + input.config.budgetMs });
 }
+/** Every frozen key not issued tonight, by cause: failed or expired skater jobs, skater keys never queued (gaps) and
+ * goalie gaps (lock closed, schedule fields, thin training, publish failed after its retries). Empty means full. */
+function shortfallOf(report: Awaited<ReturnType<typeof runH10Issuance>>, goalies: { gaps: ReadonlyArray<{ reason: string }> } | null) {
+  const byReason = (gaps: ReadonlyArray<{ reason: string }>) => gaps.reduce((map, gap) => ({ ...map, [gap.reason]: (map[gap.reason] ?? 0) + 1 }), {} as Record<string, number>);
+  return { ...(report.jobs.failed ? { skaterJobsFailed: report.jobs.failed } : {}), ...(report.jobs.expired ? { skaterJobsExpired: report.jobs.expired } : {}),
+    ...(report.gaps.length ? { skaterGaps: byReason(report.gaps) } : {}), ...(goalies?.gaps.length ? { goalieGaps: byReason(goalies.gaps) } : {}) };
+}
 const summary = (report: Awaited<ReturnType<typeof runH10Issuance>>) => ({ denominatorSha256: report.denominatorSha256, asOf: report.asOf, trigger: report.trigger, scopes: report.scopes, goalieKeys: report.goalieKeys,
   gaps: report.gaps.reduce((map, gap) => ({ ...map, [gap.reason]: (map[gap.reason] ?? 0) + 1 }), {} as Record<string, number>), jobs: report.jobs, queues: report.queues, training: report.training, finished: report.finished, complete: report.complete });
 
@@ -200,15 +207,17 @@ export async function handleH10Shadow(input: H10RouteInput): Promise<{ status: n
     // Goalies and intervals run once every skater queue has finished, whether or not every skater job published.
     const goalies = report.finished ? await goaliePhase(input, value, current, "daily") : null;
     const intervals = report.finished && goalies?.complete === true ? await intervalPhase(input, value, current, date, value.denominator.asOf!) : null;
-    const finished = report.finished && goalies?.complete === true && intervals?.complete === true, complete = finished && report.complete;
+    // Complete means every frozen key issued: a failed or expired job, or any skater or goalie gap, is incomplete.
+    const shortfall = shortfallOf(report, goalies);
+    const finished = report.finished && goalies?.complete === true && intervals?.complete === true, complete = finished && report.complete && !Object.keys(shortfall).length;
     const intervalSummary = intervals?.skipped ? { skipped: intervals.skipped } : finished ? await intervalCoverage(input.db, value.denominator) : null;
     const marker = { denominatorSha256: report.denominatorSha256, asOf: report.asOf, jobs: report.jobs, goalies: goalies ? { published: goalies.published, reused: goalies.reused, gaps: goalies.gaps.length } : null,
       ...(intervalSummary ? { intervals: { calibrationId: intervals?.calibrationId ?? null, ...intervalSummary } } : {}) };
     if (complete) await new PostgresHistoryStore(input.db).appendRecord(`forge-h10-nightly-complete:${date}:${report.denominatorSha256}`, "affiliation", `forge-h10-nightly-complete:${date}`, marker);
     else if (finished) {
       await new PostgresHistoryStore(input.db).appendRecord(`forge-h10-nightly-incomplete:${date}:${report.denominatorSha256}`, "affiliation", `forge-h10-nightly-incomplete:${date}`,
-        { ...marker, reason: "skater_jobs_failed_or_expired" });
-      return { status: 200, body: { success: false, status: "incomplete", reason: "skater_jobs_failed_or_expired", ...summary(report), goalies, intervals } };
+        { ...marker, reason: "keys_not_issued", shortfall });
+      return { status: 200, body: { success: false, status: "incomplete", reason: "keys_not_issued", shortfall, ...summary(report), goalies, intervals } };
     }
     return { status: 200, body: { success: true, status: complete ? "complete" : "continued", ...summary(report), goalies, intervals,
       ...(official ? { official: { clubs: official.rosters.length, complete: official.complete, failures: official.failures, newMoves: official.newMoves.map(m => ({ playerId: m.playerId, from: m.fromTeamId, to: m.toTeamId })) } } : {}) } };
@@ -296,7 +305,8 @@ export async function handleH10Shadow(input: H10RouteInput): Promise<{ status: n
   const report = await issue(input, value, built.logs, { material: events }, [...keysOf(nightly.denominator), ...keysOf(previous?.denominator)], evidence);
   const goalies = report.finished ? await goaliePhase(input, value, built, { material: events }, evidence) : null;
   const intervals = report.finished && goalies?.complete === true ? await intervalPhase(input, value, built, date, nightly.denominator.asOf!) : null;
-  const finished = report.finished && goalies?.complete === true && intervals?.complete === true, complete = finished && report.complete;
-  return { status: 200, body: { success: complete || !finished, status: complete ? "complete" : finished ? "incomplete" : "continued", moved: moved.length, availability: rosterEvents.length, ...summary(report), goalies, intervals,
+  const shortfall = shortfallOf(report, goalies);
+  const finished = report.finished && goalies?.complete === true && intervals?.complete === true, complete = finished && report.complete && !Object.keys(shortfall).length;
+  return { status: 200, body: { success: complete || !finished, status: complete ? "complete" : finished ? "incomplete" : "continued", ...(finished && !complete ? { reason: "keys_not_issued", shortfall } : {}), moved: moved.length, availability: rosterEvents.length, ...summary(report), goalies, intervals,
     ...newsBody, ...(finished ? await overlay(value.denominator) : {}) } };
 }

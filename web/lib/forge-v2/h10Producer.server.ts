@@ -17,7 +17,9 @@ import { createRefreshState, easternDate, enqueueMaterialEvent, enqueueRefresh, 
 import { advanceLock, observeHorizonEpisodes } from "./schedule";
 import { buildH10Model, buildH10Training, H10GameLog, H10PrepareConfig, H10RateState, prepareH10Issuance } from "./h10Features";
 
-export const H10_BOUNDS: RefreshBounds = { maximumJobs: 5000, maximumEvents: 1000, concurrency: 25, batchSize: 25, maximumAttempts: 2, retryDelayMs: 60000, leaseMs: 10 * 60000 };
+/** Three attempts per job: a thrown publish error is retryable (pipeline.server.ts) and is retried at least 60 s later,
+ * i.e. at the next nightly tick, on the same issuance key, so the stored draft is republished, never re-issued. */
+export const H10_BOUNDS: RefreshBounds = { maximumJobs: 5000, maximumEvents: 1000, concurrency: 25, batchSize: 25, maximumAttempts: 3, retryDelayMs: 60000, leaseMs: 10 * 60000 };
 export const h10QueueId = (teamId: number, horizon: number) => `forge-h10:${teamId}:H${horizon}`;
 export interface H10Gap { playerId: number; gameId: number; teamId: number; horizon: Horizon; playerClass: DenominatorKey["playerClass"]; reason: string }
 
