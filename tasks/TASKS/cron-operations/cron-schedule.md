@@ -1,3 +1,13 @@
+-- 2026-11-24 job 466 forge-h10-shadow-nightly (*/15 8-12 UTC, select forge_v2_private.forge_h10_tick_v1('nightly'))
+-- is the FORGE Full-NHL H1-H10 nightly shadow tick, scheduled 2026-11-23 by explicit TJ approval. Each tick
+-- signs one dispatch to POST /api/v1/db/forge-h10-shadow; run key nightly:<ET date>, frozen at the 04:00 ET
+-- cutoff, so only the 09:00-12:45 UTC ticks belong to that night. The route connects with
+-- SUPABASE_DB_POOLER_URL (Supavisor Shared transaction pooler; the direct db.<ref> host is IPv6-only and
+-- unreachable from Vercel), else SUPABASE_DB_URL, else POSTGRES_URL. The 2026-11-24 night issued nothing
+-- (503 database_url_missing, then ENOTFOUND on a db.<ref> URL); a temporary same-day retry job 467 ran once
+-- at 14:26 UTC and was removed at 14:26:43 UTC. Evidence: tasks/artifacts/forge-full-nhl-h10-2026-11-23/
+-- hosted-packet/PACKET.md and first-night-verify.sql (read-only, run_date=<ET date>).
+
 -- 2026-08-04 local standings timeout-bound correction
 -- The scheduled/default update-standings-details?date=all path now resumes from
 -- the latest persisted standings date, stops at the regular-season end, and
