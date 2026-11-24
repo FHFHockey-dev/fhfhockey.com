@@ -3,6 +3,7 @@ import { tweetClaimAttribution } from "./tweetSourceDirectory";
 import moment from "moment-timezone";
 import { getPrimaryTextForSource, type ParsedLinesCccSource, type RowGoalieState } from "./linesCccIngestion";
 import { fetchRegisteredPlayerIdentities } from "./playerIdentity";
+import { readTweetNewsRosterEvidence } from "./tweetNewsRosterEvidence";
 import { tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
 import { injuryExitConflict, lineReportTimeScope } from "./lineReportTime";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
@@ -431,7 +432,19 @@ export function collectUnresolvedNamesFromLineRows(
 
     const interpretation = row.metadata?.interpretation as TweetInterpretation | undefined;
     if (interpretation) {
+      const proofs = row.metadata?.resolvedNameReviewFragments;
+      const roster = Array.isArray(proofs) && proofs.length && interpretation.identityContext?.basis === "publication_roster"
+        ? readTweetNewsRosterEvidence({ metadata: row.metadata ?? null, enriched_text: row.enriched_text, raw_text: row.raw_text,
+          quoted_text: row.quoted_enriched_text ?? row.quoted_raw_text, parser_filter_status: row.nhl_filter_status }) : null;
+      const verified = roster?.publishedAt && roster.source === (usesQuote ? "quoted" : "wrapper")
+        && roster.publishedAt === interpretation.identityContext?.sourcePublishedAt && roster.text === primaryText && Array.isArray(proofs);
       for (const issue of interpretation.unresolved) {
+        if (verified && issue.reason === "invalid_extraction" && issue.situation === "es_forward"
+          && issue.candidates?.length === 2 && primaryText!.slice(issue.start, issue.end) === issue.text
+          && proofs.some(proof => proof?.publishedAt === roster.publishedAt && proof?.teamId === row.team_id
+            && proof.start === issue.start && proof.end === issue.end && proof.text === issue.text
+            && Array.isArray(proof.playerIds) && proof.playerIds.length === 2
+            && proof.playerIds[0] === issue.candidates?.[0] && proof.playerIds[1] === issue.candidates?.[1])) continue;
         addName(issue.text, issue.reason, { evidence: { start: issue.start, end: issue.end, text: issue.text }, sourcePublishedAt: interpretation.identityContext?.sourcePublishedAt ?? null, sourceOrdinal: issue.number ?? null, situation: issue.situation ?? null, candidates: issue.candidates ?? [], reviewKind: issue.reason === "ambiguous" ? "ambiguous_identity" : issue.reason === "invalid_extraction" ? "invalid_extraction" : "missing_membership" });
       }
       continue;

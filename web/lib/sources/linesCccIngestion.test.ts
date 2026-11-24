@@ -2371,3 +2371,89 @@ it("keeps the schedule placeholder out of team matching on retained injury wordi
   expect(club.team?.abbreviation).toBe("UTA");
   expect(club.metadata?.teamLabelMatches).toEqual(["UTA"]);
 });
+
+it("omits resolved two-name forward fragments only with proof from the full dated roster", () => {
+  try {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const player = (playerId: number, fullName: string, lastName: string, position: string, aliases?: string[]) =>
+      ({ playerId, fullName, lastName, position, aliases, teamId: 14 });
+    const skaters = [player(8479705, "Jeffrey Viel", "Viel", "L"), player(8483447, "Conor Geekie", "Geekie", "C")];
+    const body = "#GoBolts warmup lines\n\nForwards:\nViel-Geekie\nViel - Geekie";
+    const at = "2026-11-14T23:34:33.000Z";
+    const row = (competitors: ReturnType<typeof player>[] = [], text = body, dated = true) => {
+      const roster = new Map([[14, skaters]]);
+      const fullDated = new Map([[14, [...skaters, ...competitors]]]);
+      const source = buildLinesCccSourceFromIftttEvent({
+        snapshotDate: "2026-11-14", teams: [lightning!], rosterByTeam: roster, inferenceRosterByTeam: dated ? fullDated : undefined,
+        inferencePublishedAt: at,
+        event: { id: "warmup-pair", source: "fxtwitter", source_account: "GameDayLines", username: "GameDayLines",
+          text, link_to_tweet: "https://x.com/BenjaminJReport/status/2121748650795626720", tweet_id: "2121748650795626720",
+          tweet_created_at: at, created_at_label: null, received_at: "2026-11-14T23:38:32.000Z", raw_payload: {} },
+      });
+      return toLinesCccRow({ source, rosterEntries: skaters });
+    };
+    const queue = (value: ReturnType<typeof row>) => collectUnresolvedNamesFromLineRows([value]).map(r => r.raw_name);
+    const settled = row();
+    expect((settled.metadata?.interpretation as TweetInterpretation).unresolved.map(i => i.text)).toEqual(["Viel-Geekie", "Viel - Geekie"]);
+    expect(queue(settled)).toEqual([]);
+    expect(queue(row([], body, false))).toEqual(["Viel-Geekie", "Viel - Geekie"]);
+    const unsupported = structuredClone(settled);
+    delete unsupported.metadata!.resolvedNameReviewFragments;
+    expect(queue(unsupported)).toEqual(["Viel-Geekie", "Viel - Geekie"]);
+    const later = structuredClone(settled);
+    (later.metadata!.intakeRosterEvidence as { publishedAt: string }).publishedAt = "2026-11-15T23:34:33.000Z";
+    expect(queue(later)).toHaveLength(2);
+    const partial = structuredClone(settled);
+    (partial.metadata!.resolvedNameReviewFragments as Array<unknown>).pop();
+    expect(queue(partial)).toEqual(["Viel - Geekie"]);
+    for (const conflict of [
+      player(1111, "Genuine Viel-Geekie", "Viel-Geekie", "G"),
+      player(2222, "Genuine Other", "Other", "G", ["Viel-Geekie"]),
+    ]) {
+      const disputed = row([conflict]);
+      const evidence = disputed.metadata!.intakeRosterEvidence as { players: Array<{ id: number }> };
+      expect(evidence.players.some(entry => entry.id === conflict.playerId)).toBe(false);
+      expect((disputed.metadata?.interpretation as TweetInterpretation).excludedUnits).toHaveLength(2);
+      expect(disputed.metadata?.resolvedNameReviewFragments).toBeUndefined();
+      expect(queue(disputed)).toEqual(["Viel-Geekie", "Viel - Geekie"]);
+    }
+    const ambiguous = row([player(3333, "Genuine Geekie", "Geekie", "G")]);
+    expect(ambiguous.metadata?.resolvedNameReviewFragments).toBeUndefined();
+    expect(queue(ambiguous)).toEqual(["Geekie", "Geekie"]);
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});
+
+it("keeps separate surname reviews after a saved alias resolves its own lineup cell", () => {
+  vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+  try {
+    const teams = buildTeamDirectory([{ id: 17, abbreviation: "DET", name: "Detroit Red Wings", logo: "" }]);
+    const anton = { playerId: 8483679, teamId: 17, fullName: "Anton Johansson", lastName: "Johansson", position: "D" };
+    const albert = { ...anton, playerId: 8481607, fullName: "Albert Johansson" };
+    const englund = { ...anton, playerId: 8477971, fullName: "Andreas Englund", lastName: "Englund" };
+    const alias = { alias: "An. Johansson", role: "es_defense" as const };
+    const text = "#LGRW Lineup\n\nEnglund - An. Johansson\n\nJohansson is day-to-day.";
+    const at = "2026-11-11T00:00:00.000Z";
+    const parse = (owners: number[]) => {
+      const roster = [anton, albert, englund].map(p => ({ ...p, roleAliases: owners.includes(p.playerId) ? [alias] : [] }));
+      const table = new Map([[17, roster]]);
+      const source = buildLinesCccSourceFromIftttEvent({ teams, snapshotDate: "2026-11-10", rosterByTeam: table,
+        inferenceRosterByTeam: table, inferencePublishedAt: at, event: { id: "scoped-alias", source: "fxtwitter",
+          source_account: "DFOFantasy", username: "DFOFantasy", text, link_to_tweet: null, tweet_id: null,
+          tweet_created_at: at, created_at_label: null, received_at: at, raw_payload: {} } });
+      const row = toLinesCccRow({ source, rosterEntries: roster });
+      const mentions = collectUnresolvedNamesFromLineRows([row]).filter(r => r.raw_name === "Johansson");
+      return { pairs: (row.metadata?.interpretation as TweetInterpretation).units.filter(u => u.situation === "es_defense"),
+        starts: mentions.map(r => (r.metadata as { evidence: { start: number } }).evidence.start) };
+    };
+    const inside = text.indexOf("Johansson"), separate = text.lastIndexOf("Johansson");
+    expect(parse([]).starts).toContain(inside);
+    const saved = parse([anton.playerId]);
+    expect(saved.pairs.map(u => u.players.map(p => p.playerId))).toContainEqual([englund.playerId, anton.playerId]);
+    expect(saved.starts).toEqual([separate]);
+    expect(parse([anton.playerId, albert.playerId]).starts).toContain(inside);
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});

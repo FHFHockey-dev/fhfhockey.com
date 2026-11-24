@@ -11,7 +11,7 @@ import { tweetClaimAttribution, verifiedFxSnapshotUrl } from "./tweetSourceDirec
 import { hasMixedMedicalMoves, reportedClubRosterMoves, rosterMoveClub } from "./reportedClubRosterMoves";
 import { isVerifiedRelayQuoteSummary, verifiedFxRelayQuoteClocks } from "./fxtwitterQueuePayload";
 import { BEAT_REPORTER_REVIEWS } from "lib/lines/beatReporters";
-import { inferTweetRosterNames, type TweetRosterScopedName } from "./tweetNameInference";
+import { inferTweetRosterNames, type TweetRosterNameMatch, type TweetRosterScopedName } from "./tweetNameInference";
 import { bulletinNamesOpponent, expectedLineupBulletin, expectedLineupEvent, expectedLineupFitsGame, reportedLineupEntries } from "./reportedLineupEntry";
 import type { TweetNewsRosterEvidence } from "./tweetNewsRosterEvidence";
 import { normalizeIdentityName, type PlayerSlotRole } from "./playerIdentity";
@@ -1772,6 +1772,67 @@ type TweetRosterContext = {
   inferredBeatTeamIds?: number[];
 };
 
+/** A surname inside an already confirmed, role-scoped alias is part of that same mention. */
+function reviewsOutsideSavedLineupAliases(
+  reviews: TweetRosterNameMatch[], units: TweetInterpretation["units"], text: string, teamId: number, datedRoster: RosterNameEntry[],
+) {
+  return reviews.filter(hit => {
+    if (hit.reason !== "ambiguous_name" || (hit.teamId !== null && hit.teamId !== teamId)
+      || text.slice(hit.start, hit.end) !== hit.rawName) return true;
+    return !units.some(unit => {
+      const role = unit.situation;
+      if (!unit.complete || (role !== "es_forward" && role !== "es_defense")) return false;
+      return unit.evidence.some((span, index) => {
+        if (span.end !== hit.end || span.start >= hit.start || text.slice(span.start, span.end) !== span.text
+          || !/^\p{Lu}\p{Ll}{0,3}\.[ \t]*$/u.test(text.slice(span.start, hit.start))) return false;
+        const player = resolveTweetNameToRosterEntry(span.text, datedRoster, role);
+        return player != null && player.teamId === teamId && player.playerId === unit.players[index]?.playerId
+          && hit.candidatePlayerIds.includes(player.playerId) && playerPositionRole(player) === role
+          && player.roleAliases?.some(alias => alias.role === role && alias.alias.toLowerCase() === span.text.toLowerCase());
+      });
+    });
+  });
+}
+
+/** Keep incomplete lineup rows, but avoid identity review when both literal names are settled. */
+function resolvedNameReviewFragments(args: {
+  text: string;
+  teamId: number;
+  publishedAt: string;
+  roster: Map<number, RosterNameEntry[]>;
+  ordinary: Map<number, RosterNameEntry[]>;
+  interpretation: TweetInterpretation;
+  review: readonly { start: number; end: number }[];
+}) {
+  const { text, teamId, publishedAt, roster, ordinary, interpretation, review } = args;
+  const players = [...roster.values()].flat();
+  const ordinaryPlayers = [...ordinary.values()].flat();
+  const keys = (p: RosterNameEntry) => [p.fullName, p.lastName, ...(p.aliases ?? []), ...(p.roleAliases ?? []).map(a => a.alias)]
+    .map(normalizeIdentityName);
+  return (interpretation.excludedUnits ?? []).flatMap(unit => {
+    if (unit.situation !== "es_forward" || unit.complete || unit.players.length !== 2 || unit.evidence.length !== 2) return [];
+    const [first, second] = unit.evidence;
+    if (!first || !second || first.end >= second.start
+      || !/^[ \t]*[-‐‑–—−]+[ \t]*$/u.test(text.slice(first.end, second.start))) return [];
+    const start = first.start, end = second.end;
+    if (review.some(span => span.start < end && span.end > start)) return [];
+    const fragment = text.slice(start, end);
+    const compound = normalizeIdentityName(fragment);
+    if ([...players, ...ordinaryPlayers].some(player => keys(player).includes(compound))) return [];
+    const ids = unit.players.map(player => player.playerId);
+    if (ids[0] === ids[1]) return [];
+    const isResolved = unit.evidence.every((span, index) => {
+      if (!span.text || span.start >= span.end || text.slice(span.start, span.end) !== span.text) return false;
+      const name = normalizeIdentityName(span.text);
+      const matching = players.filter(player => player.teamId === teamId && keys(player).includes(name));
+      return matching.length === 1 && matching[0]!.playerId === ids[index] && playerPositionRole(matching[0]!) === "es_forward"
+        && [matching[0]!.fullName, matching[0]!.lastName].some(canonical => normalizeIdentityName(canonical) === name)
+        && !ordinaryPlayers.some(player => player.teamId === teamId && player.playerId !== ids[index] && keys(player).includes(name));
+    });
+    return isResolved ? [{ start, end, text: fragment, publishedAt, teamId, playerIds: ids }] : [];
+  });
+}
+
 function interpretSourceRoster(args: TweetRosterContext & {
   text: string;
   snapshotDate: string;
@@ -1876,9 +1937,14 @@ function interpretSourceRoster(args: TweetRosterContext & {
     })),
     reviewSpans: review.map(({ start, end }) => ({ start, end })),
   } : null;
+  const resolvedFragments = team && dated && publishedAt && interpreted?.excludedUnits?.length
+    ? resolvedNameReviewFragments({ text, teamId: team.id, publishedAt, roster: dated, ordinary: roster, interpretation: interpreted, review }) : [];
+  const queueReview = team && established?.id === team.id && dated && interpreted?.units.length && review.length
+    ? reviewsOutsideSavedLineupAliases(review, interpreted.units, text, team.id, dated.get(team.id) ?? []) : review;
   return { team, rosterEntries, matched, goalieIdentity, structuredContent,
     inferenceMetadata: { ...(intakeRosterEvidence ? { intakeRosterEvidence } : {}),
-      ...(review.length ? { name_inference_review: review, name_inference_published_at: publishedAt } : {}) } };
+      ...(resolvedFragments.length ? { resolvedNameReviewFragments: resolvedFragments } : {}),
+      ...(queueReview.length ? { name_inference_review: queueReview, name_inference_published_at: publishedAt } : {}) } };
 }
 
 export function buildLinesCccSourceFromIftttEvent(args: TweetRosterContext & {
@@ -2030,6 +2096,7 @@ export function refreshLinesCccSourceFromPrimaryText(args: TweetRosterContext & 
     nativePostId: text === args.source.rawText && args.source.primaryTextSource !== "quoted_oembed" ? provenance?.verifiedDfoBulletinId : null,
   });
   const metadata = { ...args.source.metadata };
+  delete metadata.resolvedNameReviewFragments;
   delete metadata.name_inference_review;
   delete metadata.name_inference_published_at;
   delete metadata.intakeRosterEvidence;
