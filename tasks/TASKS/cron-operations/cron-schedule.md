@@ -4,8 +4,10 @@
 -- cutoff, so only the 09:00-12:45 UTC ticks belong to that night. The route connects with
 -- SUPABASE_DB_POOLER_URL (Supavisor Shared transaction pooler; the direct db.<ref> host is IPv6-only and
 -- unreachable from Vercel), else SUPABASE_DB_URL, else POSTGRES_URL. The 2026-11-24 night issued nothing
--- (503 database_url_missing, then ENOTFOUND on a db.<ref> URL); a temporary same-day retry job 467 ran once
--- at 14:26 UTC and was removed at 14:26:43 UTC. Evidence: tasks/artifacts/forge-full-nhl-h10-2026-11-23/
+-- (503 database_url_missing, then ENOTFOUND on a db.<ref> URL); temporary same-day retry jobs ran once each and
+-- were removed: 467 at 14:26 UTC (ENOTFOUND) and 468 at 14:57 UTC (password authentication failed). The
+-- pooler URL was then rebuilt from the current password and proven with select 1 before the next build.
+-- Each failure was caught at the first query, so nothing was written. Evidence: tasks/artifacts/forge-full-nhl-h10-2026-11-23/
 -- hosted-packet/PACKET.md and first-night-verify.sql (read-only, run_date=<ET date>).
 
 -- 2026-08-04 local standings timeout-bound correction
