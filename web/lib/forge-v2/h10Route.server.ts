@@ -22,6 +22,7 @@ import { contentHash } from "./hash.server";
 import { PostgresHistoryStore, SqlConnection } from "./history.server";
 import { buildH10Training, H10GameLog, H10_RECIPE } from "./h10Features";
 import { H10RunInput, runH10Issuance } from "./h10Producer.server";
+import { pacedConnection } from "./h10Batch.server";
 import { runH10GoalieIssuance } from "./h10GoalieProducer.server";
 import { intervalCoverage, runIntervalPhase } from "./h10IntervalStore.server";
 import { h10InputsFromRows, H10InputRows, H10_SQL, readH10Rows } from "./h10Reader.server";
@@ -43,6 +44,9 @@ export interface H10RouteConfig {
   /** Official roster reads (FORGE_H10_OFFICIAL_ROSTERS, default on); the API route passes the fetcher only when on. */
   officialRosters?: boolean;
   newsLookbackHours?: number; maximumRecheckTeams?: number; reportExpiryHours?: number; movesWindowDays?: number; overlayLookbackDays?: number;
+  /** Nightly statement pace on the shared database: one statement in flight, at most this many starts per second (30 in
+   * production). Absent: unpaced (local fixtures). */
+  statementsPerSecond?: number;
 }
 const NEWS_DEFAULTS = { newsLookbackHours: 72, maximumRecheckTeams: 4, reportExpiryHours: 72, movesWindowDays: 30, overlayLookbackDays: 14 } as const;
 export function h10RouteConfig(env: Record<string, string | undefined>): H10RouteConfig | { error: string } {
@@ -51,7 +55,7 @@ export function h10RouteConfig(env: Record<string, string | undefined>): H10Rout
   if (!approvalEvidenceId || !approvedAt || !Number.isFinite(Date.parse(approvedAt)) || !codeVersion) return { error: "approval_or_code_version_missing" };
   return { enabled: true, approvalEvidenceId, approvedAt: new Date(approvedAt).toISOString(), codeVersion, seasonId: Number(env.FORGE_H10_SEASON_ID ?? 20262027),
     logIngestUtcMinute: 7 * 60 + 30, gameHours: 3.5, rosterMaxAgeHours: 36, maximumTrainingExamples: 2000, budgetMs: 200_000, logsWindowDays: 60, minimumPlayers: 700, expectedTeams: 32,
-    officialRosters: env.FORGE_H10_OFFICIAL_ROSTERS !== "false", ...NEWS_DEFAULTS };
+    officialRosters: env.FORGE_H10_OFFICIAL_ROSTERS !== "false", statementsPerSecond: 30, ...NEWS_DEFAULTS };
 }
 
 const RECORDS = "forge_v2_private.forge_v2_records";
@@ -150,7 +154,9 @@ const currentClubs = (evidence: Awaited<ReturnType<typeof inputs>>["evidence"], 
 const overlayKeys = (denominator: FrozenDenominator): OverlayKey[] => denominator.keys.map(key => ({ playerId: key.playerId, gameId: key.gameId, teamId: key.teamId,
   scheduledStartAt: key.scheduledStartAt ?? null, playerClass: key.playerClass === "goalie" ? "goalie" as const : "skater" as const }));
 
-export async function handleH10Shadow(input: H10RouteInput): Promise<{ status: number; body: Record<string, unknown> }> {
+export async function handleH10Shadow(raw: H10RouteInput): Promise<{ status: number; body: Record<string, unknown> }> {
+  // Nightly: one statement in flight and at most 30 statement starts per second on the shared database.
+  const input: H10RouteInput = raw.mode === "nightly" && raw.config.statementsPerSecond ? { ...raw, db: pacedConnection(raw.db, raw.config.statementsPerSecond) } : raw;
   const startedAt = Date.now(), clock = input.clock ?? (() => input.now + (Date.now() - startedAt));
   const news = { ...NEWS_DEFAULTS, ...Object.fromEntries(Object.entries(input.config).filter(([key, value]) => key in NEWS_DEFAULTS && value !== undefined)) } as typeof NEWS_DEFAULTS;
   const fetchRoster = input.config.officialRosters === false ? undefined : input.fetchRoster;

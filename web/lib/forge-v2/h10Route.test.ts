@@ -13,6 +13,14 @@ import { handleH10Shadow, h10DenominatorGuard, h10RouteConfig, H10RouteConfig, s
 import { buildDenominator } from "./denominator";
 import { easternDailyDeadline, easternDate } from "./refresh";
 
+/** Skater receipt keys a statement writes: the scalar insert ($1 vintage id, $4 player) or the nightly batched one (its
+ * entries in $2, h10Batch.server.ts). */
+function skaterReceiptKeys(text: string, values?: unknown[]): Array<{ id: string; player: number }> {
+  if (!/insert into forge_v2_private\.forge_v2_publication_receipts/.test(text)) return [];
+  if (/jsonb_to_recordset/.test(text)) return (JSON.parse(String(values?.[1])) as Array<{ id: string; player_id: number }>).map(e => ({ id: e.id, player: e.player_id }));
+  return [{ id: String(values?.[0]), player: Number(values?.[3]) }];
+}
+
 describe("h10 denominator guard", () => {
   const league = syntheticLeague({ anchor: Date.UTC(2026, 10, 23, 15), teams: 6, futureDays: 5 });
   const short = buildDenominator({ evidence: league.evidence, schedule: league.schedule, asOf: new Date(Date.UTC(2026, 10, 23, 14)).toISOString(), seasonId: H10_SEASON, scheduleComplete: true, evidenceClass: "fixture" });
@@ -238,11 +246,10 @@ describe.runIf(Boolean(bin))("h10 nightly with failed skater jobs never complete
     const [persistentGoalie, transientGoalie] = league.roster.filter(p => p.position === "G").map(p => p.playerId);
     const failedOnce = new Set<string>();
     const flaky = { query: async (text: string, values?: unknown[]) => {
-      if (/insert into forge_v2_private\.forge_v2_publication_receipts/.test(text)) {
-        const player = Number(values?.[3]), id = String(values?.[0]);
-        if (player % 9 === 0) throw new Error("injected_persistent_database_error");
-        if (player % 9 === 1 && !failedOnce.has(id)) { failedOnce.add(id); throw new Error("injected_transient_database_error"); }
-      }
+      const receipts = skaterReceiptKeys(text, values);
+      if (receipts.some(k => k.player % 9 === 0)) throw new Error("injected_persistent_database_error");
+      const transient = receipts.filter(k => k.player % 9 === 1 && !failedOnce.has(k.id));
+      if (transient.length) { for (const k of transient) failedOnce.add(k.id); throw new Error("injected_transient_database_error"); }
       if (/insert into forge_v2_private\.forge_v2_goalie_publication_receipts/.test(text)) {
         const id = String(values?.[0]), player = Number((await admin.query("select player_id from forge_v2_private.forge_v2_goalie_vintages where id = $1", [id])).rows[0]?.player_id);
         if (player === persistentGoalie) throw new Error("injected_persistent_database_error");
@@ -315,17 +322,13 @@ describe.runIf(Boolean(bin))("h10 nightly after a lost publication response", ()
     const goalie = league.roster.find(p => p.position === "G")!.playerId;
     const lost = new Map<string, { cls: string; outputHash: string }>(); // vintage id → what the first (committed) write stored
     const lossy = { query: async (text: string, values?: unknown[]) => {
-      const skater = /insert into forge_v2_private\.forge_v2_publication_receipts/.test(text), goalieReceipt = /insert into forge_v2_private\.forge_v2_goalie_publication_receipts/.test(text);
-      const id = String(values?.[0]);
-      const target = skater ? Number(values?.[3]) % 11 === 2
-        : goalieReceipt ? Number((await admin.query("select player_id from forge_v2_private.forge_v2_goalie_vintages where id = $1", [id])).rows[0]?.player_id) === goalie : false;
+      const skaterTargets = skaterReceiptKeys(text, values).filter(k => k.player % 11 === 2 && !lost.has(k.id));
+      const goalieReceipt = /insert into forge_v2_private\.forge_v2_goalie_publication_receipts/.test(text), id = String(values?.[0]);
+      const goalieTarget = goalieReceipt && Number((await admin.query("select player_id from forge_v2_private.forge_v2_goalie_vintages where id = $1", [id])).rows[0]?.player_id) === goalie && !lost.has(id);
       const result = await admin.query(text, values); // the write commits (autocommit)
-      if (target && !lost.has(id)) {
-        const table = skater ? "forge_v2_vintages" : "forge_v2_goalie_vintages";
-        const stored = (await admin.query(`select output_hash from forge_v2_private.${table} where id = $1`, [id])).rows[0];
-        lost.set(id, { cls: skater ? "skater" : "goalie", outputHash: stored.output_hash });
-        throw new Error("injected_lost_response_after_commit");
-      }
+      for (const k of skaterTargets) lost.set(k.id, { cls: "skater", outputHash: (await admin.query("select output_hash from forge_v2_private.forge_v2_vintages where id = $1", [k.id])).rows[0].output_hash });
+      if (goalieTarget) lost.set(id, { cls: "goalie", outputHash: (await admin.query("select output_hash from forge_v2_private.forge_v2_goalie_vintages where id = $1", [id])).rows[0].output_hash });
+      if (skaterTargets.length || goalieTarget) throw new Error("injected_lost_response_after_commit");
       return result;
     } } as unknown as SqlConnection;
     const night = Date.now() - 20 * MIN;
@@ -352,13 +355,14 @@ describe.runIf(Boolean(bin))("h10 nightly after a lost publication response", ()
       expect(rows[0]).toMatchObject({ id, output_hash: first.outputHash, receipt: id, receipt_hash: first.outputHash });
       expect((await admin.query(`select count(*)::int n from forge_v2_private.${R} where vintage_id = $1`, [id])).rows[0].n).toBe(1);
     }
-    // The skater retries went through the queue's normal path: attempt 2 published the original edition, recognised as a
-    // publication that predates the attempt (pipeline.server.ts recoveredPublication, refresh.ts validation).
+    // Nightly skaters publish in batches (h10Batch.server.ts): after the lost batch response every unresolved key retried
+    // on its own within the call, found its committed vintage and receipt, and acknowledged that original edition in the
+    // same attempt (the scalar path recovers it at attempt 2; the material path still does).
     const skaterIds = [...lost].filter(([, x]) => x.cls === "skater").map(([id]) => id);
     const jobs = (await admin.query("select state from forge_v2_private.forge_v2_work_queue")).rows.flatMap(r => (typeof r.state === "string" ? JSON.parse(r.state) : r.state).jobs as Array<{ vintageId: string | null; status: string; attempts: number; recoveredPublication?: { vintage: { id: string } } }>);
     const retried = jobs.filter(j => j.vintageId && skaterIds.includes(j.vintageId));
     expect(retried).toHaveLength(skaterIds.length);
-    expect(retried.every(j => j.status === "published" && j.attempts === 2 && j.recoveredPublication?.vintage.id === j.vintageId)).toBe(true);
+    expect(retried.every(j => j.status === "published" && j.attempts === 1 && !j.recoveredPublication)).toBe(true);
     // Overall: no second edition anywhere (one vintage per issued key) and every vintage has its one receipt.
     for (const [V, R, n] of [["forge_v2_vintages", "forge_v2_publication_receipts", 1380], ["forge_v2_goalie_vintages", "forge_v2_goalie_publication_receipts", 120]] as const) {
       expect((await admin.query(`select count(*)::int v, count(distinct (player_id, game_id))::int k, count(distinct issuance_sequence)::int s,
@@ -408,4 +412,91 @@ describe.runIf(Boolean(bin))("h10 nightly without the interval table", () => {
     expect(records.filter(k => k.startsWith("forge-h10-nightly-incomplete:") || k.startsWith("forge-h10-interval-calibration:"))).toEqual([]);
     expect((await call(15000)).body).toMatchObject({ status: "complete", cached: true });
   }, 600000);
+});
+
+// Throughput candidate (Chef, 2026-11-24): nightly skaters publish in batches (h10Batch.server.ts). A response lost after
+// a committed batch statement — the vintage insert (A), the receipt insert (C) or the acknowledgement CAS — must leave
+// each key with its original edition (id, sequence, bytes and, after C, the receipt time) and exactly one receipt.
+describe.runIf(Boolean(bin))("h10 nightly batches after lost responses (vintage insert, receipt insert, acknowledgement CAS)", () => {
+  let root: string, socket: string, admin: Pool, started = false;
+  const environment: NodeJS.ProcessEnv = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))), NODE_ENV: "test" };
+  const now = Date.now(), cutoff = Date.parse(easternDailyDeadline(easternDate(new Date(now).toISOString()))) - 4 * 3600000;
+  const league = syntheticLeague({ anchor: now, teams: 6, pastDays: 40 });
+  const config: H10RouteConfig = { enabled: true, approvalEvidenceId: "fixture-route-batch-lost", approvedAt: new Date(cutoff - 3600000).toISOString(), codeVersion: "local-route-test",
+    seasonId: H10_SEASON, logIngestUtcMinute: 450, gameHours: 3.5, rosterMaxAgeHours: 36, maximumTrainingExamples: 1500, budgetMs: 120000, logsWindowDays: 60, minimumPlayers: 100, expectedTeams: 6 };
+  beforeAll(async () => {
+    root = await mkdtemp(join(tmpdir(), "forge-h10-route-batchlost-")); socket = join(root, "socket");
+    await mkdir(socket, { mode: 0o700 });
+    await exec(join(bin!, "initdb"), ["-D", join(root, "data"), "--no-locale", "--encoding=UTF8", "--auth-local=trust", "--auth-host=reject", "-U", "forge_v2_fixture"], { env: environment });
+    await exec(join(bin!, "pg_ctl"), ["-D", join(root, "data"), "-l", join(root, "server.log"), "-w", "-t", "10", "-o", `-c listen_addresses='' -c unix_socket_directories='${socket}' -p 65466`, "start"], { env: environment });
+    started = true;
+    admin = new Pool({ host: socket, port: 65466, user: "forge_v2_fixture", database: "postgres", max: 3 });
+    await admin.query("create role anon; create role authenticated; create role service_role login");
+    for (const file of migrations.filter(file => !file.endsWith("20261124000000_forge_h10_interval_editions.sql"))) await admin.query(await readFile(file, "utf8"));
+    await seedH10Public(admin, league, cutoff);
+  }, 120000);
+  afterAll(async () => {
+    await admin?.end();
+    if (started) await exec(join(bin!, "pg_ctl"), ["-D", join(root, "data"), "-w", "-t", "10", "stop", "-m", "fast"], { env: environment });
+    if (root) await rm(root, { recursive: true, force: true });
+  });
+
+  it("keeps the original edition and one receipt per key, and completes", async () => {
+    const dropped: Record<"A" | "C" | "CAS", { queue: string; ids: string[] } | null> = { A: null, C: null, CAS: null };
+    const first = new Map<string, { output_hash: string; sequence: string; confirmed_at: string | null }>();
+    const remember = async (ids: string[]) => {
+      for (const row of (await admin.query(`select v.id, v.output_hash, v.issuance_sequence::text as sequence, r.confirmed_at::text as confirmed_at from forge_v2_private.forge_v2_vintages v
+        left join forge_v2_private.forge_v2_publication_receipts r on r.vintage_id = v.id where v.id = any($1::text[])`, [ids])).rows) first.set(row.id, { output_hash: row.output_hash, sequence: row.sequence, confirmed_at: row.confirmed_at });
+    };
+    const dropping = { query: async (text: string, values?: unknown[]) => {
+      const batched = /jsonb_to_recordset\(\$2::jsonb\)/.test(text), queue = String(values?.[0]);
+      const entries = batched ? JSON.parse(String(values?.[1])) as Array<{ id: string }> : [];
+      const ack = /forge_v2_work_queue q set state=\$3::jsonb/.test(text) ? (JSON.parse(String(values?.[2])).jobs as Array<{ status: string; vintageId: string | null }>) : null;
+      const result = await admin.query(text, values); // the statement commits; then its response is lost
+      const used = new Set(Object.values(dropped).flatMap(d => d ? [d.queue] : []));
+      const stage = batched && /insert into forge_v2_private\.forge_v2_vintages/.test(text) ? "A" : batched && /insert into forge_v2_private\.forge_v2_publication_receipts/.test(text) ? "C" : null;
+      if (stage && !dropped[stage] && entries.length > 1 && !used.has(queue)) {
+        dropped[stage] = { queue, ids: entries.map(e => e.id) };
+        await remember(dropped[stage]!.ids);
+        throw new Error(`injected_lost_response_after_${stage}`);
+      }
+      if (ack?.some(job => job.status === "published") && !dropped.CAS && !used.has(queue)) {
+        dropped.CAS = { queue, ids: ack.flatMap(job => job.status === "published" && job.vintageId ? [job.vintageId] : []) };
+        await remember(dropped.CAS.ids);
+        throw new Error("injected_lost_response_after_acknowledgement");
+      }
+      return result;
+    } } as unknown as SqlConnection;
+    const night = Date.now() - 20 * MIN;
+    let last: Awaited<ReturnType<typeof handleH10Shadow>> | null = null, thrown: string[] = [];
+    for (let i = 0; i < 40 && !["complete", "incomplete"].includes(String(last?.body.status)); i++) {
+      try { last = await handleH10Shadow({ mode: "nightly", now: night, db: dropping, config: { ...config, budgetMs: Date.now() - night + 120000 } }); }
+      catch (error) { thrown = [...thrown, (error as Error).message]; }
+    }
+    // A and C are recovered key by key within the call; the lost acknowledgement fails that call, and the next call finds
+    // the committed queue state.
+    expect(thrown).toEqual(["injected_lost_response_after_acknowledgement"]);
+    expect(dropped.A && dropped.C && dropped.CAS).toBeTruthy();
+    expect(new Set([dropped.A!.queue, dropped.C!.queue, dropped.CAS!.queue]).size).toBe(3);
+    expect(last!.body).toMatchObject({ status: "complete", complete: true, jobs: { published: 1380 } });
+    expect(last!.body.jobs).not.toHaveProperty("failed");
+    for (const [stage, drop] of Object.entries(dropped)) {
+      expect(drop!.ids.length, stage).toBeGreaterThan(1);
+      for (const id of drop!.ids) {
+        const key = (await admin.query("select player_id, game_id from forge_v2_private.forge_v2_vintages where id = $1", [id])).rows[0];
+        const rows = (await admin.query(`select v.id, v.output_hash, v.issuance_sequence::text as sequence, r.confirmed_at::text as confirmed_at from forge_v2_private.forge_v2_vintages v
+          left join forge_v2_private.forge_v2_publication_receipts r on r.vintage_id = v.id where v.player_id = $1 and v.game_id = $2`, [key.player_id, key.game_id])).rows;
+        const original = first.get(id)!;
+        expect(rows, `${stage} ${id}`).toEqual([{ id, output_hash: original.output_hash, sequence: original.sequence, confirmed_at: original.confirmed_at ?? rows[0].confirmed_at }]);
+        expect(rows[0].confirmed_at).not.toBeNull();
+      }
+    }
+    // After C and after the CAS the receipt existed before the loss: its confirmation time is the original one.
+    expect([...dropped.C!.ids, ...dropped.CAS!.ids].every(id => first.get(id)!.confirmed_at !== null)).toBe(true);
+    const lostQueue = (await admin.query("select state from forge_v2_private.forge_v2_work_queue where id = $1", [dropped.CAS!.queue])).rows[0].state.jobs as Array<{ status: string; attempts: number }>;
+    expect(lostQueue.every(job => job.status === "published" && job.attempts === 1)).toBe(true);
+    expect((await admin.query(`select count(*)::int v, count(distinct (player_id, game_id))::int k, count(distinct issuance_sequence)::int s,
+      (select count(*)::int from forge_v2_private.forge_v2_publication_receipts) r from forge_v2_private.forge_v2_vintages`)).rows[0]).toEqual({ v: 1380, k: 1380, s: 1380, r: 1380 });
+    expect((await admin.query("select count(*)::int n from forge_v2_private.forge_v2_records where scope_key like 'forge-h10-nightly-complete:%'")).rows[0].n).toBe(1);
+  }, 900000);
 });

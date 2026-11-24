@@ -199,3 +199,66 @@ describe.runIf(Boolean(bin))("FORGE H1–H10 night two: queue rotation and the n
     expect(back.coverage).toMatchObject({ numeric: 1380, stray: [] });
   }, 300000);
 });
+
+// Throughput candidate (Chef, 2026-11-24): the nightly batched runner (h10Batch.server.ts) must issue what the scalar
+// runner issues. Two databases, one frozen night each way: the same vintages byte for byte apart from the wall-clock
+// stamps (generation time, claim start), the same issuance sequence order, the same ledger records, every job published.
+describe.runIf(Boolean(bin))("FORGE H1–H10 nightly batched issuance matches the scalar runner", () => {
+  let root: string, socket: string, admin: Pool, started = false;
+  const pools: Pool[] = [];
+  const environment: NodeJS.ProcessEnv = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))), NODE_ENV: "test" };
+  const T = Math.floor(Date.now() / 1000) * 1000, iso = (ms: number) => new Date(ms).toISOString();
+  const league = syntheticLeague({ anchor: T, teams: 6 });
+  const denominator = buildDenominator({ evidence: league.evidence, schedule: league.schedule, asOf: iso(T - 9 * MIN), seasonId: H10_SEASON, scheduleComplete: true, evidenceClass: "fixture" });
+
+  beforeAll(async () => {
+    root = await mkdtemp(join(tmpdir(), "forge-h10-parity-")); socket = join(root, "socket");
+    await mkdir(socket, { mode: 0o700 });
+    await exec(join(bin!, "initdb"), ["-D", join(root, "data"), "--no-locale", "--encoding=UTF8", "--auth-local=trust", "--auth-host=reject", "-U", "forge_v2_fixture"], { env: environment });
+    await exec(join(bin!, "pg_ctl"), ["-D", join(root, "data"), "-l", join(root, "server.log"), "-w", "-t", "10", "-o", `-c listen_addresses='' -c unix_socket_directories='${socket}' -p 65465`, "start"], { env: environment });
+    started = true;
+    admin = new Pool({ host: socket, port: 65465, user: "forge_v2_fixture", database: "postgres", max: 2 });
+    await admin.query("create role anon; create role authenticated; create role service_role login");
+    for (const name of ["batched", "scalar"]) {
+      await admin.query(`create database ${name}`);
+      const owner = new Pool({ host: socket, port: 65465, user: "forge_v2_fixture", database: name, max: 1 });
+      await owner.query(await readFile(migration, "utf8"));
+      await owner.end();
+      pools.push(new Pool({ host: socket, port: 65465, user: "service_role", database: name, max: 2 }));
+    }
+  }, 60000);
+  afterAll(async () => {
+    for (const pool of pools) await pool.end();
+    await admin?.end();
+    if (started) await exec(join(bin!, "pg_ctl"), ["-D", join(root, "data"), "-w", "-t", "10", "stop", "-m", "fast"], { env: environment });
+    if (root) await rm(root, { recursive: true, force: true });
+  });
+
+  it("issues byte-identical vintages and ledger records, in the same sequence order, with fewer statements", async () => {
+    const statements: number[] = [];
+    for (const [index, scalarQueue] of [[0, false], [1, true]] as const) {
+      let n = 0;
+      const counted = { query: (text: string, values?: unknown[]) => { n += 1; return pools[index].query(text, values); } } as unknown as SqlConnection;
+      const report = await runH10Issuance({ db: counted, store: new PostgresHistoryStore(counted), artifacts: { put: async () => { throw new Error("no_artifact_writes_expected"); } },
+        denominator, schedule: league.schedule, logs: league.logs, clock: () => new Date().toISOString(), trigger: "daily", scalarQueue,
+        config: { evidenceClass: "fixture", approvalEvidenceId: "fixture-h10-parity", approvedAt: iso(T - 60 * MIN), codeVersion: "local-test", maximumTrainingExamples: 1500 } });
+      expect(report).toMatchObject({ complete: true, jobs: { published: 1380 }, gaps: [] });
+      statements.push(n);
+    }
+    const read = async (pool: Pool) => {
+      const vintages = (await pool.query("select v.issuance_key, v.payload, v.issuance_sequence::int as sequence, r.output_hash from forge_v2_private.forge_v2_vintages v join forge_v2_private.forge_v2_publication_receipts r on r.vintage_id = v.id order by v.issuance_key")).rows
+        .map(row => { const p = JSON.parse(row.payload); delete p.generatedAt; delete p.issuanceAttempt.startedAt; return { key: row.issuance_key, sequence: row.sequence, payload: p }; });
+      const records = (await pool.query("select id, kind, scope_key, predecessor_id, content_hash from forge_v2_private.forge_v2_records where kind <> 'history_event' order by id")).rows;
+      const queues = (await pool.query("select id, state from forge_v2_private.forge_v2_work_queue order by id")).rows.map(row => [row.id, (row.state.jobs as Array<{ status: string; attempts: number }>).map(j => `${j.status}:${j.attempts}`)]);
+      return { vintages, records, queues };
+    };
+    const [batched, scalar] = [await read(pools[0]), await read(pools[1])];
+    expect(batched.vintages).toHaveLength(1380);
+    expect(batched.vintages).toEqual(scalar.vintages);
+    expect(batched.records.length).toBeGreaterThan(1380 * 2);
+    expect(batched.records).toEqual(scalar.records);
+    expect(batched.queues).toEqual(scalar.queues);
+    // The batched runner needs a small fraction of the scalar statements for the same night.
+    expect(statements[0] * 5).toBeLessThan(statements[1]);
+  }, 600000);
+});

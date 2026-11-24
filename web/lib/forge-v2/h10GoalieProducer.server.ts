@@ -70,11 +70,14 @@ export async function runH10GoalieIssuance(input: H10GoalieRunInput) {
   const report = { keys: keys.length, published: 0, reused: 0, gaps: [] as Array<{ playerId: number; gameId: number; reason: string }>, numeric: 0, nonNumeric: 0,
     training: { examples: training.length, available, skipped, modelVersion }, complete: false };
   const delays = input.retryDelaysMs ?? GOALIE_PUBLISH_RETRY_DELAYS_MS;
+  // Nightly: a retry wait that would cross the budget ends the phase instead (the next call republishes the stored draft).
+  const DEADLINE = "deadline";
   const publish = async (vintage: GoalieVintage): Promise<string | null> => {
     for (let attempt = 0; ; attempt++) {
       try { await store.publish(vintage); return null; }
       catch (error) {
         if (attempt >= delays.length) return `publish_failed:${(error instanceof Error ? error.message : "unknown").slice(0, 60)}`;
+        if (!events && input.stopAfterMs !== undefined && Date.now() + delays[attempt] > input.stopAfterMs) return DEADLINE;
         await new Promise(resolve => setTimeout(resolve, delays[attempt]));
       }
     }
@@ -96,6 +99,7 @@ export async function runH10GoalieIssuance(input: H10GoalieRunInput) {
     const existing = await store.getDraft(issuanceKey);
     if (existing) {
       const failed = await publish(existing);
+      if (failed === DEADLINE) return report;
       if (failed) report.gaps.push({ playerId: key.playerId, gameId: key.gameId, reason: failed }); else report.reused += 1;
       continue;
     }
@@ -117,6 +121,7 @@ export async function runH10GoalieIssuance(input: H10GoalieRunInput) {
         input.config.evidenceClass === "prospective_shadow" ? "prospective_shadow_unqualified" : "fixture_only", ...(state.goalies.get(key.playerId)?.starts ?? 0) < 3 ? ["sparse_goalie_history_shrunk_to_prior"] : []],
     };
     const failed = await publish(vintage);
+    if (failed === DEADLINE) return report;
     if (failed) { report.gaps.push({ playerId: key.playerId, gameId: key.gameId, reason: failed }); continue; }
     report.published += 1;
     if (GOALIE_CATEGORIES.every(c => means[c].state === "available")) report.numeric += 1; else report.nonNumeric += 1;

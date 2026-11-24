@@ -14,7 +14,7 @@ export interface HistoryPage { revisions: PublishedVintage[]; nextCursor: string
 export interface QueueHistoryRecord { id: string; kind: "history_event"; scopeKey: string; payload: object; predecessorId: string | null }
 export interface PublicationClaim { queueId: string; jobId: string; attempt: number }
 
-function decoded(row: StoredVintage): PublishedVintage {
+export function decoded(row: StoredVintage): PublishedVintage {
   const vintage = JSON.parse(row.payload) as Vintage;
   assertVintage(vintage);
   if (contentHash(vintage) !== row.output_hash || !row.confirmed_at) throw new Error("Corrupt or unpublished vintage");

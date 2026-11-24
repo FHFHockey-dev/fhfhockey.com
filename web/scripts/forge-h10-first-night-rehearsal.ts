@@ -35,6 +35,23 @@ const FROZEN = option("frozen"), BUDGET_MS = option("budget-ms") ? Number(option
 // --intervals: also apply the interval-editions migration (20261124000000), so the night issues uncertainty too; the
 // summary then carries per-dispatch times and storage for an A/B against a run without it.
 const INTERVALS = flags.includes("--intervals");
+// --latency-ms: added before every route statement (THROUGHPUT-ANALYSIS.md §3 proof 1); each dispatch then reports its
+// statement count, the most statement starts in any one-second window and the most statements in flight at once.
+const LATENCY_MS = Number(option("latency-ms") ?? 0);
+function metered(inner: SqlConnection) {
+  const starts: number[] = [];
+  let inFlight = 0, maxInFlight = 0;
+  const db: SqlConnection = { query: async (text, values) => {
+    starts.push(Date.now()); inFlight += 1; maxInFlight = Math.max(maxInFlight, inFlight);
+    try { if (LATENCY_MS) await new Promise(resolve => setTimeout(resolve, LATENCY_MS)); return await inner.query(text, values); } finally { inFlight -= 1; }
+  } };
+  const stats = () => {
+    let peak = 0;
+    for (let i = 0, j = 0; i < starts.length; i++) { while (starts[i] - starts[j] >= 1000) j++; peak = Math.max(peak, i - j + 1); }
+    return { statements: starts.length, maxPerSecond: peak, maxInFlight };
+  };
+  return { db, stats };
+}
 const PORT = 65461, SECRET = "local-rehearsal-h10-dispatch-signing-key-0123456789";
 const STUBS = `
 create schema extensions; create extension pgcrypto schema extensions; create extension pg_stat_statements schema extensions;
@@ -79,10 +96,12 @@ async function main() {
       VERCEL_GIT_COMMIT_SHA: "local-rehearsal-code-version" });
     if ("error" in config) throw new Error(config.error);
     if (BUDGET_MS) config.budgetMs = BUDGET_MS;
+    // --roster-max-age-hours: the saved 11-23 roster read ages out of the 36 h window; a later local freeze widens it.
+    if (option("roster-max-age-hours")) config.rosterMaxAgeHours = Number(option("roster-max-age-hours"));
     // Issuance itself runs on real time (job leases are checked against the database clock), so pick a frozen time after
     // which no denominator game starts before the runs end.
     const frozen = FROZEN ? { clock: () => Date.parse(FROZEN) } : {};
-    summary.options = { intervals: INTERVALS, frozen: FROZEN ?? null, budgetMs: config.budgetMs };
+    summary.options = { intervals: INTERVALS, frozen: FROZEN ?? null, budgetMs: config.budgetMs, latencyMs: LATENCY_MS, statementsPerSecond: config.statementsPerSecond ?? null, rosterMaxAgeHours: config.rosterMaxAgeHours };
     const fetchRoster = async (abbrev: string) => JSON.parse(sweep(`roster_${abbrev}_20262027.json`));
 
     // One cron tick, then delivery of whatever it queued, exactly as the hosted route handles it.
@@ -97,17 +116,18 @@ async function main() {
       if (!auth.ok) throw new Error(`rehearsal_signature_refused:${JSON.stringify(auth.body)}`);
       const begun = await beginH10Dispatch(db, auth.dispatch), dispatchStarted = Date.now();
       let status = 200, body: Record<string, unknown>;
+      const meter = metered(db);
       if (!begun.ok) { status = begun.status; body = begun.body as Record<string, unknown>; }
       else {
         let outcome = "failed";
         try {
-          const result2 = await handleH10Shadow({ mode: "nightly", now: Date.now(), db, config, readRows: async () => rows, fetchRoster, ...frozen });
+          const result2 = await handleH10Shadow({ mode: "nightly", now: Date.now(), db: meter.db, config, readRows: async () => rows, fetchRoster, ...frozen });
           outcome = String(result2.body.status ?? "unknown"); status = result2.status; body = { ...result2.body, runKey: auth.dispatch.runKey };
         } finally { await finishH10Dispatch(db, auth.dispatch.dispatchId, outcome); }
       }
       await admin.query("insert into net._http_response (id, status_code, content_type, content, timed_out) values ($1, $2, 'application/json', $3, false)", [request.id, status, JSON.stringify(body!)]);
       const entry = { tick: result, httpStatus: status, status: body!.status, reason: body!.reason ?? null, runKey: auth.dispatch.runKey, scopes: body!.scopes ?? null, jobs: body!.jobs ?? null, gaps: body!.gaps ?? null,
-        ms: Date.now() - dispatchStarted, intervals: body!.intervals ?? null };
+        ms: Date.now() - dispatchStarted, intervals: body!.intervals ?? null, sql: meter.stats(), goalies: body!.goalies ? { published: (body!.goalies as { published: number }).published, reused: (body!.goalies as { reused: number }).reused } : null };
       (summary.dispatches as unknown[]).push(entry);
       process.stdout.write(`${JSON.stringify(entry)}\n`);
       return entry;
