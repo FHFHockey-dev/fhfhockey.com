@@ -2,8 +2,9 @@ import React from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { TeamDataWithTotals } from "lib/NHL/types";
+import type { ExtendedWeekData, GameData, TeamDataWithTotals } from "lib/NHL/types";
 import FourWeekGrid from "./FourWeekGrid";
+import { buildScheduleOpportunity } from "./scheduleOpportunity";
 
 vi.mock("hooks/useTeams", () => ({
   useTeamsMap: () => ({
@@ -105,6 +106,41 @@ describe("FourWeekGrid", () => {
     expect(screen.getByText("BOS")).toBeTruthy();
     expect(screen.getByText("No remaining games")).toBeTruthy();
   });
+  it("distinguishes partial coverage from unavailable weekly data", () => {
+    const game: GameData = {
+      id: 101, season: 20262027, gameType: 2, gameDate: "2026-10-05",
+      gameState: "FUT", gameScheduleState: "OK", startTimeUTC: "2026-10-05T23:00:00Z",
+      homeTeam: { id: 1 }, awayTeam: { id: 2 },
+    };
+    const week = (teamId: number, weekNumber: number, known: number, scheduled: GameData): ExtendedWeekData => ({
+      teamId, weekNumber, totalGamesPlayed: 0, totalOffNights: 0, weekScore: 0,
+      scheduleCoverage: { known, expected: 7 },
+      MON: scheduled,
+    });
+    const opportunityByTeamId = buildScheduleOpportunity([
+      week(1, 1, 3, game),
+      week(1, 3, 7, { ...game, id: 102, gameDate: "2026-10-19", startTimeUTC: undefined }),
+      week(1, 4, 7, { ...game, id: 103, gameDate: "2026-10-26", gameScheduleState: "PPD" }),
+      week(2, 1, 3, { ...game, id: 104, startTimeUTC: undefined }),
+    ], [{ id: 1, abbreviation: "ALP" }, { id: 2, abbreviation: "BET" }],
+    "2026-10-05", "2026-10-05T12:00:00Z");
+    render(<FourWeekGrid
+      teamDataArray={Object.values(opportunityByTeamId).map(({ teamData }) => teamData)}
+      opportunityByTeamId={opportunityByTeamId}
+    />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand four-week columns" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Weekly Detail" }));
+    const alpha = screen.getByRole("link", { name: "Open Alpha Team HQ" }).closest("tr")!;
+    expect(Array.from(alpha.cells).slice(1).map((cell) => cell.querySelector("strong")?.textContent)).toEqual([
+      "Schedule partial", "Schedule unavailable", "Schedule unavailable", "0G / 0O",
+    ]);
+    const beta = screen.getByRole("link", { name: "Open Beta Team HQ" }).closest("tr")!;
+    expect(beta.cells[1].querySelector("strong")?.textContent).toBe("Schedule unavailable");
+    const average = screen.getByText("AVG").closest("tr")!;
+    expect(Array.from(average.cells).slice(1).map((cell) => cell.textContent)).toEqual(["—", "—", "—", "—"]);
+  });
+
   it("preserves sorting through expansion and collapse", () => {
     render(<FourWeekGrid teamDataArray={teams} />);
     fireEvent.click(screen.getByRole("button", { name: "Sort by Team" }));

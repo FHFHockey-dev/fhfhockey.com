@@ -119,10 +119,16 @@ export default function FourWeekGrid({ loading = false, teamDataArray, calendar,
                 <Image src={teams[team.teamId]?.logo ?? `/teamLogos/${team.teamAbbreviation}.png`} alt={team.teamAbbreviation} width={24} height={24} />
                 <span className={styles.teamAbbr} aria-hidden="true">{team.teamAbbreviation}</span>
               </Link></td>
-              {expanded && weekly ? buildFourWeekDetailCells(team, [1, 2, 3, 4]).map((week) => <td key={week.weekNumber}>
-                <strong>{week.gamesPlayed == null ? `Schedule ${week.coverage?.known ? "partial" : "unavailable"}` : `${week.gamesPlayed}G / ${week.offNights}O`}</strong>
-                <span className={styles.opponentList}>{week.opponents.join(" · ") || (week.gamesPlayed == null ? "" : "No remaining games")}</span>
-              </td>) : <>
+              {expanded && weekly ? buildFourWeekDetailCells(team, [1, 2, 3, 4]).map((week) => {
+                const rawWeek = opportunityByTeamId[team.teamId]?.weeks.find((entry) => entry.weekNumber === week.weekNumber);
+                const coverage = rawWeek?.coverage ?? week.coverage;
+                // Raw coverage explains a withheld total without making it eligible.
+                const partial = coverage != null && coverage.known > 0 && coverage.known < coverage.expected && (rawWeek?.unknown ?? 0) === 0;
+                return <td key={week.weekNumber}>
+                  <strong>{week.gamesPlayed == null ? `Schedule ${partial ? "partial" : "unavailable"}` : `${week.gamesPlayed}G / ${week.offNights}O`}</strong>
+                  <span className={styles.opponentList}>{week.opponents.join(" · ") || (week.gamesPlayed == null ? "" : "No remaining games")}</span>
+                </td>;
+              }) : <>
                 {expanded && <><td data-favorability={metricBands.gamesPlayed.get(team.teamId)}>{formatOpportunity(value(team, "gamesPlayed") as number | null)}</td><td data-favorability={metricBands.offNights.get(team.teamId)}>{formatOpportunity(value(team, "offNights") as number | null)}</td><td data-favorability={metricBands.avgOpponentPointPct.get(team.teamId)}>{value(team, "avgOpponentPointPct") == null ? "—" : `${(team.avgOpponentPointPct! * 100).toFixed(1)}%`}</td></>}
                 <td className={valueRankClass(team.teamId)}>{formatOpportunity(value(team, "score") as number | null)}</td>
                 <td className={styles.trendCell}><OpportunitySparkline value={opportunityByTeamId[team.teamId]} scale={sharedScale} team={team.teamAbbreviation} /></td>
