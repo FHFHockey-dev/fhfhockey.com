@@ -422,6 +422,13 @@ describe("Game Grid sortable column headers", () => {
       "Sort by opponent attack strength", "Sort by opponent defense strength", "Sort by Team", "Sort by GP", "Sort by OFF", "Sort by Score", "Sort by four-week opportunity",
     ]);
     fireEvent.click(screen.getByRole("button", { name: "Expand opponent details" }));
+    expect(screen.getByRole("button", { name: /^Sort by PTS% (ascending|descending)$/ })).toBeTruthy();
+    const info = screen.getByLabelText("Info about Game Grid metrics");
+    fireEvent.click(info);
+    const disclosure = info.closest("details");
+    expect(disclosure?.hasAttribute("open")).toBe(true);
+    expect(disclosure?.textContent).toContain("PTS% is points earned divided by twice the games played.");
+
     fireEvent.click(screen.getByRole("button", { name: "Expand four-week columns" }));
     expect(screen.queryByRole("button", { name: /^Sort by MON/ })).toBeNull();
 

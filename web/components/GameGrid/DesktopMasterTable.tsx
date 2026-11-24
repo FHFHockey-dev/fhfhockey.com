@@ -1037,8 +1037,9 @@ export default function DesktopMasterTable({
         </p>
         <p>
           Expanded columns: GP, OFF (games on nights with 8 or fewer NHL games), OPP% (opponents&rsquo; points %; lower is
-          easier), xG expected goals, GF/GA goals for/against, SF/SA shots for/against, all per game. Cell colours run
-          green (best) to gold to red (worst); &ldquo;-&rdquo; means missing.
+          easier), xG expected goals, GF/GA goals for/against, SF/SA shots for/against, all per game.
+          PTS% is points earned divided by twice the games played. Cell colours run green (best) to gold to red (worst).
+          &ldquo;-&rdquo; means missing.
         </p>
         {opponentSourceLabel && <p>Natural Stat Trick · {opponentSourceLabel}</p>}
         {fourWeekCalendar && <p>Four weeks: {formatInfoDate(fourWeekCalendar.start)} – {formatInfoDate(fourWeekCalendar.end)} · {fourWeekLoading ? "loading schedule…" : fourWeekCalendar.error ?? (fourWeekCalendar.knownDays === fourWeekCalendar.expectedDays ? "schedule complete" : "schedule incomplete; affected totals unavailable")}</p>}
