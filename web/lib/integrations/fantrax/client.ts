@@ -47,7 +47,7 @@ const playerIdsResponseSchema = z.record(z.object({
 }).passthrough());
 
 const adpResponseSchema = z.array(z.object({
-  id: z.string(), name: z.string(), pos: z.string(), ADP: z.number().finite(),
+  id: z.string(), name: z.string(), pos: z.string(), ADP: z.number().finite().nullable(),
 }).passthrough());
 
 export type FantraxPlayerInfo = z.infer<typeof playerIdsResponseSchema>[string];

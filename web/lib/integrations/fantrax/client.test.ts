@@ -42,14 +42,30 @@ describe("Fantrax FXEA client", () => {
   });
 
   it("reads the official NHL ADP feed and rejects changed response shapes", async () => {
-    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse([
-      { id: "fx-1", name: "MacKinnon, Nathan", pos: "C", ADP: 1.51 },
-    ]));
+    const player = { id: "fx-1", name: "MacKinnon, Nathan", pos: "C" };
+    const ranked = { ...player, ADP: 1.51 };
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse([ranked]));
     await expect(getFantraxAdp({ fetchImpl, maxAttempts: 1 })).resolves.toHaveLength(1);
     expect(String(fetchImpl.mock.calls[0][0])).toBe("https://www.fantrax.com/fxea/general/getAdp?sport=NHL&limit=1000");
     expect(fetchImpl.mock.calls[0][1]?.method).toBe("GET");
-    fetchImpl.mockResolvedValueOnce(jsonResponse([{ id: "fx-1", ADP: "unknown" }]));
+    fetchImpl.mockResolvedValueOnce(jsonResponse([ranked, { ...player, ADP: "unknown" }]));
     await expect(getFantraxAdp({ fetchImpl, maxAttempts: 1 })).rejects.toMatchObject({ code: "FANTRAX_SCHEMA_MISMATCH" });
+    fetchImpl.mockResolvedValueOnce(jsonResponse([ranked, player]));
+    await expect(getFantraxAdp({ fetchImpl, maxAttempts: 1 })).rejects.toMatchObject({ code: "FANTRAX_SCHEMA_MISMATCH" });
+  });
+
+  it("preserves explicit null and provider ordering for ADP rows", async () => {
+    const a = { id: "fx-a", name: "Alpha, Avery", pos: "C" };
+    const b = { id: "fx-b", name: "Beta, Blake", pos: "D" };
+    const rows = [
+      { ...a, ADP: 12.5 }, { ...a, ADP: null },
+      { ...b, ADP: null }, { ...b, ADP: 42 },
+      { id: "fx-c", name: "Gamma, Casey", pos: "LW", ADP: 70 },
+      { id: "fx-zero", name: "Zero, Drew", pos: "G", ADP: 0 },
+    ];
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(rows));
+
+    await expect(getFantraxAdp({ fetchImpl, maxAttempts: 1 })).resolves.toEqual(rows);
   });
 
   it("retries 429 responses, respects Retry-After, and never logs credentials", async () => {
