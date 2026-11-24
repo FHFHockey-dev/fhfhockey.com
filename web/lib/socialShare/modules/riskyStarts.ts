@@ -19,7 +19,7 @@ export type RiskySide = RankedSide & { team: string; label: string; digits: numb
 /** `winner` is the team with the stronger rank, null when equal, missing or one-sided. */
 export type RiskyPair = { id: string; label: string; sides: RiskySide[]; flagged: boolean; winner: string | null };
 export type RiskyGoalie = { goalieId: number; name: string; starts: number | null; teamGames: number; confirmation: GoalieConfirmation; role: GoalieRole };
-export type GoalieRoleKind = "confirmed" | "projected" | "backup" | "backup-projected" | "conflicting" | "b2b" | "likely-starter" | "likely-backup" | "split";
+export type GoalieRoleKind = "confirmed" | "projected" | "backup" | "backup-projected" | "conflicting" | "b2b" | "likely-starter" | "likely-backup" | "split" | "unresolved";
 /** What the tile prints for one goalie. `handle` is the reporting account, only when a report names one. */
 export type GoalieRole = { kind: GoalieRoleKind; label: string; handle: string | null };
 /** A goalie's decisions against one opponent, this season and last, by `goalieId:opponent`. */
@@ -28,11 +28,12 @@ export type RoleContext = { backToBacks?: Readonly<Record<string, InventoryBackT
 /** Pipeline keys that name no account. The resolver falls back to these when a report has no `source_account`. */
 const PIPELINE_SOURCES: ReadonlySet<string> = new Set(["validated_events"]);
 export const sourceHandle = (confirmation: GoalieConfirmation) => confirmation.state === "none" || PIPELINE_SOURCES.has(confirmation.source) || !/^@?\w{1,15}$/.test(confirmation.source) ? null : `@${confirmation.source.replace(/^@/, "")}`;
-export const ROLE_PICK_NOTE = `Goalie labels: a source's report for this game shows as Projected or Confirmed, and the other goalie as Backup. With no report, Likely Starter has the most starts in the team's last 10 games; a tie goes to the most starts in its last ${TREND_GAMES}, then the better win share in decisions against this opponent, this season and last (NHL.com goalie game stats). Split means still tied. In a back-to-back, when this game is against the weaker opponent by ${WEAKER_OPPONENT_SOURCE}, both goalies show which game of the back-to-back it is instead. A source's account shows only when its report names one.`;
+export const ROLE_PICK_NOTE = `Goalie labels: a source's report for this game shows as Projected or Confirmed, and the other goalie as Backup. With no report, Likely Starter has the most starts in the team's last 10 games; a tie goes to the most starts in its last ${TREND_GAMES}, then the better win share in decisions against this opponent, this season and last (NHL.com goalie game stats). Split means still tied. Starter unknown means the only listed goalie has no qualified last-10 starts. In a back-to-back, when this game is against the weaker opponent by ${WEAKER_OPPONENT_SOURCE}, both goalies show which game of the back-to-back it is instead. A source's account shows only when its report names one.`;
 export const RISKY_READING_NOTE = "Reading the card: blue marks a flagged pairing, a longer bar is the stronger side, and 1ST is the league's highest value. Moneylines and totals are DraftKings market lines, shown only when one exists.";
 const winShare = (record: OpponentRecord | undefined) => { const decisions = record ? record.wins + record.losses + record.otLosses : 0; return decisions ? record!.wins / decisions : null; };
-/** The likely starter with no report: most L10 starts, then most recent starts, then the better record against this opponent. Null while still tied. */
+/** The likely starter with no report: most L10 starts, then most recent starts, then the better record against this opponent. Null while tied or when the only listed goalie has no L10 tally. */
 export function likelyStarter(goalies: readonly Pick<RiskyGoalie, "goalieId" | "starts">[], team: string, opponent: string, { recentTrend = {}, records = {} }: RoleContext) {
+  if (goalies.length === 1 && goalies[0].starts === null) return null;
   const top = <T>(pool: readonly T[], score: (item: T) => number | null) => { const known = pool.flatMap(item => { const value = score(item); return value === null ? [] : [{ item, value }]; }); const best = Math.max(...known.map(entry => entry.value)); return known.length === pool.length ? known.filter(entry => entry.value === best).map(entry => entry.item) : pool; };
   let pool = top(goalies, goalie => goalie.starts);
   if (pool.length > 1) pool = top(pool, goalie => recentTrend[`${team}:${goalie.goalieId}`] ?? null);
@@ -51,12 +52,15 @@ export function goalieRoles(row: Pick<RiskyRow, "gameId" | "team" | "opponent" |
   const b2b = context.backToBacks?.[`${row.gameId}:${row.team}`];
   if (b2b?.weakerOpponent) return all({ kind: "b2b", label: `${b2b.order === 1 ? "1st" : "2nd"} game of a B2B`, handle: null });
   const pick = likelyStarter(goalies, row.team, row.opponent, context);
-  return new Map(goalies.map(goalie => [goalie.goalieId, pick === null ? { kind: "split", label: "Split", handle: null } : goalie.goalieId === pick ? { kind: "likely-starter", label: "LIKELY STARTER", handle: null } : { kind: "likely-backup", label: "LIKELY BACKUP", handle: null }]));
+  if (pick === null) return goalies.length === 1
+    ? all({ kind: "unresolved", label: "Starter unknown", handle: null })
+    : all({ kind: "split", label: "Split", handle: null });
+  return new Map(goalies.map(goalie => [goalie.goalieId, goalie.goalieId === pick ? { kind: "likely-starter", label: "LIKELY STARTER", handle: null } : { kind: "likely-backup", label: "LIKELY BACKUP", handle: null }]));
 }
 /** Each label's text colour, with no fill (TJ, 2026-11-03). Each is at least 4.5:1 on the card's #1a1d21, so the PNG reads at AA. */
 export const ROLE_COLORS: Record<GoalieRoleKind, string> = {
   confirmed: "#3fd17a", projected: "#3fd17a", "likely-starter": "#c6e35a", "likely-backup": "#f5b041",
-  "backup-projected": "#ff7a4d", backup: "#c7d0d8", b2b: "#a9c7e0", split: "#c7d0d8", conflicting: "#f29bc4",
+  "backup-projected": "#ff7a4d", backup: "#c7d0d8", b2b: "#a9c7e0", split: "#c7d0d8", unresolved: "#c7d0d8", conflicting: "#f29bc4",
 };
 export const ROLE_CARD_BACKGROUND = "#1a1d21";
 export const ROLE_HANDLE_INK = "#b8c2cc";

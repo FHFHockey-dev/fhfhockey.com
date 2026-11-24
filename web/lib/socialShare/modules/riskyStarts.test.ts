@@ -523,6 +523,35 @@ describe("goalie labels", () => {
   const goalie = (goalieId: number, starts: number | null, confirmation: RiskyGoalie["confirmation"] = none): Omit<RiskyGoalie, "role"> => ({ goalieId, name: `G${goalieId}`, starts, teamGames: 10, confirmation });
   const row = { gameId: 1, team: "NJD", opponent: "NYR", conflicting: false };
   const labels = (roles: Map<number, GoalieRole>) => Object.fromEntries([...roles].map(([id, role]) => [id, role.label]));
+  it("withholds the sole listed goalie when the last 10 cannot establish a starter", () => {
+    const detail = buildGoalieInventory({
+      ...FIXTURE_INPUT,
+      confirmations: null,
+      schedule: FIXTURE_INPUT.schedule.map(game => game.id === 900010
+        ? { ...game, date: "2026-11-03", startTime: "2026-11-03T23:00:00Z" }
+        : game),
+      appearances: FIXTURE_INPUT.appearances.map(appearance =>
+        appearance.goalieId === 7003 ? { ...appearance, started: null } : appearance),
+    });
+    const result = riskyStartsResult(detail);
+    const data = result.data!;
+    const selected = data.rows.find(row => row.team === "NYR" && row.gameId === 900010)!;
+    expect(selected.goalies).toMatchObject([{ starts: null, confirmation: { state: "none" } }]);
+    expect(likelyStarter(selected.goalies, "NYR", "NJD", {})).toBeNull();
+    expect(card(result, "volume")).toMatch(/Mikko Søgaard<\/b> —\/2.*?data-role="unresolved"[^>]*>Starter unknown</);
+    const alt = riskyStartsModule.altText({ evidence: result.evidence } as never, data, settings("volume"));
+    expect(alt).toContain("Mikko Søgaard, Starter unknown");
+  });
+  it("keeps actual reports, qualifying back-to-backs and scored starters ahead of the lone-goalie fallback", () => {
+    const unscored = [goalie(1, null)];
+    const report = { state: "confirmed", source: "GoalieReporter", observedAt: FIXTURE_GENERATED_AT, expiresAt: null, sourceUrl: null } as const;
+    const backToBacks = { backToBacks: { "1:NJD": { order: 2 as const, otherGameId: 2, otherOpponent: "TOR", weakerOpponent: true } } };
+    expect(labels(goalieRoles(row, [goalie(1, null, report)], backToBacks))).toEqual({ 1: "CONFIRMED" });
+    expect(labels(goalieRoles(row, [goalie(1, null, { ...report, state: "projected" })], {}))).toEqual({ 1: "PROJECTED" });
+    expect(labels(goalieRoles({ ...row, conflicting: true }, unscored, backToBacks))).toEqual({ 1: "Conflicting reports" });
+    expect(labels(goalieRoles(row, unscored, backToBacks))).toEqual({ 1: "2nd game of a B2B" });
+    expect(labels(goalieRoles(row, [goalie(1, 8)], {}))).toEqual({ 1: "LIKELY STARTER" });
+  });
   it("labels the L10 leader Likely Starter and the other Likely Backup", () => {
     expect(labels(goalieRoles(row, [goalie(1, 8), goalie(2, 2)], {}))).toEqual({ 1: "LIKELY STARTER", 2: "LIKELY BACKUP" });
   });
