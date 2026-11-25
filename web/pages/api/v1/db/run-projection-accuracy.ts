@@ -14,7 +14,7 @@ import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import supabase from "lib/supabase/server";
 import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 import { requireExternalInputProvenRun } from "lib/projections/externalInputProof";
-import { creditedStartLabels } from "lib/projections/queries/goalie-queries";
+import { resolveOfficialStarter, type OfficialStartAppearance } from "lib/projections/goalie/historyLedger";
 import { readGoalieCandidatesContract } from "lib/projections/goalie/goalieCandidates";
 import { getSeasonLeagueSavePct } from "lib/projections/goalie/leagueSavePct";
 import { timestampMicros } from "lib/projections/evidenceTime";
@@ -1718,60 +1718,80 @@ async function fetchSkaterActualsByPlayerDate(opts: {
   return map;
 }
 
-async function fetchGoalieActualsByDate(
-  actualDate: string,
-  goalieIds: number[],
-): Promise<Map<string, any>> {
-  const map = new Map<string, any>();
-  if (!supabase || goalieIds.length === 0) return map;
-  for (const batch of chunk(goalieIds, BATCH_SIZE)) {
-    const { data, error } = await supabase
-      .from("goalie_stats_unified")
-      .select("game_id,team_id,player_id,goals_against,saves,wins,shutouts,date")
-      .eq("date", actualDate)
-      .in("player_id", batch);
-    if (error) throw error;
-    for (const row of data ?? []) {
-      const playerId = (row as any).player_id as number | null;
-      if (playerId == null) continue;
-      if ((row as any).game_id != null && (row as any).team_id != null) {
-        const key = `${(row as any).game_id}:${(row as any).team_id}:${playerId}`;
-        map.set(key, map.has(key) ? null : row);
+type GoalieOutcome = {
+  saves: number | null; goals_against: number | null; wins: number | null; shutouts: number | null;
+};
+
+async function fetchGoalieOutcomes(actualDate: string, games: Map<number, AccuracyGame>, gameIds: number[]) {
+  const actuals = new Map<string, GoalieOutcome>();
+  const starters = new Map<string, number | null>();
+  if (!gameIds.length) return { actuals, starters };
+
+  const teamIds = new Set<number>();
+  for (const id of gameIds) {
+    const game = games.get(id)!;
+    teamIds.add(game.homeTeamId);
+    teamIds.add(game.awayTeamId);
+  }
+  const { data: teams, error: teamError } = await supabase.from("teams")
+    .select("id,abbreviation").in("id", [...teamIds]);
+  if (teamError) throw teamError;
+  const abbreviations = new Map((teams ?? []).map(team => [team.id, team.abbreviation]));
+
+  for (const batch of chunk(gameIds, BATCH_SIZE)) {
+    const { data: appearances, error: appearanceError } = await supabase.from("forge_goalie_game")
+      .select("game_id,team_id,goalie_id,goals_allowed,saves").eq("game_date", actualDate).in("game_id", batch);
+    if (appearanceError) throw appearanceError;
+    const { data: decisions, error: decisionError } = await supabase.from("wgo_goalie_stats")
+      .select("game_id,goalie_id,team_abbreviation,games_played,games_started,wins,shutouts")
+      .eq("date", actualDate).in("game_id", batch);
+    if (decisionError) throw decisionError;
+
+    const decisionByGoalie = new Map<string, NonNullable<typeof decisions>[number] | null>();
+    for (const row of decisions ?? []) {
+      const key = `${row.game_id}:${row.goalie_id}`;
+      decisionByGoalie.set(key, decisionByGoalie.has(key) ? null : row);
+    }
+    const seen = new Set<string>();
+    const ambiguous = new Set<string>();
+    for (const row of appearances ?? []) {
+      const key = `${row.game_id}:${row.goalie_id}`;
+      if (seen.has(key)) ambiguous.add(key);
+      seen.add(key);
+    }
+    const teamLabels = new Map<string, OfficialStartAppearance[]>();
+    for (const row of appearances ?? []) {
+      const game = games.get(row.game_id);
+      if (!game || (row.team_id !== game.homeTeamId && row.team_id !== game.awayTeamId)) continue;
+      const teamKey = `${row.game_id}:${row.team_id}`;
+      const labels = teamLabels.get(teamKey) ?? [];
+      teamLabels.set(teamKey, labels);
+      const goalieKey = `${row.game_id}:${row.goalie_id}`;
+      const decision = decisionByGoalie.get(goalieKey);
+      const qualified = !ambiguous.has(goalieKey) && decision?.games_played === 1 && decision.team_abbreviation
+        && decision.team_abbreviation === abbreviations.get(row.team_id) ? decision : null;
+      labels.push({ goalieId: row.goalie_id,
+        started: qualified?.games_started === 1 ? true : qualified?.games_started === 0 ? false : null });
+      if (!ambiguous.has(goalieKey)) {
+        actuals.set(`${teamKey}:${row.goalie_id}`, { saves: row.saves, goals_against: row.goals_allowed,
+          wins: qualified?.wins ?? null, shutouts: qualified?.shutouts ?? null });
+      }
+    }
+    for (const [key, labels] of teamLabels) starters.set(key, resolveOfficialStarter(labels));
+    // A played WGO goalie without a matching FORGE appearance leaves that team's starter population incomplete.
+    for (const row of decisions ?? []) {
+      if (row.game_id == null || row.games_played !== 1 || !row.team_abbreviation) continue;
+      const game = games.get(row.game_id);
+      if (!game) continue;
+      for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+        const key = `${row.game_id}:${teamId}`;
+        if (abbreviations.get(teamId) === row.team_abbreviation && !actuals.has(`${key}:${row.goalie_id}`)) {
+          starters.set(key, null);
+        }
       }
     }
   }
-  return map;
-}
-
-async function fetchGoalieAppearances(actualDate: string, gameIds: number[]): Promise<any[]> {
-  const rows: any[] = [];
-  for (const batch of chunk(gameIds, BATCH_SIZE)) {
-    const { data, error } = await supabase.from("forge_goalie_game")
-      .select("game_id,team_id,goalie_id,goals_allowed,saves,game_date")
-      .eq("game_date", actualDate).in("game_id", batch);
-    if (error) throw error;
-    rows.push(...(data ?? []));
-  }
-  return rows;
-}
-
-async function fetchCreditedStarters(appearances: any[]): Promise<Map<string, number | null>> {
-  const gameIds = [...new Set(appearances.map(row => row.game_id).filter(Number.isSafeInteger))];
-  const labels: Array<{ game_id: number | null; goalie_id: number | null; games_started: number | null }> = [];
-  for (const batch of chunk(gameIds, BATCH_SIZE)) {
-    const { data, error } = await supabase.from("wgo_goalie_stats")
-      .select("game_id,goalie_id,games_started").in("game_id", batch);
-    if (error) throw error;
-    labels.push(...(data ?? []));
-  }
-  const teams = new Map<string, any[]>();
-  for (const row of appearances) {
-    if (row.game_id == null || row.team_id == null) continue;
-    const key = `${row.game_id}:${row.team_id}`;
-    teams.set(key, [...(teams.get(key) ?? []), row]);
-  }
-  return new Map([...teams].map(([key, rows]) => [key,
-    creditedStartLabels(rows, labels)[0]?.starterGoalieId ?? null]));
+  return { actuals, starters };
 }
 
 async function fetchGoalieActualCount(actualDate: string): Promise<number> {
@@ -2189,21 +2209,8 @@ async function runAccuracyForDate(
       });
     }
   }
-  const goalieIds = Array.from(
-    new Set(
-      goalieProjectionRows
-        .map((g) => Number(g.goalie_id))
-        .filter((n) => Number.isFinite(n)),
-    ),
-  );
-  const goalieActuals = await fetchGoalieActualsByDate(actualDate, goalieIds);
-  const appearances = await fetchGoalieAppearances(actualDate, [...validGameIds]);
-  const creditedStarters = await fetchCreditedStarters(appearances);
-  const goalieActualsFallback = new Map<string, any>();
-  for (const row of appearances) {
-    const key = `${row.game_id}:${row.team_id}:${row.goalie_id}`;
-    goalieActualsFallback.set(key, goalieActualsFallback.has(key) ? null : row);
-  }
+  const goalieGameIds = [...new Set<number>(goalieProjectionRows.map(row => row.game_id))];
+  const { actuals: goalieActuals, starters: creditedStarters } = await fetchGoalieOutcomes(actualDate, gamesById, goalieGameIds);
   const leagueBaseline = goalieProjectionRows.length > 0
     ? await getSeasonLeagueSavePct(projectionDate, new Map()) : null;
   const goalieResults: AccuracyResultRow[] = [];
@@ -2223,20 +2230,8 @@ async function runAccuracyForDate(
   for (const row of goalieProjectionRows) {
     const playerId = Number(row.goalie_id);
     if (!Number.isFinite(playerId)) continue;
-    // forge_goalie_game has no decision columns, so a fallback row leaves
-    // wins and shutouts unknown rather than scoring them as zero.
     const key = `${row.game_id}:${row.team_id}:${playerId}`;
-    const fallback = goalieActualsFallback.get(key);
-    const actualRow =
-      goalieActuals.get(key) ??
-      (fallback
-        ? {
-            saves: fallback.saves,
-            goals_against: fallback.goals_allowed,
-            wins: null,
-            shutouts: null,
-          }
-        : null);
+    const actualRow = goalieActuals.get(key);
     const starterProbability = knownStat(row.starter_probability);
     const creditedStarter = creditedStarters.get(`${row.game_id}:${row.team_id}`) ?? null;
     const startLabel = creditedStarter == null ? null : Number(creditedStarter === playerId);
@@ -2661,7 +2656,7 @@ async function runAccuracyForDate(
   const goalieMatchedByPlayer = goalieProjectionRows.filter((row) => {
     const goalieId = Number(row.goalie_id);
     const key = `${row.game_id}:${row.team_id}:${goalieId}`;
-    return !!goalieActuals.get(key) || !!goalieActualsFallback.get(key);
+    return goalieActuals.has(key);
   }).length;
 
   return {
@@ -2681,8 +2676,8 @@ async function runAccuracyForDate(
       goalieCandidateCount: goalieProjectionRows.length,
       goalieActualCount,
       goalieMatchedByPlayer,
-      goalieActualFallbackCount: goalieProjectionRows.filter(row =>
-        !!goalieActualsFallback.get(`${row.game_id}:${row.team_id}:${row.goalie_id}`)).length,
+      // Retain the existing count of candidates matched to a FORGE appearance.
+      goalieActualFallbackCount: goalieMatchedByPlayer,
     },
     goalieHoldoutComparison: {
       baseline_definition: "season_league_save_pct_using_candidate_if_starts_shots_against",

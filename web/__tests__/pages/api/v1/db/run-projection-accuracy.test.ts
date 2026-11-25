@@ -110,16 +110,24 @@ const goalieProjection = (rows = [candidate(30)], gameId = 1, teamId = 8) => ({
 });
 const goalieAppearance = (goalieId: number, gameId = 1, teamId = 8) => ({ game_id: gameId, team_id: teamId, goalie_id: goalieId,
   game_date: "2026-03-20", goals_allowed: 2, saves: 28 });
-const goalieActual = (playerId: number, gameId = 1, teamId = 8) => ({ game_id: gameId, team_id: teamId, player_id: playerId,
-  date: "2026-03-20", goals_against: 2, saves: 28, wins: 1, shutouts: 0 });
+const wgoAppearance = (goalieId: number, started = 1, gameId = 1, team = "MTL") => ({
+  game_id: gameId, goalie_id: goalieId, date: "2026-03-20", team_abbreviation: team,
+  games_played: 1, games_started: started, wins: 1, shutouts: 0,
+});
 
 type UpsertCall = { table: string; rows: unknown };
 
-async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
+async function runAccuracyWithTables(tables: Record<string, unknown[]>, failedTable?: string) {
+  tables = { teams: [{ id: 8, abbreviation: "MTL" }, { id: 10, abbreviation: "TOR" }], ...tables };
   const upserts: UpsertCall[] = [];
   const query = (table: string): any => {
     const filters: Array<(row: any) => boolean> = [];
+    let selected = "";
     const result = () => {
+      if (table === "goalie_stats_unified" && selected.split(",").includes("game_id")) {
+        return { data: null, error: { code: "42703", message: "column goalie_stats_unified.game_id does not exist" } };
+      }
+      if (table === failedTable) return { data: null, error: { code: "57014", message: "statement timeout" } };
       const data = (tables[table] ?? []).filter(row => filters.every(filter => filter(row)));
       return { data, count: data.length, error: null };
     };
@@ -127,6 +135,7 @@ async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
       {},
       {
         get(_target, prop) {
+          if (prop === "select") return (columns: string) => { selected = columns; return builder; };
           if (prop === "then") {
             return (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
               Promise.resolve(result()).then(resolve, reject);
@@ -476,9 +485,8 @@ describe("/api/v1/db/run-projection-accuracy", () => {
         ev_time_on_ice: null, pp_toi: null, sh_time_on_ice: null
       })),
       forge_goalie_projections: [goalieProjection([candidate(30, 0.9)]), goalieProjection([candidate(31, 0.8, null)], 1, 10)],
-      goalie_stats_unified: [goalieActual(30), goalieActual(31, 1, 10)],
       forge_goalie_game: [goalieAppearance(30), goalieAppearance(31, 1, 10)],
-      wgo_goalie_stats: [30, 31].map(goalie_id => ({ game_id: 1, goalie_id, games_started: 1 })),
+      wgo_goalie_stats: [wgoAppearance(30), wgoAppearance(31, 1, 1, "TOR")],
     };
     const { res, rpc } = await runAccuracyWithTables(tables);
 
@@ -519,8 +527,7 @@ describe("/api/v1/db/run-projection-accuracy", () => {
     const { res, rpc } = await runAccuracyWithTables({
       games: [game()], forge_goalie_projections: [projection],
       forge_goalie_game: [{ ...goalieAppearance(30), toi_seconds: 600 }, { ...goalieAppearance(31), toi_seconds: 3000 }],
-      wgo_goalie_stats: [{ game_id: 1, goalie_id: 30, games_started: 1 }, { game_id: 1, goalie_id: 31, games_started: 0 }],
-      goalie_stats_unified: [goalieActual(30), goalieActual(31)],
+      wgo_goalie_stats: [wgoAppearance(30, 1), wgoAppearance(31, 0)],
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.goalieProbabilityCalibration).toMatchObject({
@@ -536,13 +543,12 @@ describe("/api/v1/db/run-projection-accuracy", () => {
 
   it.each(["missing", "contradictory", "partial"])("excludes %s starter labels instead of guessing from appearances", async mode => {
     const labels = mode === "missing" ? [] : [
-      { game_id: 1, goalie_id: 30, games_started: 1 },
-      ...(mode === "contradictory" ? [{ game_id: 1, goalie_id: 31, games_started: 1 }] : []),
+      wgoAppearance(30, 1),
+      ...(mode === "contradictory" ? [wgoAppearance(31, 1)] : []),
     ];
     const { res, rpc } = await runAccuracyWithTables({
       games: [game()], forge_goalie_projections: [goalieProjection([candidate(30, 0.7), candidate(31, 0.3)])],
       forge_goalie_game: [goalieAppearance(30), goalieAppearance(31)], wgo_goalie_stats: labels,
-      goalie_stats_unified: [goalieActual(30), goalieActual(31)],
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.goalieProbabilityCalibration.starter_probability.sample_count).toBe(0);
@@ -562,7 +568,7 @@ describe("/api/v1/db/run-projection-accuracy", () => {
     if (mode === "post-start-update") projection.updated_at = "2026-03-20T20:00:00Z";
     const { res, rpc } = await runAccuracyWithTables({
       games: [game()], forge_goalie_projections: [projection], forge_goalie_game: [goalieAppearance(30)],
-      wgo_goalie_stats: [{ game_id: 1, goalie_id: 30, games_started: 1 }], goalie_stats_unified: [goalieActual(30)],
+      wgo_goalie_stats: [wgoAppearance(30, 1)],
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.goalieRows).toBe(0);
@@ -577,7 +583,7 @@ describe("/api/v1/db/run-projection-accuracy", () => {
     const { res } = await runAccuracyWithTables({
       games: [game()], forge_runs: [{ metrics: { finished_at: "2026-03-19T12:00:01Z" } }],
       forge_goalie_projections: [projection], forge_goalie_game: [goalieAppearance(30)],
-      wgo_goalie_stats: [{ game_id: 1, goalie_id: 30, games_started: 1 }], goalie_stats_unified: [goalieActual(30)],
+      wgo_goalie_stats: [wgoAppearance(30, 1)],
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.goalieRows).toBe(1);
@@ -589,8 +595,7 @@ describe("/api/v1/db/run-projection-accuracy", () => {
     const { res, rpc } = await runAccuracyWithTables({
       games: [game()], forge_goalie_projections: [goalieProjection([candidate(30, 0.7), second])],
       forge_goalie_game: [goalieAppearance(30), goalieAppearance(31)],
-      wgo_goalie_stats: [{ game_id: 1, goalie_id: 30, games_started: 0 }, { game_id: 1, goalie_id: 31, games_started: 1 }],
-      goalie_stats_unified: [goalieActual(30), goalieActual(31)],
+      wgo_goalie_stats: [wgoAppearance(30, 0), wgoAppearance(31, 1)],
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.goalieProbabilityCalibration).toMatchObject({ starter_probability: { sample_count: 1, brier_score: 0.49 },
@@ -602,12 +607,57 @@ describe("/api/v1/db/run-projection-accuracy", () => {
   it("does not join another game's actual decision onto the credited starter", async () => {
     const { res } = await runAccuracyWithTables({
       games: [game()], forge_goalie_projections: [goalieProjection()], forge_goalie_game: [goalieAppearance(30)],
-      wgo_goalie_stats: [{ game_id: 1, goalie_id: 30, games_started: 1 }], goalie_stats_unified: [goalieActual(30, 2)],
+      wgo_goalie_stats: [{ ...wgoAppearance(30), wins: null, shutouts: null }, wgoAppearance(30, 1, 2)],
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.goalieRows).toBe(0);
     expect(res.body.goalieProbabilityCalibration.win_probability).toMatchObject({ sample_count: 0, brier_score: null });
     expect(res.body.goalieStatDiagnostics.saves.daily.player_count).toBe(1);
+  });
+
+  it("keeps a relief win off the starter and a listed backup out of actuals", async () => {
+    const { res, rpc } = await runAccuracyWithTables({
+      games: [game()], forge_goalie_projections: [goalieProjection([candidate(30), candidate(31, 0.2), candidate(32, 0.1)])],
+      forge_goalie_game: [{ ...goalieAppearance(30), saves: 5, goals_allowed: 3, toi_seconds: null },
+        { ...goalieAppearance(31), saves: 12, goals_allowed: 1, toi_seconds: null }],
+      wgo_goalie_stats: [{ ...wgoAppearance(30), wins: 0, time_on_ice: 1200 },
+        { ...wgoAppearance(31, 0), wins: 1, time_on_ice: 2621 }],
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.goalieMatchDiagnostics.goalieMatchedByPlayer).toBe(2);
+    expect(res.body.goalieProbabilityCalibration.all_candidate_starter_probability.sample_count).toBe(3);
+    expect(rpc.mock.calls[0][1].p_rows).toEqual([expect.objectContaining({ player_id: 30,
+      actual_fp: computeGoalieFantasyPoints({ saves: 5, goalsAgainst: 3, wins: 0, shutouts: 0 }) })]);
+  });
+
+  it.each(["wrong team", "wrong date", "wrong game", "missing mapping", "duplicate decision", "duplicate appearance",
+    "conflicting appearance team", "not played", "extra played goalie"])("withholds unqualified goalie evidence: %s", async mode => {
+    const source = { ...wgoAppearance(30),
+      ...(mode === "wrong team" && { team_abbreviation: "TOR" }),
+      ...(mode === "wrong date" && { date: "2026-03-19" }),
+      ...(mode === "wrong game" && { game_id: 2 }),
+      ...(mode === "not played" && { games_played: 0 }),
+    };
+    const { res, rpc } = await runAccuracyWithTables({
+      games: [game()], forge_goalie_projections: [goalieProjection()],
+      forge_goalie_game: [goalieAppearance(30), ...(mode === "duplicate appearance" ? [goalieAppearance(30)] : []),
+        ...(mode === "conflicting appearance team" ? [goalieAppearance(30, 1, 10)] : [])],
+      wgo_goalie_stats: [source, ...(mode === "duplicate decision" ? [source] : []),
+        ...(mode === "extra played goalie" ? [wgoAppearance(31)] : [])],
+      ...(mode === "missing mapping" && { teams: [] }),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.goalieProbabilityCalibration.starter_probability.sample_count).toBe(0);
+    expect(rpc.mock.calls[0][1].p_rows).toEqual([]);
+  });
+
+  it.each(["teams", "forge_goalie_game", "wgo_goalie_stats"])("surfaces %s read failures before replacement", async table => {
+    const { res, rpc, upserts } = await runAccuracyWithTables({ games: [game()], forge_goalie_projections: [goalieProjection()],
+      forge_goalie_game: [goalieAppearance(30)], wgo_goalie_stats: [wgoAppearance(30)] }, table);
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toMatch(/timeout/i);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(upserts).toEqual([]);
   });
 
   it("builds 30-day gates from versioned raw sums and includes the fresh day exactly once", async () => {
@@ -621,7 +671,7 @@ describe("/api/v1/db/run-projection-accuracy", () => {
     } };
     const { res } = await runAccuracyWithTables({
       games: [game()], forge_goalie_projections: [goalieProjection()], forge_goalie_game: [goalieAppearance(30)],
-      wgo_goalie_stats: [{ game_id: 1, goalie_id: 30, games_started: 1 }], goalie_stats_unified: [goalieActual(30)],
+      wgo_goalie_stats: [wgoAppearance(30, 1)],
       forge_projection_calibration_daily: [historic, { ...historic, date: "2026-03-20" }, { ...historic, date: "2026-02-18" }],
       forge_projection_accuracy_stat_daily: [{ date: "2026-03-19", scope: "goalie", stat_key: "saves", player_count: 999, error_abs_sum: 0, error_sq_sum: 0 }],
     });
@@ -638,8 +688,7 @@ describe("/api/v1/db/run-projection-accuracy", () => {
   it("uses only the observed day in a new 30-day accumulator and marks empty subgates unavailable", async () => {
     const { res, upserts } = await runAccuracyWithTables({
       games: [game()], forge_goalie_projections: [goalieProjection([candidate(30, 0.7, null)])],
-      forge_goalie_game: [goalieAppearance(30)], wgo_goalie_stats: [{ game_id: 1, goalie_id: 30, games_started: 1 }],
-      goalie_stats_unified: [goalieActual(30)],
+      forge_goalie_game: [goalieAppearance(30)], wgo_goalie_stats: [wgoAppearance(30, 1)],
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.goalieStatDiagnostics.saves.rolling_30d).toMatchObject({ player_count: 1, mae: 1 });
@@ -669,7 +718,7 @@ describe("/api/v1/db/run-projection-accuracy", () => {
         proj_shots_es: 2, proj_shots_pp: 0, proj_shots_pk: 0, proj_hits: 0, proj_blocks: 0 }],
       wgo_skater_stats: [{ game_id: 1, player_id: 10, date: "2026-03-20", goals: 0, assists: 0, pp_points: 0, shots: 1, hits: 0, blocked_shots: 0 }],
       forge_goalie_projections: [goalieProjection()], forge_goalie_game: [goalieAppearance(30)],
-      wgo_goalie_stats: [{ game_id: 1, goalie_id: 30, games_started: 1 }], goalie_stats_unified: [goalieActual(30)],
+      wgo_goalie_stats: [wgoAppearance(30, 1)],
     });
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ totalRows: 0, issuanceDiagnostics: { skaterRowsExcluded: 1, goalieTeamRowsExcluded: 1 } });
@@ -696,9 +745,8 @@ describe("/api/v1/db/run-projection-accuracy", () => {
 
   it("treats a null predicted or actual stat as unknown, never as zero", async () => {
     // Skater 12: proj_hits null. Skater 13: actual hits null. Goalie 32:
-    // candidate if-starts shutout probability null. Goalie 33: actuals only
-    // in forge_goalie_game (a real 30-save shutout win), so wins/shutouts are
-    // unknown there.
+    // candidate if-starts shutout probability null. Goalie 33 has a credited
+    // start, but its source row has no recorded win or shutout value.
     const skater = (player_id: number, proj_hits: number | null) => ({
       ...issued, game_id: 1, player_id, team_id: 8, opponent_team_id: 10,
       proj_goals_es: 0.4, proj_goals_pp: 0.2, proj_goals_pk: 0,
@@ -721,9 +769,9 @@ describe("/api/v1/db/run-projection-accuracy", () => {
         goalie(32, 0.8, null),
         goalie(33, 0.7, 0.06)
       ],
-      goalie_stats_unified: [30, 32].map(id => goalieActual(id, id)),
       forge_goalie_game: [30, 32, 33].map(id => goalieAppearance(id, id)),
-      wgo_goalie_stats: [30, 32, 33].map(id => ({ game_id: id, goalie_id: id, games_started: 1 })),
+      wgo_goalie_stats: [wgoAppearance(30, 1, 30), wgoAppearance(32, 1, 32),
+        { ...wgoAppearance(33, 1, 33), wins: null, shutouts: null }],
     };
 
     const { res, rpc, upserts } = await runAccuracyWithTables(tables);
