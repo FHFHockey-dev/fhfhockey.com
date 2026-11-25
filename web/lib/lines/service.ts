@@ -7,7 +7,7 @@ import { activeLineClaims, captureIdentity, currentSourceReadings, eligibleClaim
 import { readOfficialPowerPlay } from "./officialPowerPlay";
 import { chooseDefaultGame, observeLineGame, stateAtRead, trustworthyState } from "./gameState";
 import { fetchCarryMemberships, fetchEntryHistory, fetchLineClaims, latestLineDecisions } from "./storage";
-import { instant, lineSnapshotFlags, type EntryRevision, type EntryView, type GameLinesResponse, type LineClaim, type LineGame, type SelectedLineUnit, type SourceFeedItem } from "./types";
+import { instant, lineSnapshotFlags, type EntryRevision, type EntryView, type GameLinesResponse, type LineClaim, type LineGame, type PPPracticeNote, type SelectedLineUnit, type SourceFeedItem } from "./types";
 
 /** Public GET bounds: games in this window, and a game-state refresh only when stored state is older than the interval. */
 const READ_WINDOW = { backDays: 21, forwardDays: 14 };
@@ -41,7 +41,8 @@ export async function latestLineGameStates(supabase: any, games: LineGame[]): Pr
     const result = await supabase.from("line_game_state_observations").select("payload").eq("game_id", game.id).order("observed_at", { ascending: false }).limit(1);
     if (result.error) throw result.error;
     const state = result.data?.[0]?.payload as LineGame | undefined;
-    return state && state.scheduledStart === game.scheduledStart ? { ...game, ...state } : game;
+    const sameStart = state && (state.scheduledStart === game.scheduledStart || instant(state.scheduledStart) != null && instant(state.scheduledStart) === instant(game.scheduledStart));
+    return sameStart ? { ...game, ...state } : game;
   }));
 }
 
@@ -120,6 +121,12 @@ export function publicClaim(claim: LineClaim): LineClaim {
     unit: claim.unit ? { ...claim.unit, number: claim.unit.situation === "pp" && !claim.unit.explicitNumber ? null : claim.unit.number,
       evidence: claim.unit.evidence.map((span) => ({ ...span, text: sanitize(span.text) })) } : null,
     relationship: claim.relationship ? { ...claim.relationship, evidence: { ...claim.relationship.evidence, text: sanitize(claim.relationship.evidence.text) } } : null };
+}
+/** The practice note's source and author pass the same public checks as a claim's; otherwise they are withheld. */
+function publicPracticeNote(note: PPPracticeNote, claims: LineClaim[]): PPPracticeNote {
+  const source = claims.find((claim) => claim.id === note.claimIds[0]);
+  const shown = source ? publicClaim(source) : null;
+  return { ...note, sourceUrl: shown?.sourceUrl ?? null, author: shown?.sourceUrl ? shown.author : null };
 }
 const FEED_WINDOW_MS = 2 * 86400000;
 const excludedAuthor = (claim: LineClaim) => claim.authorityTier === "excluded" || claim.reviewReasons.includes("author_excluded");
@@ -230,7 +237,8 @@ export async function readGameLines(supabase: any, args: { teamId?: number; game
       observations: controls.observations ? active.filter((claim) => claim.context !== "practice" && claim.context !== "projected" && !excludedAuthor(claim)
         && (["iga", "entry_correction"].includes(claim.kind) || claim.kind === "pp" && claim.phase === "in_game")).map(publicClaim) : [],
       history: controls.observations ? [...scoped, ...claims.filter((claim) => claim.teamId === teamId && claim.gameId == null)].map(publicClaim) : [],
-      ppDefaults: pp.map((decision) => ({ ...decision, selection: decision.selection ? { ...decision.selection, claims: decision.selection.claims.map(publicClaim) } : null })),
+      ppDefaults: pp.map((decision) => ({ ...decision, selection: decision.selection ? { ...decision.selection, claims: decision.selection.claims.map(publicClaim) } : null,
+        ...decision.practiceDiffers ? { practiceDiffers: publicPracticeNote(decision.practiceDiffers, claims) } : {} })),
       unresolved: [...unresolved.map((claim) => ({ claimId: claim.id, reasons: claim.reviewReasons.length ? claim.reviewReasons.map(scrubRelayHandles) : ["Evidence is not eligible for selection"] })),
         ...scoped.filter((claim) => claim.kind === "entry" && entry?.cutoff && (instant(claim.time.interpretedAt) ?? Infinity) > instant(entry.cutoff)!).map((claim) => ({ claimId: claim.id, reasons: ["Late entry evidence requires an explicit correction"] }))],
       conflicts: [...entry?.conflicts ?? [], ...pp.flatMap((decision) => decision.conflict ? [decision.conflict] : [])],

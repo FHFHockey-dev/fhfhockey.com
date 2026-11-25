@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { activeLineClaims, eligibleClaim, reconcileEntry, reconcilePP } from "./reconcile";
+import { sameScheduleIdentity } from "./types";
 import { fixtureClaim, fixtureGame, fixtureNext, fixtureNow, fixturePP, fixtureUnit } from "./testFixtures";
+import { curtisBound, curtisClaim, curtisFive, game0356, game0397, rawal, rawalTime, rawalUnits } from "./testPpFixtures";
+import type { LineClaim } from "./types";
 
 const entry = (claims = [fixtureClaim()], previous: ReturnType<typeof reconcileEntry> | null = null, game = fixtureGame) => reconcileEntry({ game, teamId: 14, claims, previous, now: fixtureNow });
 const pp = (claims = [fixturePP(1)], game = fixtureNext, carryForward = true) => reconcilePP({ game, games: [fixtureGame, fixtureNext], teamId: 14, claims, now: fixtureNow, carryForward });
@@ -118,6 +121,13 @@ describe("entry snapshot reconciliation", () => {
   it("reschedule identity prevents stale entry evidence reuse", () => {
     expect(entry(undefined, null, { ...fixtureGame, scheduleIdentity: "rescheduled" }).units).toHaveLength(0);
   });
+  it("keeps entry evidence when the stored start reads +00:00 but not after a real reschedule", () => {
+    const bound = (identity: string) => fixtureClaim(undefined, { binding: { ...fixtureClaim().binding, scheduleIdentity: identity } });
+    const claim = bound(`${fixtureGame.id}:2026-10-01T23:00:00Z:OK`);
+    expect(entry([claim], null, { ...fixtureGame, scheduleIdentity: `${fixtureGame.id}:2026-10-01T23:00:00+00:00:OK` }).units.length).toBeGreaterThan(0);
+    expect(entry([claim], null, { ...fixtureGame, scheduleIdentity: `${fixtureGame.id}:2026-10-02T23:00:00+00:00:OK` }).units).toHaveLength(0);
+    expect(entry([claim], null, { ...fixtureGame, scheduleIdentity: `${fixtureGame.id}:bad:OK` }).units).toHaveLength(0);
+  });
   it("replays deterministically regardless of input ordering", () => {
     const claims = [fixtureClaim(), fixturePP(1), fixturePP(2)];
     expect(entry(claims)).toEqual(entry([...claims].reverse()));
@@ -203,5 +213,83 @@ describe("independent PP defaults", () => {
   });
   it.each([fixturePP(1, { identityStatus: "unresolved" }), fixturePP(1, { accepted: false }), fixturePP(1, { reviewReasons: ["ambiguous_game"] })])("ineligible evidence cannot acquire PP authority", (claim) => {
     expect(eligibleClaim(claim)).toBe(false); expect(pp([claim])[0]!.selection).toBeNull();
+  });
+});
+
+describe("PPCF next-game carry and practice note (Curtis → MTL–COL 2026020397)", () => {
+  const decide = (claims: LineClaim[]) => reconcilePP({ game: game0397, teamId: 21, games: [game0356, game0397], claims, now: "2026-11-26T02:00:00Z", carryForward: true });
+
+  it("carries Curtis PP1 to 2026020397", () => {
+    const [pp1, pp2] = decide([curtisBound]);
+    expect(pp1!.selection).toMatchObject({ designation: "carried", originGameId: 2026020356 });
+    expect(pp1!.selection!.unit.players.map((player) => player.playerId)).toEqual(curtisFive);
+    expect(pp1!.selection!.claims[0]!.sourceUrl).toBe("https://x.com/baileyycurtis/status/2123606497813053505");
+    expect(pp2!.selection).toBeNull();
+  });
+  it("adds a practice note without replacing the carried unit", () => {
+    const [pp1, pp2] = decide([curtisBound, rawal(1), rawal(2)]);
+    expect(pp1!.selection!.designation).toBe("carried");
+    expect(pp1!.selection!.unit.players.map((player) => player.playerId)).toEqual(curtisFive);
+    expect(pp1!.practiceDiffers).toEqual({ claimIds: ["rawal-pp1", "rawal-pp2"], sourceUrl: "https://x.com/evanrawal/status/2125298833580339606", author: "evanrawal",
+      postedAt: "2026-11-24T18:41:42.000Z", units: [{ number: 1, players: rawalUnits[1] }, { number: 2, players: rawalUnits[2] }] });
+    expect(pp2!.practiceDiffers ?? null).toBeNull();
+  });
+  it("withholds the note when a practice name is unresolved", () => {
+    const partial = rawal(2, { identityStatus: "unresolved", unit: { ...curtisClaim.unit!, number: 2, players: rawalUnits[2].slice(0, 4), complete: false, evidence: [] } });
+    expect(decide([curtisBound, rawal(1), partial])[0]!.practiceDiffers).toBeNull();
+  });
+  it("withholds the note when the practice units match the carried five or predate it", () => {
+    expect(decide([curtisBound, rawal(1, { unit: curtisBound.unit })])[0]!.practiceDiffers).toBeNull();
+    const older = { ...rawalTime, originalPublishedAt: "2026-11-18T18:00:00.000Z", effectiveAt: "2026-11-18T18:00:00.000Z" };
+    expect(decide([curtisBound, rawal(1, { time: older }), rawal(2, { time: older })])[0]!.practiceDiffers).toBeNull();
+  });
+  it("keeps the carry when the stored schedule start reads +00:00 instead of Z", () => {
+    const origin = { ...game0356, scheduledStart: "2026-11-20T02:00:00+00:00", scheduleIdentity: "2026020356:2026-11-20T02:00:00+00:00:OK" };
+    const [pp1] = reconcilePP({ game: game0397, teamId: 21, games: [origin, game0397], claims: [curtisBound], now: "2026-11-26T02:00:00Z", carryForward: true });
+    expect(pp1!.selection).toMatchObject({ designation: "carried", originGameId: 2026020356 });
+  });
+  it("drops the carry when the origin game was rescheduled or its start is unreadable", () => {
+    for (const identity of ["2026020356:2026-11-20T03:00:00+00:00:OK", "2026020356:not-a-time:OK", "2026020356:2026-11-20T02:00:00+00:00:PPD"]) {
+      const origin = { ...game0356, scheduleIdentity: identity };
+      expect(reconcilePP({ game: game0397, teamId: 21, games: [origin, game0397], claims: [curtisBound], now: "2026-11-26T02:00:00Z", carryForward: true })[0]!.selection).toBeNull();
+    }
+  });
+  it("withholds the note when practice PP1 matches the carried PP1, even with a PP2 listed", () => {
+    expect(decide([curtisBound, rawal(1, { unit: curtisBound.unit }), rawal(2)])[0]!.practiceDiffers).toBeNull();
+  });
+  it("lets a qualifying game-specific report for 0397 win", () => {
+    const own: LineClaim = { ...curtisBound, id: "pp1-0397", captureId: "capture:0397", originalIdentity: "0397", gameId: game0397.id, phase: "pregame",
+      binding: { ...curtisBound.binding, scheduleIdentity: game0397.scheduleIdentity }, sourceUrl: "https://x.com/reporter/status/1",
+      unit: { ...curtisBound.unit!, players: rawalUnits[1] }, time: { ...rawalTime, originalPublishedAt: "2026-11-25T22:00:00.000Z", effectiveAt: "2026-11-25T22:00:00.000Z", ingestedAt: "2026-11-25T22:01:00.000Z", interpretedAt: "2026-11-25T22:01:00.000Z" } };
+    const [pp1] = decide([curtisBound, rawal(1), rawal(2), own]);
+    expect(pp1!.selection!.designation).not.toBe("carried");
+    expect(pp1!.selection!.claims[0]!.sourceUrl).toBe("https://x.com/reporter/status/1");
+    expect(pp1!.practiceDiffers ?? null).toBeNull();
+  });
+  it("retires the unbound reading of the same original once it is bound", () => {
+    const upgraded = { ...curtisBound, id: "bound", supersedes: [curtisClaim.id] };
+    expect(activeLineClaims([curtisClaim, upgraded]).map((claim) => claim.id)).toEqual(["bound"]);
+    // Another source's unbound claim is never retired by it.
+    const other = { ...curtisClaim, id: "other", captureId: "other", originalIdentity: "999", provenance: undefined };
+    expect(activeLineClaims([curtisClaim, upgraded, other]).map((claim) => claim.id).sort()).toEqual(["bound", "other"]);
+  });
+});
+
+describe("sameScheduleIdentity", () => {
+  it("matches the same instant written as Z or +00:00", () => {
+    expect(sameScheduleIdentity("2026020356:2026-11-20T02:00:00Z:OK", "2026020356:2026-11-20T02:00:00+00:00:OK")).toBe(true);
+    expect(sameScheduleIdentity("2026020356:2026-11-20T02:00:00.000Z:OK", "2026020356:2026-11-19T21:00:00-05:00:OK")).toBe(true);
+  });
+  it("keeps every exact match, including date-only and fixture identities", () => {
+    expect(sameScheduleIdentity("2026020356:2026-11-19:OK", "2026020356:2026-11-19:OK")).toBe(true);
+    expect(sameScheduleIdentity("fixture:game:1", "fixture:game:1")).toBe(true);
+  });
+  it("refuses a different instant, game, state or an unreadable start", () => {
+    expect(sameScheduleIdentity("2026020356:2026-11-20T02:00:00Z:OK", "2026020356:2026-11-20T02:00:01+00:00:OK")).toBe(false);
+    expect(sameScheduleIdentity("2026020356:2026-11-20T02:00:00Z:OK", "2026020357:2026-11-20T02:00:00+00:00:OK")).toBe(false);
+    expect(sameScheduleIdentity("2026020356:2026-11-20T02:00:00Z:OK", "2026020356:2026-11-20T02:00:00+00:00:PPD")).toBe(false);
+    expect(sameScheduleIdentity("2026020356:2026-11-20T02:00:00Z:OK", "2026020356:not-a-time:OK")).toBe(false);
+    expect(sameScheduleIdentity("2026020356:2026-11-19:OK", "2026020356:2026-11-20T02:00:00Z:OK")).toBe(false);
+    expect(sameScheduleIdentity(null, null)).toBe(false);
   });
 });

@@ -9,7 +9,7 @@ const routeDb = vi.hoisted(() => ({ from: vi.fn() }));
 vi.mock("lib/supabase/server", () => ({ default: routeDb }));
 vi.mock("./officialPowerPlay", () => ({ readOfficialPowerPlay: async () => [] }));
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: unknown) => game }));
-import { buildSourceFeed, publicClaim, readGameLines, readReportGames } from "./service";
+import { buildSourceFeed, latestLineGameStates, publicClaim, readGameLines, readReportGames } from "./service";
 import { reconcileEntry } from "./reconcile";
 import { RELAY_ACCOUNTS } from "./authority";
 import { lineTestDatabase } from "./testDatabase";
@@ -307,4 +307,18 @@ it("selects the corrected relay time and withholds an old clock belonging to the
     const [item] = buildSourceFeed(claims, fixtureGame, fixtureNow);
     expect(item).toMatchObject({ publishedAt: original, relays: [{ relayPublishedAt: relay }] });
   }
+});
+
+describe("latestLineGameStates schedule match", () => {
+  const stored = { ...fixtureGame, scheduledStart: "2026-10-01T23:00:00Z", phase: "final" as const };
+  const read = (scheduledStart: string | null) => latestLineGameStates(lineTestDatabase({ line_game_state_observations: [{ game_id: fixtureGame.id, state_id: "s", observed_at: fixtureNow, payload: stored }] }),
+    [{ ...fixtureGame, scheduledStart, phase: "unknown" }]).then(([game]) => game!.phase);
+  it("merges stored state when the schedule start is the same instant written as +00:00", async () => {
+    expect(await read("2026-10-01T23:00:00+00:00")).toBe("final");
+    expect(await read("2026-10-01T23:00:00Z")).toBe("final");
+  });
+  it("does not merge after a reschedule or with an unreadable start", async () => {
+    expect(await read("2026-10-02T23:00:00+00:00")).toBe("unknown");
+    expect(await read("not-a-time")).toBe("unknown");
+  });
 });

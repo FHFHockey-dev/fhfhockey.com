@@ -194,6 +194,14 @@ describe("historical report reader", () => {
     expect(JSON.stringify(result)).not.toMatch(/SECRET|decisionEvidence|publicationEvidence|identityEvidence|provenance/);
   });
 
+  it("links a claim bound with a Z start when the games row reads +00:00, but not after a reschedule", async () => {
+    const scope = parseLineHistoryQuery({ ...query, mode: "game" }, now);
+    const zClaim = () => { const claim = gameClaim(); claim.payload.binding.scheduleIdentity = "2026020001:2026-11-06T00:00:00Z:OK"; return claim; };
+    const row = (startTime: string) => [{ id: 2026020001, date: "2026-11-05", startTime, homeTeamId: 54, awayTeamId: 10 }];
+    expect((await readLineHistory(gameDatabase([zClaim()], row("2026-11-06T00:00:00+00:00")), scope)).items).toHaveLength(1);
+    expect((await readLineHistory(gameDatabase([zClaim()], row("2026-11-06T01:00:00+00:00")), scope)).items).toHaveLength(0);
+  });
+
   it("skips game IDs without semantic, publication, schedule or identity evidence", async () => {
     const missingBinding = gameClaim("no-binding"); missingBinding.payload.decisionEvidence.binding = [];
     const staleSchedule = gameClaim("stale-schedule"); staleSchedule.payload.binding.scheduleIdentity = "old";

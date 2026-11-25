@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { compareInterpretationVersions } from "lib/sources/interpretationVersion";
 import { trustworthyState } from "./gameState";
 import type { EventMembership } from "./identity";
-import { instant, LINE_SELECTOR_VERSION, unitKey, type EntryRevision, type LineClaim, type LineConflict, type LineGame, type PPDecision, type PPDerivation, type PPEndReason, type SelectedLineUnit } from "./types";
+import { instant, LINE_SELECTOR_VERSION, sameScheduleIdentity, unitKey, type EntryRevision, type LineClaim, type LineConflict, type LineGame, type PPDecision, type PPDerivation, type PPEndReason, type PPPracticeNote, type SelectedLineUnit } from "./types";
 
 export function evidenceKey(value: unknown): string { return createHash("sha256").update(JSON.stringify(value)).digest("hex"); }
 const claimTime = (claim: LineClaim) => instant(claim.time.effectiveAt) ?? instant(claim.time.originalPublishedAt);
@@ -69,6 +69,13 @@ export function currentSourceReadings(claims: LineClaim[], identity: (claim: Lin
   return retained;
 }
 
+/** A corroboration-bound PP claim (PPCF P1) and an unbound reading it upgrades: same team, slot and five; the target is unbound. */
+export function isBindingUpgrade(claim: LineClaim, target: LineClaim): boolean {
+  return claim.kind === "pp" && target.kind === "pp" && claim.binding.status === "bound" && claim.gameId != null
+    && claim.binding.evidence.some((item) => item.startsWith("nhl_penalty:")) && target.gameId == null && target.binding.status !== "bound"
+    && claim.teamId === target.teamId && !!claim.unit && !!target.unit && unitKey(claim.unit) === unitKey(target.unit) && signature(claim) === signature(target);
+}
+
 /** Keep all versions in history. Count one active contribution per original and slot. */
 export function activeLineClaims(claims: LineClaim[]): LineClaim[] {
   const versions = new Map<string, LineClaim>();
@@ -84,6 +91,11 @@ export function activeLineClaims(claims: LineClaim[]): LineClaim[] {
   // Resolve targets against all retained versions; a correction cannot acquire relay authority.
   for (const claim of current) for (const targetId of [...claim.supersedes, ...claim.retracts]) {
     const target = claims.find((candidate) => candidate.id === targetId);
+    // A binding upgrade retires the unbound readings of the same original, never another source's claim.
+    if (target && identity(target) === identity(claim) && isBindingUpgrade(claim, target)) {
+      for (const candidate of current) if (candidate.id === targetId || !candidate.supersedes.length && identity(candidate) === identity(target) && isBindingUpgrade(claim, candidate)) inactive.add(candidate.id);
+      continue;
+    }
     if (target && mayReplace(claim, target)) {
       for (const candidate of current) {
         const sameUnit = !candidate.supersedes.length && !candidate.retracts.length && candidate.teamId === target.teamId
@@ -129,9 +141,9 @@ export function reconcileEntry(args: { game: LineGame; teamId: number; claims: L
   const frozen = previous?.status === "frozen" || previous?.status === "corrected";
   const canFreeze = trustworthyState(game, now) && (game.phase === "live" || game.phase === "final" && instant(game.actualStart) != null);
   const cutoff = frozen ? previous!.cutoff : canFreeze ? game.actualStart ?? game.observedAt : null;
-  const scoped = args.claims.filter((claim) => claim.gameId === game.id && claim.teamId === teamId && claim.binding.scheduleIdentity === game.scheduleIdentity);
+  const scoped = args.claims.filter((claim) => claim.gameId === game.id && claim.teamId === teamId && sameScheduleIdentity(claim.binding.scheduleIdentity, game.scheduleIdentity));
   const active = activeLineClaims(args.claims.filter((claim) => claim.teamId === teamId && availableAt(claim, cutoff ?? now)))
-    .filter((claim) => claim.gameId === game.id && claim.binding.scheduleIdentity === game.scheduleIdentity);
+    .filter((claim) => claim.gameId === game.id && sameScheduleIdentity(claim.binding.scheduleIdentity, game.scheduleIdentity));
   const candidates = active.filter((claim) => (claim.kind === "entry" || claim.kind === "pp" || claim.kind === "entry_correction" && claim.supersedes.some((id) => scoped.some((target) => target.id === id && mayReplace(claim, target)))) && claim.phase === "pregame"
     && (claim.time.effectiveUntil == null || (instant(claim.time.effectiveUntil) ?? -Infinity) > (instant(cutoff ?? now) ?? Infinity))
     && (cutoff == null || (claimTime(claim) ?? Infinity) <= instant(cutoff)! && (instant(claim.time.ingestedAt) ?? Infinity) <= instant(cutoff)! && (instant(claim.time.interpretedAt) ?? Infinity) <= instant(cutoff)!));
@@ -209,13 +221,37 @@ function deriveSwap(base: SelectedLineUnit, swaps: LineClaim[]): { selection: Se
     derivation: { baseClaimIds: base.claims.map((claim) => claim.id).sort(), swapClaimIds: [swap.id], playersIn, playersOut } };
 }
 
+const effectiveContext = (claim: LineClaim) => claim.context ?? (claim.specificity === "warmup" ? "warmup" : claim.specificity === "game" ? "game" : "practice");
+/**
+ * PPCF P3: the newest practice report after a carried unit, when its units differ. Unbound practice evidence neither replaces
+ * nor suppresses the carried unit; a report with any unresolved or incomplete unit is withheld rather than shown in part.
+ */
+function practiceNote(carried: SelectedLineUnit, number: number, readings: LineClaim[], game: LineGame, now: string, identity: (claim: LineClaim) => string): PPPracticeNote | null {
+  const newest = Math.max(...carried.claims.map((claim) => claimTime(claim) ?? -Infinity));
+  const practice = readings.filter((claim) => claim.kind === "pp" && claim.unit?.situation === "pp" && effectiveContext(claim) === "practice"
+    && (claimTime(claim) ?? -Infinity) > newest && (claimTime(claim) ?? Infinity) <= (instant(now) ?? -Infinity) && !(eligibleClaim(claim) && claim.gameId === game.id));
+  if (!practice.length) return null;
+  const latest = [...practice].sort((a, b) => (claimTime(b) ?? 0) - (claimTime(a) ?? 0) || a.id.localeCompare(b.id))[0]!;
+  const source = practice.filter((claim) => identity(claim) === identity(latest)).sort((a, b) => (a.unit!.number ?? 0) - (b.unit!.number ?? 0) || a.id.localeCompare(b.id));
+  const complete = (claim: LineClaim) => claim.identityStatus === "resolved_at_event" && claim.unit!.explicitNumber && (claim.unit!.number === 1 || claim.unit!.number === 2)
+    && claim.unit!.complete && claim.unit!.players.length === 5 && claim.unit!.players.every((player) => Number.isSafeInteger(player.playerId) && player.playerId > 0)
+    && new Set(claim.unit!.players.map((player) => player.playerId)).size === 5;
+  if (!source.every(complete) || new Set(source.map((claim) => claim.unit!.number)).size !== source.length) return null;
+  const carriedFive = carried.unit.players.map((player) => player.playerId).sort((a, b) => a - b).join(",");
+  // The note compares like with like: the practice unit with this decision's number against the carried five.
+  const same = source.find((claim) => claim.unit!.number === number);
+  if (!same || signature(same) === carriedFive) return null;
+  return { claimIds: source.map((claim) => claim.id).sort(), sourceUrl: latest.sourceUrl, author: latest.originalAuthor ?? latest.author, postedAt: latest.time.originalPublishedAt,
+    units: source.map((claim) => ({ number: claim.unit!.number as 1 | 2, players: claim.unit!.players.map((player) => ({ playerId: player.playerId, name: player.name })) })) };
+}
+
 export function reconcilePP(args: { game: LineGame; teamId: number; games: LineGame[]; claims: LineClaim[]; previous?: PPDecision[]; now: string; carryForward: boolean; memberships?: EventMembership[] }): PPDecision[] {
   const { game, teamId, now } = args;
   const games = new Map(args.games.map((candidate) => [candidate.id, candidate]));
   const dateOf = (claim: LineClaim) => games.get(claim.gameId!)!.date;
   const currentReadings = activeLineClaims(args.claims.filter((claim) => claim.teamId === teamId && availableAt(claim, now)
     && (claim.gameId === game.id && claim.phase === "pregame" && claim.kind !== "retraction" || (claimTime(claim) ?? Infinity) <= (instant(now) ?? -Infinity))));
-  const active = currentReadings.filter((claim) => eligibleClaim(claim) && claim.kind === "pp" && !!games.get(claim.gameId!) && games.get(claim.gameId!)!.scheduleIdentity === claim.binding.scheduleIdentity
+  const active = currentReadings.filter((claim) => eligibleClaim(claim) && claim.kind === "pp" && !!games.get(claim.gameId!) && sameScheduleIdentity(games.get(claim.gameId!)!.scheduleIdentity, claim.binding.scheduleIdentity)
     && (claim.time.effectiveUntil == null || (instant(claim.time.effectiveUntil) ?? -Infinity) > instant(now)!)
     && (claim.gameId === game.id && claim.phase === "pregame" || (claimTime(claim) ?? Infinity) <= instant(now)!));
   // Scratches / ruled-out reports, from any eligible claim kind.
@@ -223,6 +259,7 @@ export function reconcilePP(args: { game: LineGame; teamId: number; games: LineG
     && !!claim.unit && ["scratch", "injury"].includes(claim.unit.situation) && (claimTime(claim) ?? Infinity) <= (instant(now) ?? -Infinity));
   const at = instant(game.scheduledStart) ?? instant(`${game.date}T12:00:00Z`)!;
   const teamGames = args.games.filter((candidate) => [candidate.homeTeamId, candidate.awayTeamId].includes(teamId) && candidate.phase !== "postponed");
+  const identityOf = captureIdentity(args.claims);
   return [1, 2].map((number) => {
     const current = active.filter((claim) => claim.gameId === game.id && ppUnit(claim, number) && ["pregame", "in_game"].includes(claim.phase));
     const swaps = active.filter((claim) => claim.gameId === game.id && ppSwap(claim, number));
@@ -268,11 +305,13 @@ export function reconcilePP(args: { game: LineGame; teamId: number; games: LineG
       if (derived) { selection = derived.selection; derivation = derived.derivation; reason = "PP swap applied to the accepted base unit"; }
       else if (!selection) reason = "PP swap observed; no accepted base unit to apply it to";
     }
+    const practiceDiffers = selection?.designation === "carried" ? practiceNote(selection, number, currentReadings, game, now, identityOf) : null;
     const previous = args.previous?.find((decision) => decision.unitNumber === number);
-    const fingerprint = evidenceKey([game.id, teamId, number, selection, conflict, endReason, derivation, LINE_SELECTOR_VERSION]);
-    if (previous && evidenceKey([game.id, teamId, number, previous.selection, previous.conflict, previous.endReason ?? null, previous.derivation ?? null, previous.selectorVersion]) === fingerprint) return previous;
+    // A note is part of the fingerprint only when present, so decisions stored before PPCF are not re-revised.
+    const fingerprint = evidenceKey([game.id, teamId, number, selection, conflict, endReason, derivation, LINE_SELECTOR_VERSION, ...practiceDiffers ? [practiceDiffers] : []]);
+    if (previous && evidenceKey([game.id, teamId, number, previous.selection, previous.conflict, previous.endReason ?? null, previous.derivation ?? null, previous.selectorVersion, ...previous.practiceDiffers ? [previous.practiceDiffers] : []]) === fingerprint) return previous;
     const id = evidenceKey([fingerprint, previous?.id ?? null]);
     return { id, revision: (previous?.revision ?? 0) + 1, gameId: game.id, teamId, unitNumber: number, selection, conflict, replacesId: previous?.id ?? null,
-      reason, decidedAt: now, selectorVersion: LINE_SELECTOR_VERSION, endReason, derivation };
+      reason, decidedAt: now, selectorVersion: LINE_SELECTOR_VERSION, endReason, derivation, practiceDiffers };
   });
 }

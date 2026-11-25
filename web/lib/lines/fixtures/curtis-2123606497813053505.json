@@ -1,0 +1,166 @@
+{
+ "_note": "Retained resolved claim for Bailey Curtis original 2123606497813053505, copied from Documents/Codex/2026-11-23/luna-pp-club/game-pair.json (pre-PPCF, unbound).",
+ "schedule": [
+  {
+   "id": 2026020356,
+   "date": "2026-11-19",
+   "startTime": "2026-11-20T02:00:00Z",
+   "homeTeamId": 21,
+   "awayTeamId": 24
+  },
+  {
+   "id": 2026020397,
+   "date": "2026-11-25",
+   "startTime": "2026-11-26T02:30:00Z",
+   "homeTeamId": 21,
+   "awayTeamId": 8
+  }
+ ],
+ "claim": {
+  "captureId": "b3f25f620c6640aa60efd91c9b4fc96c9a297642eec9244f25bd35e07dcbb0d0",
+  "version": "2026-11-23.12:2026-11-18.1",
+  "originalIdentity": "2123606497813053505",
+  "provenance": {
+   "relayTweetId": null,
+   "originalTweetId": "2123606497813053505",
+   "attributionStatus": "resolved"
+  },
+  "decisionEvidence": {
+   "producerVersion": "lines-decisions:2026-11-06.1",
+   "decisionId": "pp:1:main:in_game_span",
+   "sourceReferences": [
+    "source:2123606497813053505",
+    "in_game_span"
+   ],
+   "binding": [],
+   "phase": [
+    {
+     "start": 19,
+     "end": 68,
+     "text": "Nikita Nesterenko gets the call for high-sticking"
+    }
+   ]
+  },
+  "publicationEvidence": [
+   "publication_basis:provider_timestamp",
+   "source_provenance:fxtwitter:repost"
+  ],
+  "teamId": 21,
+  "gameId": null,
+  "binding": {
+   "status": "unresolved",
+   "evidence": [
+    "no_game_binding_evidence"
+   ],
+   "resolverVersion": "2026-11-18.1",
+   "scheduleIdentity": null
+  },
+  "phase": "in_game",
+  "text": "RT @baileyycurtis: Nikita Nesterenko gets the call for high-sticking and the Avs PP will get another look.\n\nPP1: Hughes, Kadri, Lehkonen, Necas, Toews",
+  "sourceUrl": "https://x.com/baileyycurtis/status/2123606497813053505",
+  "author": "baileyycurtis",
+  "time": {
+   "originalPublishedAt": "2026-11-20T02:36:58.000Z",
+   "relayPublishedAt": null,
+   "ingestedAt": "2026-11-20T02:40:15.833432+00:00",
+   "interpretedAt": "2026-11-23T20:10:00.000Z",
+   "effectiveAt": "2026-11-20T02:36:58.000Z",
+   "effectiveUntil": null,
+   "rawDisplay": null,
+   "timezone": null,
+   "precision": "instant",
+   "basis": "verified_original_publication"
+  },
+  "explicit": false,
+  "authority": 2,
+  "certainty": "reported",
+  "confirmationEvidence": [],
+  "specificity": "game",
+  "identityStatus": "resolved_at_event",
+  "identityEvidence": [
+   "roster:8486171:21:2026-09-19T00:57:34.211535+00:00:open",
+   "roster:8475172:21:2026-09-19T00:57:25.362965+00:00:open",
+   "roster:8477476:21:2026-09-19T00:57:26.986942+00:00:open",
+   "roster:8480039:21:2026-09-19T00:57:28.907445+00:00:open",
+   "roster:8478038:21:2026-09-19T00:57:27.616689+00:00:open"
+  ],
+  "accepted": true,
+  "reviewReasons": [
+   "no_game_binding_evidence",
+   "binding_decision_unverified"
+  ],
+  "supersedes": [],
+  "retracts": [],
+  "relationAuthority": "none",
+  "id": "ce7e194c673ece7c0cca9742e07e07908d0444c52b9c85704476019abb8c9f78",
+  "unit": {
+   "situation": "pp",
+   "number": 1,
+   "explicitNumber": true,
+   "players": [
+    {
+     "playerId": 8486171,
+     "name": "T.J. Hughes"
+    },
+    {
+     "playerId": 8475172,
+     "name": "Nazem Kadri"
+    },
+    {
+     "playerId": 8477476,
+     "name": "Artturi Lehkonen"
+    },
+    {
+     "playerId": 8480039,
+     "name": "Martin Necas"
+    },
+    {
+     "playerId": 8478038,
+     "name": "Devon Toews"
+    }
+   ],
+   "evidence": [
+    {
+     "start": 113,
+     "end": 119,
+     "text": "Hughes"
+    },
+    {
+     "start": 121,
+     "end": 126,
+     "text": "Kadri"
+    },
+    {
+     "start": 128,
+     "end": 136,
+     "text": "Lehkonen"
+    },
+    {
+     "start": 138,
+     "end": 143,
+     "text": "Necas"
+    },
+    {
+     "start": 145,
+     "end": 150,
+     "text": "Toews"
+    }
+   ],
+   "group": null,
+   "complete": true
+  },
+  "relationship": null,
+  "kind": "pp",
+  "context": "game",
+  "contextEvidence": [
+   {
+    "start": 19,
+    "end": 68,
+    "text": "Nikita Nesterenko gets the call for high-sticking"
+   }
+  ],
+  "authorityTier": "beat",
+  "originalAuthor": "baileyycurtis",
+  "relayAccount": "gamedaylines"
+ }
+}

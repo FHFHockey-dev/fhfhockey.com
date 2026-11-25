@@ -18,6 +18,7 @@ const fxIds = (source: ParsedLinesCccSource) => {
   return fx?.provider === "fxtwitter" ? [fx.fx?.id, fx.fx?.repost_wrapper_id].map((value) => value == null ? null : String(value)) : [];
 };
 import { evidenceKey } from "./reconcile";
+import { bindInGamePPClaims } from "./ppIntake";
 
 /** Minimum time between NHL game-state observations of one game (equal to the trusted-state age, so a reused state stays trusted). */
 export const LINE_OBSERVE_INTERVAL_MS = 5 * 60_000;
@@ -239,6 +240,8 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
         if (!target || target.teamId !== claim.teamId || target.gameId !== claim.gameId || id === claim.id) claim.reviewReasons.push(`relation_target_unresolved:${id}`);
       }
     }
+    // PPCF P1: bind qualifying in-game PP reports by a penalty clue and the NHL five on ice (cached official reports, observed games only).
+    claims.splice(0, claims.length, ...await bindInGamePPClaims(supabase, claims, { teamId, observed: [...states.values()], now, since: day(now, -GAME_WINDOW.backDays) }));
     const { insertedClaims } = await appendLineEvidence(supabase, claims, observed);
     count += claims.length;
     for (const game of near.map((candidate) => states.get(candidate.id)!)) {
