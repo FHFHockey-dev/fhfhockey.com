@@ -71,6 +71,37 @@ it("shows full eligibility independently of assigned slots, including bench play
   expect(screen.getByTestId("schedule-overview-slot")).toBeTruthy();
 });
 
+it("offers Utility only to a known skater on the roster being viewed", () => {
+  const onMovePlayer = vi.fn();
+  const props = {
+    myTeamId: "1", teamOptions: [{ id: "1", label: "Mine" }, { id: "2", label: "Opponent" }],
+    nextPickByTeam: {}, scheduleState: { status: "idle" }, currentPick: 1,
+    currentTurn: { teamId: "1", round: 1, pickInRound: 1, isMyTurn: true },
+    draftSettings: { teamCount: 2, rosterConfig: { RW: 1, utility: 1, bench: 0 } },
+    teamStatsList: [
+      { teamId: "1", projectedPoints: 0, rosterSlots: { RW: [{ playerId: "11" }] }, bench: [] },
+      { teamId: "2", projectedPoints: 0, rosterSlots: {}, bench: [] },
+    ],
+    allPlayers: [{ playerId: 11, displayPosition: "?", fullName: "Fixture winger" }],
+    availablePlayers: [], onDraftPlayer: vi.fn(), canDraft: true, onMovePlayer,
+  } as unknown as ComponentProps<typeof MyRoster>;
+  const { rerender } = render(<MyRoster {...props} />);
+  const selectPlayer = () => fireEvent.click(screen.getByRole("button", { name: "RW 1: Fixture winger" }));
+  const chooseUtility = () => fireEvent.click(screen.getByRole("button", { name: "UTILITY 1: Open" }));
+  selectPlayer();
+  chooseUtility();
+  expect(onMovePlayer).not.toHaveBeenCalled();
+
+  rerender(<MyRoster {...props} allPlayers={[{ ...props.allPlayers[0], displayPosition: "RW" }]} />);
+  selectPlayer();
+  chooseUtility();
+  expect(onMovePlayer).toHaveBeenCalledWith("11", "UTILITY");
+  selectPlayer();
+  fireEvent.change(screen.getByRole("combobox", { name: "Select team to view" }), { target: { value: "2" } });
+  chooseUtility();
+  expect(onMovePlayer).toHaveBeenCalledTimes(1);
+});
+
 it("shows and explains the roster DUST rate", () => {
   const props = {
     myTeamId: "1",
@@ -182,4 +213,59 @@ it("opens DUST in a bounded dialog and restores focus after Escape", () => {
   fireEvent.keyDown(document, { key: "Escape" });
   expect(screen.queryByRole("dialog", { name: "DUST schedule overview" })).toBeNull();
   expect(document.activeElement).toBe(trigger);
+});
+
+it("follows a changed my team while preserving an opponent selection", () => {
+  const props = {
+    myTeamId: "1",
+    nextPickByTeam: { "1": 1, "2": 1, "3": 1 },
+    scheduleState: { status: "idle" },
+    teamStatsList: ["1", "2", "3"].map((teamId) => ({
+      teamId,
+      teamName: `Team ${teamId}`,
+      projectedPoints: 0,
+      rosterSlots: {},
+      bench: [],
+    })),
+    draftSettings: { teamCount: 3, rosterConfig: { bench: 0 } },
+    availablePlayers: [],
+    allPlayers: [],
+    onDraftPlayer: vi.fn(),
+    canDraft: true,
+    currentPick: 1,
+    currentTurn: { round: 1, pickInRound: 1, teamId: "1", isMyTurn: true },
+    teamOptions: ["1", "2", "3"].map((id) => ({ id, label: `Team ${id}` })),
+  } as unknown as ComponentProps<typeof MyRoster>;
+
+  const { rerender } = render(<MyRoster {...props} />);
+  const rosterSelect = screen.getByRole("combobox", { name: "Select team to view" });
+  expect((rosterSelect as HTMLSelectElement).value).toBe("1");
+
+  rerender(<MyRoster {...props} myTeamId="2" />);
+  expect((rosterSelect as HTMLSelectElement).value).toBe("2");
+
+  rerender(<MyRoster {...props} myTeamId="3" />);
+  expect((rosterSelect as HTMLSelectElement).value).toBe("3");
+
+  fireEvent.change(rosterSelect, { target: { value: "1" } });
+  rerender(<MyRoster {...props} myTeamId="2" />);
+  expect((rosterSelect as HTMLSelectElement).value).toBe("1");
+
+  rerender(
+    <MyRoster
+      {...props}
+      myTeamId="2"
+      teamStatsList={props.teamStatsList.filter((team) => team.teamId !== "1")}
+      teamOptions={props.teamOptions.filter((team) => team.id !== "1")}
+    />,
+  );
+  expect((rosterSelect as HTMLSelectElement).value).toBe("2");
+
+  // A fresh schedule-inspection request wins and later renders do not replay it.
+  const viewRequest = { teamId: "3" };
+  rerender(<MyRoster {...props} myTeamId="2" viewRequest={viewRequest} />);
+  expect((rosterSelect as HTMLSelectElement).value).toBe("3");
+  fireEvent.change(rosterSelect, { target: { value: "2" } });
+  rerender(<MyRoster {...props} myTeamId="1" viewRequest={viewRequest} />);
+  expect((rosterSelect as HTMLSelectElement).value).toBe("1");
 });

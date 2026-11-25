@@ -604,6 +604,12 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   }, []);
 
   const [myTeamId, setMyTeamId] = useState<string>("Team 1");
+  useEffect(() => {
+    if (!manualDraftingEnabled) return;
+    const firstTeam = draftSettings.draftOrder[0];
+    if (firstTeam) setMyTeamId(current => draftSettings.draftOrder.includes(current) ? current : firstTeam);
+  }, [manualDraftingEnabled, draftSettings.draftOrder]);
+
   // NEW: baseline mode for VORP replacement source (persisted)
   const [baselineMode, setBaselineMode] = useState<"remaining" | "full">(
     "remaining",
@@ -1057,6 +1063,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             ? snap.draftSettings.customSourceMinimumCoverage
             : 25,
       }, snap.isSnakeDraft ?? true);
+      const restoredTeamId = restoredSettings.draftOrder.includes(snap.myTeamId)
+        ? snap.myTeamId
+        : restoredSettings.draftOrder[0] || "Team 1";
       const restoredKeepers = migrateKeeperEntries(
         snap.keepers,
         snap.draftSettings?.teamCount || DEFAULT_DRAFT_SETTINGS.teamCount,
@@ -1104,7 +1113,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         pickOwnerOverrides: snap.pickOwnerOverrides || {},
         pickTrades: restoredPickTrades as BrowserDraftSnapshot["pickTrades"],
         positionOverrides: snap.positionOverrides || {}, customTeamNames: snap.customTeamNames || {},
-        currentPick: snap.currentPick || 1, isSnakeDraft: snap.isSnakeDraft ?? true, myTeamId: snap.myTeamId || "Team 1",
+        currentPick: snap.currentPick || 1, isSnakeDraft: snap.isSnakeDraft ?? true, myTeamId: restoredTeamId,
         baselineMode: snap.baselineMode || "remaining", needWeightEnabled: !!snap.needWeightEnabled,
         needAlpha: typeof snap.needAlpha === "number" ? snap.needAlpha : 0.5,
         forwardGrouping: snap.forwardGrouping || "split", personalizeReplacement: !!snap.personalizeReplacement,
@@ -1120,7 +1129,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         setSettingsSaveError(null);
         setDraftSettings(restoredSettings); setSettingsConfigured(snap.configured !== false); setKeepers(restoredKeepers);
         setManualDraftedPlayers(restoredDraftedPlayers); setPickTrades(restoredPickTrades); setPositionOverrides(snap.positionOverrides || {});
-        setCustomTeamNames(snap.customTeamNames || {}); setCurrentPick(snap.currentPick || 1); setMyTeamId(snap.myTeamId || "Team 1");
+        setCustomTeamNames(snap.customTeamNames || {}); setCurrentPick(snap.currentPick || 1); setMyTeamId(restoredTeamId);
         setBaselineMode(snap.baselineMode || "remaining"); setNeedWeightEnabled(!!snap.needWeightEnabled);
         setNeedAlpha(typeof snap.needAlpha === "number" ? snap.needAlpha : 0.5); setForwardGrouping(snap.forwardGrouping || "split");
         setPersonalizeReplacement(!!snap.personalizeReplacement); setGoaliePointValues(snap.goaliePointValues || getDefaultFantasyPointsConfig("goalie"));
@@ -2914,7 +2923,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
 
   const playerEligibility = useMemo(() => new Map(allPlayers.map(player => [String(player.playerId), normalizePlayerEligibility(player.displayPosition, player.eligiblePositions)])), [allPlayers]);
   const unavailableCustomSources = useMemo(() => customCsvList.filter((entry) => !entry.rows?.length), [customCsvList]);
-  const settingsValidationInput = useMemo(() => ({ unavailableCustomSources, settings: draftSettings, myTeamId, goalieScoring: goaliePointValues, skaterSources: sourceControls, goalieSources: goalieSourceControls, draftedPlayers, keepers, trades: pickTrades, playerEligibility, forwardGrouping }), [unavailableCustomSources, draftSettings, myTeamId, goaliePointValues, sourceControls, goalieSourceControls, draftedPlayers, keepers, pickTrades, playerEligibility, forwardGrouping]);
+  const settingsValidationInput = useMemo(() => ({ unavailableCustomSources, settings: draftSettings, myTeamId, goalieScoring: goaliePointValues, skaterSources: sourceControls, goalieSources: goalieSourceControls, draftedPlayers, keepers, trades: pickTrades, playerEligibility, forwardGrouping, positionOverrides }), [unavailableCustomSources, draftSettings, myTeamId, goaliePointValues, sourceControls, goalieSourceControls, draftedPlayers, keepers, pickTrades, playerEligibility, forwardGrouping, positionOverrides]);
   const settingsValidation = useMemo(() => validateDraftSettings(settingsValidationInput), [settingsValidationInput]);
   useEffect(() => {
     if (settingsValidation.valid) {

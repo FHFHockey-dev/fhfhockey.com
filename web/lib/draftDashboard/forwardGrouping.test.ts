@@ -146,6 +146,39 @@ describe("grouped forward contract", () => {
     expect(goalie.assignments.g).toBe("G");
   });
 
+  it("resolves conflicting Utility reservations in draft order", () => {
+    const allocation = allocateGroupedRosterSlots({
+      players: [
+        { id: "first", eligibility: ["C"] },
+        { id: "second", eligibility: ["LW"] },
+      ],
+      rosterConfig: { C: 0, LW: 1, utility: 1, bench: 0 },
+      grouping: "split",
+      overrides: { first: " utility ", second: "UTILITY" },
+    });
+    expect(allocation.assignments).toEqual({ first: "UTILITY", second: "LW" });
+  });
+
+  it.each(["split", "fwd"] as const)("gives Utility only to classified skaters in %s grouping", (grouping) => {
+    const allocation = allocateGroupedRosterSlots({
+      players: [
+        { id: "unclassified", eligibility: normalizePlayerEligibility(null) },
+        { id: "unknownOverride", eligibility: normalizePlayerEligibility("?") },
+        { id: "goalie", eligibility: ["G"] },
+        { id: "mixed", eligibility: ["D", "G"] },
+        { id: "skater", eligibility: ["D"] },
+      ],
+      rosterConfig: { D: 0, G: 0, utility: 1, bench: 4 },
+      grouping,
+      overrides: { unknownOverride: "UTILITY", goalie: "UTILITY", mixed: "UTILITY" },
+    });
+    expect(allocation.assignments).toEqual({
+      unclassified: "BENCH", unknownOverride: "BENCH", goalie: "BENCH",
+      mixed: "BENCH", skater: "UTILITY",
+    });
+    expect(allocation.counts).toMatchObject({ UTILITY: 1, BENCH: 4 });
+  });
+
   it("supports an exact generic-forward flex alongside split forward slots", () => {
     const rosterConfig = {
       C: 1,

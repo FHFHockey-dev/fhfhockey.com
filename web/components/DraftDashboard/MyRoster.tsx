@@ -18,6 +18,7 @@ import { usePlayerRecommendations } from "hooks/usePlayerRecommendations";
 import {
   getEffectiveRosterConfig,
   groupPlayerEligibility,
+  hasUtilityEligibility,
   normalizePlayerEligibility
 } from "lib/draftDashboard/forwardGrouping";
 
@@ -98,19 +99,22 @@ const MyRoster: React.FC<MyRosterProps> = ({
     number | undefined
   >();
   const [searchValue, setSearchValue] = useState("");
-  const [selectedViewTeamId, setSelectedViewTeamId] =
-    useState<string>(myTeamId);
+  const ownViewTeamId = teamOptions.find(team => team.id === myTeamId)?.id ?? teamOptions[0]?.id ?? "";
+  const [opponentId, setOpponentId] = useState<string | null>(null);
+  const selectedViewTeamId = teamOptions.find(team => team.id === opponentId)?.id ?? ownViewTeamId;
+  const lastViewRequest = React.useRef<typeof viewRequest>(undefined);
 
   useEffect(() => {
-    if (viewRequest) setSelectedViewTeamId(viewRequest.teamId);
-  }, [viewRequest]);
+    // Consume an explicit roster request once. A later manual choice takes precedence.
+    const request = viewRequest !== lastViewRequest.current ? viewRequest : undefined;
+    lastViewRequest.current = viewRequest;
+    setOpponentId(previous => {
+      const id = request?.teamId ?? previous;
+      return id !== ownViewTeamId && teamOptions.some(team => team.id === id) ? id : null;
+    });
+  }, [viewRequest, ownViewTeamId, teamOptions]);
 
   useEffect(() => { onSelectedTeamChange?.(selectedViewTeamId); }, [selectedViewTeamId, onSelectedTeamChange]);
-
-  // Keep selection synced when myTeamId changes IF user is viewing their team
-  useEffect(() => {
-    setSelectedViewTeamId((prev) => (prev === myTeamId ? myTeamId : prev));
-  }, [myTeamId]);
 
   const playerMap = useMemo(() => {
     const m = new Map<string, ProcessedPlayer>();
@@ -344,6 +348,8 @@ const MyRoster: React.FC<MyRosterProps> = ({
     | null
   >(null);
 
+  useEffect(() => { setSelectedRoster(null); }, [selectedViewTeamId]);
+
   const eligibleTargetsForSelected = useMemo(() => {
     if (!selectedRoster) return new Set<string>();
     const p = playerMap.get(selectedRoster.playerId);
@@ -359,8 +365,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
     });
     // All skaters can move to UTILITY if present
     const hasUtility = (draftSettings.rosterConfig as any)?.utility > 0;
-    const isGoalie = elig.includes("G");
-    if (hasUtility && !isGoalie) targets.add("UTILITY");
+    if (hasUtility && hasUtilityEligibility(elig)) targets.add("UTILITY");
     return targets;
   }, [selectedRoster, playerMap, draftSettings.rosterConfig, forwardGrouping]);
 
@@ -377,14 +382,14 @@ const MyRoster: React.FC<MyRosterProps> = ({
           )}
           <TeamRosterSelect
             value={selectedViewTeamId}
-            onChange={setSelectedViewTeamId}
+            onChange={id => setOpponentId(id === ownViewTeamId ? null : id)}
             options={teamOptions}
             selectClassName={styles.teamSelect}
           />
           <button
             type="button"
             className={styles.quickMyTeamButton}
-            onClick={() => setSelectedViewTeamId(myTeamId)}
+            onClick={() => setOpponentId(null)}
             title="Jump to My Team"
           >
             My Team

@@ -56,6 +56,39 @@ describe("representative draft workflow", () => {
     expect(positionalConflict.errors[0].message).toContain("drafted positions exceed");
   });
 
+  it("validates the same manual Utility reservation that the roster displays", () => {
+    const roster = {
+      ...input,
+      settings: { ...settings, rosterConfig: { C: 1, utility: 1, bench: 0 } },
+      draftedPlayers: picks.slice(0, 2),
+      playerEligibility: new Map([["1", ["C"]], ["2", ["RW"]]]),
+    };
+
+    expect(validateDraftSettings(roster).domains.roster).toBe(true);
+    const reserved = validateDraftSettings({ ...roster, positionOverrides: { "1": "UTILITY" } });
+    expect(reserved.domains.roster).toBe(false);
+    expect(reserved.errors).toContainEqual(expect.objectContaining({
+      domain: "roster", target: "pos-bench",
+    }));
+  });
+
+  it("counts position overrides against available bench capacity without changing picks", () => {
+    const roster = {
+      ...input,
+      settings: { ...settings, rosterConfig: { C: 1, LW: 1, utility: 0, bench: 0 } },
+      draftedPlayers: picks.slice(0, 2),
+      playerEligibility: new Map([["1", ["C"]], ["2", ["C", "LW"]]]),
+    };
+    expect(validateDraftSettings(roster).domains.roster).toBe(true);
+    const originalPicks = JSON.stringify(roster.draftedPlayers);
+    const reserved = validateDraftSettings({ ...roster, positionOverrides: { "2": "C" } });
+    expect(reserved.domains.roster).toBe(false);
+    expect(reserved.errors).toContainEqual(expect.objectContaining({
+      domain: "roster", target: "pos-bench",
+    }));
+    expect(JSON.stringify(roster.draftedPlayers)).toBe(originalPicks);
+  });
+
   it("accepts valid portable sessions and rejects malformed or destructive imports before application", () => {
     const bookmark = { v: 3, settings, myTeamId: "Team 1", draftedPlayers: picks, currentPick: 4, sourceControls: input.skaterSources, goalieSourceControls: input.goalieSources, goalieScoringCategories: input.goalieScoring };
     expect(bookmarkImportError(bookmark)).toBeNull();

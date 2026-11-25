@@ -29,6 +29,7 @@ export interface SettingsValidationInput {
   trades?: PickTradeEntry[];
   playerEligibility?: ReadonlyMap<string, string[]>;
   forwardGrouping?: "split" | "fwd";
+  positionOverrides?: Record<string, string>;
   unavailableCustomSources?: readonly { id: string; label: string }[];
 }
 
@@ -43,6 +44,7 @@ export function validateDraftSettings({
   trades = [],
   playerEligibility,
   forwardGrouping = "split",
+  positionOverrides,
   unavailableCustomSources = [],
 }: SettingsValidationInput) {
   const issues: SettingsIssue[] = [];
@@ -148,6 +150,7 @@ export function validateDraftSettings({
         })),
         rosterConfig: settings.rosterConfig,
         grouping: forwardGrouping,
+        overrides: positionOverrides,
       });
       if (allocation.counts.BENCH > settings.rosterConfig.bench)
         add(

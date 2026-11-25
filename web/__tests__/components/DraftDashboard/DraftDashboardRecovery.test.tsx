@@ -335,6 +335,14 @@ it("restores source controls once and retains missing-source repair controls", a
   expect(saved().sourceControls[csv.id].weight).toBe(0.7);
 });
 
+it("resumes a manual draft on the first team in its saved order when the old selection is gone", async () => {
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({ ...snapshot(), myTeamId: "Retired team" }));
+  render(<DraftDashboard />);
+  await waitFor(() => expect(saved().myTeamId).toBe("Team 1"));
+  expect(saved().draftedPlayers).toEqual(snapshot().draftedPlayers);
+  expect(saved().draftHistory).toEqual(snapshot().draftHistory);
+});
+
 it("a configured import after decline survives a subsequent mount", async () => {
   sessionStorage.setItem("draft.snapshot.v2", JSON.stringify(snapshot()));
   vi.mocked(window.confirm).mockReturnValue(false);

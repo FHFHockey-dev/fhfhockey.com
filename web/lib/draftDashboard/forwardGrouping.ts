@@ -27,6 +27,12 @@ export function saveForwardGroupingPreference(
 
 const FORWARD_POSITIONS = new Set(["C", "LW", "RW", "F", "FWD"]);
 
+export function hasUtilityEligibility(positions: readonly string[]) {
+  return !positions.includes("G") && positions.some(
+    (position) => position === "D" || FORWARD_POSITIONS.has(position)
+  );
+}
+
 export function normalizePlayerEligibility(
   displayPosition?: string | null,
   eligiblePositions?: string[] | null
@@ -186,7 +192,11 @@ export function allocateGroupedRosterSlots({
   for (const player of players) {
     const eligible = groupPlayerEligibility(player.eligibility, grouping, includeGenericForward);
     const override = overrides[player.id]?.trim().toUpperCase();
-    if (!override || (override === "UTILITY" ? !eligible.length || eligible.includes("G") : !eligible.includes(override))) continue;
+    if (!override) continue;
+    const allowed = override === "UTILITY"
+      ? hasUtilityEligibility(eligible)
+      : eligible.includes(override);
+    if (!allowed) continue;
     const capacity = Math.max(0, Number(effective[override === "UTILITY" ? "utility" : override]) || 0);
     if ((counts[override] ?? 0) >= capacity) continue;
     counts[override] += 1;
@@ -240,7 +250,11 @@ export function allocateGroupedRosterSlots({
       }
     }
     if (relocating) return false;
-    if (!eligible.includes("G") && counts.UTILITY < Math.max(0, Number(effective.utility) || 0) && !blocked.has("UTILITY")) {
+    if (
+      hasUtilityEligibility(eligible) &&
+      counts.UTILITY < Math.max(0, Number(effective.utility) || 0) &&
+      !blocked.has("UTILITY")
+    ) {
       counts.UTILITY += 1;
       occupants.UTILITY.push(player.id);
       assignments[player.id] = "UTILITY";
