@@ -30,8 +30,8 @@
 
 - Use `/Users/tim/Code/fhfhockey.com` on `octoberBranch` as the sole local FHFH editing checkout and branch. Preserve `fhfhockey-october` and other historical worktrees without further edits. `master` is the release branch: reconcile accepted work into it, then sync `octoberBranch` from the released commit before continuing.
 - Coordinate concurrent work through exact file ownership in the canonical checkout. Do not start another editing branch or worktree unless the user explicitly changes the sole-checkout instruction; preserve existing divergent history and unfinished work.
-- Name new agent-created branches `chef/<descriptive-name>`, not `codex/`. Keep `master` and `octoberBranch` as the long-lived branches.
-- Before deleting a branch, check for unmerged commits and unfinished work; preserve unique work before cleanup.
+- Keep at most three branches, local and remote: `master` (release), `octoberBranch` (testing, and the only branch for localhost development) and one other branch for work that warrants its own branch. Name that branch `chef/<descriptive-name>`, not `codex/`, and retire it only when it meets the deletion gate below. Never create a fourth branch.
+- Before retiring a branch, compare its introduced changes against current `octoberBranch` and `master`. Highlight and analyze each difference, then consolidate work that is not already represented into `octoberBranch` (testing) or `master` (release-ready) as appropriate, through the normal ownership and release gates. Document evidence when newer work already preserves or supersedes a change; do not revert it just to match the old branch. Retire the source only after verification shows no discernible work left stranded and the exact deletion is approved. A merged PR, matching patch ID, or recovery copy alone is not sufficient.
 
 ## Task Routing and Repository Map
 
