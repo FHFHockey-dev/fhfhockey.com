@@ -1452,8 +1452,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     }
   }, [adaptBrowserSnapshot, prepareSnapshot]);
 
-  const startNewDraftSession = useCallback(() => {
-    if (!manualDraftingEnabled) return;
+  const startNewDraftSession = useCallback((discardLegacyTab = false) => {
+    if (!manualDraftingEnabled) return false;
     try {
       clearDraftStorage([
         [window.localStorage, [
@@ -1464,13 +1464,15 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         ]],
         [window.sessionStorage, [
           "draft.snapshot.v2", "draft.resume.declined",
+          ...(discardLegacyTab ? [LEGACY_DRAFT_TAB_KEY] : []),
           CUSTOM_CSV_SESSION_KEY, ...LEGACY_CUSTOM_CSV_SESSION_KEYS,
         ]],
       ]);
     } catch {
       setSettingsSaveError("Could not clear the saved draft in this browser. Restore browser storage access, then try again.");
-      return;
+      return false;
     }
+    if (discardLegacyTab) setLegacyTabAvailable(false);
     freshSessionRef.current = true;
     restoredLeagueSettingsRef.current = true;
     manualLeagueSettingsDirtyRef.current = true;
@@ -1518,6 +1520,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     setDeviceSaveFailed(false);
     setAnalysisPreferenceSaveErrors({ prorate84: false, riskSd: false });
     window.dispatchEvent(new CustomEvent("projections:prorate84", { detail: { value: false } }));
+    return true;
   }, [manualDraftingEnabled, sourceControlDefaults]);
 
   // On mount: offer to resume snapshot
@@ -4199,7 +4202,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         }}
         undoLastPick={undoLastPick}
         resetDraft={resetDraft}
-        startNewDraft={startNewDraftSession}
+        startNewDraft={() => startNewDraftSession(true)}
         draftHistory={draftHistory}
         draftedPlayers={draftedPlayers}
         currentPick={currentPick}

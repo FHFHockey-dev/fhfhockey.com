@@ -59,7 +59,7 @@ interface DraftSettingsProps {
   onMyTeamIdChange: (teamId: string) => void;
   undoLastPick: () => void;
   resetDraft: () => void;
-  startNewDraft?: () => void;
+  startNewDraft?: () => boolean;
   draftHistory: any[];
   draftedPlayers: DraftedPlayer[];
   currentPick: number;
@@ -490,6 +490,12 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
+  const closeBookmarkImport = () => {
+    fileReadGenerationRef.current += 1;
+    setReadingBookmark(false);
+    setImportText("");
+    setImportOpen(false);
+  };
   const handleImportBookmark = () => {
     if (draftLocked) return;
     fileReadGenerationRef.current += 1;
@@ -509,9 +515,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     const result = onBookmarkImport(data);
     if (!result || result.status === "failed") { setTradeFeedback({ ok: false, message: result?.message ?? "Draft import did not finish. The current draft has not changed." }); return; }
     importAppliedRef.current = true;
-    fileReadGenerationRef.current += 1;
-    setImportOpen(false);
-    setImportText("");
+    closeBookmarkImport();
     setTradeFeedback({ ok: result.status === "accepted", message: result.message });
   };
 
@@ -561,7 +565,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                 }
               }} />
               <button type="button" disabled={!importText.trim() || readingBookmark || draftLocked} onClick={applyBookmark}>{readingBookmark ? "Reading bookmark…" : "Import Bookmark"}</button>
-              <button type="button" onClick={() => { fileReadGenerationRef.current += 1; setReadingBookmark(false); setImportText(""); setImportOpen(false); }}>Cancel Import</button>
+              <button type="button" onClick={closeBookmarkImport}>Cancel Import</button>
             </div>}
 
             <div className={styles.playoffWeeks} hidden={useLeagueViews && leagueView !== "schedule"}>
@@ -829,7 +833,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               This will clear all picks. Action cannot be undone.
             </div>
             {confirmReset && <div className={styles.lockNotice} role="alert">Clear all picks, keepers, trades, and pick history? Your settings stay in place.<button type="button" onClick={() => setConfirmReset(false)}>Cancel Reset</button></div>}
-            {confirmNewDraft && <div className={styles.lockNotice} role="alert">Start a new draft with default settings? Picks, keepers, trades, history, and imported projections will be cleared.<button type="button" onClick={() => setConfirmNewDraft(false)}>Cancel New Draft</button></div>}
+            {confirmNewDraft && <div className={styles.lockNotice} role="alert">Start a new draft with default settings? This clears the saved tab and device drafts in this browser, including picks, keepers, trades, history, and imported projections.<button type="button" onClick={() => setConfirmNewDraft(false)}>Cancel New Draft</button></div>}
             <div className={styles.actionButtons}>
               <button
                 className={`${styles.actionButton} ${styles.actionButtonDanger}`}
@@ -871,8 +875,12 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               </button>
               {startNewDraft && <button type="button" className={`${styles.actionButton} ${styles.actionButtonDanger}`} disabled={draftLocked} onClick={() => {
                 if (!confirmNewDraft) { setConfirmNewDraft(true); return; }
-                startNewDraft();
+                const started = startNewDraft();
                 setConfirmNewDraft(false);
+                if (!started) return;
+                closeBookmarkImport();
+                setTradeFeedback(null);
+                setIncludeImportedProjections(false);
                 setConfirmReset(false);
                 setLeagueView("format");
               }}>{confirmNewDraft ? "Confirm Start New Draft" : "Start New Draft"}</button>}

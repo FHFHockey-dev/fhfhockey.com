@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const noop = vi.fn();
@@ -727,6 +727,78 @@ it("Start New Draft has a cancellable separate confirmation and clears imported 
   fireEvent.click(screen.getByRole("button", { name: "Start New Draft" }));
   fireEvent.click(screen.getByRole("button", { name: "Confirm Start New Draft" }));
   await waitFor(() => expect(saved()).toMatchObject({ draftSettings: { teamCount: 12 }, customCsvList: [], draftHistory: [], draftedPlayers: [] }));
+});
+
+it("only discards a v4-only tab on successful confirmed Start New Draft", async () => {
+  const legacyKey = "draft.snapshot.v4";
+  const csvKey = "draft.customCsvList.v2";
+  const legacyRaw = JSON.stringify(legacyV4Draft());
+  const csvRaw = JSON.stringify([csv]);
+  sessionStorage.setItem(legacyKey, legacyRaw);
+  sessionStorage.setItem(csvKey, csvRaw);
+  localStorage.setItem("unrelated-auth-fixture", "preserved");
+  const view = render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
+  const restore = () => screen.queryByRole("button", { name: "Restore legacy saved tab draft" });
+  await waitFor(() => expect(restore()).toBeTruthy());
+  management();
+  fireEvent.click(screen.getByRole("button", { name: "Start New Draft" }));
+  fireEvent.click(screen.getByRole("button", { name: "Cancel New Draft" }));
+  expect(sessionStorage.getItem(legacyKey)).toBe(legacyRaw);
+  expect(sessionStorage.getItem(csvKey)).toBe(csvRaw);
+
+  const removeItem = Storage.prototype.removeItem;
+  let failClear = true;
+  vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function (this: Storage, key) {
+    if (failClear && this === sessionStorage && key === csvKey) throw new DOMException("blocked", "SecurityError");
+    return removeItem.call(this, key);
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Start New Draft" }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirm Start New Draft" }));
+  expect(dialog().textContent).toContain("Could not clear the saved draft");
+  expect(sessionStorage.getItem(legacyKey)).toBe(legacyRaw);
+  expect(sessionStorage.getItem(csvKey)).toBe(csvRaw);
+  expect(restore()).toBeTruthy();
+
+  failClear = false;
+  management();
+  fireEvent.click(screen.getByRole("button", { name: "Start New Draft" }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirm Start New Draft" }));
+  await waitFor(() => expect(saved().draftedPlayers).toEqual([]));
+  expect(sessionStorage.getItem(legacyKey)).toBeNull();
+  expect(sessionStorage.getItem(csvKey)).toBeNull();
+  expect(restore()).toBeNull();
+
+  view.unmount();
+  render(<DraftDashboard />);
+  await waitFor(() => expect(saved()).toMatchObject({ configured: false, currentPick: 1, draftedPlayers: [] }));
+  expect(restore()).toBeNull();
+  expect(screen.queryByText(/An older saved tab draft is available/)).toBeNull();
+  expect(localStorage.getItem("unrelated-auth-fixture")).toBe("preserved");
+});
+
+it("discards pending bookmark file input and old feedback on confirmed Start New Draft", async () => {
+  render(<DraftDashboard />);
+  await waitFor(() => expect(saved().draftSettings.teamCount).toBe(12));
+  importBookmark({ bad: "bookmark" });
+  expect(dialog().textContent).toContain("Unsupported bookmark");
+  let completeRead!: (text: string) => void;
+  const text = new Promise<string>((resolve) => { completeRead = resolve; });
+  const file = new File(["pending"], "draft.json", { type: "application/json" });
+  Object.defineProperty(file, "text", { value: () => text });
+  fireEvent.change(screen.getByLabelText("Read draft bookmark file"), { target: { files: [file] } });
+  expect(screen.getByRole("button", { name: "Reading bookmark…" })).toBeTruthy();
+
+  management();
+  fireEvent.click(screen.getByRole("button", { name: "Start New Draft" }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirm Start New Draft" }));
+  expect(screen.queryByLabelText("Import draft bookmark")).toBeNull();
+  expect(dialog().textContent).not.toContain("Unsupported bookmark");
+  fireEvent.click(within(dialog()).getByRole("button", { name: "Import bookmark" }));
+  const input = screen.getByLabelText("Import draft bookmark") as HTMLTextAreaElement;
+  expect(input.value).toBe("");
+  await act(async () => { completeRead(JSON.stringify(bookmark())); });
+  expect(input.value).toBe("");
+  expect(saved().draftSettings.teamCount).toBe(12);
 });
 
 it("Reset Entire Draft keeps configuration and imported projections while clearing activity", async () => {
