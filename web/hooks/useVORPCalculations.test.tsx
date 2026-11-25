@@ -265,12 +265,43 @@ describe("useVORPCalculations position weights", () => {
     expect(players.map(p => p.fantasyPoints.projected)).toEqual(before);
   });
 
-  it("does not introduce omitted default scoring categories when pacing an authoritative league map", () => {
-    const skater = { ...player(20, "D", 20), combinedStats: { GOALS: projectedStat("GOALS", 10), ASSISTS: projectedStat("ASSISTS", 100), HITS: projectedStat("HITS", 10), GAMES_PLAYED: projectedStat("GAMES_PLAYED", 42) } };
-    const paced = renderHook(() => useVORPCalculations({ players: [skater], availablePlayers: [skater], draftSettings: { teamCount: 1, rosterConfig }, picksUntilNext: 0, prorate84: true, fantasyPointSettings: { GOALS: 2, HITS_D: 0.5 } })).result.current;
-    expect(paced.playerMetrics.get("20")?.value).toBe(50);
+  it("paces skaters with authoritative scoring and keeps scored goalie projections unchanged", () => {
+    const skater = {
+      ...player(20, "D", 20),
+      combinedStats: {
+        GOALS: projectedStat("GOALS", 10),
+        ASSISTS: projectedStat("ASSISTS", 100),
+        HITS: projectedStat("HITS", 10),
+        GAMES_PLAYED: projectedStat("GAMES_PLAYED", 42),
+      },
+    };
+    const goalie = {
+      ...player(21, "G", 100),
+      combinedStats: {
+        WINS_GOALIE: projectedStat("WINS_GOALIE", 10),
+        GAMES_PLAYED: projectedStat("GAMES_PLAYED", 42),
+      },
+    };
+    const players = [skater, goalie];
+    const { result, rerender } = renderHook(
+      ({ prorate84 }) => useVORPCalculations({
+        players,
+        availablePlayers: players,
+        draftSettings: { teamCount: 1, rosterConfig },
+        picksUntilNext: 0,
+        prorate84,
+        fantasyPointSettings: { GOALS: 2, HITS_D: 0.5 },
+      }),
+      { initialProps: { prorate84: true } },
+    );
+    expect(result.current.playerMetrics.get("20")?.value).toBe(50);
+    expect(result.current.playerMetrics.get("21")?.value).toBe(100);
     expect(skater.fantasyPoints.projected).toBe(20);
     expect(skater.combinedStats.ASSISTS.projected).toBe(100);
+
+    rerender({ prorate84: false });
+    expect(result.current.playerMetrics.get("20")?.value).toBe(20);
+    expect(result.current.playerMetrics.get("21")?.value).toBe(100);
   });
 
   it.each<Record<string, number>>([{ GOALS: 0 }, {}, { HITS: 0, HITS_D: 0 }])("returns zero for an explicit zero scoring map %j instead of retaining old points", (fantasyPointSettings) => {

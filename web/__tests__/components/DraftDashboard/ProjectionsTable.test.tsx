@@ -160,20 +160,27 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect(screen.getByText("42.5")).toBeTruthy();
   });
 
-  it("keeps projection sorting separate from position-weighted valuation sorting", () => {
+  it("sorts raw projected points independently of paced and position-weighted valuation", () => {
+    window.localStorage.setItem("projections.prorate84", "true");
     const defender = player(1, "Defender", "D");
     const forward = player(2, "Forward", "C");
+    const missingProjection = player(3, "Missing Projection", "C");
     defender.fantasyPoints.projected = 100;
     forward.fantasyPoints.projected = 80;
-    render(<ProjectionsTable players={[defender, forward]} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft vorpMetrics={new Map([
-      ["1", { value: 0, unweightedValue: 100, vorp: 0, vona: 0, vols: 0, vbd: 0, scarcity: null, bestPos: "D", eligible: ["D"] }],
-      ["2", { value: 80, vorp: 20, vona: 0, vols: 0, vbd: 12, scarcity: null, bestPos: "C", eligible: ["C"] }],
+    missingProjection.fantasyPoints.projected = null;
+    render(<ProjectionsTable players={[defender, forward, missingProjection]} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft vorpMetrics={new Map([
+      ["1", { value: 0, unweightedValue: 110, vorp: 0, vona: 0, vols: 0, vbd: 0, scarcity: null, bestPos: "D", eligible: ["D"] }],
+      ["2", { value: 120, vorp: 20, vona: 0, vols: 0, vbd: 12, scarcity: null, bestPos: "C", eligible: ["C"] }],
+      ["3", { value: 300, vorp: null, vona: null, vols: null, vbd: null, scarcity: null, bestPos: "C", eligible: ["C"] }],
     ])} />);
     const order = () => Array.from(document.querySelectorAll("tbody tr[data-player-id]")).map(row => row.getAttribute("data-player-id"));
-    fireEvent.click(screen.getByTitle("Projected Fantasy Points"));
-    expect(order()).toEqual(["1", "2"]);
+    const pointsHeader = screen.getByTitle("Projected Fantasy Points");
+    fireEvent.click(pointsHeader);
+    expect(order()).toEqual(["1", "2", "3"]);
+    fireEvent.click(pointsHeader);
+    expect(order()).toEqual(["2", "1", "3"]);
     fireEvent.click(screen.getByRole("button", { name: "VORP" }));
-    expect(order()).toEqual(["2", "1"]);
+    expect(order()).toEqual(["2", "1", "3"]);
     expect(screen.getByText("100.0")).toBeTruthy();
   });
 
