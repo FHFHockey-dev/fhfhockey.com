@@ -634,6 +634,32 @@ it("shows device and preference write failures and exports the recovered analysi
   await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith("blob:draft-fixture"));
 });
 
+it("requires explicit removal of a missing CSV even after both projection controls are disabled", async () => {
+  const control = { isSelected: true, weight: 0.5 };
+  render(<DraftDashboard />);
+  importBookmark({ ...bookmark(), customCsvList: undefined,
+    goalieSourceControls: { dtz_goalies: control, [csv.id]: control },
+  });
+  fireEvent.click(within(dialog()).getByRole("tab", { name: /^Projections/ }));
+  for (const label of ["Skaters projection sources", "Goalies projection sources"]) {
+    const group = within(dialog()).getByRole("region", { name: label });
+    fireEvent.click(within(group).getByRole("checkbox", { name: "Toggle source Tab source" }));
+  }
+  await waitFor(() => {
+    expect(saved().sourceControls[csv.id].isSelected).toBe(false);
+    expect(saved().goalieSourceControls[csv.id].isSelected).toBe(false);
+  });
+  fireEvent.click(within(dialog()).getByRole("button", { name: "Done" }));
+  expect(dialog().textContent).toContain("Reimport or remove this source before drafting");
+  expect((screen.getByRole("button", { name: "Draft recovery player", hidden: true }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(within(dialog()).getAllByRole("button", { name: "Remove Tab source" })[0]);
+  await waitFor(() => expect(saved().sourceControls[csv.id]).toBeUndefined());
+  expect(saved().goalieSourceControls[csv.id]).toBeUndefined();
+  fireEvent.click(within(dialog()).getByRole("button", { name: "Done" }));
+  expect(screen.queryByRole("dialog", { name: "Draft Settings" })).toBeNull();
+  expect((screen.getByRole("button", { name: "Draft recovery player" }) as HTMLButtonElement).disabled).toBe(false);
+});
+
 it("restores source controls once and retains missing-source repair controls", async () => {
   sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({ ...snapshot(), configured: true, keepers: [], draftedPlayers: [], currentPick: 1, customCsvList: undefined, customSourceMetadata: [{ id: csv.id, label: csv.label }] }));
   render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
