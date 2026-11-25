@@ -143,6 +143,47 @@ const getOffNightRankColor = (rankPercentile: number) => {
   return mixRgb(from, to, scaled - quartileIndex);
 };
 
+type SeasonHistory =
+  | { status: "ready"; value: SeasonDetail | null }
+  | { status: "error"; message: string };
+
+type SeasonDetail = {
+  type: "skater" | "goalie";
+  seasonLabel: string;
+  data: any;
+};
+
+const isGoaliePlayer = (player: ProcessedPlayer) => {
+  const pos = player.displayPosition?.toUpperCase() || "";
+  // Treat pure G or multi-position including G as goalie
+  return pos
+    .split(",")
+    .map((p) => p.trim())
+    .includes("G");
+};
+
+const formatSeasonLabel = (season: string | number | null) => {
+  if (season == null) return "";
+  const s = String(season);
+  if (s.length === 8) {
+    const start = s.slice(0, 4);
+    const end = s.slice(6, 8);
+    return `${start}-${end}`;
+  }
+  return s;
+};
+
+function getSeasonHistoryKey(
+  player: ProcessedPlayer,
+  projectionSeasonId: string | number | undefined,
+) {
+  return JSON.stringify([
+    isGoaliePlayer(player) ? "goalie" : "skater",
+    player.playerId,
+    projectionSeasonId == null ? null : String(projectionSeasonId),
+  ]);
+}
+
 const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   draftUnavailableReason = "Manual drafting is unavailable",
   onRefresh,
@@ -470,35 +511,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     setCompareOpen(false);
   };
 
-  // Expand/collapse and last season totals cache per player
+  // Expansion follows the player row. A history result belongs to one role and cutoff.
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [seasonTotals, setSeasonTotals] = useState<
-    Record<
-      string,
-      {
-        type: "skater" | "goalie";
-        seasonLabel: string;
-        data: any;
-      } | null
-    >
+  const [seasonHistory, setSeasonHistory] = useState<
+    Partial<Record<string, SeasonHistory>>
   >({});
-  const [seasonLoading, setSeasonLoading] = useState<Record<string, boolean>>(
-    {},
-  );
-  const [seasonError, setSeasonError] = useState<Record<string, string | null>>(
-    {},
-  );
-  const loadedSeasonIdsRef = React.useRef(new Set<string>());
-  const seasonBatchPromiseRef = React.useRef<Promise<void> | null>(null);
-
-  const isGoaliePlayer = (player: ProcessedPlayer) => {
-    const pos = player.displayPosition?.toUpperCase() || "";
-    // Treat pure G or multi-position including G as goalie
-    return pos
-      .split(",")
-      .map((p) => p.trim())
-      .includes("G");
-  };
+  const requestedSeasonHistory = React.useRef(new Set<string>());
 
   // Map raw displayPosition to UI display based on forward grouping
   const getDisplayPos = useCallback(
@@ -507,126 +525,92 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     [forwardGrouping],
   );
 
-  const formatSeasonLabel = (season: string | number | null) => {
-    if (season == null) return "";
-    const s = String(season);
-    if (s.length === 8) {
-      const start = s.slice(0, 4);
-      const end = s.slice(6, 8);
-      return `${start}-${end}`;
-    }
-    return s;
-  };
+  useEffect(() => {
+    if (isLoading || error) return;
 
-  const fetchLastSeasonTotalsBatch = async () => {
-    if (seasonBatchPromiseRef.current) return seasonBatchPromiseRef.current;
-    const pendingPlayers = players.filter(
-      (player) => !loadedSeasonIdsRef.current.has(String(player.playerId)),
-    );
-    if (!pendingPlayers.length) return;
-    const pendingIds = pendingPlayers.map((player) => String(player.playerId));
-    setSeasonLoading((current) => ({
-      ...current,
-      ...Object.fromEntries(pendingIds.map((id) => [id, true])),
-    }));
-    setSeasonError((current) => ({
-      ...current,
-      ...Object.fromEntries(pendingIds.map((id) => [id, null])),
-    }));
+    async function loadHistory(player: ProcessedPlayer, historyKey: string) {
+      const id = String(player.playerId);
+      const type = isGoaliePlayer(player) ? "goalie" : "skater";
+      const playerIds = [Number(player.playerId)];
+      let result: SeasonHistory;
 
-    const request = (async () => {
       try {
-        const skaterIds = pendingPlayers
-          .filter((player) => !isGoaliePlayer(player))
-          .map((player) => Number(player.playerId));
-        const goalieIds = pendingPlayers
-          .filter(isGoaliePlayer)
-          .map((player) => Number(player.playerId));
-        const [skaterRows, goalieRows] = await Promise.all([
-          fetchAllSupabaseFilterChunks<any, number>(skaterIds, (chunk, range) =>
-            supabase
-              .from("wgo_skater_stats_totals")
-              .select(
-                "player_id, season, games_played, goals, assists, points, shots, hits, blocked_shots, pp_points, toi_per_game, plus_minus, shooting_percentage, gw_goals",
+        const rows =
+          type === "goalie"
+            ? await fetchAllSupabaseFilterChunks<any, number>(
+                playerIds,
+                (chunk, range) =>
+                  supabase
+                    .from("wgo_goalie_stats_totals")
+                    .select(
+                      "goalie_id, season_id, games_played, wins, losses, ot_losses, goals_against_avg, save_pct, shutouts, saves",
+                    )
+                    .in("goalie_id", chunk)
+                    .order("goalie_id", { ascending: true })
+                    .order("season_id", { ascending: false })
+                    .range(range.from, range.to),
               )
-              .in("player_id", chunk)
-              .order("player_id", { ascending: true })
-              .order("season", { ascending: false })
-              .range(range.from, range.to),
-          ),
-          fetchAllSupabaseFilterChunks<any, number>(goalieIds, (chunk, range) =>
-            supabase
-              .from("wgo_goalie_stats_totals")
-              .select(
-                "goalie_id, season_id, games_played, wins, losses, ot_losses, goals_against_avg, save_pct, shutouts, saves",
-              )
-              .in("goalie_id", chunk)
-              .order("goalie_id", { ascending: true })
-              .order("season_id", { ascending: false })
-              .range(range.from, range.to),
-          ),
-        ]);
-        const latestSkaters = selectLatestSeasonRows(
-          skaterRows,
-          "player_id",
-          "season",
+            : await fetchAllSupabaseFilterChunks<any, number>(
+                playerIds,
+                (chunk, range) =>
+                  supabase
+                    .from("wgo_skater_stats_totals")
+                    .select(
+                      "player_id, season, games_played, goals, assists, points, shots, hits, blocked_shots, pp_points, toi_per_game, plus_minus, shooting_percentage, gw_goals",
+                    )
+                    .in("player_id", chunk)
+                    .order("player_id", { ascending: true })
+                    .order("season", { ascending: false })
+                    .range(range.from, range.to),
+              );
+        const idKey = type === "goalie" ? "goalie_id" : "player_id";
+        const seasonKey = type === "goalie" ? "season_id" : "season";
+        const row = selectLatestSeasonRows(
+          rows,
+          idKey,
+          seasonKey,
           projectionSeasonId,
-        );
-        const latestGoalies = selectLatestSeasonRows(
-          goalieRows,
-          "goalie_id",
-          "season_id",
-          projectionSeasonId,
-        );
-        setSeasonTotals((current) => {
-          const next = { ...current };
-          for (const player of pendingPlayers) {
-            const id = String(player.playerId);
-            const row = isGoaliePlayer(player)
-              ? latestGoalies.get(id)
-              : latestSkaters.get(id);
-            next[id] = row
-              ? {
-                  type: isGoaliePlayer(player) ? "goalie" : "skater",
-                  seasonLabel: formatSeasonLabel(
-                    isGoaliePlayer(player) ? row.season_id : row.season,
-                  ),
-                  data: row,
-                }
-              : null;
-            loadedSeasonIdsRef.current.add(id);
-          }
-          return next;
-        });
-      } catch (error: any) {
-        setSeasonError((current) => ({
-          ...current,
-          ...Object.fromEntries(
-            pendingIds.map((id) => [
-              id,
-              error?.message || "Failed to load prior-season totals",
-            ]),
-          ),
-        }));
-      } finally {
-        setSeasonLoading((current) => ({
-          ...current,
-          ...Object.fromEntries(pendingIds.map((id) => [id, false])),
-        }));
-        seasonBatchPromiseRef.current = null;
+        ).get(id);
+        result = {
+          status: "ready",
+          value: row
+            ? { type, seasonLabel: formatSeasonLabel(row[seasonKey]), data: row }
+            : null,
+        };
+      } catch (cause) {
+        const message =
+          cause && typeof cause === "object" && "message" in cause
+            ? cause.message
+            : undefined;
+        result = {
+          status: "error",
+          message:
+            typeof message === "string" && message
+              ? message
+              : "Failed to load prior-season totals",
+        };
       }
-    })();
-    seasonBatchPromiseRef.current = request;
-    return request;
-  };
-
-  const toggleExpand = async (player: ProcessedPlayer) => {
-    const id = String(player.playerId);
-    setExpanded((m) => ({ ...m, [id]: !m[id] }));
-    const next = !expanded[id];
-    if (next && seasonTotals[id] === undefined) {
-      await fetchLastSeasonTotalsBatch();
+      setSeasonHistory((current) => ({ ...current, [historyKey]: result }));
     }
+
+    for (const player of players) {
+      if (!expanded[String(player.playerId)]) continue;
+      const historyKey = getSeasonHistoryKey(player, projectionSeasonId);
+      if (requestedSeasonHistory.current.has(historyKey)) continue;
+      requestedSeasonHistory.current.add(historyKey);
+      void loadHistory(player, historyKey);
+    }
+  }, [error, expanded, isLoading, players, projectionSeasonId]);
+
+  const toggleExpand = (player: ProcessedPlayer) => {
+    const id = String(player.playerId);
+    const historyKey = getSeasonHistoryKey(player, projectionSeasonId);
+    if (!expanded[id] && seasonHistory[historyKey]?.status === "error") {
+      // An explicit reopen retries a settled failure but shares any pending request.
+      requestedSeasonHistory.current.delete(historyKey);
+      setSeasonHistory((current) => ({ ...current, [historyKey]: undefined }));
+    }
+    setExpanded((current) => ({ ...current, [id]: !current[id] }));
   };
 
   // Load persisted bandScope on mount
@@ -2503,6 +2487,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   </tr>
                 );
 
+                const history = expanded[key]
+                  ? seasonHistory[getSeasonHistoryKey(player, projectionSeasonId)]
+                  : undefined;
+                const seasonDetail =
+                  history?.status === "ready" ? history.value : null;
                 const detailRow = expanded[key] ? (
                   <tr
                     key={`${player.playerId}-details`}
@@ -2510,26 +2499,22 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     className={styles.expandRow}
                   >
                     <td colSpan={detailColSpan}>
-                      {seasonLoading[key] && (
+                      {!history && (
                         <div style={{ padding: "8px 12px", opacity: 0.8 }}>
                           Loading last season totals...
                         </div>
                       )}
-                      {!seasonLoading[key] && seasonError[key] && (
+                      {history?.status === "error" && (
                         <div style={{ padding: "8px 12px", color: "#c66" }}>
-                          {seasonError[key]}
+                          {history.message}
                         </div>
                       )}
-                      {!seasonLoading[key] &&
-                        !seasonError[key] &&
-                        seasonTotals[key] == null && (
+                      {history?.status === "ready" && seasonDetail == null && (
                           <div style={{ padding: "8px 12px", opacity: 0.8 }}>
                             No last season totals available.
                           </div>
                         )}
-                      {!seasonLoading[key] &&
-                        !seasonError[key] &&
-                        seasonTotals[key] && (
+                      {seasonDetail && (
                           <div style={{ padding: "10px 12px" }}>
                             <div
                               style={{
@@ -2538,9 +2523,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                                 marginBottom: 6,
                               }}
                             >
-                              Last Season: {seasonTotals[key]?.seasonLabel}
+                              Last Season: {seasonDetail.seasonLabel}
                             </div>
-                            {seasonTotals[key]?.type === "skater" ? (
+                            {seasonDetail.type === "skater" ? (
                               <div
                                 style={{
                                   display: "grid",
@@ -2551,58 +2536,56 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                               >
                                 <StatPill
                                   label="GP"
-                                  value={seasonTotals[key]!.data.games_played}
+                                  value={seasonDetail.data.games_played}
                                 />
                                 <StatPill
                                   label="G"
-                                  value={seasonTotals[key]!.data.goals}
+                                  value={seasonDetail.data.goals}
                                 />
                                 <StatPill
                                   label="A"
-                                  value={seasonTotals[key]!.data.assists}
+                                  value={seasonDetail.data.assists}
                                 />
                                 <StatPill
                                   label="P"
-                                  value={seasonTotals[key]!.data.points}
+                                  value={seasonDetail.data.points}
                                 />
                                 <StatPill
                                   label="SOG"
-                                  value={seasonTotals[key]!.data.shots}
+                                  value={seasonDetail.data.shots}
                                 />
                                 <StatPill
                                   label="HIT"
-                                  value={seasonTotals[key]!.data.hits}
+                                  value={seasonDetail.data.hits}
                                 />
                                 <StatPill
                                   label="BLK"
-                                  value={seasonTotals[key]!.data.blocked_shots}
+                                  value={seasonDetail.data.blocked_shots}
                                 />
                                 <StatPill
                                   label="PPP"
-                                  value={seasonTotals[key]!.data.pp_points}
+                                  value={seasonDetail.data.pp_points}
                                 />
                                 <StatPill
                                   label="TOI/G"
                                   value={
-                                    seasonTotals[
-                                      key
-                                    ]!.data.toi_per_game?.toFixed?.(2) ??
-                                    seasonTotals[key]!.data.toi_per_game
+                                    seasonDetail.data.toi_per_game?.toFixed?.(2) ??
+                                    seasonDetail.data.toi_per_game
                                   }
                                 />
                                 <StatPill
                                   label="+/-"
-                                  value={seasonTotals[key]!.data.plus_minus}
+                                  value={seasonDetail.data.plus_minus}
                                 />
                                 <StatPill
                                   label="S%"
                                   value={
-                                    seasonTotals[key]!.data.shooting_percentage
+                                    seasonDetail.data.shooting_percentage
                                   }
                                 />
                                 <StatPill
                                   label="GWG"
-                                  value={seasonTotals[key]!.data.gw_goals}
+                                  value={seasonDetail.data.gw_goals}
                                 />
                               </div>
                             ) : (
@@ -2616,29 +2599,29 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                               >
                                 <StatPill
                                   label="GP"
-                                  value={seasonTotals[key]!.data.games_played}
+                                  value={seasonDetail.data.games_played}
                                 />
                                 <StatPill
                                   label="W-L-OT"
-                                  value={`${seasonTotals[key]!.data.wins ?? 0}-${seasonTotals[key]!.data.losses ?? 0}-${seasonTotals[key]!.data.ot_losses ?? 0}`}
+                                  value={`${seasonDetail.data.wins ?? 0}-${seasonDetail.data.losses ?? 0}-${seasonDetail.data.ot_losses ?? 0}`}
                                 />
                                 <StatPill
                                   label="SV%"
-                                  value={seasonTotals[key]!.data.save_pct}
+                                  value={seasonDetail.data.save_pct}
                                 />
                                 <StatPill
                                   label="GAA"
                                   value={
-                                    seasonTotals[key]!.data.goals_against_avg
+                                    seasonDetail.data.goals_against_avg
                                   }
                                 />
                                 <StatPill
                                   label="SO"
-                                  value={seasonTotals[key]!.data.shutouts}
+                                  value={seasonDetail.data.shutouts}
                                 />
                                 <StatPill
                                   label="SVS"
-                                  value={seasonTotals[key]!.data.saves}
+                                  value={seasonDetail.data.saves}
                                 />
                               </div>
                             )}

@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -38,6 +39,34 @@ function player(playerId: number, fullName: string, position: string) {
     },
     yahooAvgPick: null,
   } as any;
+}
+
+type HistoryRow = Record<string, string | number>;
+
+function deferHistory() {
+  type Response = { data: HistoryRow[] | null; error: Error | null };
+  let resolve!: (result: Response) => void;
+  const pending = new Promise<Response>((complete) => {
+    resolve = complete;
+  });
+  const chain = {
+    select: vi.fn(),
+    in: vi.fn(),
+    order: vi.fn(),
+    range: vi.fn(() => pending),
+  };
+  chain.select.mockReturnValue(chain);
+  chain.in.mockReturnValue(chain);
+  chain.order.mockReturnValue(chain);
+  const settle = (result: Response) => act(async () => {
+    resolve(result);
+    await pending;
+  });
+  return {
+    chain,
+    succeed: (...rows: HistoryRow[]) => settle({ data: rows, error: null }),
+    fail: (message: string) => settle({ data: null, error: new Error(message) }),
+  };
 }
 
 describe("ProjectionsTable visibility diagnostics", () => {
@@ -545,29 +574,15 @@ describe("ProjectionsTable visibility diagnostics", () => {
     ).toContain("duplicate rows 1");
   });
 
-  it("batches prior-season totals once for multiple expanded players", async () => {
+  it("loads history only for expanded players and reuses pending and successful requests", async () => {
+    const first = deferHistory();
+    const second = deferHistory();
+    fromMock.mockReturnValueOnce(first.chain).mockReturnValueOnce(second.chain);
     const players = [
       player(1, "First Player", "C"),
       player(2, "Second Player", "D"),
       player(3, "Third Player", "LW"),
     ];
-    const chain: any = {
-      select: vi.fn(() => chain),
-      in: vi.fn(() => chain),
-      order: vi.fn(() => chain),
-      range: vi.fn(() =>
-        Promise.resolve({
-          data: players.flatMap((entry) => [20242025, 20252026].map((season) => ({
-            player_id: entry.playerId,
-            season,
-            games_played: 82,
-            goals: 10,
-          }))),
-          error: null,
-        }),
-      ),
-    };
-    fromMock.mockReturnValue(chain);
 
     render(
       <ProjectionsTable
@@ -582,23 +597,138 @@ describe("ProjectionsTable visibility diagnostics", () => {
       />,
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Expand details for First Player" }),
+    const expandFirst = () => fireEvent.click(screen.getByRole("button", {
+      name: "Expand details for First Player",
+    }));
+    const collapseFirst = () => fireEvent.click(screen.getByRole("button", {
+      name: "Collapse details for First Player",
+    }));
+    expect(fromMock).not.toHaveBeenCalled();
+    expandFirst();
+    expect(fromMock).toHaveBeenCalledExactlyOnceWith("wgo_skater_stats_totals");
+    expect(first.chain.in).toHaveBeenCalledExactlyOnceWith("player_id", [1]);
+
+    collapseFirst();
+    expandFirst();
+    expect(fromMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Loading last season totals...")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Second Player" }));
+    expect(fromMock).toHaveBeenCalledTimes(2);
+    expect(second.chain.in).toHaveBeenCalledExactlyOnceWith("player_id", [2]);
+    await second.succeed({ player_id: 2, season: 20252026, games_played: 81 });
+    expect(screen.getByText("Last Season: 2025-26")).toBeTruthy();
+    expect(screen.getByText("Loading last season totals...")).toBeTruthy();
+
+    await first.succeed(
+      { player_id: 1, season: 20272028, games_played: 99 },
+      { player_id: 1, season: 20262027, games_played: 98 },
+      { player_id: 1, season: 20242025, games_played: 50 },
+      { player_id: 1, season: 20252026, games_played: 82 },
     );
-    await screen.findByText("Last Season: 2025-26");
+    expect(screen.getAllByText("Last Season: 2025-26")).toHaveLength(2);
     const firstRow = screen.getByText("First Player").closest("tr")!;
     expect(firstRow.getAttribute("data-stripe")).toBe(firstRow.nextElementSibling?.getAttribute("data-stripe"));
     expect(screen.getByText("Second Player").closest("tr")?.getAttribute("data-stripe")).not.toBe(firstRow.getAttribute("data-stripe"));
-    expect(fromMock).toHaveBeenCalledTimes(1);
-    expect(chain.in).toHaveBeenCalledWith("player_id", [1, 2, 3]);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Expand details for Second Player" }),
+    collapseFirst();
+    expandFirst();
+    expect(screen.getAllByText("Last Season: 2025-26")).toHaveLength(2);
+    expect(fromMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("isolates deferred history results by projection season and player role", async () => {
+    const priorSeason = deferHistory();
+    const priorRole = deferHistory();
+    const current = deferHistory();
+    fromMock
+      .mockReturnValueOnce(priorSeason.chain)
+      .mockReturnValueOnce(priorRole.chain)
+      .mockReturnValueOnce(current.chain);
+
+    const table = (season: number, role: string) => (
+      <ProjectionsTable
+        players={[player(1, "Same Player", role)]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        projectionSeasonId={season}
+      />
     );
-    await waitFor(() =>
-      expect(screen.getAllByText("Last Season: 2025-26")).toHaveLength(2),
+    const { rerender } = render(table(20252026, "C"));
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Same Player" }));
+    rerender(table(20262027, "C"));
+    expect(fromMock).toHaveBeenNthCalledWith(2, "wgo_skater_stats_totals");
+    expect(priorRole.chain.in).toHaveBeenCalledExactlyOnceWith("player_id", [1]);
+    rerender(table(20262027, "G"));
+    expect(fromMock).toHaveBeenNthCalledWith(3, "wgo_goalie_stats_totals");
+    expect(current.chain.in).toHaveBeenCalledExactlyOnceWith("goalie_id", [1]);
+    expect(screen.getByText("Loading last season totals...")).toBeTruthy();
+
+    await current.succeed(
+      { goalie_id: 1, season_id: 20262027, wins: 99 },
+      { goalie_id: 1, season_id: 20252026, wins: 22, losses: 9, ot_losses: 3 },
     );
+    expect(screen.getByText("Last Season: 2025-26")).toBeTruthy();
+    expect(screen.getByText("22-9-3")).toBeTruthy();
+
+    await priorSeason.succeed({ player_id: 1, season: 20242025, games_played: 82 });
+    await priorRole.fail("Stale skater history error");
+    expect(screen.queryByText("Last Season: 2024-25")).toBeNull();
+    expect(screen.queryByText("Stale skater history error")).toBeNull();
+    expect(screen.getByText("22-9-3")).toBeTruthy();
+
+    rerender(table(20252026, "C"));
+    expect(screen.getByText("Last Season: 2024-25")).toBeTruthy();
+    expect(screen.queryByText("22-9-3")).toBeNull();
+    expect(fromMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("shares a pending failure, retries on reopening, and caches missing history", async () => {
+    const failed = deferHistory();
+    const retry = deferHistory();
+    fromMock.mockReturnValueOnce(failed.chain).mockReturnValueOnce(retry.chain);
+    const table = () => (
+      <ProjectionsTable
+        players={[player(1, "Retry Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />
+    );
+    const { rerender } = render(table());
+    const expand = () => fireEvent.click(screen.getByRole("button", {
+      name: "Expand details for Retry Player",
+    }));
+    const collapse = () => fireEvent.click(screen.getByRole("button", {
+      name: "Collapse details for Retry Player",
+    }));
+
+    expand();
+    collapse();
+    expand();
     expect(fromMock).toHaveBeenCalledTimes(1);
+    await failed.fail("History unavailable");
+    expect(screen.getByText("History unavailable")).toBeTruthy();
+    rerender(table());
+    expect(fromMock).toHaveBeenCalledTimes(1);
+
+    collapse();
+    expand();
+    expect(fromMock).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText("History unavailable")).toBeNull();
+    expect(screen.getByText("Loading last season totals...")).toBeTruthy();
+    await retry.succeed();
+    expect(screen.getByText("No last season totals available.")).toBeTruthy();
+
+    collapse();
+    expand();
+    expect(screen.getByText("No last season totals available.")).toBeTruthy();
+    expect(fromMock).toHaveBeenCalledTimes(2);
   });
 
   it("enforces the two-player comparison limit with visible feedback", () => {
