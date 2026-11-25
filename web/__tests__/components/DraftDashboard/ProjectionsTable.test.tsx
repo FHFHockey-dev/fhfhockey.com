@@ -70,6 +70,36 @@ function deferHistory() {
 }
 
 describe("ProjectionsTable visibility diagnostics", () => {
+  it("delegates draft proration changes without rewriting the standalone preference", () => {
+    const key = "projections.prorate84";
+    const previous = localStorage.getItem(key);
+    localStorage.setItem(key, "false");
+    const onChange = vi.fn();
+    try {
+      const view = render(
+        <ProjectionsTable
+          players={[player(1, "Pace Player", "C")]}
+          draftedPlayers={[]}
+          isLoading={false}
+          error={null}
+          onDraftPlayer={vi.fn()}
+          canDraft
+          draftProrate84
+          onDraftProrate84Change={onChange}
+        />,
+      );
+      const control = screen.getByRole("button", { name: /toggle \d+-game prorated skater stats/i });
+      expect(control.getAttribute("aria-pressed")).toBe("true");
+      fireEvent.click(control);
+      expect(onChange).toHaveBeenCalledExactlyOnceWith(false);
+      expect(localStorage.getItem(key)).toBe("false");
+      view.unmount();
+    } finally {
+      if (previous === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, previous);
+    }
+  });
+
   it("traps drawer focus, isolates the table, and restores the trigger", async () => {
     const outsideControl = document.createElement("button");
     outsideControl.textContent = "Outside dashboard control";

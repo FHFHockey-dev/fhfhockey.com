@@ -30,6 +30,7 @@ import QuickFixModal from "./QuickFixModal";
 import styles from "./DraftSettings.module.scss";
 import DraftScoringSettings from "./DraftScoringSettings";
 import ProjectionSourceSettings from "./ProjectionSourceSettings";
+import { isLegacyDraftV4 } from "lib/draftDashboard/recovery";
 import { bookmarkImportError, type DraftSettingsValidation, type SettingsDomain } from "lib/draftDashboard/settingsValidation";
 
 export interface DraftSettingsHandle {
@@ -41,6 +42,8 @@ export interface DraftSettingsHandle {
 type LeagueType = "points" | "categories";
 
 interface DraftSettingsProps {
+  prorate84?: boolean;
+  riskSd?: number;
   matchupWeeks?: readonly DashboardMatchupWeek[];
   matchupWeeksError?: string | null;
   validation?: DraftSettingsValidation;
@@ -132,6 +135,8 @@ interface DraftSettingsProps {
 import PlayerAutocomplete from "components/PlayerAutocomplete";
 
 const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(({
+  prorate84,
+  riskSd,
   matchupWeeks = [],
   matchupWeeksError,
   validation,
@@ -431,8 +436,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
       customSourceMetadata,
       customCsvList: includeImportedProjections ? customCsvEntries.filter((entry) => entry.rows?.length) : undefined,
       positionOverrides,
-      prorate84: ls("projections.prorate84") === "true",
-      riskSd: Number(ls("projections.riskSd", "12")),
+      prorate84: prorate84 ?? (ls("projections.prorate84") === "true"),
+      riskSd: riskSd ?? Number(ls("projections.riskSd", "12")),
     };
   }, [
     settings,
@@ -452,6 +457,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     customCsvEntries,
     includeImportedProjections,
     positionOverrides,
+    prorate84,
+    riskSd,
   ]);
 
   const deserializeBookmark = (key: string): any | null => {
@@ -497,7 +504,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     const data = deserializeBookmark(importText.trim());
     const message = bookmarkImportError(data);
     if (message) { setTradeFeedback({ ok: false, message }); return; }
-    if ((draftedPlayers.length || keepers.length || pickTrades.length) && !window.confirm("Replace the current draft with this bookmark? Current picks, keepers, trades, and settings will be replaced. Export a bookmark first to keep a copy.")) return;
+    if (!isLegacyDraftV4(data) && (draftedPlayers.length || keepers.length || pickTrades.length) && !window.confirm("Replace the current draft with this bookmark? Current picks, keepers, trades, and settings will be replaced. Export a bookmark first to keep a copy.")) return;
     if (!onBookmarkImport) { setTradeFeedback({ ok: false, message: "Draft import is unavailable." }); return; }
     const result = onBookmarkImport(data);
     if (!result || result.status === "failed") { setTradeFeedback({ ok: false, message: result?.message ?? "Draft import did not finish. The current draft has not changed." }); return; }

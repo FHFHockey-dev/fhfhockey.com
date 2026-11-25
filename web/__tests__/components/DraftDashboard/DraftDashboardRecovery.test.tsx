@@ -7,6 +7,7 @@ const external = vi.hoisted(() => ({
   user: null as { id: string } | null,
   espnState: null as any,
   showRoster: false,
+  showDraftButtons: false,
   players: null as any[] | null,
   filledSlots: {} as Record<string, number>,
   proEnabled: false,
@@ -88,9 +89,15 @@ vi.mock("hooks/useProviderSyncAccess", () => ({ useProviderSyncAccess: () => ({ 
 vi.mock("hooks/useDraftProAccess", () => ({ useDraftProAccess: () => ({ access: external.proEnabled ? { eligible: true, capabilities: ["recommendations"] } : null }) }));
 vi.mock("hooks/useDraftProDust", () => ({ useDraftProDust: () => ({ data: null, error: null, isLoading: false }) }));
 vi.mock("hooks/useDraftSchedule", () => ({ useDraftSchedule: () => ({ playerMetrics: new Map(), weeks: [], selectedWeeks: [], weeksError: null, periodLabel: "Season" }) }));
-vi.mock("components/DraftDashboard/ProjectionsTable", () => ({ default: ({ allPlayers }: any) => {
-  external.tablePlayers = allPlayers;
-  return null;
+vi.mock("components/DraftDashboard/ProjectionsTable", () => ({ default: ({ allPlayers, onDraftPlayer, canDraft }: React.ComponentProps<typeof import("../../../components/DraftDashboard/ProjectionsTable").default>) => {
+  external.tablePlayers = allPlayers ?? [];
+  return external.showDraftButtons
+    ? (allPlayers ?? []).map((row) => (
+        <button key={row.playerId} disabled={!canDraft} onClick={() => onDraftPlayer(String(row.playerId))}>
+          Draft {row.fullName}
+        </button>
+      ))
+    : null;
 } }));
 vi.mock("components/DraftDashboard/SuggestedPicks", () => ({ default: ({ tierPositions, adpSource }: any) => {
   external.tierPositions = tierPositions;
@@ -104,7 +111,44 @@ const settings = { teamCount: 2, draftOrder: ["Team 1", "Team 2"], draftOrderMod
 const csv = { id: "custom_csv_one", label: "Tab source", playerType: "skater" as const, rows: [{ Player_Name: "Recovery Player", player_id: 2, Goals: 12, Position: "C" }] };
 const snapshot = () => ({ v: 2, configured: true, draftSettings: settings, currentPick: 2, myTeamId: "Team 1", draftedPlayers: [{ playerId: "1", teamId: "Team 1", pickNumber: 1, round: 1, pickInRound: 1 }], keepers: [{ playerId: "9", teamId: "Team 2", cost: "none" }], pickTrades: [], positionOverrides: { "1": "UTILITY" }, draftHistory: [{ players: [], pickNumber: 1 }], sourceControls: { dtz_skaters: { isSelected: true, weight: 0.3 }, custom_csv_one: { isSelected: true, weight: 0.7 } }, goalieSourceControls: { dtz_goalies: { isSelected: true, weight: 1 } }, customCsvList: [csv], goaliePointValues: { WINS_GOALIE: 4 }, prorate84: true, riskSd: 28, forwardGrouping: "fwd", baselineMode: "full", needWeightEnabled: true, needAlpha: 0.8, personalizeReplacement: true });
 const bookmark = () => ({ v: 3, settings, currentPick: 1, myTeamId: "Team 1", draftedPlayers: [], keepers: [], pickTrades: [], customCsvList: [csv], customSourceMetadata: [{ id: csv.id, label: csv.label }], sourceControls: { dtz_skaters: { isSelected: true, weight: 0.3 }, [csv.id]: { isSelected: true, weight: 0.7 } }, goalieSourceControls: { dtz_goalies: { isSelected: true, weight: 1 } }, goalieScoringCategories: { WINS_GOALIE: 4 } });
-const saved = () => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}");
+// Shape recorded by the historical createManualDraftRecoveryRecord writer.
+function legacyV4Draft(attached = false) {
+  return {
+    v: 4,
+    ts: 1700000000000,
+    isSnakeDraft: true,
+    configured: true,
+    settings,
+    draftedPlayers: [{ playerId: "2", teamId: "Team 1", pickNumber: 1, round: 1, pickInRound: 1 }],
+    draftHistory: [{ players: [], pickNumber: 1, positionOverrides: {} }],
+    currentPick: 2,
+    myTeamId: "Team 1",
+    customTeamNames: { "Team 1": "First Team", "Team 2": "Second Team" },
+    forwardGrouping: "split",
+    baselineMode: "full",
+    personalizeReplacement: true,
+    needWeightEnabled: true,
+    needAlpha: 0.8,
+    prorate84: true,
+    riskSd: 28,
+    goalieScoringCategories: { WINS_GOALIE: 4 },
+    sourceControls: bookmark().sourceControls,
+    goalieSourceControls: bookmark().goalieSourceControls,
+    keepers: [],
+    pickTrades: [],
+    positionOverrides: { "2": "C" },
+    preserveExactCategoryWeights: true,
+    csvMetadata: [{ id: csv.id, label: csv.label }],
+    ...(attached ? { customCsvEntries: [{ id: csv.id, label: csv.label, rows: csv.rows }] } : {}),
+  };
+}
+
+const tabSnapshot = () => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}");
+const saved = () => {
+  const snap = tabSnapshot();
+  if (!snap.tabCsvSidecar) return snap;
+  return { ...snap, customCsvList: JSON.parse(sessionStorage.getItem("draft.customCsvList.v3") ?? "[]") };
+};
 const dialog = () => screen.getByRole("dialog", { name: "Draft Settings" });
 function openSettings() {
   if (!screen.queryByRole("dialog", { name: "Draft Settings" })) fireEvent.click(screen.getByRole("tab", { name: "Setup" }));
@@ -127,7 +171,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup(); sessionStorage.clear(); localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals();
-  external.showRoster = false; external.players = null; external.filledSlots = {};
+  external.showRoster = false; external.showDraftButtons = false; external.players = null; external.filledSlots = {};
   external.proEnabled = false; external.providerSyncEnabled = false; external.fantraxPlayers = []; external.tablePlayers = []; external.tierPositions = []; external.tierAdpSource = "";
   external.user = null; external.espnState = null; external.loadSettings.mockReset(); external.loadSettings.mockResolvedValue({ data: null, error: null });
 });
@@ -320,6 +364,276 @@ it("keeps an old bookmark unresolved after a different CSV is imported into an e
   ]));
 });
 
+it("preserves an unsupported future device record without treating it as a current snapshot", async () => {
+  const raw = JSON.stringify({ ...snapshot(), v: 5 });
+  localStorage.setItem("draftDashboard.session.v1", raw);
+  render(<DraftDashboard />);
+  expect(await screen.findByRole("button", { name: "Retry saved draft recovery" })).toBeTruthy();
+  expect(localStorage.getItem("draftDashboard.session.v1")).toBe(raw);
+  expect(sessionStorage.getItem("draft.snapshot.v2")).toBeNull();
+});
+
+it.each(["writer", "earlier aliases"] as const)("resumes a historical device record with %s fields and keeps missing-source labels", async (shape) => {
+  const legacy = legacyV4Draft();
+  const { settings: draftSettings, goalieScoringCategories: goaliePointValues, ...rest } = legacy;
+  const device = shape === "writer" ? legacy : { ...rest, draftSettings, goaliePointValues };
+  localStorage.setItem("draftDashboard.session.v1", JSON.stringify(device));
+  sessionStorage.setItem("draft.customCsvList.v3", JSON.stringify([{ ...csv, rows: [{ Name: "Another draft" }] }]));
+  if (shape === "writer") sessionStorage.setItem("draft.snapshot.v2", "{unreadable");
+  render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
+  if (shape === "writer") fireEvent.click(await screen.findByRole("button", { name: "Restore saved device draft" }));
+  await waitFor(() => expect(saved()).toMatchObject({
+    draftedPlayers: legacy.draftedPlayers, currentPick: legacy.currentPick, draftSettings: { teamCount: 2 },
+    goaliePointValues, positionOverrides: legacy.positionOverrides, prorate84: true, riskSd: 28,
+  }));
+  expect(JSON.parse(sessionStorage.getItem("draft.customCsvList.v3")!)).toEqual([{ ...csv, rows: [] }]);
+});
+
+it("keeps current picks when an older bookmark has orphan overrides or invalid historical picks", async () => {
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify(snapshot()));
+  render(<DraftDashboard />);
+  await waitFor(() => expect(saved().draftedPlayers).toEqual(snapshot().draftedPlayers));
+  const legacy = legacyV4Draft(true);
+  const raw = sessionStorage.getItem("draft.snapshot.v2");
+  for (const [changes, message] of [
+    [{ positionOverrides: { orphan: "C" } }, "Invalid roster slot overrides"],
+    [{ draftHistory: [{ players: [], pickNumber: 1, positionOverrides: { orphan: "C" } }] }, "Invalid undo history"],
+    [{ draftHistory: [{ players: [{ ...legacy.draftedPlayers[0], teamId: "Gone" }], pickNumber: 1 }] }, "Invalid undo history"],
+  ] as const) {
+    openSettings();
+    if (!screen.queryByLabelText("Import draft bookmark")) fireEvent.click(within(dialog()).getByRole("button", { name: "Import bookmark" }));
+    fireEvent.change(screen.getByLabelText("Import draft bookmark"), { target: { value: JSON.stringify({ ...legacy, ...changes }) } });
+    fireEvent.click(screen.getByRole("button", { name: "Import Bookmark" }));
+    expect(dialog().textContent).toContain(message);
+    expect(sessionStorage.getItem("draft.snapshot.v2")).toBe(raw);
+  }
+});
+
+it("restores a v4-only compact tab draft explicitly and preserves old storage on a failed write", async () => {
+  const legacyKey = "draft.snapshot.v4";
+  const csvKey = "draft.customCsvList.v3";
+  const priorCsvKey = "draft.customCsvList.v2";
+  const legacy = legacyV4Draft();
+  const raw = JSON.stringify(legacy);
+  const csvRaw = JSON.stringify([csv]);
+  sessionStorage.setItem(legacyKey, raw);
+  sessionStorage.setItem(priorCsvKey, csvRaw);
+
+  render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
+  const restore = await screen.findByRole("button", { name: "Restore legacy saved tab draft" });
+  expect(sessionStorage.getItem("draft.snapshot.v2")).toBeNull();
+  expect(localStorage.getItem("draftDashboard.session.v1")).toBeNull();
+  expect(sessionStorage.getItem(csvKey)).toBeNull();
+
+  const setItem = Storage.prototype.setItem;
+  let rejectSnapshot = true;
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (rejectSnapshot && this === sessionStorage && key === "draft.snapshot.v2") throw new DOMException("quota", "QuotaExceededError");
+    return setItem.call(this, key, value);
+  });
+  fireEvent.click(restore);
+  expect(dialog().textContent).toContain("Could not save the restored draft");
+  expect(sessionStorage.getItem(legacyKey)).toBe(raw);
+  expect(sessionStorage.getItem(priorCsvKey)).toBe(csvRaw);
+  expect(sessionStorage.getItem(csvKey)).toBeNull();
+  expect(sessionStorage.getItem("draft.snapshot.v2")).toBeNull();
+
+  rejectSnapshot = false;
+  fireEvent.click(restore);
+  await waitFor(() => expect(saved()).toMatchObject({
+    v: 2,
+    currentPick: 2,
+    draftedPlayers: legacy.draftedPlayers,
+    draftHistory: legacy.draftHistory,
+    positionOverrides: legacy.positionOverrides,
+    sourceControls: legacy.sourceControls,
+    goaliePointValues: legacy.goalieScoringCategories,
+    customCsvList: [csv],
+    prorate84: true,
+    riskSd: 28,
+  }));
+  expect(sessionStorage.getItem(legacyKey)).toBe(raw);
+  expect(sessionStorage.getItem(priorCsvKey)).toBe(csvRaw);
+});
+
+it.each(["tab", "device"] as const)(
+  "prefers the current %s draft until the user chooses the older tab draft",
+  async (source) => {
+    const legacy = legacyV4Draft();
+    const raw = JSON.stringify(legacy);
+    sessionStorage.setItem("draft.snapshot.v4", raw);
+    const newerStore = source === "tab" ? sessionStorage : localStorage;
+    const newerKey = source === "tab" ? "draft.snapshot.v2" : "draftDashboard.session.v1";
+    newerStore.setItem(newerKey, JSON.stringify(snapshot()));
+    render(<DraftDashboard />);
+    await waitFor(() => expect(saved().draftedPlayers).toContainEqual(snapshot().draftedPlayers[0]));
+    openSettings();
+    const restore = screen.getByRole("button", { name: "Restore legacy saved tab draft" });
+    const currentRaw = sessionStorage.getItem("draft.snapshot.v2");
+    const currentDevice = localStorage.getItem("draftDashboard.session.v1");
+    vi.mocked(window.confirm).mockReturnValueOnce(false);
+    fireEvent.click(restore);
+    expect(window.confirm).toHaveBeenLastCalledWith(expect.stringContaining("Replace your current saved draft"));
+    expect(sessionStorage.getItem("draft.snapshot.v2")).toBe(currentRaw);
+    expect(localStorage.getItem("draftDashboard.session.v1")).toBe(currentDevice);
+    expect(sessionStorage.getItem("draft.snapshot.v4")).toBe(raw);
+
+    fireEvent.click(restore);
+    await waitFor(() => expect(saved().draftedPlayers).toEqual(legacy.draftedPlayers));
+    expect(saved().customCsvList).toEqual([{ id: csv.id, label: csv.label, playerType: "skater", rows: [] }]);
+    expect(sessionStorage.getItem("draft.snapshot.v4")).toBe(raw);
+  },
+);
+
+it.each([true, false])("imports historical v4 bookmarks through the current reader (attached=%s)", async (attached) => {
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify(snapshot()));
+  render(<DraftDashboard />);
+  await waitFor(() => expect(saved().draftedPlayers).toContainEqual(snapshot().draftedPlayers[0]));
+  const originalCurrent = sessionStorage.getItem("draft.snapshot.v2");
+  const originalCsv = sessionStorage.getItem("draft.customCsvList.v3");
+  const legacy = legacyV4Draft(attached);
+
+  vi.mocked(window.confirm).mockReturnValueOnce(false);
+  importBookmark(legacy);
+  expect(dialog().textContent).toContain("Import cancelled");
+  expect(sessionStorage.getItem("draft.snapshot.v2")).toBe(originalCurrent);
+  expect(sessionStorage.getItem("draft.customCsvList.v3")).toBe(originalCsv);
+
+  fireEvent.click(screen.getByRole("button", { name: "Import Bookmark" }));
+  await waitFor(() => expect(saved().draftedPlayers).toEqual(legacy.draftedPlayers));
+  expect(saved().draftHistory).toEqual(legacy.draftHistory);
+  expect(saved().customCsvList).toEqual(attached
+    ? legacy.customCsvEntries
+    : [{ id: csv.id, label: csv.label, playerType: "skater", rows: [] }]);
+  expect(dialog().textContent).toContain(attached ? "Draft bookmark imported." : "Missing projection CSVs must be reimported or removed");
+  expect(sessionStorage.getItem("draft.snapshot.v4")).toBeNull();
+});
+
+it("keeps a v4 draft already in setup unconfigured until its sources are fixed", async () => {
+  const legacy = legacyV4Draft();
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify({
+    ...legacy, configured: false, sourceControls: {}, goalieSourceControls: {},
+  }));
+  render(<DraftDashboard />);
+  fireEvent.click(await screen.findByRole("button", { name: "Restore legacy saved tab draft" }));
+  await waitFor(() => expect(saved()).toMatchObject({ configured: false, draftedPlayers: legacy.draftedPlayers }));
+  expect((screen.getByRole("button", { name: "Draft recovery player", hidden: true }) as HTMLButtonElement).disabled).toBe(true);
+});
+
+it("migrates a full snapshot and keeps recurring picks compact while restoring the verified sidecar", async () => {
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
+    ...snapshot(), currentPick: 1, draftedPlayers: [], keepers: [], positionOverrides: {}, draftHistory: [],
+  }));
+  const view = render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
+  await waitFor(() => expect(tabSnapshot()).toMatchObject({
+    tabCsvSidecar: true, customSourceMetadata: [{ id: csv.id, label: csv.label, contentFingerprint: expect.any(String) }],
+  }));
+  expect(tabSnapshot()).not.toHaveProperty("customCsvList");
+  expect(saved().customCsvList).toEqual([csv]);
+  const csvBytes = sessionStorage.getItem("draft.customCsvList.v3");
+
+  const reads = vi.spyOn(Storage.prototype, "getItem");
+  const writes = vi.spyOn(Storage.prototype, "setItem");
+  view.rerender(<React.StrictMode><DraftDashboard /></React.StrictMode>);
+  expect(reads.mock.calls.some(([key]) => key === "draft.customCsvList.v3")).toBe(false);
+  expect(writes.mock.calls.some(([key]) => key === "draft.customCsvList.v3")).toBe(false);
+
+  fireEvent.click(screen.getByRole("button", { name: "Draft recovery player" }));
+  await waitFor(() => expect(tabSnapshot().draftedPlayers).toHaveLength(1));
+  expect(tabSnapshot()).not.toHaveProperty("customCsvList");
+  expect(JSON.parse(localStorage.getItem("draftDashboard.session.v1")!)).not.toHaveProperty("customCsvList");
+  expect(writes.mock.calls.some(([key]) => key === "draft.customCsvList.v3")).toBe(false);
+  expect(sessionStorage.getItem("draft.customCsvList.v3")).toBe(csvBytes);
+
+  view.unmount();
+  render(<DraftDashboard />);
+  await waitFor(() => expect(tabSnapshot().draftedPlayers).toHaveLength(1));
+  expect(saved().customCsvList).toEqual([csv]);
+});
+
+it("does not hydrate a changed sidecar through the same source ID and label", async () => {
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify(snapshot()));
+  const initial = render(<DraftDashboard />);
+  await waitFor(() => expect(tabSnapshot().tabCsvSidecar).toBe(true));
+  initial.unmount();
+
+  const changedCsv = JSON.stringify([{ ...csv, rows: [{ ...csv.rows[0], Goals: 999 }] }]);
+  sessionStorage.setItem("draft.customCsvList.v3", changedCsv);
+  render(<DraftDashboard />);
+  await waitFor(() => expect(tabSnapshot().customSourceMetadata).toEqual([{ id: csv.id, label: csv.label, playerType: "skater", missing: true }]));
+  expect(dialog().textContent).toContain("Reimport or remove this source before drafting");
+  expect(sessionStorage.getItem("draft.customCsvList.v3")).toBe(changedCsv);
+});
+
+it("keeps the prior compact record and sidecar when a CSV removal cannot commit", async () => {
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify(snapshot()));
+  render(<DraftDashboard />);
+  await waitFor(() => expect(tabSnapshot().tabCsvSidecar).toBe(true));
+  openSettings();
+  fireEvent.click(within(dialog()).getByRole("tab", { name: /^Projections/ }));
+  fireEvent.click(within(dialog()).getByRole("button", { name: "Edit Weights" }));
+  const group = within(dialog()).getByRole("region", { name: "Skaters projection sources" });
+  const old = sessionStorage.getItem("draft.snapshot.v2");
+  const csvOld = sessionStorage.getItem("draft.customCsvList.v3");
+
+  const setItem = Storage.prototype.setItem;
+  let rejectSnapshot = true;
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (rejectSnapshot && this === sessionStorage && key === "draft.snapshot.v2") throw new DOMException("quota", "QuotaExceededError");
+    return setItem.call(this, key, value);
+  });
+  fireEvent.click(within(group).getByRole("button", { name: "Remove Tab source" }));
+  expect(dialog().textContent).toContain("Could not save imported projections");
+  expect(sessionStorage.getItem("draft.snapshot.v2")).toBe(old);
+  expect(sessionStorage.getItem("draft.customCsvList.v3")).toBe(csvOld);
+
+  rejectSnapshot = false;
+  fireEvent.click(within(group).getByRole("button", { name: "Remove Tab source" }));
+  await waitFor(() => expect(saved().customCsvList).toEqual([]));
+  expect(tabSnapshot().sourceControls[csv.id]).toBeUndefined();
+  expect(tabSnapshot()).not.toHaveProperty("customCsvList");
+});
+
+it("shows device and preference write failures and exports the recovered analysis values", async () => {
+  const device = JSON.stringify({ ...snapshot(), currentPick: 3 });
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify(snapshot()));
+  localStorage.setItem("draftDashboard.session.v1", device);
+  localStorage.setItem("projections.riskSd", "6");
+  localStorage.setItem("projections.prorate84", "false");
+  const setItem = Storage.prototype.setItem;
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (this === localStorage && ["draftDashboard.session.v1", "projections.riskSd", "projections.prorate84"].includes(key)) {
+      throw new DOMException("quota", "QuotaExceededError");
+    }
+    return setItem.call(this, key, value);
+  });
+
+  render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
+  await waitFor(() => expect(tabSnapshot()).toMatchObject({ prorate84: true, riskSd: 28 }));
+  expect(localStorage.getItem("draftDashboard.session.v1")).toBe(device);
+  expect(localStorage.getItem("projections.riskSd")).toBe("6");
+  expect(localStorage.getItem("projections.prorate84")).toBe("false");
+  openSettings();
+  expect(dialog().textContent).toContain("Could not save this draft on this device");
+  expect(dialog().textContent).toContain("Analysis preferences could not be saved");
+
+  let exportedJson = "";
+  const NativeBlob = globalThis.Blob;
+  vi.stubGlobal("Blob", class extends NativeBlob {
+    constructor(parts: BlobPart[]) { super(parts); exportedJson = String(parts[0]); }
+  });
+  const NativeURL = globalThis.URL;
+  const revokeObjectURL = vi.fn();
+  vi.stubGlobal("URL", class extends NativeURL {
+    static createObjectURL() { return "blob:draft-fixture"; }
+    static revokeObjectURL(url: string) { revokeObjectURL(url); }
+  });
+  vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  fireEvent.click(within(dialog()).getByRole("button", { name: "Export bookmark" }));
+  expect(JSON.parse(exportedJson)).toMatchObject({ v: 3, prorate84: true, riskSd: 28, draftedPlayers: snapshot().draftedPlayers });
+  await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith("blob:draft-fixture"));
+});
+
 it("restores source controls once and retains missing-source repair controls", async () => {
   sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({ ...snapshot(), configured: true, keepers: [], draftedPlayers: [], currentPick: 1, customCsvList: undefined, customSourceMetadata: [{ id: csv.id, label: csv.label }] }));
   render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
@@ -425,6 +739,39 @@ it.each(["draft.snapshot.v2", "draftDashboard.session.v1"])("failed %s resume re
   render(<DraftDashboard />);
   await waitFor(() => expect(saved().draftedPlayers).toContainEqual(snapshot().draftedPlayers[0]));
   expect(saved().customCsvList).toEqual([csv]);
+});
+
+it("restores the device draft over an unreadable tab only after confirmation and a successful save", async () => {
+  const tabKey = "draft.snapshot.v2";
+  const deviceKey = "draftDashboard.session.v1";
+  const csvKey = "draft.customCsvList.v3";
+  const invalid = "{truncated tab";
+  const device = JSON.stringify({ ...snapshot(), customCsvList: undefined, customSourceMetadata: [{ id: csv.id, label: csv.label }] });
+  const unrelatedRows = JSON.stringify([{ ...csv, rows: [{ Name: "Different draft" }] }]);
+  sessionStorage.setItem(tabKey, invalid);
+  sessionStorage.setItem(csvKey, unrelatedRows);
+  localStorage.setItem(deviceKey, device);
+  render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
+  const restore = await screen.findByRole("button", { name: "Restore saved device draft" });
+  vi.mocked(window.confirm).mockReturnValueOnce(false);
+  fireEvent.click(restore);
+  expect(sessionStorage.getItem(tabKey)).toBe(invalid);
+  expect(localStorage.getItem(deviceKey)).toBe(device);
+  const write = Storage.prototype.setItem;
+  const quota = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (this === sessionStorage && key === tabKey) throw new DOMException("quota", "QuotaExceededError");
+    write.call(this, key, value);
+  });
+  fireEvent.click(restore);
+  expect(dialog().textContent).toContain("Could not save imported projections");
+  expect(sessionStorage.getItem(tabKey)).toBe(invalid);
+  expect(sessionStorage.getItem(csvKey)).toBe(unrelatedRows);
+  expect(localStorage.getItem(deviceKey)).toBe(device);
+  quota.mockRestore();
+  fireEvent.click(restore);
+  await waitFor(() => expect(saved().draftedPlayers).toEqual(snapshot().draftedPlayers));
+  expect(JSON.parse(sessionStorage.getItem(csvKey)!)).toEqual([{ ...csv, rows: [] }]);
+  expect(screen.queryByRole("button", { name: "Retry saved draft recovery" })).toBeNull();
 });
 
 it("retains a malformed tab snapshot through retry and Done until a confirmed clean start", async () => {
@@ -614,4 +961,164 @@ it.each([
   const tiers = external.tierPositions.find(row => row.position === position);
   expect(tiers?.bands.flatMap(band => band.players)).toMatchObject([{ id: "2", adp }]);
   expect(external.tierAdpSource).toBe(adpSource === "fantrax" ? "Fantrax" : "Yahoo");
+});
+
+
+const undoSettings = {
+  ...settings,
+  rosterConfig: { ...settings.rosterConfig, utility: 1 },
+};
+const undoPickOne = { playerId: "2", teamId: "Team 1", pickNumber: 1, round: 1, pickInRound: 1 };
+const undoPickTwo = { playerId: "9", teamId: "Team 2", pickNumber: 2, round: 1, pickInRound: 2 };
+const utilityHistory = {
+  players: [undoPickOne],
+  pickNumber: 2,
+  positionOverrides: { "2": "UTILITY" },
+};
+const historicalUndo = { players: [], pickNumber: 1 };
+const undoSources = { dtz_skaters: { isSelected: true, weight: 1 } };
+
+function undoDraftPick() {
+  openSettings();
+  management();
+  fireEvent.click(within(dialog()).getByRole("button", { name: "Undo Last Pick" }));
+}
+
+function moveRecoveryPlayer(from: "C" | "UTILITY", to: "C" | "UTILITY") {
+  fireEvent.click(screen.getByRole("button", { name: `${from} 1: Recovery Player` }));
+  fireEvent.click(screen.getByRole("button", { name: `${to} 1: Open` }));
+}
+
+it("restores roster overrides per pick after remounting the current tab", async () => {
+  external.showRoster = true;
+  external.showDraftButtons = true;
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
+    ...snapshot(),
+    draftSettings: undoSettings,
+    currentPick: 1,
+    draftedPlayers: [],
+    keepers: [],
+    positionOverrides: {},
+    draftHistory: [],
+    forwardGrouping: "split",
+    sourceControls: undoSources,
+    customCsvList: [],
+  }));
+  const view = render(<DraftDashboard />);
+  await waitFor(() => expect(saved().currentPick).toBe(1));
+  fireEvent.click(screen.getByRole("button", { name: "Draft Recovery Player" }));
+  await screen.findByRole("button", { name: "C 1: Recovery Player" });
+  moveRecoveryPlayer("C", "UTILITY");
+
+  fireEvent.click(screen.getByRole("button", { name: "Draft Root Keeper" }));
+  await waitFor(() => expect(saved().draftedPlayers).toEqual([undoPickOne, undoPickTwo]));
+  moveRecoveryPlayer("UTILITY", "C");
+  expect(saved().positionOverrides).toEqual({ "2": "C" });
+
+  view.unmount();
+  render(<DraftDashboard />);
+  await screen.findByRole("button", { name: "C 1: Recovery Player" });
+  undoDraftPick();
+  await waitFor(() => expect(saved()).toMatchObject({
+    draftedPlayers: [undoPickOne],
+    currentPick: 2,
+    positionOverrides: { "2": "UTILITY" },
+    draftHistory: [{ ...historicalUndo, positionOverrides: {} }],
+  }));
+  expect(screen.getByRole("button", { name: "UTILITY 1: Recovery Player" })).toBeTruthy();
+
+  undoDraftPick();
+  await waitFor(() => expect(saved()).toMatchObject({
+    draftedPlayers: [],
+    currentPick: 1,
+    positionOverrides: {},
+    draftHistory: [],
+  }));
+});
+
+it.each([3, 4])("restores bookmark v%s pick history including an older entry without overrides", async (version) => {
+  external.showRoster = true;
+  const format = version === 3
+    ? { ...bookmark(), customCsvList: [], customSourceMetadata: [] }
+    : { ...legacyV4Draft(true), csvMetadata: [], customCsvEntries: [] };
+  render(<DraftDashboard />);
+  importBookmark({
+    ...format,
+    settings: undoSettings,
+    sourceControls: undoSources,
+    draftedPlayers: [undoPickOne, undoPickTwo],
+    currentPick: 3,
+    positionOverrides: { "2": "C" },
+    draftHistory: [historicalUndo, utilityHistory],
+  });
+  await waitFor(() => expect(saved()).toMatchObject({
+    draftedPlayers: [undoPickOne, undoPickTwo],
+    draftHistory: [historicalUndo, utilityHistory],
+  }));
+  expect(screen.getByRole("button", { name: "C 1: Recovery Player" })).toBeTruthy();
+
+  undoDraftPick();
+  await waitFor(() => expect(saved()).toMatchObject({
+    draftedPlayers: [undoPickOne],
+    currentPick: 2,
+    positionOverrides: { "2": "UTILITY" },
+  }));
+  expect(screen.getByRole("button", { name: "UTILITY 1: Recovery Player" })).toBeTruthy();
+
+  undoDraftPick();
+  await waitFor(() => expect(saved()).toMatchObject({
+    draftedPlayers: [],
+    currentPick: 1,
+    positionOverrides: {},
+    draftHistory: [],
+  }));
+});
+
+it("captures roster overrides for a corrected pick without changing the later pick number", async () => {
+  external.showRoster = true;
+  external.players = [
+    ...recoveryPlayers,
+    { ...player, playerId: 4, fullName: "Replacement Skater" },
+  ];
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
+    ...snapshot(),
+    draftSettings: undoSettings,
+    draftedPlayers: [undoPickOne, undoPickTwo],
+    currentPick: 3,
+    positionOverrides: { "2": "UTILITY" },
+    draftHistory: [],
+    keepers: [],
+    forwardGrouping: "split",
+    sourceControls: undoSources,
+    customCsvList: [],
+  }));
+  render(<DraftDashboard />);
+  await screen.findByRole("button", { name: "UTILITY 1: Recovery Player" });
+  openSettings();
+  management();
+  fireEvent.click(within(dialog()).getByRole("button", { name: "Pick Correction" }));
+  const correction = screen.getByRole("dialog", { name: "Quick Fix Draft Pick" });
+  fireEvent.change(within(correction).getByLabelText("Replacement player"), {
+    target: { value: "Replacement Skater" },
+  });
+  fireEvent.click(within(correction).getByRole("button", { name: "Replace Player" }));
+  await waitFor(() => expect(saved().draftedPlayers).toEqual([
+    undoPickOne,
+    { ...undoPickTwo, playerId: "4" },
+  ]));
+  expect(saved()).toMatchObject({
+    currentPick: 3,
+    draftHistory: [{
+      players: [undoPickOne, undoPickTwo],
+      pickNumber: 3,
+      positionOverrides: { "2": "UTILITY" },
+    }],
+  });
+  undoDraftPick();
+  await waitFor(() => expect(saved()).toMatchObject({
+    draftedPlayers: [undoPickOne, undoPickTwo],
+    currentPick: 3,
+    positionOverrides: { "2": "UTILITY" },
+    draftHistory: [],
+  }));
 });

@@ -94,7 +94,17 @@ import {
   loadCustomCsvSessionResult,
   type SessionCsvEntry,
 } from "lib/draftDashboard/csvImportSession";
-import { clearDraftStorage, persistRecoveredDraft, recoverCustomCsvEntries, type BookmarkImportResult } from "lib/draftDashboard/recovery";
+import {
+  LEGACY_DRAFT_TAB_KEY,
+  clearDraftStorage,
+  isLegacyDraftV4,
+  normalizeLegacyDraftV4,
+  persistRecoveredDraft,
+  recoverCustomCsvEntries,
+  toDraftTabCsvMetadata,
+  type BookmarkImportResult,
+  type DraftTabCsvMetadata,
+} from "lib/draftDashboard/recovery";
 import {
   createDefaultSourceControls,
   loadSourceControlPreferences,
@@ -281,6 +291,12 @@ export interface DraftedPlayer {
   fantraxMappingStatus?: "mapped" | "unresolved";
   auctionCost?: number | null;
 }
+
+type DraftHistoryEntry = {
+  players: DraftedPlayer[];
+  pickNumber: number;
+  positionOverrides?: Record<string, string>;
+};
 
 export type RosterAssignment =
   | DraftedPlayer
@@ -470,6 +486,7 @@ function forwardGroupingForRoster(rosterConfig: Record<string, number>) {
 }
 
 type DraftSnapshotSource = "tab" | "device";
+type HistoricalDraftSource = "tab" | "device" | "bookmark";
 
 function readDraftSnapshot(source: DraftSnapshotSource) {
   return source === "tab" ? sessionStorage.getItem("draft.snapshot.v2") : localStorage.getItem("draftDashboard.session.v1");
@@ -510,7 +527,30 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       ? window.localStorage.getItem("projections.prorate82") === "true"
       : current === "true";
   });
-  const [availabilitySpread, setAvailabilitySpread] = useState(12);
+  const [availabilitySpread, setAvailabilitySpread] = useState(() => {
+    try {
+      const stored = typeof window === "undefined" ? null : window.localStorage.getItem("projections.riskSd");
+      if (stored !== null) return normalizeAvailabilitySpread(Number(stored));
+    } catch {}
+    return 12;
+  });
+  const [analysisPreferenceSaveErrors, setAnalysisPreferenceSaveErrors] = useState({ prorate84: false, riskSd: false });
+  const [deviceSaveFailed, setDeviceSaveFailed] = useState(false);
+  const [tabSaveFailed, setTabSaveFailed] = useState(false);
+  const persistAnalysisPreference = useCallback((key: "prorate84" | "riskSd", value: boolean | number) => {
+    let failed = false;
+    try {
+      window.localStorage.setItem(`projections.${key}`, String(value));
+    } catch {
+      failed = true;
+    }
+    setAnalysisPreferenceSaveErrors((previous) => previous[key] === failed ? previous : { ...previous, [key]: failed });
+  }, []);
+  const updateProrate84 = useCallback((value: boolean) => {
+    setProrate84(value);
+    persistAnalysisPreference("prorate84", value);
+    window.dispatchEvent(new CustomEvent("projections:prorate84", { detail: { value } }));
+  }, [persistAnalysisPreference]);
   const [preserveExactCategoryWeights, setPreserveExactCategoryWeights] =
     useState(false);
   // Ensure baseline goalie categories appear in categories leagues if user has none.
@@ -620,9 +660,11 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const [needAlpha, setNeedAlpha] = useState<number>(0.5);
   // Guard to ensure we don't overwrite saved session before offering resume
   const [sessionReady, setSessionReady] = React.useState(false);
-  const recoveryBlockedRef = React.useRef<DraftSnapshotSource | "csv" | null>(null);
-  const [recoveryFailure, setRecoveryFailure] = useState<{ source: DraftSnapshotSource | "csv"; message: string } | null>(null);
+  const recoveryBlockedRef = React.useRef<DraftSnapshotSource | "csv" | "legacy" | null>(null);
+  const [recoveryFailure, setRecoveryFailure] = useState<{ source: DraftSnapshotSource | "csv" | "legacy"; message: string } | null>(null);
   const [csvRecoverySources, setCsvRecoverySources] = useState<DraftSnapshotSource[]>([]);
+  const [deviceFallbackAvailable, setDeviceFallbackAvailable] = useState(false);
+  const [legacyTabAvailable, setLegacyTabAvailable] = useState(false);
   const snapshotResumeAttemptedRef = React.useRef(false);
   const legacyResumeAttemptedRef = React.useRef(false);
   const snapshotWasPresentRef = React.useRef(false);
@@ -694,12 +736,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   });
 
   // Add draft history for undo functionality
-  const [draftHistory, setDraftHistory] = useState<
-    {
-      players: DraftedPlayer[];
-      pickNumber: number;
-    }[]
-  >([]);
+  const [draftHistory, setDraftHistory] = useState<DraftHistoryEntry[]>([]);
 
   // Add summary modal state
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -751,26 +788,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const [exportCsvState, setExportCsvState] = useState<"idle" | "loading">("idle");
   const [exportCsvMessage, setExportCsvMessage] = useState<string | null>(null);
   const getCsvList = useCallback(() => customCsvList, [customCsvList]);
-  const setCsvList = useCallback((next: SessionCsvEntry[]) => {
-    if (typeof window === "undefined") return false;
-    if (recoveryBlockedRef.current === "csv") {
-      setSettingsOpen(true);
-      return false;
-    }
-    const duplicateId = findDuplicateCustomCsvId(next);
-    if (duplicateId) {
-      setCustomCsvSessionError(`Duplicate projection CSV source ID "${duplicateId}". Remove the conflicting source or reimport its original CSV, then try again.`);
-      setSettingsOpen(true);
-      return false;
-    }
-    if (!persistRecoveredDraft(next)) {
-      setCustomCsvSessionError("Could not save imported projections in this tab. The current draft has not changed.");
-      return false;
-    }
-    setCustomCsvList(next);
-    setCustomCsvSessionError(null);
-    return true;
-  }, []);
+  const tabCsvMetadata = useMemo(() => toDraftTabCsvMetadata(customCsvList), [customCsvList]);
+  type CsvUpdate = {
+    rows: SessionCsvEntry[];
+    skater: typeof sourceControls;
+    goalie: typeof goalieSourceControls;
+  };
+
   // Snapshot V2 will be defined after dependent state declarations
 
   // Projection Data Setup
@@ -912,9 +936,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       string,
       { isSelected: boolean; weight: number }
     >;
-    customCsvList: SessionCsvEntry[];
-    customSourceMetadata?: ReturnType<typeof toCustomSourceMetadata>;
-    draftHistory?: typeof draftHistory;
+    customCsvList?: SessionCsvEntry[];
+    customSourceMetadata?: DraftTabCsvMetadata[];
+    tabCsvSidecar?: true;
+    draftHistory?: unknown;
     prorate84?: boolean;
     riskSd?: number;
     favorites?: (string | number)[];
@@ -927,7 +952,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   };
   type AdaptableBrowserSnapshot = ReturnType<typeof parseBrowserSnapshot> | ReturnType<typeof restoreBrowserSnapshot>;
 
-  const adaptBrowserSnapshot = useCallback((snapshot: AdaptableBrowserSnapshot): DraftSnapshotV2 => {
+  const adaptBrowserSnapshot = useCallback((snapshot: AdaptableBrowserSnapshot): DraftSnapshotV2 & { customCsvList: SessionCsvEntry[] } => {
     if (!isDraftSettings(snapshot.draftSettings)) throw new Error("Saved draft settings are invalid.");
     const isRecord = isSnapshotRecord;
     const { draftedPlayers, customCsvList } = adaptSavedDraftRows(snapshot);
@@ -961,7 +986,11 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     };
   }, []);
 
-  const saveSnapshot = useCallback((draftSettingsOverride?: DraftSettings, goaliePointValuesOverride?: Record<string, number>) => {
+  const saveSnapshot = useCallback((
+    draftSettingsOverride?: DraftSettings,
+    goaliePointValuesOverride?: Record<string, number>,
+    csvUpdate?: CsvUpdate,
+  ) => {
     if (recoveryBlockedRef.current) return false;
     if (
       typeof window === "undefined" ||
@@ -988,9 +1017,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       forwardGrouping,
       personalizeReplacement,
       goaliePointValues: goaliePointValuesOverride ?? goaliePointValues,
-      sourceControls,
-      goalieSourceControls,
-      customCsvList: getCsvList(),
+      sourceControls: csvUpdate?.skater ?? sourceControls,
+      goalieSourceControls: csvUpdate?.goalie ?? goalieSourceControls,
+      customSourceMetadata: csvUpdate ? toDraftTabCsvMetadata(csvUpdate.rows) : tabCsvMetadata,
+      tabCsvSidecar: true,
       draftHistory,
       prorate84,
       riskSd: availabilitySpread,
@@ -1003,10 +1033,17 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       configured: settingsConfigured,
     };
     try {
-      sessionStorage.setItem("draft.snapshot.v2", JSON.stringify(payload));
+      const snapshot = JSON.stringify(payload);
+      if (csvUpdate) {
+        const committed = persistRecoveredDraft(csvUpdate.rows, snapshot, undefined, true);
+        setTabSaveFailed(!committed);
+        return committed;
+      }
+      sessionStorage.setItem("draft.snapshot.v2", snapshot);
+      setTabSaveFailed(false);
       return true;
     } catch {
-      setSettingsSaveError("Could not save this draft on this device. Export a bookmark, free browser storage, then try Done again.");
+      setTabSaveFailed(true);
       return false;
     }
   }, [
@@ -1028,7 +1065,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     goaliePointValues,
     sourceControls,
     goalieSourceControls,
-    getCsvList,
+    tabCsvMetadata,
     draftHistory,
     prorate84,
     availabilitySpread,
@@ -1041,15 +1078,63 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     favoriteIds,
   ]);
 
-  const prepareSnapshot = useCallback((snap: DraftSnapshotV2, replaceDuplicateCsv = false) => {
+  const setCsvList = useCallback((update: CsvUpdate) => {
+    if (typeof window === "undefined") return false;
+    if (recoveryBlockedRef.current === "csv" || recoveryBlockedRef.current === "legacy") {
+      setSettingsOpen(true);
+      return false;
+    }
+    const duplicateId = findDuplicateCustomCsvId(update.rows);
+    if (duplicateId) {
+      setCustomCsvSessionError(`Duplicate projection CSV source ID "${duplicateId}". Remove the conflicting source or reimport its original CSV, then try again.`);
+      setSettingsOpen(true);
+      return false;
+    }
+    let saved = false;
+    if (manualDraftingEnabled) {
+      saved = saveSnapshot(undefined, undefined, update) === true;
+    } else {
+      try {
+        const previous = JSON.parse(readDraftSnapshot("tab") ?? "null") as DraftSnapshotV2 | null;
+        let backup: string | undefined;
+        if (previous?.tabCsvSidecar) {
+          // A live-mode CSV edit must leave the earlier manual draft recoverable.
+          const { tabCsvSidecar: _sidecar, ...draft } = previous;
+          backup = JSON.stringify({ ...draft, customCsvList: recoverCustomCsvEntries(previous, customCsvList) });
+        }
+        saved = persistRecoveredDraft(update.rows, backup);
+      } catch {}
+    }
+    if (!saved) {
+      setCustomCsvSessionError("Could not save imported projections in this tab. The current draft has not changed.");
+      return false;
+    }
+    setCustomCsvList(update.rows);
+    setSourceControls(update.skater);
+    setGoalieSourceControls(update.goalie);
+    setCustomCsvSessionError(null);
+    return true;
+  }, [manualDraftingEnabled, saveSnapshot]);
+  const prepareSnapshot = useCallback((snap: DraftSnapshotV2, replaceDuplicateCsv = false, historicalSource?: HistoricalDraftSource) => {
     if (!isSnapshotRecord(snap) || snap.v !== 2) throw new Error("Unsupported draft snapshot.");
     if (!isSnapshotRecord(snap.draftSettings) || !isDraftSettings({ ...DEFAULT_DRAFT_SETTINGS, ...snap.draftSettings }) || !Number.isInteger(snap.draftSettings.teamCount) || snap.draftSettings.teamCount < 1) throw new Error("Saved draft settings are invalid.");
+    const restoredDraftHistory: DraftHistoryEntry[] = [];
     if (snap.draftHistory !== undefined) {
       if (!Array.isArray(snap.draftHistory)) throw new Error("Saved draft undo history is invalid.");
       for (const state of snap.draftHistory as unknown[]) {
-        if (!isSnapshotRecord(state) || !Array.isArray(state.players) || typeof state.pickNumber !== "number" || !Number.isInteger(state.pickNumber) || state.pickNumber < 1 ||
-          state.positionOverrides !== undefined && (!isSnapshotRecord(state.positionOverrides) || Object.values(state.positionOverrides).some((value) => typeof value !== "string"))) throw new Error("Saved draft undo history is invalid.");
-        adaptSavedDraftRows({ draftedPlayers: state.players });
+        if (!isSnapshotRecord(state) || !Array.isArray(state.players) ||
+          typeof state.pickNumber !== "number" || !Number.isInteger(state.pickNumber) || state.pickNumber < 1
+        ) throw new Error("Saved draft undo history is invalid.");
+        const overrides = state.positionOverrides;
+        if (overrides !== undefined &&
+          (!isSnapshotRecord(overrides) || Object.values(overrides).some((value) => typeof value !== "string"))
+        ) throw new Error("Saved draft undo history is invalid.");
+        const { draftedPlayers: players } = adaptSavedDraftRows({ draftedPlayers: state.players });
+        restoredDraftHistory.push({
+          players,
+          pickNumber: state.pickNumber,
+          positionOverrides: overrides as Record<string, string> | undefined,
+        });
       }
     }
     const restoredRows = adaptSavedDraftRows({ draftedPlayers: snap.draftedPlayers ?? [], customCsvList: snap.customCsvList });
@@ -1087,14 +1172,22 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           ),
         },
       );
-      const csvSession = loadCustomCsvSessionResult();
+      const csvSession = loadCustomCsvSessionResult(undefined, !historicalSource);
       const replacesDuplicateCsv = "duplicateId" in csvSession;
       if (replacesDuplicateCsv && !replaceDuplicateCsv) {
         throw new Error(`Duplicate projection CSV source ID "${csvSession.duplicateId}".`);
       }
+      const useHistoricalSidecar = historicalSource === "tab" && !readDraftSnapshot("tab") && !readDraftSnapshot("device");
+      const availableCsv = replacesDuplicateCsv || (historicalSource && !useHistoricalSidecar)
+        ? []
+        : useHistoricalSidecar
+          ? csvSession.entries.filter((entry) => snap.customSourceMetadata?.some(
+            (source) => source.id === entry.id && source.label === entry.label,
+          ))
+          : csvSession.entries;
       const customCsvList = recoverCustomCsvEntries(
         { ...snap, customCsvList: snap.customCsvList === undefined ? undefined : restoredRows.customCsvList },
-        replacesDuplicateCsv ? [] : csvSession.entries
+        availableCsv
       );
       const customSourceIds = customCsvList.map((entry) => entry.id);
       const restoredSourceControls = sanitizeControls(sourceControlDefaults.skater, snap.sourceControls, customSourceIds);
@@ -1123,7 +1216,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         notes: [...(snap.notes ?? [])], tiers: snap.tiers ?? {}, fantraxLeagueOverride: snap.fantraxLeagueOverride ?? null,
         espnLeagueOverride: snap.espnLeagueOverride ?? null, preserveExactCategoryWeights, configured: snap.configured !== false,
       };
-      return { browser, replacesDuplicateCsv, apply: () => {
+      return { browser, replacesDuplicateCsv, draftHistory: restoredDraftHistory, apply: () => {
         recoveryBlockedRef.current = null;
         setRecoveryFailure(null);
         setSettingsSaveError(null);
@@ -1136,15 +1229,14 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         setSourceControls(restoredSourceControls); setGoalieSourceControls(restoredGoalieSourceControls);
         setFantraxLeagueOverride(snap.fantraxLeagueOverride ?? null); setEspnLeagueOverride(snap.espnLeagueOverride ?? null);
         setPreserveExactCategoryWeights(preserveExactCategoryWeights); setCustomCsvList(customCsvList);
-        setDraftHistory(snap.draftHistory ?? []);
+        setDraftHistory(restoredDraftHistory);
         if (typeof snap.prorate84 === "boolean") {
-          setProrate84(snap.prorate84);
-          try { window.localStorage.setItem("projections.prorate84", String(snap.prorate84)); } catch {}
-          window.dispatchEvent(new CustomEvent("projections:prorate84", { detail: { value: snap.prorate84 } }));
+          updateProrate84(snap.prorate84);
         }
         if (typeof snap.riskSd === "number") {
-          setAvailabilitySpread(normalizeAvailabilitySpread(snap.riskSd));
-          try { window.localStorage.setItem("projections.riskSd", String(normalizeAvailabilitySpread(snap.riskSd))); } catch {}
+          const riskSd = normalizeAvailabilitySpread(snap.riskSd);
+          setAvailabilitySpread(riskSd);
+          persistAnalysisPreference("riskSd", riskSd);
         }
         freshSessionRef.current = false;
         try { sessionStorage.removeItem("draft.resume.declined"); } catch {}
@@ -1155,13 +1247,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         window.dispatchEvent(new CustomEvent("draft-saved-favorites-changed"));
         restoredLeagueSettingsRef.current = true; manualLeagueSettingsDirtyRef.current = true;
       } };
-  }, [favoriteIds, sourceControlDefaults]);
+  }, [favoriteIds, persistAnalysisPreference, sourceControlDefaults, updateProrate84]);
 
-  const blockRecovery = useCallback((source: DraftSnapshotSource | "csv", message: string) => {
+  const blockRecovery = useCallback((source: DraftSnapshotSource | "csv" | "legacy", message: string) => {
     // Mark the guard synchronously: later mount effects must not save defaults.
     recoveryBlockedRef.current = source;
     setRecoveryFailure({ source, message });
-    if (source === "csv" && !manualDraftingEnabled) return;
+    if ((source === "csv" || source === "legacy") && !manualDraftingEnabled) return;
     restoredLeagueSettingsRef.current = true;
     setSettingsConfigured(false);
     setSettingsSection("league");
@@ -1173,7 +1265,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     if (csvSessionLoadedRef.current) return;
     csvSessionLoadedRef.current = true;
     try {
-      const csvSession = loadCustomCsvSessionResult();
+      const hasLegacyTab = Boolean(sessionStorage.getItem(LEGACY_DRAFT_TAB_KEY));
+      setLegacyTabAvailable(hasLegacyTab);
+      const csvSession = loadCustomCsvSessionResult(undefined, !hasLegacyTab);
       if ("duplicateId" in csvSession) {
         setCsvRecoverySources((["tab", "device"] as const).filter((source) => {
           try { return Boolean(readDraftSnapshot(source)); }
@@ -1183,15 +1277,56 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         return;
       }
       setCustomCsvList(csvSession.entries);
+      if (hasLegacyTab && !readDraftSnapshot("tab") && !readDraftSnapshot("device")) {
+        blockRecovery("legacy", "An older saved tab draft is available. Restore it, import a bookmark, or confirm Start New Draft.");
+      }
     } catch {
       blockRecovery("csv", "Could not access saved projection CSVs. Your saved draft is retained. Restore browser storage access and reload to retry.");
     }
   }, [blockRecovery]);
 
-  const resumeSavedDraft = useCallback((source: DraftSnapshotSource, replaceDuplicateCsv = false) => {
+  const importDraftRecord = useCallback((data: any, historicalSource?: HistoricalDraftSource) => {
+    const importedCsv = data.customCsvList === undefined ? undefined : adaptSavedDraftRows({ draftedPlayers: [], customCsvList: data.customCsvList }).customCsvList;
+    const importedSettings = normalizeDraftSettingsOrder({
+      ...DEFAULT_DRAFT_SETTINGS,
+      ...data.settings,
+      positionWeights: normalizePositionWeights(data.settings?.positionWeights),
+    }, data.isSnakeDraft ?? true);
+    const prepared = prepareSnapshot({
+      v: 2, ts: Date.now(), draftSettings: importedSettings,
+      draftHistory: data.draftHistory,
+      draftedPlayers: data.draftedPlayers, keepers: data.keepers ?? [],
+      pickOwnerOverrides: data.pickOwnerOverrides ?? {}, pickTrades: data.pickTrades,
+      positionOverrides: data.positionOverrides ?? {},
+      customTeamNames: data.customTeamNames ?? Object.fromEntries(importedSettings.draftOrder.map((id, index) => [id, `Team ${index + 1}`])),
+      currentPick: data.currentPick, isSnakeDraft: importedSettings.draftOrderMode === "snake",
+      myTeamId: data.myTeamId ?? importedSettings.draftOrder[0],
+      baselineMode: data.baselineMode ?? "remaining", needWeightEnabled: data.needWeightEnabled ?? false,
+      needAlpha: data.needAlpha ?? 0.5, forwardGrouping: data.forwardGrouping ?? "split",
+      personalizeReplacement: data.personalizeReplacement ?? false,
+      goaliePointValues: data.goalieScoringCategories ?? getDefaultFantasyPointsConfig("goalie"),
+      sourceControls: data.sourceControls ?? sourceControlDefaults.skater,
+      goalieSourceControls: data.goalieSourceControls ?? sourceControlDefaults.goalie,
+      customCsvList: importedCsv, customSourceMetadata: data.customSourceMetadata,
+      fantraxLeagueOverride: data.fantraxLeagueOverride ?? null, espnLeagueOverride: data.espnLeagueOverride ?? null,
+      preserveExactCategoryWeights: data.preserveExactCategoryWeights,
+      prorate84: data.prorate84 ?? false, riskSd: data.riskSd ?? 12, configured: historicalSource ? data.configured : true,
+    } as DraftSnapshotV2, true, historicalSource);
+    const rows = prepared.browser.customCsvList as SessionCsvEntry[];
+    const snapshot = JSON.stringify({
+      ...prepared.browser,
+      draftHistory: prepared.draftHistory,
+      ts: Date.now(), prorate84: data.prorate84 ?? false, riskSd: data.riskSd ?? 12,
+    });
+    if (!persistRecoveredDraft(rows, snapshot, undefined, Boolean(historicalSource) || prepared.replacesDuplicateCsv)) return null;
+    prepared.apply();
+    return rows;
+  }, [prepareSnapshot, sourceControlDefaults]);
+
+  const resumeSavedDraft = useCallback((source: DraftSnapshotSource, replacement?: "duplicate-csv" | "failed-tab") => {
     if (typeof window === "undefined") return false;
     const fail = (message: string) => {
-      if (replaceDuplicateCsv) setSettingsSaveError(message);
+      if (replacement) setSettingsSaveError(message);
       else blockRecovery(source, message);
       return false;
     };
@@ -1200,20 +1335,69 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       if (!raw) throw new Error("Saved draft unavailable.");
       const saved = JSON.parse(raw);
       if (!isSnapshotRecord(saved)) throw new Error("Saved draft is invalid.");
-      const prepared = prepareSnapshot(source === "tab" ? saved as DraftSnapshotV2 : { ...saved, v: 2 } as DraftSnapshotV2, replaceDuplicateCsv);
-      const snapshot = replaceDuplicateCsv
+      if (source === "device" && isLegacyDraftV4(saved)) {
+        const issue = bookmarkImportError(saved);
+        if (issue) throw new Error(issue);
+        if (!importDraftRecord(normalizeLegacyDraftV4(saved), "device")) {
+          return fail("Could not save the recovered device draft in this tab. Your saved draft is retained.");
+        }
+        sessionResumedRef.current = true;
+        return true;
+      }
+      if (source === "device" && typeof saved.v === "number" && ![1, 2].includes(saved.v)) {
+        throw new Error("Unsupported saved device draft.");
+      }
+      const input = source === "tab" ? saved : {
+        ...saved, v: 2,
+        // A device record cannot identify projection rows belonging to the failed tab.
+        ...(replacement === "failed-tab" ? { customCsvList: saved.customCsvList ?? [] } : {}),
+      };
+      const prepared = prepareSnapshot(input as DraftSnapshotV2, Boolean(replacement));
+      const snapshot = replacement
         ? JSON.stringify({ ...saved, ...prepared.browser, ts: Date.now() })
         : undefined;
-      if (!persistRecoveredDraft(prepared.browser.customCsvList as SessionCsvEntry[], snapshot, undefined, prepared.replacesDuplicateCsv)) {
+      // A normal compact restore must retain sidecar rows even if they no longer match.
+      const needsSidecarWrite = source !== "tab" || saved.tabCsvSidecar !== true || Boolean(replacement);
+      if (needsSidecarWrite && !persistRecoveredDraft(prepared.browser.customCsvList as SessionCsvEntry[], snapshot, undefined, prepared.replacesDuplicateCsv)) {
         return fail("Could not save imported projections in this tab. Your saved draft is retained and automatic saving is paused. Free browser storage, then retry recovery, import a valid bookmark, or confirm Start New Draft.");
       }
       prepared.apply();
       sessionResumedRef.current = true;
       return true;
     } catch {
+      if (!replacement && source === "tab") {
+        try { setDeviceFallbackAvailable(Boolean(readDraftSnapshot("device"))); }
+        catch { setDeviceFallbackAvailable(false); }
+      }
       return fail("Could not read the saved draft. Its original data is retained and automatic saving is paused. Retry recovery, import a valid bookmark, or confirm Start New Draft.");
     }
-  }, [blockRecovery, prepareSnapshot]);
+  }, [blockRecovery, importDraftRecord, prepareSnapshot]);
+
+  const confirmHistoricalReplacement = useCallback(() =>
+    !(readDraftSnapshot("tab") || readDraftSnapshot("device") || settingsConfigured ||
+      manualDraftedPlayers.length || keepers.length || pickTrades.length) ||
+    window.confirm("Replace your current saved draft with this older draft? Export your current draft as a bookmark first to keep a copy."),
+  [settingsConfigured, manualDraftedPlayers.length, keepers.length, pickTrades.length]);
+
+  const restoreLegacyTab = useCallback(() => {
+    if (!manualDraftingEnabled) return;
+    try {
+      const raw = JSON.parse(sessionStorage.getItem(LEGACY_DRAFT_TAB_KEY) ?? "null");
+      if (!isLegacyDraftV4(raw) || bookmarkImportError(raw)) {
+        setSettingsSaveError("Could not read the legacy saved draft. Its original data is retained.");
+        return;
+      }
+      if (!confirmHistoricalReplacement()) return;
+      if (!importDraftRecord(normalizeLegacyDraftV4(raw), "tab")) {
+        setSettingsSaveError("Could not save the restored draft. Its original data is retained. Free browser storage and retry.");
+        return;
+      }
+      sessionResumedRef.current = true;
+      setDataRefreshKey((key) => key + 1);
+    } catch {
+      setSettingsSaveError("Could not read the legacy saved draft. Its original data is retained.");
+    }
+  }, [confirmHistoricalReplacement, importDraftRecord, manualDraftingEnabled]);
 
   const getSavedBrowserSnapshot = useCallback((): BrowserDraftSnapshot => ({
     v: 2,
@@ -1279,7 +1463,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           "projections.riskSd",
         ]],
         [window.sessionStorage, [
-          "draft.snapshot.v2", "draft.snapshot.v4", "draft.resume.declined",
+          "draft.snapshot.v2", "draft.resume.declined",
           CUSTOM_CSV_SESSION_KEY, ...LEGACY_CUSTOM_CSV_SESSION_KEYS,
         ]],
       ]);
@@ -1330,6 +1514,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     setDataRefreshKey((key) => key + 1);
     recoveryBlockedRef.current = null;
     setRecoveryFailure(null);
+    setTabSaveFailed(false);
+    setDeviceSaveFailed(false);
+    setAnalysisPreferenceSaveErrors({ prorate84: false, riskSd: false });
     window.dispatchEvent(new CustomEvent("projections:prorate84", { detail: { value: false } }));
   }, [manualDraftingEnabled, sourceControlDefaults]);
 
@@ -1343,10 +1530,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       if (draftMode === "yahoo") {
         restoredLeagueSettingsRef.current = true;
         setSettingsConfigured(true);
-        if (raw && recoveryBlockedRef.current !== "csv") resumeSavedDraft("tab");
+        if (raw && recoveryBlockedRef.current !== "csv" && recoveryBlockedRef.current !== "legacy") resumeSavedDraft("tab");
         return;
       }
-      if (recoveryBlockedRef.current === "csv") return;
+      if (recoveryBlockedRef.current === "csv" || recoveryBlockedRef.current === "legacy") return;
       if (raw) {
         snapshotWasPresentRef.current = true;
         const ok = window.confirm("Resume your last Draft Dashboard session?");
@@ -1691,7 +1878,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         "draftDashboard.session.v1",
         JSON.stringify(payload),
       );
-    } catch {}
+      setDeviceSaveFailed(false);
+    } catch {
+      setDeviceSaveFailed(true);
+    }
   }, [
     sessionReady,
     recoveryFailure,
@@ -2387,17 +2577,11 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   ]);
   const myFilledSlotsForVorp = teamRosterAllocations[myTeamId].counts;
 
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem("projections.riskSd");
-      if (stored !== null) setAvailabilitySpread(normalizeAvailabilitySpread(Number(stored)));
-    } catch {}
-  }, []);
   const updateAvailabilitySpread = useCallback((value: number) => {
     const normalized = normalizeAvailabilitySpread(value);
     setAvailabilitySpread(normalized);
-    try { window.localStorage.setItem("projections.riskSd", String(normalized)); } catch {}
-  }, []);
+    persistAnalysisPreference("riskSd", normalized);
+  }, [persistAnalysisPreference]);
   const tierAnalysis = useMemo(() => {
     if (!canUseProRecommendations) return { positions: [], error: null };
     try {
@@ -2964,13 +3148,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   };
 
   const canMakeManualPick = manualDraftingEnabled && settingsConfigured &&
-    settingsValidation.valid && recoveryFailure?.source !== "csv";
+    settingsValidation.valid && recoveryFailure?.source !== "csv" && recoveryFailure?.source !== "legacy";
 
   // Draft a player - Updated to track history for undo and prevent drafting beyond completion
   const draftPlayer = useCallback(
     (playerId: string) => {
       if (!manualDraftingEnabled) return;
-      if (recoveryBlockedRef.current === "csv" || !settingsConfigured || !settingsValidation.valid) { openSettings("league"); return; }
+      if (recoveryBlockedRef.current === "csv" || recoveryBlockedRef.current === "legacy" || !settingsConfigured || !settingsValidation.valid) { openSettings("league"); return; }
       // Prevent drafting beyond completion; open summary instead
       if (draftComplete) {
         setIsSummaryOpen(true);
@@ -2991,6 +3175,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         {
           players: [...draftedPlayers],
           pickNumber: currentPick,
+          positionOverrides: { ...positionOverrides },
         },
       ]);
 
@@ -3006,6 +3191,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       settingsValidation.valid,
       openSettings,
       manualDraftingEnabled,
+      positionOverrides,
     ],
   );
 
@@ -3033,6 +3219,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       const lastState = draftHistory[draftHistory.length - 1];
       setManualDraftedPlayers(lastState.players);
       setCurrentPick(lastState.pickNumber);
+      setPositionOverrides(lastState.positionOverrides ?? {});
       setDraftHistory((prev) => prev.slice(0, -1));
     }
   }, [draftHistory, manualDraftingEnabled]);
@@ -3063,7 +3250,11 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
 
       setDraftHistory((previous) => [
         ...previous,
-        { players: [...manualDraftedPlayers], pickNumber: currentPick },
+        {
+          players: [...manualDraftedPlayers],
+          pickNumber: currentPick,
+          positionOverrides: { ...positionOverrides },
+        },
       ]);
       setManualDraftedPlayers(result.players);
       return { ok: true as const, message: "Draft pick replaced." };
@@ -3074,12 +3265,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       manualDraftedPlayers,
       manualDraftingEnabled,
       unavailablePlayerIds,
+      positionOverrides,
     ],
   );
 
   // Add reset draft functionality
   const resetDraft = useCallback(() => {
-    if (!manualDraftingEnabled || recoveryBlockedRef.current === "csv") return;
+    if (!manualDraftingEnabled || (recoveryBlockedRef.current === "csv" || recoveryBlockedRef.current === "legacy")) return;
     setSettingsConfigured(false);
     setSettingsOpen(true);
     setFullSettings(true);
@@ -3783,6 +3975,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   // Keep table rendering independent of settings navigation and visibility.
   const projectionsTable = useMemo(() => (
     <ProjectionsTable
+            draftProrate84={prorate84}
+            onDraftProrate84Change={updateProrate84}
             draftUnavailableReason={draftUnavailableReason}
             picksBeforeTurn={myPickWindows[0]?.offset}
             onRefresh={() => setDataRefreshKey((k) => k + 1)}
@@ -3853,7 +4047,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     manualDraftingEnabled, canMakeManualPick, draftProEligible, adpSource, positionSource, fantraxLeagueEligibilityAvailable, fantraxPlayerDataLoaded,
     personalRankByPlayerId, vorpMetrics, replacementByPos, referenceLabel, referenceLabel, baselineMode,
     expectedTakenByPos, expectedN, needWeightEnabled, posNeeds, needAlpha,
-    selectionHorizon, availabilitySpread, updateAvailabilitySpread, nextPickNumber, draftSettings.leagueType, draftSettings.categoryWeights,
+    selectionHorizon, availabilitySpread, updateAvailabilitySpread, prorate84, updateProrate84, nextPickNumber, draftSettings.leagueType, draftSettings.categoryWeights,
     draftSettings.scoringCategories, forwardGrouping, availableGoalieStatKeys,
     goaliePointValues, fantraxLeagueOverride, draftUnavailableReason, skaterData.yahooMappingDiagnostics,
     goalieData.yahooMappingDiagnostics, sourceRankImpacts,
@@ -3862,6 +4056,12 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   ]);
 
   const retrySnapshotSource = recoveryFailure?.source;
+  const persistenceWarnings = [
+    tabSaveFailed && "Could not save this draft in this tab. Export a bookmark, free browser storage, then try Done again.",
+    deviceSaveFailed && "Could not save this draft on this device. Export a bookmark to keep a recovery copy.",
+    (analysisPreferenceSaveErrors.prorate84 || analysisPreferenceSaveErrors.riskSd) &&
+      "Analysis preferences could not be saved on this device. Export a bookmark to retain your settings.",
+  ].filter(Boolean).join(" ");
 
   return (
     <main
@@ -3893,6 +4093,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       {!settingsOpen && recoveryFailure?.source === "csv" && (
         <p role="status" className={styles.warningBanner}>{recoveryFailure.message}</p>
       )}
+      {!settingsOpen && persistenceWarnings && <p role="status" className={styles.warningBanner}>{persistenceWarnings}</p>}
       <DraftSettingsShell
         settings={draftSettings}
         sourceControls={sourceControls}
@@ -3902,9 +4103,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         configured={settingsConfigured}
         draftProEligible={draftProEligible}
         validation={settingsValidation}
-        saveError={recoveryFailure?.source === "csv"
-          ? [recoveryFailure.message, settingsSaveError].filter(Boolean).join(" ")
-          : recoveryFailure?.message || settingsSaveError || customCsvSessionError}
+        saveError={[recoveryFailure?.message, settingsSaveError, customCsvSessionError, persistenceWarnings].filter(Boolean).join(" ") || null}
         onToggle={() => { setSettingsOpen(false); setFullSettings(false); setIsSummaryOpen(true); }}
         onClose={() => { setSettingsOpen(false); setFullSettings(false); }}
         onFullSetup={() => setFullSettings(true)}
@@ -3920,13 +4119,23 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           if (section === "reports") setReportsMounted(true);
         }}
       >
-      {retrySnapshotSource && retrySnapshotSource !== "csv" && (
+      {(retrySnapshotSource === "tab" || retrySnapshotSource === "device") && (
         <button type="button" disabled={!manualDraftingEnabled} onClick={() => resumeSavedDraft(retrySnapshotSource)}>
           Retry saved draft recovery
         </button>
       )}
+      {retrySnapshotSource === "tab" && deviceFallbackAvailable && manualDraftingEnabled && (
+        <button type="button" onClick={() => {
+          if (window.confirm("Replace the unreadable tab draft with the draft saved on this device?")) {
+            resumeSavedDraft("device", "failed-tab");
+          }
+        }}>Restore saved device draft</button>
+      )}
+      {legacyTabAvailable && manualDraftingEnabled && (
+        <button type="button" onClick={restoreLegacyTab}>Restore legacy saved tab draft</button>
+      )}
       {retrySnapshotSource === "csv" && manualDraftingEnabled && csvRecoverySources.map((source) => (
-        <button type="button" key={source} onClick={() => resumeSavedDraft(source, true)}>
+        <button type="button" key={source} onClick={() => resumeSavedDraft(source, "duplicate-csv")}>
           {source === "tab" ? "Restore saved tab draft" : "Restore saved device draft"}
         </button>
       ))}
@@ -3943,6 +4152,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         <div className={styles.setupCore}>
           <div hidden={settingsSection === "integrations" || settingsSection === "saved-drafts" || settingsSection === "roster-impact" || settingsSection === "reports"}>
           <DraftSettings
+        prorate84={prorate84}
+        riskSd={availabilitySpread}
         draftProEligible={draftProEligible}
         fantraxLeagueEligibilityAvailable={fantraxLeagueEligibilityAvailable}
         matchupWeeks={draftSchedule.weeks}
@@ -4002,15 +4213,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           // Remove from session list and controls
           const list = getCsvList();
           const next = list.filter((e) => e.id !== id);
-          if (!setCsvList(next)) return;
-          setSourceControls((prev) => {
-            const { [id]: _, ...rest } = prev;
-            return rest as typeof prev;
-          });
-          setGoalieSourceControls((prev) => {
-            const { [id]: _, ...rest } = prev;
-            return rest as typeof prev;
-          });
+          const { [id]: removedSkater, ...skater } = sourceControls;
+          const { [id]: removedGoalie, ...goalie } = goalieSourceControls;
+          if (!setCsvList({ rows: next, skater, goalie })) return;
           // Force data refresh
           setDataRefreshKey((k) => k + 1);
         }}
@@ -4037,40 +4242,17 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         structuralSettingsLocked={hasOrdinaryManualPick}
         draftLockReason={`${espnLiveActive ? "ESPN" : fantraxLiveActive ? "Fantrax" : "Yahoo"} live sync controls picks and league structure. Stop sync to edit manual draft settings.`}
         onBookmarkCreate={() => {}}
-        onBookmarkImport={(data): BookmarkImportResult => {
+        onBookmarkImport={(raw): BookmarkImportResult => {
           if (!manualDraftingEnabled) return { status: "failed", message: "Live sync controls this draft. Stop sync before importing a bookmark." };
-          const importError = bookmarkImportError(data);
+          const importError = bookmarkImportError(raw);
           if (importError) return { status: "failed", message: importError };
           try {
-            const importedCsv = data.customCsvList === undefined ? undefined : adaptSavedDraftRows({ draftedPlayers: [], customCsvList: data.customCsvList }).customCsvList;
-            const importedSettings = normalizeDraftSettingsOrder({
-              ...DEFAULT_DRAFT_SETTINGS,
-              ...data.settings,
-              positionWeights: normalizePositionWeights(data.settings?.positionWeights),
-            }, data.isSnakeDraft ?? true);
-            const prepared = prepareSnapshot({
-              v: 2, ts: Date.now(), draftSettings: importedSettings,
-              draftedPlayers: data.draftedPlayers, keepers: data.keepers ?? [],
-              pickOwnerOverrides: data.pickOwnerOverrides ?? {}, pickTrades: data.pickTrades,
-              positionOverrides: data.positionOverrides ?? {},
-              customTeamNames: data.customTeamNames ?? Object.fromEntries(importedSettings.draftOrder.map((id, index) => [id, `Team ${index + 1}`])),
-              currentPick: data.currentPick, isSnakeDraft: importedSettings.draftOrderMode === "snake",
-              myTeamId: data.myTeamId ?? importedSettings.draftOrder[0],
-              baselineMode: data.baselineMode ?? "remaining", needWeightEnabled: data.needWeightEnabled ?? false,
-              needAlpha: data.needAlpha ?? 0.5, forwardGrouping: data.forwardGrouping ?? "split",
-              personalizeReplacement: data.personalizeReplacement ?? false,
-              goaliePointValues: data.goalieScoringCategories ?? getDefaultFantasyPointsConfig("goalie"),
-              sourceControls: data.sourceControls ?? sourceControlDefaults.skater,
-              goalieSourceControls: data.goalieSourceControls ?? sourceControlDefaults.goalie,
-              customCsvList: importedCsv, customSourceMetadata: data.customSourceMetadata,
-              fantraxLeagueOverride: data.fantraxLeagueOverride ?? null, espnLeagueOverride: data.espnLeagueOverride ?? null,
-              preserveExactCategoryWeights: data.preserveExactCategoryWeights,
-              prorate84: data.prorate84 ?? false, riskSd: data.riskSd ?? 12, configured: true,
-            } as DraftSnapshotV2, true);
-            const rows = prepared.browser.customCsvList as SessionCsvEntry[];
-            const snapshot = JSON.stringify({ ...prepared.browser, ts: Date.now(), prorate84: data.prorate84 ?? false, riskSd: data.riskSd ?? 12 });
-            if (!persistRecoveredDraft(rows, snapshot, undefined, prepared.replacesDuplicateCsv)) return { status: "failed", message: "Could not save this bookmark in this tab. The current draft has not changed. Free browser storage, then retry." };
-            prepared.apply();
+            const legacy = isLegacyDraftV4(raw);
+            if (legacy && !confirmHistoricalReplacement()) {
+              return { status: "failed", message: "Import cancelled. Your current draft is unchanged." };
+            }
+            const rows = importDraftRecord(legacy ? normalizeLegacyDraftV4(raw) : raw, legacy ? "bookmark" : undefined);
+            if (!rows) return { status: "failed", message: "Could not save this bookmark in this tab. The current draft has not changed. Free browser storage, then retry." };
             setSettingsSaveError(null);
             setDataRefreshKey((key) => key + 1);
             return rows.some((entry) => !entry.rows?.length)
@@ -4551,17 +4733,15 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
               },
             },
           ];
-          if (!setCsvList(next)) return;
-          setReimportSourceId(null);
           // Enable the imported source only for the chosen player groups.
-          if (playerType !== "goalie") setSourceControls((prev) => ({
-            ...prev,
-            [id]: prev[id] || { isSelected: true, weight: 1 },
-          }));
-          if (playerType !== "skater") setGoalieSourceControls((prev) => ({
-            ...prev,
-            [id]: prev[id] || { isSelected: true, weight: 1 },
-          }));
+          const skater = playerType === "goalie" ? sourceControls : {
+            ...sourceControls, [id]: sourceControls[id] || { isSelected: true, weight: 1 },
+          };
+          const goalie = playerType === "skater" ? goalieSourceControls : {
+            ...goalieSourceControls, [id]: goalieSourceControls[id] || { isSelected: true, weight: 1 },
+          };
+          if (!setCsvList({ rows: next, skater, goalie })) return;
+          setReimportSourceId(null);
           setCustomCsvLabel(label);
         }}
       />

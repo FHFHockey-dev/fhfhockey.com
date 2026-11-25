@@ -1,3 +1,4 @@
+import { isLegacyDraftV4, normalizeLegacyDraftV4 } from "./recovery";
 import type {
   DraftSettings,
   DraftedPlayer,
@@ -279,14 +280,21 @@ export function bookmarkImportError(
     Object.values(value).every(
       (v) => typeof v === "number" && Number.isFinite(v),
     );
+  const legacy = isLegacyDraftV4(data);
+  if (legacy) {
+    try { data = normalizeLegacyDraftV4(data); }
+    catch (error) { return error instanceof Error ? error.message : "Invalid legacy draft."; }
+  }
   if (!record(data) || ![2, 3].includes(data.v))
-    return "Unsupported bookmark. Use a v2 or v3 draft bookmark.";
+    return "Unsupported bookmark. Use a v2, v3, or v4 draft bookmark.";
   if (data.customCsvList !== undefined) {
     if (!Array.isArray(data.customCsvList) || data.customCsvList.some((entry: any) =>
       !record(entry) || typeof entry.id !== "string" || !entry.id.startsWith("custom_csv_") ||
       typeof entry.label !== "string" || !Array.isArray(entry.rows) || !entry.rows.length || entry.rows.some((row: any) => !record(row))
     )) return "Invalid custom CSV data in bookmark. The current draft has not changed.";
-    availableCustomSourceIds = data.customCsvList.map((entry: any) => entry.id);
+    if (availableCustomSourceIds) {
+      availableCustomSourceIds = [...availableCustomSourceIds, ...data.customCsvList.map((entry: any) => entry.id)];
+    }
   }
   const s = data.settings;
   if (
@@ -312,9 +320,9 @@ export function bookmarkImportError(
     Object.values<number>(s.rosterConfig).reduce((a, b) => a + b, 0) > 100
   )
     return "Invalid team count or roster capacity in bookmark.";
-  if (
-    !Array.isArray(data.draftedPlayers) ||
-    data.draftedPlayers.some(
+  const validPicks = (picks: any) =>
+    Array.isArray(picks) &&
+    !picks.some(
       (p: any) =>
         !record(p) ||
         typeof p.playerId !== "string" ||
@@ -323,12 +331,10 @@ export function bookmarkImportError(
         p.pickNumber < 1 ||
         p.round !== Math.ceil(p.pickNumber / s.teamCount) ||
         p.pickInRound !== ((p.pickNumber - 1) % s.teamCount) + 1,
-    ) ||
-    new Set(data.draftedPlayers.map((p: any) => p.playerId)).size !==
-      data.draftedPlayers.length ||
-    new Set(data.draftedPlayers.map((p: any) => p.pickNumber)).size !==
-      data.draftedPlayers.length
-  )
+    ) &&
+    new Set(picks.map((p: any) => p.playerId)).size === picks.length &&
+    new Set(picks.map((p: any) => p.pickNumber)).size === picks.length;
+  if (!validPicks(data.draftedPlayers))
     return "Invalid or duplicate draft picks in bookmark.";
   for (const [index, controls] of [
     data.sourceControls,
@@ -414,6 +420,21 @@ export function bookmarkImportError(
   });
   if (!keeperResult.ok)
     return `Invalid keepers: ${keeperResult.errors.join(" ")}`;
+  if (legacy) {
+    const noPickKeepers = keeperResult.keepers.filter((keeper) => keeper.cost === "none").map((keeper) => keeper.playerId);
+    const validOverrides = (overrides: unknown, picks: { playerId: string }[]) => {
+      if (overrides === undefined) return true;
+      if (!record(overrides)) return false;
+      const ids = new Set([...noPickKeepers, ...picks.map((pick) => pick.playerId)]);
+      return Object.entries(overrides as Record<string, unknown>).every(([id, slot]) => ids.has(id) && typeof slot === "string");
+    };
+    if (!validOverrides(data.positionOverrides, data.draftedPlayers))
+      return "Invalid roster slot overrides in legacy draft.";
+    if (data.draftHistory.some((entry: any) =>
+      !record(entry) || !Number.isInteger(entry.pickNumber) || entry.pickNumber < 1 ||
+      !validPicks(entry.players) || !validOverrides(entry.positionOverrides, entry.players)
+    )) return "Invalid undo history in legacy draft.";
+  }
   if (
     data.pickOwnerOverrides &&
     (!record(data.pickOwnerOverrides) ||
@@ -445,6 +466,8 @@ export function bookmarkImportError(
   });
   if (!tradeResult.ok)
     return `Invalid traded picks: ${tradeResult.errors.join(" ")}`;
+  // Historical autosaves can contain a legitimate draft still in setup.
+  if (legacy && data.configured === false) return null;
   const validation = validateDraftSettings({
     settings: s,
     myTeamId: data.myTeamId,

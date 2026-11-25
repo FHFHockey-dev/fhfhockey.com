@@ -35,6 +35,8 @@ import {
 } from "lib/projectionsConfig/proration";
 
 interface ProjectionsTableProps {
+  draftProrate84?: boolean;
+  onDraftProrate84Change?: (value: boolean) => void;
   draftUnavailableReason?: string;
   onRefresh?: () => void;
   picksBeforeTurn?: number;
@@ -185,6 +187,8 @@ function getSeasonHistoryKey(
 }
 
 const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
+  draftProrate84,
+  onDraftProrate84Change,
   draftUnavailableReason = "Manual drafting is unavailable",
   onRefresh,
   projectionSeasonId,
@@ -331,25 +335,27 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   }, [statColumnsMode]);
 
   // Full-season proration toggle (skater counting stats pacing)
-  const [prorate84, setProrate84] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
+  const managedProration = draftProrate84 !== undefined;
+  const [localProrate84, setLocalProrate84] = useState<boolean>(() => {
+    if (managedProration || typeof window === "undefined") return false;
     const current = window.localStorage.getItem("projections.prorate84");
     return current == null
       ? window.localStorage.getItem("projections.prorate82") === "true"
       : current === "true";
   });
+  const prorate84 = draftProrate84 ?? localProrate84;
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (managedProration || typeof window === "undefined") return;
     try {
-      window.localStorage.setItem("projections.prorate84", String(prorate84));
+      window.localStorage.setItem("projections.prorate84", String(localProrate84));
     } catch {}
-  }, [prorate84]);
+  }, [localProrate84, managedProration]);
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (managedProration || typeof window === "undefined") return;
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail && typeof detail.value === "boolean") {
-        setProrate84(detail.value);
+        setLocalProrate84(detail.value);
       }
     };
     window.addEventListener("projections:prorate84", handler as EventListener);
@@ -358,7 +364,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         "projections:prorate84",
         handler as EventListener,
       );
-  }, []);
+  }, [managedProration]);
 
   const goalieStatColumns = useMemo(() => {
     const src = enabledGoalieStatKeys
@@ -1235,7 +1241,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   type="button"
                   className={`${styles.controlToggleBtn} ${prorate84 ? styles.controlToggleBtnActive : ""}`}
                   onClick={() => {
-                    setProrate84((v) => {
+                    if (onDraftProrate84Change) {
+                      onDraftProrate84Change(!prorate84);
+                      return;
+                    }
+                    setLocalProrate84((v) => {
                       const next = !v;
                       try {
                         if (typeof window !== "undefined") {

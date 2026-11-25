@@ -1,16 +1,70 @@
+import { scenarioFingerprint } from "lib/draft-pro/scenarios";
 import { CUSTOM_CSV_SESSION_KEY, findDuplicateCustomCsvId, type SessionCsvEntry } from "./csvImportSession";
 import type { ProjectionSourceControls } from "./sourceControlPreferences";
 import type { DraftCustomSourceMetadata } from "./summaryConfiguration";
+
+export const LEGACY_DRAFT_TAB_KEY = "draft.snapshot.v4";
+
+export function isLegacyDraftV4(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value) && (value as Record<string, unknown>).v === 4;
+}
+
+// Map the old writer's names onto the current bookmark validator and restore boundary.
+export function normalizeLegacyDraftV4(data: Record<string, unknown>) {
+  const draftHistory = data.draftHistory === undefined ? [] : data.draftHistory;
+  if (!Array.isArray(draftHistory) ||
+    (data.prorate84 !== undefined && typeof data.prorate84 !== "boolean") ||
+    (data.riskSd !== undefined && (typeof data.riskSd !== "number" || !Number.isFinite(data.riskSd)))) {
+    throw new Error("Invalid legacy draft history or analysis preferences.");
+  }
+  const attachments = data.customCsvEntries === undefined ? data.customCsvList : data.customCsvEntries;
+  const sources = data.csvMetadata === undefined
+    ? data.customSourceMetadata ?? attachments ?? []
+    : data.csvMetadata;
+  if (!Array.isArray(sources) || sources.some((source) =>
+    !source || typeof source !== "object" ||
+    typeof source.id !== "string" || !source.id.startsWith("custom_csv_") ||
+    typeof source.label !== "string"
+  ) || new Set(sources.map(({ id }) => id)).size !== sources.length) {
+    throw new Error("Invalid or duplicate projection source metadata in the legacy draft.");
+  }
+  return {
+    ...data, v: 3,
+    settings: data.settings ?? data.draftSettings,
+    goalieScoringCategories: data.goalieScoringCategories ?? data.goaliePointValues,
+    customSourceMetadata: sources, customCsvList: attachments, draftHistory,
+  };
+}
 
 export type BookmarkImportResult = {
   status: "accepted" | "missing_resources" | "failed";
   message: string;
 };
 
+export type DraftTabCsvMetadata = DraftCustomSourceMetadata & {
+  contentFingerprint?: string;
+  playerType?: SessionCsvEntry["playerType"];
+};
+
+// Match the stored JSON shape, including rows, without putting it in each draft save.
+function csvEntryFingerprint(entry: SessionCsvEntry) {
+  return scenarioFingerprint(JSON.stringify(entry));
+}
+
+export function toDraftTabCsvMetadata(entries: readonly SessionCsvEntry[]): DraftTabCsvMetadata[] {
+  return entries.map((entry) => ({
+    id: entry.id,
+    label: entry.label,
+    playerType: entry.playerType,
+    ...(entry.rows?.length ? { contentFingerprint: csvEntryFingerprint(entry) } : { missing: true }),
+  }));
+}
+
 export function recoverCustomCsvEntries(
   saved: {
     customCsvList?: SessionCsvEntry[];
-    customSourceMetadata?: DraftCustomSourceMetadata[];
+    customSourceMetadata?: DraftTabCsvMetadata[];
+    tabCsvSidecar?: true;
     sourceControls?: ProjectionSourceControls;
     goalieSourceControls?: ProjectionSourceControls;
   },
@@ -22,14 +76,21 @@ export function recoverCustomCsvEntries(
     ...Object.keys(saved.sourceControls ?? {}),
     ...Object.keys(saved.goalieSourceControls ?? {}),
   ].filter((id) => id.startsWith("custom_csv_")));
-  const entries = [...(saved.customCsvList ?? available.filter((entry) => ids.has(entry.id)))];
+  const availableRows = available.filter((entry) => {
+    if (!ids.has(entry.id)) return false;
+    if (!saved.tabCsvSidecar) return true;
+    const source = metadata.find(({ id }) => id === entry.id);
+    return source?.contentFingerprint === csvEntryFingerprint(entry);
+  });
+  const entries = [...(saved.customCsvList ?? availableRows)];
   for (const id of ids) {
     if (entries.some((entry) => entry.id === id)) continue;
+    const source = metadata.find((source) => source.id === id);
     entries.push({
       id,
-      label: metadata.find((source) => source.id === id)?.label ?? id,
-      playerType: saved.sourceControls?.[id] && saved.goalieSourceControls?.[id]
-        ? "both" : saved.goalieSourceControls?.[id] ? "goalie" : "skater",
+      label: source?.label ?? id,
+      playerType: source?.playerType ?? (saved.sourceControls?.[id] && saved.goalieSourceControls?.[id]
+        ? "both" : saved.goalieSourceControls?.[id] ? "goalie" : "skater"),
       rows: [],
     });
   }
@@ -42,7 +103,7 @@ export function persistRecoveredDraft(
   entries: SessionCsvEntry[],
   snapshot?: string,
   storage: Pick<Storage, "getItem" | "setItem" | "removeItem"> = window.sessionStorage,
-  replaceDuplicateCsv = false,
+  writeEmptyCsvList = false,
 ) {
   if (findDuplicateCustomCsvId(entries)) return false;
   let previousCsv: string | null = null;
@@ -50,7 +111,7 @@ export function persistRecoveredDraft(
   try {
     previousCsv = storage.getItem(CUSTOM_CSV_SESSION_KEY);
     const csv = JSON.stringify(entries);
-    const csvChanged = csv !== (previousCsv ?? "[]") || (replaceDuplicateCsv && previousCsv === null);
+    const csvChanged = csv !== (previousCsv ?? "[]") || (writeEmptyCsvList && previousCsv === null);
     if (csvChanged) {
       storage.setItem(CUSTOM_CSV_SESSION_KEY, csv);
       csvWritten = true;

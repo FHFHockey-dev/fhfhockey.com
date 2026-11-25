@@ -87,7 +87,8 @@ export function loadCustomCsvSession(
 
 export function loadCustomCsvSessionResult(
   storage: Pick<Storage, "getItem" | "setItem" | "removeItem"> =
-    window.sessionStorage
+    window.sessionStorage,
+  migrateLegacy = true,
 ): { entries: SessionCsvEntry[] } | { duplicateId: string } {
   const currentRaw = storage.getItem(CUSTOM_CSV_SESSION_KEY);
   const current = parseList(currentRaw);
@@ -118,8 +119,10 @@ export function loadCustomCsvSessionResult(
 
   const migratedDuplicateId = findDuplicateCustomCsvId(migrated);
   if (migratedDuplicateId) return { duplicateId: migratedDuplicateId };
-  if (migrated.length) saveCustomCsvSession(migrated, storage);
-  for (const key of LEGACY_CUSTOM_CSV_SESSION_KEYS) storage.removeItem(key);
+  if (migrateLegacy) {
+    if (migrated.length) saveCustomCsvSession(migrated, storage);
+    for (const key of LEGACY_CUSTOM_CSV_SESSION_KEYS) storage.removeItem(key);
+  }
   return { entries: migrated };
 }
 
