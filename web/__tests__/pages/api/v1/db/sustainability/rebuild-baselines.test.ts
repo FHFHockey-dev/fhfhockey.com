@@ -147,10 +147,30 @@ describe("/api/v1/db/sustainability/rebuild-baselines", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ success: true, processed: 150, rowsUpserted: 150 });
 
-    upsertMock.mockClear();
-    const dryRes = createMockRes();
-    await handler({ method: "GET", query: { snapshot_date: "2026-10-17", dry: "1" } } as any, dryRes);
-    expect(upsertMock).not.toHaveBeenCalled();
-    expect(dryRes.body).toMatchObject({ success: true, dry_run: true, processed: 150, rowsUpserted: 0 });
+    expect(upsertMock.mock.calls.map(([, options]) => options)).toEqual([
+      { onConflict: "player_id,snapshot_date" },
+      { onConflict: "player_id,snapshot_date" },
+    ]);
+    const firstBatch = upsertMock.mock.calls[0][0];
+
+    for (const method of ["GET", "POST"]) {
+      upsertMock.mockClear();
+      const dryRes = createMockRes();
+      await handler({ method, query: { snapshot_date: "2026-10-17", dry: "1" } } as any, dryRes);
+      expect(dryRes.statusCode).toBe(200);
+      expect(upsertMock).not.toHaveBeenCalled();
+      expect(dryRes.body).toMatchObject({
+        success: true,
+        dry_run: true,
+        snapshot_date: "2026-10-17",
+        processed: 150,
+        rowsUpserted: 0,
+      });
+      expect(dryRes.body.sample_records).toHaveLength(100);
+      expect(dryRes.body.sample_records).toMatchObject(firstBatch.map(
+        ({ player_id, snapshot_date }: { player_id: string; snapshot_date: string }) =>
+          ({ player_id, snapshot_date })
+      ));
+    }
   });
 });

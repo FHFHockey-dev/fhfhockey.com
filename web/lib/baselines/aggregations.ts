@@ -514,6 +514,47 @@ export function computeBlendFromSeasons(
   return { numer: blendedNumer, denom: blendedDenom, rate };
 }
 
+const matchedStrengthSeasonFields: Record<string, readonly [string, string]> = {
+  points_per_60_5v5: ["points_5v5", "toi_5v5_total"],
+  pp_points_per_60: ["pp_points", "pp_toi"],
+  pp_goals_per_60: ["pp_goals", "pp_toi"],
+  pp_shots_per_60: ["pp_shots", "pp_toi"]
+};
+
+function buildMatchedStrengthSeasonRates(
+  seasonTotals: GameRow[],
+  [numerKey, denomKey]: readonly [string, string]
+) {
+  // Keep empty recency slots so an older season cannot replace a missing pair.
+  const pairs = seasonTotals.map((season) => {
+    const numer = season[numerKey];
+    const denom = season[denomKey];
+    return typeof numer === "number" && Number.isFinite(numer) && numer >= 0
+      && typeof denom === "number" && Number.isFinite(denom) && denom > 0
+      ? { numer, denom }
+      : {};
+  });
+  const blend = computeBlendFromSeasons(pairs, "numer", "denom");
+  const numer = pairs.reduce((sum, pair) => sum + (pair.numer ?? 0), 0);
+  const denom = pairs.reduce((sum, pair) => sum + (pair.denom ?? 0), 0);
+  const matchedCount = (rows: typeof pairs) =>
+    rows.filter((pair) => pair.denom !== undefined).length;
+  const stats = (numerator: number, seconds: number, n: number): MetricStats => ({
+    mu: Number(per60(numerator, seconds).toFixed(6)),
+    sigma: SIGMA_MIN,
+    n
+  });
+
+  return {
+    threeYear: blend && blend.denom > 0
+      ? stats(blend.numer, blend.denom, matchedCount(pairs.slice(0, 3)))
+      : undefined,
+    career: denom > 0
+      ? { ...stats(numer, denom, matchedCount(pairs)), numer, denom }
+      : undefined
+  };
+}
+
 export function buildBaselinePayload(params: {
   player_id: string;
   season_id?: number | null;
@@ -552,10 +593,6 @@ export function buildBaselinePayload(params: {
       nst_ixg_per_60: { numer: "nst_ixg", denom: "nst_toi" },
       nst_icf_per_60: { numer: "nst_icf", denom: "nst_toi" },
       nst_hdcf_per_60: { numer: "nst_hdcf", denom: "nst_toi" },
-      points_per_60_5v5: { numer: "points_5v5", denom: "ev_time_on_ice" },
-      pp_points_per_60: { numer: "pp_points", denom: "pp_toi" },
-      pp_goals_per_60: { numer: "pp_goals", denom: "pp_toi" },
-      pp_shots_per_60: { numer: "pp_shots", denom: "pp_toi" },
       nst_shots_per_60: { numer: "shots", denom: "nst_toi" },
       shooting_percentage: { numer: "goals", denom: "shots" },
       shooting_percentage_5v5: { numer: "goals_5v5", denom: "shots" },
@@ -663,6 +700,13 @@ export function buildBaselinePayload(params: {
 
     for (const m of metricAllowlist.med) {
       try {
+        const matchedFields = matchedStrengthSeasonFields[m];
+        if (matchedFields) {
+          const { threeYear, career } = buildMatchedStrengthSeasonRates(seasonTotals, matchedFields);
+          if (threeYear) win_3yr[m] = threeYear;
+          if (career) win_career[m] = career;
+          continue;
+        }
         const map = medMetricMap[m] || {};
         if (map.numer && map.denom) {
           const blend = computeBlendFromSeasons(
