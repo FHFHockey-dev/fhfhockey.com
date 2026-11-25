@@ -51,6 +51,7 @@ function installQueryMock(args: {
   filterCohort?: boolean;
   playerResult?: Promise<QueryResult>;
   playerError?: unknown;
+  onRead?: (trace: QueryTrace) => void;
   cohortResults?: Record<string, QueryResult | Promise<QueryResult>>;
 }) {
   fromMock.mockImplementation((table: string) => {
@@ -76,12 +77,14 @@ function installQueryMock(args: {
       },
       single() {
         trace.calls.push(["single"]);
+        args.onRead?.(trace);
         return args.playerResult ?? Promise.resolve({ data: args.playerRow, error: args.playerError ?? null });
       },
       then(
         onFulfilled: (value: unknown) => unknown,
         onRejected?: () => unknown,
       ) {
+        args.onRead?.(trace);
         const rows = args.filterCohort
           ? args.cohortRows.filter((row) =>
               trace.calls.every(([operation, key, value]) => {
@@ -308,6 +311,35 @@ describe("PlayerRadarChart", () => {
     expect(fromMock).not.toHaveBeenCalled();
   });
 
+  it("starts goalie peer reads concurrently while saves is pending", async () => {
+    let releaseSaves!: (result: QueryResult) => void;
+    const saves = new Promise<QueryResult>((resolve) => { releaseSaves = resolve; });
+    const startedColumns: string[] = [];
+    installQueryMock({
+      playerRow: { goalie_id: 1, save_pct: 0.915, saves: 25, wins: 0.5 },
+      cohortRows: [],
+      onRead: (trace) => startedColumns.push(String(trace.calls[0]?.[1])),
+      cohortResults: {
+        "goalie_id,saves": saves,
+        "goalie_id,save_pct": { data: [{ goalie_id: 2, save_pct: 0.9 }], error: null },
+        "goalie_id,wins": { data: [{ goalie_id: 2, wins: 0.4 }, { goalie_id: 3, wins: 0.6 }], error: null },
+      },
+    });
+    render(<PlayerRadarChart {...scopeProps} selectedStats={["saves", "save_pct", "wins"]} />);
+
+    try {
+      await waitFor(() => {
+        expect(startedColumns[0]).toBe("*");
+        expect(startedColumns.slice(1).sort()).toEqual([
+          "goalie_id,save_pct", "goalie_id,saves", "goalie_id,wins",
+        ]);
+      });
+    } finally {
+      await act(async () => { releaseSaves({ data: [{ goalie_id: 2, saves: 21 }], error: null }); });
+    }
+    await waitFor(() => expect(chartPercentiles()).toEqual([75, 75, 50]));
+  });
+
   it.each(["error", "reject"] as const)("leaves only the failed metric unavailable after a %s", async (failure) => {
     installQueryMock({
       playerRow: { goalie_id: 1, save_pct: 0.915, saves: 25, wins: 0.5 },
@@ -404,6 +436,43 @@ describe("PlayerRadarChart", () => {
       seasonId: 20262027,
     };
     const centers = { data: [{ player_id: 1 }, { player_id: 2 }, { player_id: 3 }], error: null };
+
+    it("starts skater peer reads concurrently while the 5v5 rates view is pending", async () => {
+      let releaseRates!: (result: QueryResult) => void;
+      const rates = new Promise<QueryResult>((resolve) => { releaseRates = resolve; });
+      const startedTables: string[] = [];
+      installQueryMock({
+        playerRow: null,
+        cohortRows: [],
+        onRead: (trace) => startedTables.push(trace.table),
+        cohortResults: {
+          "player_id,goals_per_60,toi_seconds": rates,
+          "player_id,cf,ca": {
+            data: [{ player_id: 1, cf: 60, ca: 40 }, { player_id: 2, cf: 70, ca: 30 }],
+            error: null,
+          },
+          player_id: centers,
+        },
+      });
+      render(<PlayerRadarChart {...nstProps} selectedStats={["goals_per_60", "cf_pct"]} />);
+
+      try {
+        await waitFor(() => expect([...startedTables].sort()).toEqual([
+          "nst_seasonlong_5v5_counts_oi",
+          "nst_seasonlong_5v5_rates",
+          "wgo_skater_stats_per_game",
+        ]));
+      } finally {
+        await act(async () => { releaseRates({
+          data: [
+            { player_id: 1, goals_per_60: 1.5, toi_seconds: 20000 },
+            { player_id: 2, goals_per_60: 0.5, toi_seconds: 20000 },
+          ],
+          error: null,
+        }); });
+      }
+      await waitFor(() => expect(chartPercentiles()).toEqual([75, 25]));
+    });
 
     it("reads the player's value and the cohort from the 5v5 views and labels the radar 5v5", async () => {
       installQueryMock({
@@ -548,6 +617,13 @@ describe("PlayerRadarChart", () => {
 
       await waitFor(() => expect(chartPercentiles()).toEqual([75]));
       expect(chartState.current.data.averages.hdcf_per_60).toBeCloseTo(14.4, 6);
+      expect(chartState.current.data.labels).toEqual(["HDCF/60"]);
+      expect(chartState.current.options.plugins.tooltip.callbacks.title([{ dataIndex: 0 }])).toBe("HDCF/60");
+      expect(chartState.current["aria-label"]).toContain("On-ice high-danger chances for per 60 minutes 75th");
+      expect(screen.getByText("HDCF/60:")).toBeTruthy();
+
+      fireEvent.click(screen.getByRole("button", { name: "How rankings are calculated" }));
+      expect(screen.getByText("On-ice high-danger chances for per 60 minutes at 5v5")).toBeTruthy();
     });
 
     it("never ranks all-situation WGO skater stats on the 5v5 radar", async () => {
