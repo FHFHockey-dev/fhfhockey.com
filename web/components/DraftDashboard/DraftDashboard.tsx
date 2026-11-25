@@ -1035,7 +1035,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     try {
       const snapshot = JSON.stringify(payload);
       if (csvUpdate) {
-        const committed = persistRecoveredDraft(csvUpdate.rows, snapshot, undefined, true);
+        const committed = persistRecoveredDraft(csvUpdate.rows, snapshot, undefined, { writeEmptyCsvList: true });
         setTabSaveFailed(!committed);
         return committed;
       }
@@ -1318,7 +1318,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       draftHistory: prepared.draftHistory,
       ts: Date.now(), prorate84: data.prorate84 ?? false, riskSd: data.riskSd ?? 12,
     });
-    if (!persistRecoveredDraft(rows, snapshot, undefined, Boolean(historicalSource) || prepared.replacesDuplicateCsv)) return null;
+    if (!persistRecoveredDraft(rows, snapshot, undefined, {
+      writeEmptyCsvList: Boolean(historicalSource) || prepared.replacesDuplicateCsv,
+      onlyChangedRows: (historicalSource === "tab" || historicalSource === "device") && !prepared.replacesDuplicateCsv,
+    })) return null;
     prepared.apply();
     return rows;
   }, [prepareSnapshot, sourceControlDefaults]);
@@ -1358,7 +1361,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         : undefined;
       // A normal compact restore must retain sidecar rows even if they no longer match.
       const needsSidecarWrite = source !== "tab" || saved.tabCsvSidecar !== true || Boolean(replacement);
-      if (needsSidecarWrite && !persistRecoveredDraft(prepared.browser.customCsvList as SessionCsvEntry[], snapshot, undefined, prepared.replacesDuplicateCsv)) {
+      if (needsSidecarWrite && !persistRecoveredDraft(prepared.browser.customCsvList as SessionCsvEntry[], snapshot, undefined, {
+        writeEmptyCsvList: prepared.replacesDuplicateCsv,
+        onlyChangedRows: !replacement,
+      })) {
         return fail("Could not save imported projections in this tab. Your saved draft is retained and automatic saving is paused. Free browser storage, then retry recovery, import a valid bookmark, or confirm Start New Draft.");
       }
       prepared.apply();
@@ -1443,7 +1449,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         prepared.browser.customCsvList as SessionCsvEntry[],
         JSON.stringify({ ...prepared.browser, ts: Date.now() }),
         undefined,
-        prepared.replacesDuplicateCsv,
+        { writeEmptyCsvList: prepared.replacesDuplicateCsv },
       )) return false;
       prepared.apply();
       return prepared.browser;

@@ -1,5 +1,5 @@
 import { scenarioFingerprint } from "lib/draft-pro/scenarios";
-import { CUSTOM_CSV_SESSION_KEY, findDuplicateCustomCsvId, type SessionCsvEntry } from "./csvImportSession";
+import { CUSTOM_CSV_SESSION_KEY, LEGACY_CUSTOM_CSV_SESSION_KEYS, findDuplicateCustomCsvId, type SessionCsvEntry } from "./csvImportSession";
 import type { ProjectionSourceControls } from "./sourceControlPreferences";
 import type { DraftCustomSourceMetadata } from "./summaryConfiguration";
 
@@ -97,13 +97,24 @@ export function recoverCustomCsvEntries(
   return entries;
 }
 
+function storedProjectionRowsMatch(previous: string | null, entries: SessionCsvEntry[]) {
+  const withRows = (entry: SessionCsvEntry) => Array.isArray(entry?.rows) && entry.rows.length > 0;
+  try {
+    const priorEntries = JSON.parse(previous ?? "[]");
+    return Array.isArray(priorEntries) &&
+      JSON.stringify(priorEntries.filter(withRows)) === JSON.stringify(entries.filter(withRows));
+  } catch {
+    return false;
+  }
+}
+
 // Persist replacement rows before a replacement snapshot. State is applied only
 // after this succeeds; a failed snapshot write restores the previous row payload.
 export function persistRecoveredDraft(
   entries: SessionCsvEntry[],
   snapshot?: string,
   storage: Pick<Storage, "getItem" | "setItem" | "removeItem"> = window.sessionStorage,
-  writeEmptyCsvList = false,
+  { writeEmptyCsvList = false, onlyChangedRows = false } = {},
 ) {
   if (findDuplicateCustomCsvId(entries)) return false;
   let previousCsv: string | null = null;
@@ -111,7 +122,13 @@ export function persistRecoveredDraft(
   try {
     previousCsv = storage.getItem(CUSTOM_CSV_SESSION_KEY);
     const csv = JSON.stringify(entries);
-    const csvChanged = csv !== (previousCsv ?? "[]") || (writeEmptyCsvList && previousCsv === null);
+    // Do not leave a stale legacy list authoritative after an explicit recovery.
+    const maskLegacy = writeEmptyCsvList && previousCsv === null && (
+      !onlyChangedRows || LEGACY_CUSTOM_CSV_SESSION_KEYS.some((key) => storage.getItem(key) !== null)
+    );
+    const csvChanged = maskLegacy || (onlyChangedRows
+      ? !storedProjectionRowsMatch(previousCsv, entries)
+      : csv !== (previousCsv ?? "[]"));
     if (csvChanged) {
       storage.setItem(CUSTOM_CSV_SESSION_KEY, csv);
       csvWritten = true;

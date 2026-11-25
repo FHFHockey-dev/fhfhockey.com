@@ -677,6 +677,103 @@ it("requires explicit removal of a missing CSV even after both projection contro
   expect((screen.getByRole("button", { name: "Draft recovery player" }) as HTMLButtonElement).disabled).toBe(false);
 });
 
+it.each(["v2", "v4"] as const)(
+  "restores named missing sources from %s without writing an empty sidecar and preserves the recovery guard on reload",
+  async (version) => {
+    const csvKey = "draft.customCsvList.v3";
+    const legacy = legacyV4Draft();
+    const goalieControls = { ...legacy.goalieSourceControls, [csv.id]: { isSelected: true, weight: 0.4 } };
+    if (version === "v4") {
+      sessionStorage.setItem("draft.snapshot.v4", JSON.stringify({ ...legacy, goalieSourceControls: goalieControls }));
+    } else {
+      sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
+        ...snapshot(), keepers: [], customCsvList: undefined, customSourceMetadata: legacy.csvMetadata,
+        goalieSourceControls: goalieControls,
+      }));
+      sessionStorage.setItem(csvKey, "[]");
+    }
+
+    const setItem = Storage.prototype.setItem;
+    const writes = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+      if (this === sessionStorage && key === csvKey) throw new DOMException("quota", "QuotaExceededError");
+      return setItem.call(this, key, value);
+    });
+    const view = render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
+    if (version === "v4") fireEvent.click(await screen.findByRole("button", { name: "Restore legacy saved tab draft" }));
+
+    const expectRestoredMetadata = () => {
+      expect(tabSnapshot()).toMatchObject({
+        tabCsvSidecar: true,
+        customSourceMetadata: [{ id: csv.id, label: csv.label, playerType: "both", missing: true }],
+        sourceControls: { [csv.id]: { isSelected: true, weight: 0.7 } },
+        goalieSourceControls: { [csv.id]: { isSelected: true, weight: 0.4 } },
+      });
+      expect(dialog().textContent).toContain("Reimport or remove this source before drafting");
+      expect((screen.getByRole("button", { name: "Draft recovery player", hidden: true }) as HTMLButtonElement).disabled).toBe(true);
+    };
+    await waitFor(expectRestoredMetadata);
+    expect(writes.mock.calls.some(([key]) => key === csvKey)).toBe(false);
+    expect(sessionStorage.getItem(csvKey)).toBe(version === "v4" ? null : "[]");
+
+    view.unmount();
+    render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
+    await waitFor(expectRestoredMetadata);
+    fireEvent.click(within(dialog()).getByRole("tab", { name: /^Projections/ }));
+    for (const group of ["Skaters projection sources", "Goalies projection sources"]) {
+      expect(within(screen.getByRole("region", { name: group })).getByRole("button", { name: "Reimport Tab source" })).toBeTruthy();
+    }
+    expect(writes.mock.calls.some(([key]) => key === csvKey)).toBe(false);
+
+    writes.mockRestore();
+    fireEvent.click(within(dialog()).getAllByRole("button", { name: "Remove Tab source" })[0]);
+    await waitFor(() => expect(tabSnapshot().sourceControls[csv.id]).toBeUndefined());
+    expect(tabSnapshot().goalieSourceControls[csv.id]).toBeUndefined();
+    fireEvent.click(within(dialog()).getByRole("button", { name: "Done" }));
+    expect(screen.queryByRole("dialog", { name: "Draft Settings" })).toBeNull();
+  },
+);
+
+it("retains matching sidecar rows during legacy tab recovery when writes are unavailable", async () => {
+  const v3 = "draft.customCsvList.v3";
+  const stored = JSON.stringify([csv], null, 2);
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify(legacyV4Draft()));
+  sessionStorage.setItem(v3, stored);
+  const setItem = Storage.prototype.setItem;
+  const writes = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (this === sessionStorage && key === v3) throw new DOMException("quota", "QuotaExceededError");
+    return setItem.call(this, key, value);
+  });
+
+  render(<DraftDashboard />);
+  fireEvent.click(await screen.findByRole("button", { name: "Restore legacy saved tab draft" }));
+  await waitFor(() => expect(tabSnapshot()).toMatchObject({ tabCsvSidecar: true, draftedPlayers: legacyV4Draft().draftedPlayers }));
+  expect(saved().customCsvList).toEqual([csv]);
+  expect(sessionStorage.getItem(v3)).toBe(stored);
+  expect(writes.mock.calls.some(([key]) => key === v3)).toBe(false);
+});
+
+it("keeps an unrelated older CSV list masked after an explicit legacy restore", async () => {
+  const v2 = "draft.customCsvList.v2";
+  const v3 = "draft.customCsvList.v3";
+  const stored = JSON.stringify([{ ...csv, id: "custom_csv_retired", label: "Old rows" }]);
+  const legacy = legacyV4Draft();
+  sessionStorage.setItem(v2, stored);
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify({
+    ...legacy, csvMetadata: [], sourceControls: { dtz_skaters: { isSelected: true, weight: 1 } },
+  }));
+
+  const view = render(<DraftDashboard />);
+  fireEvent.click(await screen.findByRole("button", { name: "Restore legacy saved tab draft" }));
+  await waitFor(() => expect(tabSnapshot()).toMatchObject({ tabCsvSidecar: true, customSourceMetadata: [] }));
+  expect(sessionStorage.getItem(v3)).toBe("[]");
+  expect(sessionStorage.getItem(v2)).toBe(stored);
+  view.unmount();
+  render(<DraftDashboard />);
+  await waitFor(() => expect(tabSnapshot().draftedPlayers).toEqual(legacy.draftedPlayers));
+  expect(saved().customCsvList).toEqual([]);
+  expect(sessionStorage.getItem(v2)).toBe(stored);
+});
+
 it("restores source controls once and retains missing-source repair controls", async () => {
   sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({ ...snapshot(), configured: true, keepers: [], draftedPlayers: [], currentPick: 1, customCsvList: undefined, customSourceMetadata: [{ id: csv.id, label: csv.label }] }));
   render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
