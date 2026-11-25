@@ -379,6 +379,71 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   >([]);
   // settings drawer visibility
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsTriggerRef = React.useRef<HTMLButtonElement>(null);
+  const settingsDrawerRef = React.useRef<HTMLElement>(null);
+  const settingsOverlayRef = React.useRef<HTMLDivElement>(null);
+  const drawerVisible = settingsOpen && !isLoading && !error;
+
+  useEffect(() => {
+    const drawer = settingsDrawerRef.current;
+    if (!drawerVisible || !drawer) return;
+    const trigger = settingsTriggerRef.current;
+    const controls = () => drawer.querySelectorAll<HTMLElement>(
+      'button:enabled, input:enabled, select:enabled, textarea:enabled, a[href], [tabindex="0"]',
+    );
+    const focusFirst = () => (controls()[0] ?? drawer).focus();
+    focusFirst();
+
+    // Isolate siblings at each level so controls outside the table are covered too.
+    const background: { element: HTMLElement; hidden: string | null; inert: boolean }[] = [];
+    for (let branch: HTMLElement = drawer; branch !== document.body && branch.parentElement; branch = branch.parentElement) {
+      for (const element of Array.from(branch.parentElement.children)) {
+        if (!(element instanceof HTMLElement) || element === branch || element === settingsOverlayRef.current) continue;
+        background.push({ element, hidden: element.getAttribute("aria-hidden"), inert: element.inert });
+        element.inert = true;
+        element.setAttribute("aria-hidden", "true");
+      }
+    }
+
+    const { overflow, overscrollBehavior } = document.body.style;
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "contain";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSettingsOpen(false);
+      } else if (event.key === "Tab") {
+        const items = controls();
+        const first = items[0] ?? drawer;
+        const last = items[items.length - 1] ?? drawer;
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    const keepFocusInside = (event: FocusEvent) => {
+      if (event.target instanceof Node && !drawer.contains(event.target)) focusFirst();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("focusin", keepFocusInside);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("focusin", keepFocusInside);
+      for (const { element, hidden, inert } of background) {
+        element.inert = inert;
+        if (hidden === null) element.removeAttribute("aria-hidden");
+        else element.setAttribute("aria-hidden", hidden);
+      }
+      document.body.style.overflow = overflow;
+      document.body.style.overscrollBehavior = overscrollBehavior;
+      trigger?.focus();
+    };
+  }, [drawerVisible]);
+
   // compare players modal state
   const [compareOpen, setCompareOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -1226,6 +1291,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 <button
                   type="button"
                   className={`${styles.controlToggleBtn} ${settingsOpen ? styles.controlToggleBtnActive : ""}`}
+                  ref={settingsTriggerRef}
                   onClick={() => setSettingsOpen(true)}
                   aria-haspopup="dialog"
                   aria-expanded={settingsOpen}
@@ -1477,6 +1543,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       {/* Settings Drawer Overlay */}
       {settingsOpen && (
         <div
+          ref={settingsOverlayRef}
           className={styles.drawerOverlay}
           role="presentation"
           onClick={() => setSettingsOpen(false)}
@@ -1484,13 +1551,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       )}
       {settingsOpen && (
         <aside
+          ref={settingsDrawerRef}
           id="draft-settings-drawer"
           className={styles.settingsDrawer}
           role="dialog"
-          aria-label="Draft advanced settings"
+          aria-modal="true"
+          aria-labelledby="draft-settings-title"
+          tabIndex={-1}
         >
           <div className={styles.drawerHeader}>
-            <h3>Advanced Settings</h3>
+            <h3 id="draft-settings-title">Advanced Settings</h3>
             <button
               type="button"
               onClick={() => setSettingsOpen(false)}
