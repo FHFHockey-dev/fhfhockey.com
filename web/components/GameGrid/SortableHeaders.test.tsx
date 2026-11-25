@@ -82,7 +82,7 @@ describe("Game Grid sortable column headers", () => {
   it.each([7, 10])("balances side panels and shares collapsed column widths except Team in %s-day mode", (dayCount) => {
     const { rating, metric, percent, day, team, summary, score } = MASTER_COLUMNS;
     const sum = (widths: number[]) => widths.reduce((a, b) => a + b, 0);
-    for (const containerWidth of [922, 1080, 1354, 1582, 1920]) {
+    for (const containerWidth of [900, 922, 1080, 1354, 1582, 1920]) {
       for (const expanded of [false, true]) for (const fourWeekCollapsed of [false, true]) {
         const metricColumns = [rating, rating, ...(expanded ? [metric, metric, metric, metric, metric, metric, percent] : [])];
         const widths = sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollapsed, containerWidth });
@@ -94,7 +94,10 @@ describe("Game Grid sortable column headers", () => {
         expect(widths[gridStart]).toBe(team.base);
         if (!expanded && fourWeekCollapsed) {
           expect(new Set(widths.filter((_, i) => i !== gridStart)).size).toBe(1);
-          expect(sum(widths)).toBeCloseTo(Math.max(containerWidth, team.base + (widths.length - 1) * 78), 9);
+          const minimum = dayCount === 7 ? rating.min : MASTER_COLUMNS.trend.min;
+          expect(sum(widths)).toBeCloseTo(Math.max(containerWidth, team.base + (widths.length - 1) * minimum), 9);
+          const goalieWidths = sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollapsed, containerWidth, goalieView: true });
+          expect(sum(goalieWidths)).toBeCloseTo(Math.max(containerWidth, team.base + (widths.length - 1) * 80), 9);
         } else expect(widths.slice(summaryStart, summaryStart + 3)).toEqual([44, 44, 64]);
         expect(sum(widths.slice(0, gridStart))).toBeCloseTo(sum(widths.slice(summaryStart + 3)), 9);
         metricColumns.forEach((spec, i) => expect(widths[i]).toBeGreaterThanOrEqual(spec.min));

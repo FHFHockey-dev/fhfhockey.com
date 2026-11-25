@@ -268,7 +268,9 @@ export function sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollap
   if (metricColumns.length === 2 && fourWeekCollapsed) {
     // Collapsed: Team alone keeps its width; every other visible column shares one width.
     const count = metricColumns.length + dayCount + 3 + right.length;
-    const minimum = Math.max(dayMinimum, ...metricColumns.map(c => c.min), ...right.map(c => c.min), summary.min, score.min);
+    const metricMinimum = Math.max(dayMinimum, ...metricColumns.map(c => c.min), summary.min, fourWeekValue.min);
+    // The seven-day Skater overview can fit Score and Weekly at the rating-column minimum.
+    const minimum = !goalieView && dayCount === 7 ? metricMinimum : Math.max(metricMinimum, trend.min, score.min);
     const width = Math.max(minimum, containerWidth > 0 ? (containerWidth - team.base) / count : day.base);
     return [...Array(metricColumns.length).fill(width), team.base, ...Array(dayCount + 3 + right.length).fill(width)];
   }
@@ -674,7 +676,10 @@ export default function DesktopMasterTable({
   };
 
   const renderTableHeader = (keyPrefix = "") => (
-    <thead ref={keyPrefix ? undefined : theadRef}>
+    <thead
+      ref={keyPrefix ? undefined : theadRef}
+      className={columnWidths[columnWidths.length - 1] < MASTER_COLUMNS.trend.min ? styles.compactSkaterHeader : undefined}
+    >
       <tr className={styles.masterHeaderGroupRow}>
         <th
           colSpan={visibleMetricColumns.length}
