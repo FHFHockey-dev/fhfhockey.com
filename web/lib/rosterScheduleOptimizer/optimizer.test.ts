@@ -5,6 +5,7 @@ import {
   calculateCandidateDust,
   canEligibilityOccupySlot,
   classifyDustRisk,
+  createBestAlternativeRecommendationFinder,
   createOptimizerCacheSignature,
   evaluateRosterSchedule,
   expandActiveSlots,
@@ -541,6 +542,47 @@ describe("recommendations, risk, and caching", () => {
         (item) => item.player.id,
       ),
     ).toEqual(["less-dust", "a", "b"]);
+  });
+
+  it("returns the same best recommendation from a prepared pool", () => {
+    const candidate = dust(player("candidate", "RW", 100), 8);
+    const alternatives = [
+      candidate,
+      dust(player("b", "RW", 98), 3),
+      dust(player("a", "RW", 98), 3),
+      dust(player("less-dust", "RW", 97), 2),
+      dust(player("missing", "UNKNOWN", 99), 0),
+    ];
+    const best = createBestAlternativeRecommendationFinder(
+      alternatives,
+      { RW: 1 },
+    )(candidate);
+
+    expect(best).toEqual(
+      rankAlternativeRecommendations(candidate, alternatives, { RW: 1 })[0],
+    );
+  });
+
+  it("prepares each alternative once for repeated best-only queries", () => {
+    let eligibilityReads = 0;
+    const pool = [
+      dust(player("target", "RW", 100), 8),
+      dust(player("another-target", "RW", 99), 7),
+      dust(player("best", "RW", 98), 2),
+    ];
+    for (const row of pool) {
+      const positions = row.player.eligiblePositions;
+      Object.defineProperty(row.player, "eligiblePositions", {
+        get() {
+          eligibilityReads += 1;
+          return positions;
+        },
+      });
+    }
+    const find = createBestAlternativeRecommendationFinder(pool, { RW: 1 });
+    expect(find(pool[0])?.player.id).toBe("best");
+    expect(find(pool[1])?.player.id).toBe("best");
+    expect(eligibilityReads).toBe(pool.length);
   });
 
   it("classifies typed DUST risk using both exact games and rate", () => {
