@@ -141,7 +141,8 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     );
     // The card shows first initial + last name; the title keeps the full name.
     expect(screen.getAllByRole("listitem")[1].textContent).toContain("U. Player");
-    expect(screen.getAllByTitle("Probability of remaining available at your next pick")[0].textContent).toContain("%");
+    expect(screen.getAllByText("Est. AVL%")).toHaveLength(2);
+    expect(screen.getAllByTitle("Estimated probability of remaining available at your next pick")[0].textContent).toContain("%");
     expect(screen.queryByText(/Gone by next pick/)).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Draft Urgent Player" }));
