@@ -54,8 +54,12 @@ export type GoalieGsaxData = {
   model: "NST"; strength: GsaxStrength; strengthLabel: string; board: BoardChoice; window: GsaxWindow;
   /** The matchup week, when that is the window; the last one NST's logs fully cover. Null if the window is not a week or none is covered. */
   week: MatchupWeek | null; windowLabel: string; minAppearances: number; minCoverage: number;
-  nstThrough: string | null; wgoThrough: string | null; lagDays: number | null;
-  /** NHL.com appearances after NST's through-date: not counted anywhere on this card. */
+  /** Effective card cutoff after the NHL.com late-feed rule. */
+  nstThrough: string | null;
+  /** Latest observed NST date, independent of the card cutoff. Older snapshots may omit it. */
+  nstSourceThrough?: string | null;
+  wgoThrough: string | null; lagDays: number | null;
+  /** NHL.com appearances after NST's newest observed date. */
   appearancesBehindNst: number;
   /** NST rows with no NHL.com appearance for that goalie and date: dropped, because the source disagrees about who played. */
   unmatchedNstRows: number;
@@ -89,13 +93,13 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
   const nights = scheduleNights(input.scheduled.filter(game => (dates ? chosen(game.date) : inWeek(game.date)) && (dates || !nstNewest || game.date <= nstNewest)), input.reported);
   const cut = completeThrough(nights, latest(nights.map(night => night.date)) ?? "");
   const endDate = cut.trimmed.length ? cut.through : null, nstThrough = endDate && nstNewest && endDate < nstNewest ? endDate : nstNewest;
-  const lagDays = nstThrough && wgoThrough ? Math.max(0, dayDifference(wgoThrough, nstThrough)) : null;
+  const lagDays = nstNewest && wgoThrough ? Math.max(0, dayDifference(wgoThrough, nstNewest)) : null;
   const counted = (date: string) => !endDate || date <= endDate;
   const inWindowDates = (date: string) => !!nstThrough && date <= nstThrough && (dates ? chosen(date) : input.window !== "week" || (!!week && date >= week.start && date <= week.end));
   const inScope = input.appearances.filter(row => inWindowDates(row.date));
-  const appearancesBehindNst = nstThrough ? input.appearances.filter(row => row.date > nstThrough).length : 0;
+  const appearancesBehindNst = nstNewest ? input.appearances.filter(row => row.date > nstNewest).length : 0;
   // Only games NST lacks count as behind: a chosen week still under way, or a day with no games, has nothing missing.
-  const pastNst = (date: string) => chosen(date) && counted(date) && (!nstThrough || date > nstThrough);
+  const pastNst = (date: string) => chosen(date) && counted(date) && (!nstNewest || date > nstNewest);
   const appearancesPastNst = input.appearances.filter(row => pastNst(row.date)).length, gamesPastNst = input.scheduled.filter(game => pastNst(game.date)).length;
   const windowLabel = dates ? dates.label : input.window === "week" ? week ? `Week ${week.week}, ${week.start} to ${week.end}${week.end > nstThrough! ? `, through ${nstThrough}` : ""}` : "No matchup week covered" : input.window === null ? "Season to date" : `Last ${input.window} appearances per goalie`;
   const nstByKey = new Map(input.nstGames.map(game => [`${game.goalieId}:${game.date}`, game]));
@@ -133,7 +137,7 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
     ...nstThrough ? [] : [`NST ${strengthLabel} goalie rows are missing this season.`],
     ...schedule.unreported ? [`${schedule.unreported} of ${schedule.expected} scheduled team games ${dates ? "in these dates" : "through NST's date"} have no reported result.`] : [],
     ...notFinalReason(schedule, dates ? " in these dates" : " through NST's date"),
-    ...nstThrough && (appearancesPastNst || gamesPastNst) ? [`${dates!.label} runs past NST's newest date, ${nstThrough}: ${countOf(appearancesPastNst, "appearance")} after it ${appearancesPastNst === 1 ? "is" : "are"} not counted.`] : [],
+    ...nstThrough && (appearancesPastNst || gamesPastNst) ? [`${dates!.label} runs past NST's newest date, ${nstNewest}: ${countOf(appearancesPastNst, "appearance")} after it ${appearancesPastNst === 1 ? "is" : "are"} not counted.`] : [],
   ];
   const lagNote = lagDays ? [`${gsaxLagLabel(lagDays)} behind NHL.com`] : [];
   const note = completeThroughNote(cut), unreported = cut.trimmed.length > 0 && !cut.through;
@@ -141,17 +145,17 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
     state: !nstThrough || unreported ? "missing" : reasons.length ? "partial" : "ready", reasons: unreported ? ["No night in this window is fully reported yet."] : reasons, ...note ? { pageNotes: [note] } : {}, teams: [...new Set(shownTeams)].filter(team => team in teamsInfo),
     data: nstThrough && !unreported ? {
       model: "NST", strength: input.strength, strengthLabel, board: input.board, window: input.window, week, windowLabel, minAppearances: input.minAppearances, minCoverage: input.minCoverage,
-      nstThrough, wgoThrough, lagDays, appearancesBehindNst, unmatchedNstRows: input.nstGames.filter(game => !appearanceKeys.has(`${game.goalieId}:${game.date}`)).length,
+      nstThrough, nstSourceThrough: nstNewest, wgoThrough, lagDays, appearancesBehindNst, unmatchedNstRows: input.nstGames.filter(game => !appearanceKeys.has(`${game.goalieId}:${game.date}`)).length,
       rows: finished, ranked: ranked.length, unadmitted: rows.length - ranked.length, fhfhModel,
     } : null,
     evidence: {
       sources: [
-        { name: `NST ${strengthLabel} goalie logs (NST model)`, tables: [table], state: nstThrough ? "ready" : "missing", asOf: nstThrough, updatedAt: null, reasons: lagNote },
+        { name: `NST ${strengthLabel} goalie logs (NST model)`, tables: [table], state: nstNewest ? "ready" : "missing", asOf: nstNewest, updatedAt: null, reasons: lagNote },
         { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats", "wgo_team_stats", "games", "pbp_plays"], state: schedule.missing ? "partial" : "ready", asOf: wgoThrough, updatedAt: null },
         { name: "FHFH xG model", tables: ["nhl_xg_goalie_game_aggregates"], state: fhfhModel.state === "unavailable" ? "missing" : "ready", asOf: null, updatedAt: null, reasons: [fhfhModel.reason] },
       ],
-      sample: `${windowLabel}, NST through ${nstThrough ?? "no date"}${lagDays ? `, ${gsaxLagLabel(lagDays)} behind NHL.com (${wgoThrough})` : ""}: ${covered} of ${countOf(expected, "appearance")} with NST rows. Later appearances not counted: ${appearancesBehindNst}. NST rows dropped for no NHL.com appearance that date: ${input.nstGames.filter(game => !appearanceKeys.has(`${game.goalieId}:${game.date}`)).length}`,
-      strength: strengthLabel, cohort: `${countOf(ranked.length, "goalie")} with at least ${countOf(input.minAppearances, "appearance")} and ${input.minCoverage}% NST coverage; ${rows.length - ranked.length} unranked.${dates ? ` Appearances and coverage count only games in the chosen dates through NST's newest date, so a short range ranks on a small sample: at ${countOf(input.minAppearances, "appearance")} that many games qualifies a goalie. Raise Min appearances for a firmer list.` : ""} Above 0 means fewer goals allowed than this model expected; one model's context beside SV% and GAA, not comparable across models or strengths, and nothing about the next start. ${fhfhModel.reason}`,
+      sample: `${windowLabel}, NST through ${nstNewest ?? "no date"}${lagDays ? `, ${gsaxLagLabel(lagDays)} behind NHL.com (${wgoThrough})` : ""}${nstThrough !== nstNewest ? `; card through ${nstThrough}` : ""}: ${covered} of ${countOf(expected, "appearance")} with NST rows. Later appearances not counted: ${appearancesBehindNst} after NST's newest date. NST rows dropped for no NHL.com appearance that date: ${input.nstGames.filter(game => !appearanceKeys.has(`${game.goalieId}:${game.date}`)).length}`,
+      strength: strengthLabel, cohort: `${countOf(ranked.length, "goalie")} with at least ${countOf(input.minAppearances, "appearance")} and ${input.minCoverage}% NST coverage; ${rows.length - ranked.length} unranked.${dates ? ` Appearances and coverage count only games in the chosen dates through the card cutoff, so a short range ranks on a small sample: at ${countOf(input.minAppearances, "appearance")} that many games qualifies a goalie. Raise Min appearances for a firmer list.` : ""} Above 0 means fewer goals allowed than this model expected; one model's context beside SV% and GAA, not comparable across models or strengths, and nothing about the next start. ${fhfhModel.reason}`,
       coverage: { observed: covered, expected, missing: expected - covered, unit: "goalie appearances" },
     },
   };
@@ -178,5 +182,5 @@ export const goalieGsaxModule = defineShareModule<GoalieGsaxSettings, GoalieGsax
   load: () => import("./goalieGsax.sources").then(sources => sources.loadGoalieGsax),
   card: () => import("components/SocialShare/modules/GoalieGsaxCard").then(card => card.default),
   hasRows: data => data.ranked > 0,
-  altText: (snapshot, data) => `FHFH GSAx, NST model, ${data.strengthLabel}, ${data.windowLabel}, NST through ${data.nstThrough}. ${boardSides(data.rows, goalieGsaxRanks, data.board, GSAX_SHOWN).sides.map(side => `${side.kind === "best" ? "Best" : "Worst"}: ${side.entries.map(({ row, rank }) => `${rank}. ${row.name ?? row.goalieId}: ${row.gsax} in ${row.covered} of ${countOf(row.appearances, "appearance")}`).join("; ")}`).join(". ")}. ${data.fhfhModel.reason} ${snapshot.evidence.sample}.`,
+  altText: (snapshot, data) => `FHFH GSAx, NST model, ${data.strengthLabel}, ${data.windowLabel}, card through ${data.nstThrough}. ${boardSides(data.rows, goalieGsaxRanks, data.board, GSAX_SHOWN).sides.map(side => `${side.kind === "best" ? "Best" : "Worst"}: ${side.entries.map(({ row, rank }) => `${rank}. ${row.name ?? row.goalieId}: ${row.gsax} in ${row.covered} of ${countOf(row.appearances, "appearance")}`).join("; ")}`).join(". ")}. ${data.fhfhModel.reason}${data.nstSourceThrough ? ` ${snapshot.evidence.sample}.` : ""}`,
 });

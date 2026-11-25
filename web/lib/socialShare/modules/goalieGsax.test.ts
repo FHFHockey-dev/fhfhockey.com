@@ -206,6 +206,42 @@ describe("the period control", () => {
     // NST's own lag is not a late feed: it stays partial with its reason.
     expect(buildGoalieGsax({ ...input, appearances: [...three(1), appearance(1, 5)], nstGames: [0, 1, 2].map(index => nst(1, index)), window: dates("2026-10-02", "2026-10-06") }).state).toBe("partial");
   });
+  it("keeps the observed NST source clock separate from the late-feed card cutoff", async () => {
+    const played = [0, 1, 2, 6];
+    const appearances = played.flatMap(index => [appearance(1, index, { gameId: 50 + index }), appearance(2, index, { gameId: 50 + index, team: "NYR" })]);
+    const nstGames = played.flatMap(index => [nst(1, index), nst(2, index, { xgAgainst: 1 })]);
+    const scheduled = played.map(index => ({ id: 50 + index, date: date(index), homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id, final: true }));
+    const reported = played.slice(0, 3).flatMap(index => ["NJD", "NYR"].map(team => ({ gameId: 50 + index, date: date(index), team })));
+    const request = { ...input, appearances, nstGames, scheduled, reported, window: dates("2026-10-01", "2026-10-07") };
+    const result = buildGoalieGsax(request);
+    expect(result).toMatchObject({ state: "ready", pageNotes: ["Oct 7 is not fully reported yet, so this card ends Oct 3."] });
+    expect(result.data).toMatchObject({ nstThrough: "2026-10-03", ranked: 2, unadmitted: 0 });
+    expect(result.data!.rows.map(({ goalieId, gsax, rank, worstRank, appearances, covered, missing, lastDate }) =>
+      [goalieId, gsax, rank, worstRank, appearances, covered, missing, lastDate])).toEqual([
+      [1, 3, 1, 2, 3, 3, 0, "2026-10-03"],
+      [2, -3, 2, 1, 3, 3, 0, "2026-10-03"],
+    ]);
+    expect(result.evidence.coverage).toEqual({ observed: 6, expected: 6, missing: 0, unit: "goalie appearances" });
+    expect(result.evidence.sources[0]).toMatchObject({ asOf: "2026-10-07", reasons: [] });
+    expect(result.data).toMatchObject({ nstSourceThrough: "2026-10-07", wgoThrough: "2026-10-07", lagDays: 0, appearancesBehindNst: 0 });
+
+    const Card = await goalieGsaxModule.card();
+    const markup = (data: GoalieGsaxData) => renderToStaticMarkup(createElement(Card, { data, logos: {}, settings: {} as never, snapshot: {} as never }));
+    const render = markup(result.data!);
+    expect(render).toContain("card through 2026-10-03; NST source through 2026-10-07");
+    expect(render).not.toContain("behind NHL.com");
+    expect(result.evidence.sample).toContain("NST through 2026-10-07; card through 2026-10-03");
+    expect(goalieGsaxModule.altText({ evidence: result.evidence } as never, result.data!, {} as never)).toContain("NST through 2026-10-07");
+    expect(markup({ ...result.data!, nstSourceThrough: undefined, lagDays: 4 })).not.toContain("behind NHL.com");
+
+    const actualLag = buildGoalieGsax({ ...request, appearances: [...appearances, appearance(1, 7)] });
+    expect(actualLag.data!.rows).toEqual(result.data!.rows);
+    expect(actualLag.evidence.coverage).toEqual(result.evidence.coverage);
+    expect(actualLag.data).toMatchObject({ nstThrough: "2026-10-03", nstSourceThrough: "2026-10-07", lagDays: 1, appearancesBehindNst: 1 });
+    expect(actualLag.evidence.sources[0]).toMatchObject({ asOf: "2026-10-07", reasons: ["1 day behind NHL.com"] });
+    expect(markup(actualLag.data!)).toContain("NST source through 2026-10-07, 1 day behind NHL.com");
+  });
+
   it("trims a preset week's late last night without moving to an older week", () => {
     const weekly = { ...input, window: "week" as const };
     const late = { scheduled: [0, 6].map(index => ({ id: 50 + index, date: date(index), homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id, final: true })), reported: ["NJD", "NYR"].map(team => ({ gameId: 50, date: date(0), team })) };
