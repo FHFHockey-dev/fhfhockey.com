@@ -1836,17 +1836,24 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   // lookback. Reading every success instead pulled ~270k mostly empty-poll
   // rows and never completed within its page budget.
   const windowSuccesses = buildLastKnownSuccessMap(auditRows, true);
+  const failedRunsNeedingHistory = runs
+    .filter((row) => normalizeStatus(row.status) === "failure")
+    .map((row) => ({
+      jobName: String(row.jobname ?? ""),
+      ...parseCronInvocation((row.sql_text ?? null) as string | null),
+    }))
+    .filter((run) => !windowSuccesses.has(auditSuccessKey(run)));
   const successHistoryJobNames = Array.from(new Set([
     ...auditRows.filter((row) => classifyAuditStatus(row) === "failure" && !windowSuccesses.has(auditSuccessKey({
       jobName: row.jobName, method: row.parsed.method, route: row.parsed.route, routePath: row.parsed.routePath })))
       // The wrapper's default job name is the route path, so try both.
       .flatMap((row) => [row.jobName, row.parsed.routePath].filter((value): value is string => Boolean(value))),
-    ...runs.filter((row) => normalizeStatus(row.status) === "failure").flatMap((row) => {
-      const invocation = parseCronInvocation((row.sql_text ?? null) as string | null);
-      const name = String(row.jobname ?? "");
-      return windowSuccesses.has(auditSuccessKey({ jobName: name, ...invocation })) ? []
-        : [name, invocation.routePath].filter((value): value is string => Boolean(value));
-    }),
+    ...failedRunsNeedingHistory.flatMap((run) =>
+      [run.jobName, run.routePath].filter((value): value is string => Boolean(value))),
+    // Forecast receipts use one writer name across horizons. Give the existing
+    // job names priority under the cap; auditSuccessKey still matches the exact GET and query.
+    ...(failedRunsNeedingHistory.some((run) => run.method === "GET" &&
+      run.routePath === "/api/v1/game-predictions/forecast") ? ["game-predictions-forecast"] : []),
   ]));
   const successHistoryJobsTruncated = successHistoryJobNames.length > SUCCESS_HISTORY_MAX_JOBS;
   successHistoryJobNames.length = Math.min(successHistoryJobNames.length, SUCCESS_HISTORY_MAX_JOBS);
