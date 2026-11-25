@@ -109,9 +109,12 @@ export async function installDraftProAuthenticatedFixtures(
     expires_at: expiresAt,
     user,
   };
-  await page.addInitScript((persistedSession) => {
-    localStorage.setItem("sb-127-auth-token", JSON.stringify(persistedSession));
-  }, session);
+  const fixtureOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1";
+  const projectRef = new URL(fixtureOrigin).hostname.split(".")[0];
+  const storageKey = `sb-${projectRef}-auth-token`;
+  await page.addInitScript(({ storageKey, persistedSession }) => {
+    localStorage.setItem(storageKey, JSON.stringify(persistedSession));
+  }, { storageKey, persistedSession: session });
   await page.route("**/auth/v1/user", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(user) }),
   );

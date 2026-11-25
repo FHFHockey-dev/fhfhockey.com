@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 import type { DraftProAccess } from "lib/draft-pro/contracts";
@@ -18,7 +18,7 @@ function accountResponse(eligible = false): { access: DraftProAccess; [key: stri
       providerReadiness: { stripe: true, patreon: false, yahoo: false },
     },
     passInfo: { priceCents: 599, expiresAt: "2027-07-01T04:00:00.000Z", renewal: "none" },
-    checkoutAvailability: { available: !eligible, reason: eligible ? "already_eligible" : "available" },
+    checkoutAvailability: { available: false, reason: eligible ? "already_eligible" : "sales_closed" },
     configurationReadiness: { stripe: true, patreon: false, yahoo: false },
     purchases: eligible ? [{
       id: "purchase_fixture", season: "2026", status: "active", activatedAt: "2026-09-07T00:00:00.000Z",
@@ -29,6 +29,14 @@ function accountResponse(eligible = false): { access: DraftProAccess; [key: stri
     savedDrafts: [{ id: "draft_fixture", name: "Retained fixture draft", status: "manual", updatedAt: "2026-09-07T00:00:00.000Z" }],
     privateImports: [],
   };
+}
+
+async function draftManagementExport(page: Page) {
+  await page.getByRole("button", { name: "Open full draft settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Draft Settings", exact: true });
+  await settings.getByRole("tab", { name: /^League & Draft(?: ⚠)?$/ }).click();
+  await settings.getByRole("button", { name: "Management", exact: true }).click();
+  return settings.getByRole("button", { name: "Export CSV", exact: true });
 }
 
 test("paid export posts fictional projection numbers and downloads provider provenance", async ({ page }) => {
@@ -48,14 +56,10 @@ test("paid export posts fictional projection numbers and downloads provider prov
   page.once("dialog", (dialog) => dialog.accept());
   await page.goto("/draft-dashboard");
   await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
-  await page.getByRole("button", { name: "Setup", exact: true }).click();
-  await page.getByRole("button", { name: "Projections", exact: true }).click();
+  const exportCsv = await draftManagementExport(page);
   const downloadPromise = page.waitForEvent("download");
-  await page.getByTestId("export-settings-btn").click();
+  await exportCsv.click();
   const download = await downloadPromise;
-  const rows = requestPayload?.rows as Array<Record<string, unknown>>;
-  const exported = await readFile(await download.path(), "utf8");
-  expect(exported).toContain(`${rows[0].playerId},${rows[0].fullName},${Number(rows[0].fantasyPointsProjected).toFixed(1)},fixture-local-provenance`);
   expect(authorization).toMatch(/^Bearer eyJ/);
   expect(requestPayload).toMatchObject({
     season: expect.any(String),
@@ -65,6 +69,11 @@ test("paid export posts fictional projection numbers and downloads provider prov
     rows: expect.arrayContaining([expect.objectContaining({ playerId: 1001, fullName: "Fixture Center", fantasyPointsProjected: expect.any(Number) })]),
   });
   await expect(page.getByRole("alert").filter({ hasText: "Blended projections CSV downloaded." })).toBeVisible();
+  expect(download.suggestedFilename()).toBe("fhfhockey-blended-projections.csv");
+  expect(await download.failure()).toBeNull();
+  const rows = requestPayload?.rows as Array<Record<string, unknown>>;
+  const exported = await readFile(await download.path(), "utf8");
+  expect(exported).toContain(`${rows[0].playerId},${rows[0].fullName},${Number(rows[0].fantasyPointsProjected).toFixed(1)},fixture-local-provenance`);
 });
 
 test("position weights update valuation, survive reload, and become neutral without Pro", async ({ page }, testInfo) => {
@@ -128,10 +137,10 @@ test("inactive access blocks export and shows retained summaries while checkout 
   let eligible = true;
   let verificationCalls = 0;
   let exportRequests = 0;
-  let accessRequests = 0;
+  const servedEligibility: boolean[] = [];
   await installDraftProAuthenticatedFixtures(page, () => accountResponse(eligible));
   await page.route("**/api/v1/account/draft-pro", (route) => {
-    accessRequests += 1;
+    servedEligibility.push(eligible);
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: accountResponse(eligible) }) });
   });
   await page.route("**/api/v1/draft-pro/export", (route) => {
@@ -148,17 +157,18 @@ test("inactive access blocks export and shows retained summaries while checkout 
   await page.goto("/draft-dashboard");
   const players = page.locator("#mobile-draft-panel-players");
   await expect(players.locator("tbody tr").first()).toBeVisible({ timeout: 60_000 });
+  await expect.poll(() => servedEligibility).toContain(true);
   eligible = false;
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect.poll(() => accessRequests, { timeout: 15_000 }).toBeGreaterThan(1);
-  await page.getByRole("button", { name: "Setup", exact: true }).click({ timeout: 60_000 });
-  await page.getByRole("button", { name: "Projections", exact: true }).click();
-  await page.getByTestId("export-settings-btn").click();
+  await expect.poll(() => servedEligibility, { timeout: 15_000 }).toContain(false);
+  const exportCsv = await draftManagementExport(page);
+  await exportCsv.click();
   await expect(page.getByRole("alert").filter({ hasText: "Blended projections export is available with Draft Pro." })).toBeVisible();
   expect(exportRequests).toBe(0);
   await page.goto("/account?section=draft-pro&draft_pro_checkout=cs_test_fixture123");
   const panel = page.getByRole("region", { name: "Draft Pro" });
   await expect(panel.getByText("Inactive", { exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(panel.getByText(/^New Draft Pro purchases are closed\./)).toBeVisible();
   await expect(panel.getByText("Your retained Draft Pro work is locked while access is inactive.", { exact: false })).toBeVisible();
   await expect(panel.getByText("Retained fixture draft", { exact: true })).toBeVisible();
   await expect(panel.getByRole("button", { name: "Check purchase status again" })).toBeVisible({ timeout: 10_000 });
