@@ -292,9 +292,12 @@ describe("ProjectionsTable visibility diagnostics", () => {
   it("displays next-pick availability, with high availability marked green", () => {
     const early = { ...player(1, "Early", "C"), yahooAvgPick: 1 };
     const later = { ...player(2, "Later", "C"), yahooAvgPick: 100 };
-    render(<ProjectionsTable players={[early, later]} draftedPlayers={[]} nextPickNumber={50} selectionHorizon={{ currentPick: 1, targetPick: 50, opposingPicks: 49 }} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft />);
-    expect(screen.getByTitle("100% likely available at your next pick").className).toContain("riskLow");
-    expect(screen.getByTitle("0% likely available at your next pick").className).toContain("riskHigh");
+    const props = { players: [early, later], draftedPlayers: [], isLoading: false, error: null, onDraftPlayer: vi.fn(), canDraft: true };
+    const { rerender } = render(<ProjectionsTable {...props} selectionHorizon={{ currentPick: 1, targetPick: 50, opposingPicks: 49 }} />);
+    expect(screen.getByTitle("100% estimated available at your next pick").className).toContain("riskLow");
+    expect(screen.getByTitle("0% estimated available at your next pick").className).toContain("riskHigh");
+    rerender(<ProjectionsTable {...props} nextPickNumber={50} selectionHorizon={null} />);
+    expect(screen.queryByTitle(/estimated available at your next pick/)).toBeNull();
   });
   it("preserves projected decimals and exposes the unrounded source value", () => {
     const projected = player(8477492, "Nathan MacKinnon", "C");

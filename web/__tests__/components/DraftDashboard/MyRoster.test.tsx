@@ -71,6 +71,22 @@ it("shows full eligibility independently of assigned slots, including bench play
   expect(screen.getByTestId("schedule-overview-slot")).toBeTruthy();
 });
 
+it("shows a dash when the displayed current owner has no actionable pick", () => {
+  const props = {
+    myTeamId: "1", teamOptions: [{ id: "1", label: "Mine" }],
+    nextPickByTeam: {}, scheduleState: { status: "idle" }, currentPick: 3,
+    currentTurn: { teamId: "1", round: 2, pickInRound: 1, isMyTurn: true },
+    draftSettings: { teamCount: 2, rosterConfig: { RW: 1, bench: 1 } },
+    teamStatsList: [{ teamId: "1", projectedPoints: 0, rosterSlots: {}, bench: [] }],
+    allPlayers: [], availablePlayers: [], onDraftPlayer: vi.fn(), canDraft: false,
+  } as unknown as ComponentProps<typeof MyRoster>;
+  const { rerender } = render(<MyRoster {...props} />);
+  const summary = () => screen.getByText("Next pick", { exact: true }).parentElement?.textContent;
+  expect(summary()).toBe("Next pick—");
+  rerender(<MyRoster {...props} nextPickByTeam={{ "1": 3 }} />);
+  expect(summary()).toBe("Next pick3");
+});
+
 it("offers Utility only to a known skater on the roster being viewed", () => {
   const onMovePlayer = vi.fn();
   const props = {

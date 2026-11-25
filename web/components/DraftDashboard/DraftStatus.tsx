@@ -6,8 +6,8 @@ interface DraftStatusProps {
   currentPick: number;
   totalPicks: number;
   teamName: string;
-  nextPick: number;
-  picksUntilNext: number;
+  nextPick?: number;
+  picksUntilNext?: number;
 }
 
 export default function DraftStatus({
@@ -21,7 +21,7 @@ export default function DraftStatus({
 }: DraftStatusProps) {
   const complete = currentPick > totalPicks;
   const hasNextPick =
-    !complete && Number.isFinite(nextPick) && nextPick <= totalPicks;
+    !complete && typeof nextPick === "number" && Number.isFinite(nextPick) && nextPick <= totalPicks;
   return (
     <section className={styles.status} aria-label="Draft Status">
       <h2>Draft Graph</h2>
@@ -50,7 +50,7 @@ export default function DraftStatus({
         </div>
         <div aria-live="polite">
           <span aria-label="Picks until your turn">Until turn</span>
-          <strong>{hasNextPick ? picksUntilNext : "—"}</strong>
+          <strong>{hasNextPick ? picksUntilNext ?? "—" : "—"}</strong>
           {hasNextPick && picksUntilNext === 0 ? (
             <small className={styles.srOnly}>You’re on the clock</small>
           ) : null}

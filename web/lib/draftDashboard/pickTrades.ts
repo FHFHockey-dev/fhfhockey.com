@@ -236,52 +236,15 @@ export function resolvePickOwner({
   };
 }
 
-export function findPicksUntilTeamTurn({
-  currentPick,
-  teamId,
-  draftOrder,
-  orderPattern,
-  isSnakeDraft,
-  trades = [],
-  keepers = [],
-  completedPickNumbers = [],
-  teamRosterCounts = {},
-  rosterCapacity,
-  maxPickNumber
-}: {
-  currentPick: number;
-  teamId: string;
-  draftOrder: string[];
-  orderPattern?: DraftOrderPattern;
-  isSnakeDraft?: boolean;
-  trades?: PickTradeEntry[];
-  keepers?: KeeperEntry[];
-  completedPickNumbers?: Iterable<number>;
-  teamRosterCounts?: Readonly<Record<string, number>>;
-  rosterCapacity?: number;
-  maxPickNumber: number;
-}) {
-  const completed = new Set(completedPickNumbers);
-  for (let pickNumber = currentPick + 1; pickNumber <= maxPickNumber; pickNumber++) {
-    const round = Math.ceil(pickNumber / draftOrder.length);
-    const pickInRound = ((pickNumber - 1) % draftOrder.length) + 1;
-    const owner = resolvePickOwner({
-      round,
-      pickInRound,
-      draftOrder,
-      orderPattern,
-      isSnakeDraft,
-      trades,
-      keepers
-    }).currentTeamId;
-    const ownerHasCapacity =
-      rosterCapacity == null ||
-      (teamRosterCounts[owner] ?? 0) < rosterCapacity;
-    if (owner === teamId && ownerHasCapacity && !completed.has(pickNumber)) {
-      return pickNumber - currentPick;
-    }
-  }
-  return draftOrder.length;
+export function findPicksUntilTeamTurn(
+  input: Omit<Parameters<typeof findSelectionHorizon>[0], "onClock">
+) {
+  const horizon = findSelectionHorizon({
+    ...input,
+    currentPick: input.currentPick + 1,
+    onClock: false,
+  });
+  return horizon ? horizon.targetPick - input.currentPick : undefined;
 }
 
 export function findNextActionablePick({

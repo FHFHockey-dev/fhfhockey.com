@@ -2502,22 +2502,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     [draftSettings.draftOrder, customTeamNames],
   );
 
-  // Helper: compute picks until my next pick considering snake draft
+  // Expected position runs use this strictly future selection distance.
   const picksUntilNext = useMemo(() => {
     const teamCount = draftSettings.teamCount;
     if (!draftSettings.draftOrder.includes(myTeamId) || teamCount <= 0) {
       return teamCount;
     }
-    const remainingDraftSpan =
-      teamCount *
-      Math.max(
-        2,
-        Object.values(draftSettings.rosterConfig).reduce(
-          (sum, count) => sum + Number(count || 0),
-          0,
-        ),
-      );
-
+    const rosterCapacity = rosterRoundCount(draftSettings.rosterConfig);
     return findPicksUntilTeamTurn({
       currentPick,
       teamId: myTeamId,
@@ -2527,9 +2518,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       keepers: activeKeepers,
       completedPickNumbers: draftedPlayers.map((player) => player.pickNumber),
       teamRosterCounts,
-      rosterCapacity: rosterRoundCount(draftSettings.rosterConfig),
-      maxPickNumber: currentPick + remainingDraftSpan,
-    });
+      rosterCapacity,
+      maxPickNumber: teamCount * rosterCapacity,
+    }) ?? teamCount;
   }, [
     draftSettings.teamCount,
     draftSettings.draftOrder,
@@ -3853,10 +3844,26 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           ? "No goalie sources are enabled, and no skater players are available. Enable a goalie source or review the skater source status."
           : "No players found matching your filters.";
 
-  const nextPickNumber = useMemo(
-    () => currentPick + picksUntilNext,
-    [currentPick, picksUntilNext],
-  );
+  const nextPickByTeam = useMemo<Record<string, number | undefined>>(() => {
+    if (fantraxLiveActive) return fantraxReconciliation.nextPickByTeam;
+    const rosterCapacity = rosterRoundCount(draftSettings.rosterConfig);
+    const context = {
+      currentPick,
+      onClock: false,
+      draftOrder: draftSettings.draftOrder,
+      orderPattern: draftOrderPattern,
+      trades: effectivePickTrades,
+      keepers: activeKeepers,
+      completedPickNumbers: draftedPlayers.map((player) => player.pickNumber),
+      teamRosterCounts,
+      rosterCapacity,
+      maxPickNumber: draftSettings.teamCount * rosterCapacity,
+    };
+    return Object.fromEntries(draftSettings.draftOrder.map((teamId) => [
+      teamId, findSelectionHorizon({ ...context, teamId })?.targetPick,
+    ]));
+  }, [fantraxLiveActive, fantraxReconciliation.nextPickByTeam, currentPick, draftSettings.draftOrder, draftSettings.rosterConfig, draftSettings.teamCount, draftOrderPattern, effectivePickTrades, activeKeepers, draftedPlayers, teamRosterCounts]);
+  const nextPickNumber = nextPickByTeam[myTeamId];
 
   // --- CSV Export: server-formatted blended projections ---
   const exportBlendedProjectionsCsv = useCallback(async () => {
@@ -4579,8 +4586,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             teamName={
               customTeamNames[currentTurn.teamId] || currentTurn.teamId
             }
-            nextPick={currentTurn.isMyTurn ? currentPick : nextPickNumber}
-            picksUntilNext={currentTurn.isMyTurn ? 0 : picksUntilNext}
+            nextPick={nextPickNumber}
+            picksUntilNext={nextPickNumber == null ? undefined : nextPickNumber - currentPick}
           />
           <DraftBoard
             rankHistory={roundRankHistory}
@@ -4624,7 +4631,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             draftUnavailableReason={draftUnavailableReason}
             onSelectedTeamChange={setInspectedTeamId}
             viewRequest={rosterViewRequest}
-            nextPickByTeam={fantraxLiveActive ? fantraxReconciliation.nextPickByTeam : Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: effectivePickTrades, keepers: activeKeepers, completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
+            nextPickByTeam={nextPickByTeam}
             scheduleState={rosterScheduleOptimizer}
             myTeamId={myTeamId}
             teamStatsList={teamStats}

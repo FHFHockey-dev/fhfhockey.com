@@ -208,6 +208,18 @@ describe("pick trade contract", () => {
     ).toBe(4);
   });
 
+  it("reports no owned turn when remaining cells are traded, reserved, complete, or outside capacity", () => {
+    const forecast = { currentPick: 8, teamId: "Team 1", draftOrder: base.draftOrder, isSnakeDraft: false, maxPickNumber: 12, rosterCapacity: 3 };
+    expect(findPicksUntilTeamTurn(forecast)).toBe(1);
+    const traded = upsertPickTrade({ round: 3, pickInRound: 1, currentTeamId: "Team 2" }, { ...base, isSnakeDraft: false });
+    if (!traded.ok) throw new Error("fixture failed");
+    expect(findPicksUntilTeamTurn({ ...forecast, trades: traded.trades })).toBeUndefined();
+    expect(findPicksUntilTeamTurn({ ...forecast, keepers: [{ version: KEEPER_CONTRACT_VERSION, status: "valid", playerId: "k", teamId: "Team 1", cost: "pick", pickNumber: 9, round: 3, pickInRound: 1 }] })).toBeUndefined();
+    expect(findPicksUntilTeamTurn({ ...forecast, completedPickNumbers: [9] })).toBeUndefined();
+    expect(findPicksUntilTeamTurn({ ...forecast, teamRosterCounts: { "Team 1": 3 } })).toBeUndefined();
+    expect(findPicksUntilTeamTurn({ ...forecast, teamId: "removed" })).toBeUndefined();
+  });
+
   it("skips future cells owned by teams whose rosters are full", () => {
     expect(
       findNextActionablePick({

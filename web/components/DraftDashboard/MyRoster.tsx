@@ -35,7 +35,7 @@ interface MyRosterProps {
   viewRequest?: { teamId: string };
   schedulePeriod?: string;
   draftUnavailableReason?: string;
-  nextPickByTeam: Record<string, number>;
+  nextPickByTeam: Record<string, number | undefined>;
   scheduleState: RosterScheduleOptimizerState;
   myTeamId: string;
   teamStatsList: TeamDraftStats[]; // receive all teams
@@ -315,11 +315,9 @@ const MyRoster: React.FC<MyRosterProps> = ({
     return slotsCount + benchCount;
   }, [selectedTeamStats]);
 
-  const selectedNextPick = currentPlayerCount >= totalRosterSpots
-    ? Infinity
-    : currentTurn.teamId === selectedViewTeamId
-      ? currentPick
-      : nextPickByTeam[selectedViewTeamId];
+  const selectedNextPick = currentPlayerCount < totalRosterSpots
+    ? nextPickByTeam[selectedViewTeamId]
+    : undefined;
   const rosterDustPercent = Math.round(
     (scheduleState.baseline?.dustRate ?? 0) * 100,
   );
@@ -457,7 +455,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
           <div className={styles.summaryCard}>
             <div className={styles.summaryLabel}>Next pick</div>
             <div className={styles.summaryValue}>
-              {Number.isFinite(selectedNextPick) && selectedNextPick <= totalRosterSpots * draftSettings.teamCount ? selectedNextPick : "—"}
+              {typeof selectedNextPick === "number" && Number.isFinite(selectedNextPick) && selectedNextPick <= totalRosterSpots * draftSettings.teamCount ? selectedNextPick : "—"}
             </div>
           </div>
         </div>

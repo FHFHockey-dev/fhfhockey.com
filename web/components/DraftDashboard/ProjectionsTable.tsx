@@ -1951,7 +1951,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               >
                 <span
                   aria-label="Compare column header"
-                  title="Select players (checkboxes) then click Open to compare. AVL%: green high, yellow medium, red low probability of remaining available at your next pick."
+                  title="Select players (checkboxes) then click Open to compare. AVL%: green high, yellow medium, red low estimated probability of remaining available at your next pick."
                 >
                   COMP.
                 </span>
@@ -2462,7 +2462,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       title={
                         riskPct == null
                           ? undefined
-                          : `${riskPct}% likely available at your next pick`
+                          : `${riskPct}% estimated available at your next pick`
                       }
                     >
                       {riskPct == null ? "-" : `${riskPct}%`}
