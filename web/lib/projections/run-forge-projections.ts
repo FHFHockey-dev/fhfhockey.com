@@ -943,16 +943,42 @@ function forgeGoalieStageArgs(base: ForgeStageBase, metrics: { warnings: string[
   };
 }
 
-/** The target game's stored PBP and shift-chart completeness, read exactly as the writer reads them. */
-async function readForgeGameCompleteness(gameId: number, metrics: Record<string, any>) {
-  const pbpComplete = await hasCompleteStoredPbpGame(gameId);
-  if (!pbpComplete) {
-    metrics.data_quality.missing_pbp_games += 1;
-  } else if (
-    (await classifyStoredShiftChartStrengthGame({ gameId }))
-      .status !== "complete"
-  ) {
-    metrics.data_quality.missing_shift_totals += 1;
+/**
+ * Stored PBP and shift-chart completeness of each slate team's previous game, read the same way by the writer and the
+ * native-input collector. The previous game is the team's newest game before both the target date and the Eastern
+ * date of the information cutoff, so a forward-dated run checks games already played. (Audit L1: the target game
+ * itself is always pregame, so checking it counted every game.) A game shared by two slate teams is checked once.
+ */
+async function readForgeGameCompleteness(
+  game: GameRow,
+  decisionAsOf: string,
+  checkedGameIds: Set<number>,
+  metrics: Record<string, any>,
+) {
+  const cutoffDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date(decisionAsOf));
+  const beforeDate = game.date < cutoffDate ? game.date : cutoffDate;
+  for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+    const { data, error } = await supabase
+      .from("games")
+      .select("id,date")
+      .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
+      .lt("date", beforeDate)
+      .order("date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    const previousGameId = Number((data as { id?: unknown } | null)?.id);
+    if (!Number.isSafeInteger(previousGameId) || previousGameId <= 0 || checkedGameIds.has(previousGameId)) continue;
+    checkedGameIds.add(previousGameId);
+    if (!(await hasCompleteStoredPbpGame(previousGameId))) {
+      metrics.data_quality.missing_pbp_games += 1;
+      metrics.warnings.push(`previous game ${previousGameId} of team=${teamId} (before game=${game.id}) has no complete stored PBP`);
+    } else if ((await classifyStoredShiftChartStrengthGame({ gameId: previousGameId })).status !== "complete") {
+      metrics.data_quality.missing_shift_totals += 1;
+      metrics.warnings.push(`previous game ${previousGameId} of team=${teamId} (before game=${game.id}) has incomplete stored shift totals`);
+    }
   }
 }
 
@@ -977,9 +1003,10 @@ export async function loadForgeNativeInputs(asOfDate: string, opts: {
   const runCaches = createForgeRunCaches();
   const skaterRollout = resolveSkaterRolloutConfig();
   const skaters = new Set<number>(), goalies = new Set<number>(), reserves = new Set<number>();
+  const completenessCheckedGameIds = new Set<number>();
   for (const game of (preflight.games ?? []) as GameRow[]) {
     if (Date.now() > opts.deadlineMs) throw new Error("FORGE native input collection passed its deadline.");
-    await readForgeGameCompleteness(game.id, metrics);
+    await readForgeGameCompleteness(game, opts.decisionAsOf, completenessCheckedGameIds, metrics);
     const gameCaches = createForgeGameCaches();
     const base: ForgeStageBase = {
       asOfDate, runId: "native-input-collection", horizonGames: 1, game, deadlineMs: opts.deadlineMs,
@@ -1201,6 +1228,7 @@ async function runProjectionCalculations(
     // only while the slowest game so far still fits before the deadline. The
     // deadline then bounds when games end, not just when they start.
     let slowestGameMs = 0;
+    const completenessCheckedGameIds = new Set<number>();
     gamesLoop: for (const game of pendingGames) {
       const gameStartedAt = Date.now();
       if (gameStartedAt > deadlineMs || (claim && gameStartedAt + slowestGameMs > deadlineMs)) {
@@ -1210,7 +1238,7 @@ async function runProjectionCalculations(
       // Ownership is re-confirmed at each game and stage boundary (a no-op
       // outside a claimed run); each write checks only the lease deadline.
       await assertRunStillOwned();
-      await readForgeGameCompleteness(game.id, metrics);
+      await readForgeGameCompleteness(game, opts?.decisionAsOf ?? new Date().toISOString(), completenessCheckedGameIds, metrics);
 
       // Removed: const lineCombos = await fetchLineCombinations(game.id);
       // We now fetch per-team latest LCs inside the loop.
