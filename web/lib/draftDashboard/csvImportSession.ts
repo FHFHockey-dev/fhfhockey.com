@@ -45,10 +45,32 @@ function parseList(raw: string | null): SessionCsvEntry[] {
   }
 }
 
+export function findDuplicateCustomCsvId(entries: readonly Pick<SessionCsvEntry, "id">[]) {
+  const ids = new Set<string>();
+  for (const { id } of entries) {
+    if (ids.has(id)) return id;
+    ids.add(id);
+  }
+}
+
+export function createCustomCsvId(
+  entries: readonly Pick<SessionCsvEntry, "id">[],
+  randomId: () => string = () =>
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`,
+): string {
+  const existingIds = new Set(entries.map((entry) => entry.id));
+  let id = `custom_csv_${randomId()}`;
+  while (existingIds.has(id)) id = `custom_csv_${randomId()}`;
+  return id;
+}
+
 export function saveCustomCsvSession(
   entries: SessionCsvEntry[],
   storage: Pick<Storage, "setItem"> = window.sessionStorage
 ) {
+  const duplicateId = findDuplicateCustomCsvId(entries);
+  if (duplicateId) throw new Error(`Duplicate projection CSV source ID "${duplicateId}".`);
   storage.setItem(CUSTOM_CSV_SESSION_KEY, JSON.stringify(entries));
 }
 
@@ -56,8 +78,23 @@ export function loadCustomCsvSession(
   storage: Pick<Storage, "getItem" | "setItem" | "removeItem"> =
     window.sessionStorage
 ): SessionCsvEntry[] {
-  const current = parseList(storage.getItem(CUSTOM_CSV_SESSION_KEY));
-  if (current.length) return current;
+  const result = loadCustomCsvSessionResult(storage);
+  if ("duplicateId" in result) {
+    throw new Error(`Duplicate projection CSV source ID "${result.duplicateId}".`);
+  }
+  return result.entries;
+}
+
+export function loadCustomCsvSessionResult(
+  storage: Pick<Storage, "getItem" | "setItem" | "removeItem"> =
+    window.sessionStorage
+): { entries: SessionCsvEntry[] } | { duplicateId: string } {
+  const currentRaw = storage.getItem(CUSTOM_CSV_SESSION_KEY);
+  const current = parseList(currentRaw);
+  const currentDuplicateId = findDuplicateCustomCsvId(current);
+  if (currentDuplicateId) return { duplicateId: currentDuplicateId };
+  // An explicitly emptied current list supersedes legacy data.
+  if (current.length || currentRaw === "[]") return { entries: current };
 
   const legacyList = parseList(storage.getItem("draft.customCsvList.v2"));
   let migrated = legacyList;
@@ -79,9 +116,11 @@ export function loadCustomCsvSession(
     }
   }
 
+  const migratedDuplicateId = findDuplicateCustomCsvId(migrated);
+  if (migratedDuplicateId) return { duplicateId: migratedDuplicateId };
   if (migrated.length) saveCustomCsvSession(migrated, storage);
   for (const key of LEGACY_CUSTOM_CSV_SESSION_KEYS) storage.removeItem(key);
-  return migrated;
+  return { entries: migrated };
 }
 
 export function clearCustomCsvSession(

@@ -1,4 +1,4 @@
-import { CUSTOM_CSV_SESSION_KEY, type SessionCsvEntry } from "./csvImportSession";
+import { CUSTOM_CSV_SESSION_KEY, findDuplicateCustomCsvId, type SessionCsvEntry } from "./csvImportSession";
 import type { ProjectionSourceControls } from "./sourceControlPreferences";
 import type { DraftCustomSourceMetadata } from "./summaryConfiguration";
 
@@ -42,13 +42,15 @@ export function persistRecoveredDraft(
   entries: SessionCsvEntry[],
   snapshot?: string,
   storage: Pick<Storage, "getItem" | "setItem" | "removeItem"> = window.sessionStorage,
+  replaceDuplicateCsv = false,
 ) {
+  if (findDuplicateCustomCsvId(entries)) return false;
   let previousCsv: string | null = null;
   let csvWritten = false;
   try {
     previousCsv = storage.getItem(CUSTOM_CSV_SESSION_KEY);
     const csv = JSON.stringify(entries);
-    const csvChanged = csv !== (previousCsv ?? "[]");
+    const csvChanged = csv !== (previousCsv ?? "[]") || (replaceDuplicateCsv && previousCsv === null);
     if (csvChanged) {
       storage.setItem(CUSTOM_CSV_SESSION_KEY, csv);
       csvWritten = true;
@@ -63,5 +65,27 @@ export function persistRecoveredDraft(
       } catch {}
     }
     return false;
+  }
+}
+
+export function clearDraftStorage(
+  targets: ReadonlyArray<readonly [Pick<Storage, "getItem" | "setItem" | "removeItem">, readonly string[]]>,
+) {
+  const saved = targets.flatMap(([storage, keys]) =>
+    keys.map((key) => ({ storage, key, value: storage.getItem(key) })),
+  );
+  const removed: typeof saved = [];
+  try {
+    for (const entry of saved) {
+      entry.storage.removeItem(entry.key);
+      if (entry.value !== null) removed.push(entry);
+    }
+  } catch (error) {
+    for (const { storage, key, value } of removed) {
+      try {
+        if (value !== null) storage.setItem(key, value);
+      } catch {}
+    }
+    throw error;
   }
 }

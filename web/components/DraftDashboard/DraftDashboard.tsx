@@ -87,11 +87,14 @@ import EspnLeagueSettingsPanel, {
 import type { EspnConnectionLeague } from "lib/integrations/espn/contracts";
 import { mapUserSettingsRowToLeagueSettings } from "lib/user-settings/mappers";
 import {
-  clearCustomCsvSession,
-  loadCustomCsvSession,
+  CUSTOM_CSV_SESSION_KEY,
+  LEGACY_CUSTOM_CSV_SESSION_KEYS,
+  createCustomCsvId,
+  findDuplicateCustomCsvId,
+  loadCustomCsvSessionResult,
   type SessionCsvEntry,
 } from "lib/draftDashboard/csvImportSession";
-import { persistRecoveredDraft, recoverCustomCsvEntries, type BookmarkImportResult } from "lib/draftDashboard/recovery";
+import { clearDraftStorage, persistRecoveredDraft, recoverCustomCsvEntries, type BookmarkImportResult } from "lib/draftDashboard/recovery";
 import {
   createDefaultSourceControls,
   loadSourceControlPreferences,
@@ -466,6 +469,12 @@ function forwardGroupingForRoster(rosterConfig: Record<string, number>) {
   return null;
 }
 
+type DraftSnapshotSource = "tab" | "device";
+
+function readDraftSnapshot(source: DraftSnapshotSource) {
+  return source === "tab" ? sessionStorage.getItem("draft.snapshot.v2") : localStorage.getItem("draftDashboard.session.v1");
+}
+
 const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { enabled: false, collection: false, board: false } }) => {
   const [mockOpen, setMockOpen] = useState(false);
   const { user, isLoading: authLoading } = useAuth();
@@ -605,8 +614,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const [needAlpha, setNeedAlpha] = useState<number>(0.5);
   // Guard to ensure we don't overwrite saved session before offering resume
   const [sessionReady, setSessionReady] = React.useState(false);
-  const recoveryBlockedRef = React.useRef<"tab" | "device" | null>(null);
-  const [recoveryFailure, setRecoveryFailure] = useState<{ source: "tab" | "device"; message: string } | null>(null);
+  const recoveryBlockedRef = React.useRef<DraftSnapshotSource | "csv" | null>(null);
+  const [recoveryFailure, setRecoveryFailure] = useState<{ source: DraftSnapshotSource | "csv"; message: string } | null>(null);
+  const [csvRecoverySources, setCsvRecoverySources] = useState<DraftSnapshotSource[]>([]);
   const snapshotResumeAttemptedRef = React.useRef(false);
   const legacyResumeAttemptedRef = React.useRef(false);
   const snapshotWasPresentRef = React.useRef(false);
@@ -737,6 +747,16 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const getCsvList = useCallback(() => customCsvList, [customCsvList]);
   const setCsvList = useCallback((next: SessionCsvEntry[]) => {
     if (typeof window === "undefined") return false;
+    if (recoveryBlockedRef.current === "csv") {
+      setSettingsOpen(true);
+      return false;
+    }
+    const duplicateId = findDuplicateCustomCsvId(next);
+    if (duplicateId) {
+      setCustomCsvSessionError(`Duplicate projection CSV source ID "${duplicateId}". Remove the conflicting source or reimport its original CSV, then try again.`);
+      setSettingsOpen(true);
+      return false;
+    }
     if (!persistRecoveredDraft(next)) {
       setCustomCsvSessionError("Could not save imported projections in this tab. The current draft has not changed.");
       return false;
@@ -745,12 +765,6 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     setCustomCsvSessionError(null);
     return true;
   }, []);
-  useEffect(() => {
-    if (csvSessionLoadedRef.current) return;
-    csvSessionLoadedRef.current = true;
-    setCustomCsvList(loadCustomCsvSession());
-  }, []);
-
   // Snapshot V2 will be defined after dependent state declarations
 
   // Projection Data Setup
@@ -1021,7 +1035,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     favoriteIds,
   ]);
 
-  const prepareSnapshot = useCallback((snap: DraftSnapshotV2) => {
+  const prepareSnapshot = useCallback((snap: DraftSnapshotV2, replaceDuplicateCsv = false) => {
     if (!isSnapshotRecord(snap) || snap.v !== 2) throw new Error("Unsupported draft snapshot.");
     if (!isSnapshotRecord(snap.draftSettings) || !isDraftSettings({ ...DEFAULT_DRAFT_SETTINGS, ...snap.draftSettings }) || !Number.isInteger(snap.draftSettings.teamCount) || snap.draftSettings.teamCount < 1) throw new Error("Saved draft settings are invalid.");
     if (snap.draftHistory !== undefined) {
@@ -1064,7 +1078,15 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           ),
         },
       );
-      const customCsvList = recoverCustomCsvEntries({ ...snap, customCsvList: snap.customCsvList === undefined ? undefined : restoredRows.customCsvList }, loadCustomCsvSession());
+      const csvSession = loadCustomCsvSessionResult();
+      const replacesDuplicateCsv = "duplicateId" in csvSession;
+      if (replacesDuplicateCsv && !replaceDuplicateCsv) {
+        throw new Error(`Duplicate projection CSV source ID "${csvSession.duplicateId}".`);
+      }
+      const customCsvList = recoverCustomCsvEntries(
+        { ...snap, customCsvList: snap.customCsvList === undefined ? undefined : restoredRows.customCsvList },
+        replacesDuplicateCsv ? [] : csvSession.entries
+      );
       const customSourceIds = customCsvList.map((entry) => entry.id);
       const restoredSourceControls = sanitizeControls(sourceControlDefaults.skater, snap.sourceControls, customSourceIds);
       const restoredGoalieSourceControls = sanitizeControls(sourceControlDefaults.goalie, snap.goalieSourceControls, customSourceIds);
@@ -1092,7 +1114,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         notes: [...(snap.notes ?? [])], tiers: snap.tiers ?? {}, fantraxLeagueOverride: snap.fantraxLeagueOverride ?? null,
         espnLeagueOverride: snap.espnLeagueOverride ?? null, preserveExactCategoryWeights, configured: snap.configured !== false,
       };
-      return { browser, apply: () => {
+      return { browser, replacesDuplicateCsv, apply: () => {
         recoveryBlockedRef.current = null;
         setRecoveryFailure(null);
         setSettingsSaveError(null);
@@ -1126,35 +1148,61 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       } };
   }, [favoriteIds, sourceControlDefaults]);
 
-  const blockRecovery = useCallback((source: "tab" | "device", message: string) => {
+  const blockRecovery = useCallback((source: DraftSnapshotSource | "csv", message: string) => {
     // Mark the guard synchronously: later mount effects must not save defaults.
     recoveryBlockedRef.current = source;
     setRecoveryFailure({ source, message });
+    if (source === "csv" && !manualDraftingEnabled) return;
     restoredLeagueSettingsRef.current = true;
     setSettingsConfigured(false);
     setSettingsSection("league");
     setFullSettings(true);
     setSettingsOpen(true);
-  }, []);
+  }, [manualDraftingEnabled]);
 
-  const resumeSavedDraft = useCallback((source: "tab" | "device") => {
-    if (typeof window === "undefined") return false;
+  useEffect(() => {
+    if (csvSessionLoadedRef.current) return;
+    csvSessionLoadedRef.current = true;
     try {
-      const raw = source === "tab" ? sessionStorage.getItem("draft.snapshot.v2") : localStorage.getItem("draftDashboard.session.v1");
+      const csvSession = loadCustomCsvSessionResult();
+      if ("duplicateId" in csvSession) {
+        setCsvRecoverySources((["tab", "device"] as const).filter((source) => {
+          try { return Boolean(readDraftSnapshot(source)); }
+          catch { return false; }
+        }));
+        blockRecovery("csv", `Duplicate projection CSV source ID "${csvSession.duplicateId}". Your saved data is retained. Restore a saved draft if available, import a valid draft bookmark, or confirm Start New Draft and reimport your original CSVs.`);
+        return;
+      }
+      setCustomCsvList(csvSession.entries);
+    } catch {
+      blockRecovery("csv", "Could not access saved projection CSVs. Your saved draft is retained. Restore browser storage access and reload to retry.");
+    }
+  }, [blockRecovery]);
+
+  const resumeSavedDraft = useCallback((source: DraftSnapshotSource, replaceDuplicateCsv = false) => {
+    if (typeof window === "undefined") return false;
+    const fail = (message: string) => {
+      if (replaceDuplicateCsv) setSettingsSaveError(message);
+      else blockRecovery(source, message);
+      return false;
+    };
+    try {
+      const raw = readDraftSnapshot(source);
       if (!raw) throw new Error("Saved draft unavailable.");
       const saved = JSON.parse(raw);
       if (!isSnapshotRecord(saved)) throw new Error("Saved draft is invalid.");
-      const prepared = prepareSnapshot(source === "tab" ? saved as DraftSnapshotV2 : { ...saved, v: 2 } as DraftSnapshotV2);
-      if (!persistRecoveredDraft(prepared.browser.customCsvList as SessionCsvEntry[])) {
-        blockRecovery(source, "Could not save imported projections in this tab. Your saved draft is retained and automatic saving is paused. Free browser storage, then retry recovery, import a valid bookmark, or confirm Start New Draft.");
-        return false;
+      const prepared = prepareSnapshot(source === "tab" ? saved as DraftSnapshotV2 : { ...saved, v: 2 } as DraftSnapshotV2, replaceDuplicateCsv);
+      const snapshot = replaceDuplicateCsv
+        ? JSON.stringify({ ...saved, ...prepared.browser, ts: Date.now() })
+        : undefined;
+      if (!persistRecoveredDraft(prepared.browser.customCsvList as SessionCsvEntry[], snapshot, undefined, prepared.replacesDuplicateCsv)) {
+        return fail("Could not save imported projections in this tab. Your saved draft is retained and automatic saving is paused. Free browser storage, then retry recovery, import a valid bookmark, or confirm Start New Draft.");
       }
       prepared.apply();
       sessionResumedRef.current = true;
       return true;
     } catch {
-      blockRecovery(source, "Could not read the saved draft. Its original data is retained and automatic saving is paused. Retry recovery, import a valid bookmark, or confirm Start New Draft.");
-      return false;
+      return fail("Could not read the saved draft. Its original data is retained and automatic saving is paused. Retry recovery, import a valid bookmark, or confirm Start New Draft.");
     }
   }, [blockRecovery, prepareSnapshot]);
 
@@ -1197,8 +1245,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       const incoming = adaptBrowserSnapshot(validated);
       const imports = toNormalizedPrivateImports(incoming.customCsvList);
       const restored = restoreBrowserSnapshot(serialized, imports);
-      const prepared = prepareSnapshot(adaptBrowserSnapshot(restored));
-      if (!persistRecoveredDraft(prepared.browser.customCsvList as SessionCsvEntry[], JSON.stringify({ ...prepared.browser, ts: Date.now() }))) return false;
+      const prepared = prepareSnapshot(adaptBrowserSnapshot(restored), true);
+      if (!persistRecoveredDraft(
+        prepared.browser.customCsvList as SessionCsvEntry[],
+        JSON.stringify({ ...prepared.browser, ts: Date.now() }),
+        undefined,
+        prepared.replacesDuplicateCsv,
+      )) return false;
       prepared.apply();
       return prepared.browser;
     } catch {
@@ -1208,6 +1261,23 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
 
   const startNewDraftSession = useCallback(() => {
     if (!manualDraftingEnabled) return;
+    try {
+      clearDraftStorage([
+        [window.localStorage, [
+          "draftDashboard.session.v1", "draft.sourceControls.v4", "draft.sourceControls.v3", "draft.sourceControls.v2",
+          "draftDashboard.forwardGrouping.v1", "draftDashboard.personalizeReplacement.v1", "draftDashboard.baselineMode",
+          "draftDashboard.needWeight.v1", "draftDashboard.needAlpha.v1", "projections.prorate84", "projections.prorate82",
+          "projections.riskSd",
+        ]],
+        [window.sessionStorage, [
+          "draft.snapshot.v2", "draft.snapshot.v4", "draft.resume.declined",
+          CUSTOM_CSV_SESSION_KEY, ...LEGACY_CUSTOM_CSV_SESSION_KEYS,
+        ]],
+      ]);
+    } catch {
+      setSettingsSaveError("Could not clear the saved draft in this browser. Restore browser storage access, then try again.");
+      return;
+    }
     freshSessionRef.current = true;
     restoredLeagueSettingsRef.current = true;
     manualLeagueSettingsDirtyRef.current = true;
@@ -1249,16 +1319,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     setFullSettings(true);
     setSettingsOpen(true);
     setDataRefreshKey((key) => key + 1);
-    try {
-      for (const key of ["draftDashboard.session.v1", "draft.sourceControls.v4", "draft.sourceControls.v3", "draft.sourceControls.v2", "draftDashboard.forwardGrouping.v1", "draftDashboard.personalizeReplacement.v1", "draftDashboard.baselineMode", "draftDashboard.needWeight.v1", "draftDashboard.needAlpha.v1", "projections.prorate84", "projections.prorate82", "projections.riskSd"]) window.localStorage.removeItem(key);
-      for (const key of ["draft.snapshot.v2", "draft.snapshot.v4", "draft.resume.declined"]) window.sessionStorage.removeItem(key);
-      clearCustomCsvSession();
-      window.dispatchEvent(new CustomEvent("projections:prorate84", { detail: { value: false } }));
-      recoveryBlockedRef.current = null;
-      setRecoveryFailure(null);
-    } catch {
-      setSettingsSaveError("Could not clear the saved draft in this browser. Free browser storage before starting a new draft.");
-    }
+    recoveryBlockedRef.current = null;
+    setRecoveryFailure(null);
+    window.dispatchEvent(new CustomEvent("projections:prorate84", { detail: { value: false } }));
   }, [manualDraftingEnabled, sourceControlDefaults]);
 
   // On mount: offer to resume snapshot
@@ -1271,9 +1334,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       if (draftMode === "yahoo") {
         restoredLeagueSettingsRef.current = true;
         setSettingsConfigured(true);
-        if (raw) resumeSavedDraft("tab");
+        if (raw && recoveryBlockedRef.current !== "csv") resumeSavedDraft("tab");
         return;
       }
+      if (recoveryBlockedRef.current === "csv") return;
       if (raw) {
         snapshotWasPresentRef.current = true;
         const ok = window.confirm("Resume your last Draft Dashboard session?");
@@ -1533,7 +1597,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     if (typeof window === "undefined") return;
     if (legacyResumeAttemptedRef.current) return; // prevent double-run in StrictMode
     legacyResumeAttemptedRef.current = true;
-    if (draftMode === "yahoo" || snapshotWasPresentRef.current) {
+    if (draftMode === "yahoo" || snapshotWasPresentRef.current || recoveryBlockedRef.current === "csv") {
       setSessionReady(true);
       return;
     }
@@ -2890,11 +2954,14 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     return true;
   };
 
+  const canMakeManualPick = manualDraftingEnabled && settingsConfigured &&
+    settingsValidation.valid && recoveryFailure?.source !== "csv";
+
   // Draft a player - Updated to track history for undo and prevent drafting beyond completion
   const draftPlayer = useCallback(
     (playerId: string) => {
       if (!manualDraftingEnabled) return;
-      if (!settingsConfigured || !settingsValidation.valid) { openSettings("league"); return; }
+      if (recoveryBlockedRef.current === "csv" || !settingsConfigured || !settingsValidation.valid) { openSettings("league"); return; }
       // Prevent drafting beyond completion; open summary instead
       if (draftComplete) {
         setIsSummaryOpen(true);
@@ -3003,7 +3070,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
 
   // Add reset draft functionality
   const resetDraft = useCallback(() => {
-    if (!manualDraftingEnabled) return;
+    if (!manualDraftingEnabled || recoveryBlockedRef.current === "csv") return;
     setSettingsConfigured(false);
     setSettingsOpen(true);
     setFullSettings(true);
@@ -3718,7 +3785,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             isLoading={isLoading}
             error={errorMessage}
             onDraftPlayer={draftPlayer}
-            canDraft={manualDraftingEnabled && settingsConfigured && settingsValidation.valid}
+            canDraft={canMakeManualPick}
             draftProEligible={draftProEligible}
             adpSource={adpSource}
             positionSource={positionSource}
@@ -3774,7 +3841,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   ), [
     myPickWindows, currentSeasonId, tableAvailablePlayers, tableAllPlayers, draftedPlayers,
     unavailablePlayerIds, isLoading, errorMessage, draftPlayer,
-    manualDraftingEnabled, settingsConfigured, settingsValidation.valid, draftProEligible, adpSource, positionSource, fantraxLeagueEligibilityAvailable, fantraxPlayerDataLoaded,
+    manualDraftingEnabled, canMakeManualPick, draftProEligible, adpSource, positionSource, fantraxLeagueEligibilityAvailable, fantraxPlayerDataLoaded,
     personalRankByPlayerId, vorpMetrics, replacementByPos, referenceLabel, referenceLabel, baselineMode,
     expectedTakenByPos, expectedN, needWeightEnabled, posNeeds, needAlpha,
     selectionHorizon, availabilitySpread, updateAvailabilitySpread, nextPickNumber, draftSettings.leagueType, draftSettings.categoryWeights,
@@ -3784,6 +3851,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     skaterData.inclusionDiagnostics, goalieData.inclusionDiagnostics,
     draftSchedule.playerMetrics, tableDataNotices, fantraxSourceNotice, canUseProDust, draftProDustInsights, projectionEmptyStateMessage, setFavoriteIds, canUseProScenarios, openRosterImpact,
   ]);
+
+  const retrySnapshotSource = recoveryFailure?.source;
 
   return (
     <main
@@ -3812,6 +3881,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         enabled={canProviderSync && yahooDraftSync.enabled && !espnLiveActive}
         onReview={() => { openSettings("integrations"); void yahooDraftSync.refreshAccount(); }}
       />
+      {!settingsOpen && recoveryFailure?.source === "csv" && (
+        <p role="status" className={styles.warningBanner}>{recoveryFailure.message}</p>
+      )}
       <DraftSettingsShell
         settings={draftSettings}
         sourceControls={sourceControls}
@@ -3821,7 +3893,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         configured={settingsConfigured}
         draftProEligible={draftProEligible}
         validation={settingsValidation}
-        saveError={recoveryFailure?.message || settingsSaveError || customCsvSessionError}
+        saveError={recoveryFailure?.source === "csv"
+          ? [recoveryFailure.message, settingsSaveError].filter(Boolean).join(" ")
+          : recoveryFailure?.message || settingsSaveError || customCsvSessionError}
         onToggle={() => { setSettingsOpen(false); setFullSettings(false); setIsSummaryOpen(true); }}
         onClose={() => { setSettingsOpen(false); setFullSettings(false); }}
         onFullSetup={() => setFullSettings(true)}
@@ -3837,7 +3911,16 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           if (section === "reports") setReportsMounted(true);
         }}
       >
-      {recoveryFailure && <button type="button" disabled={!manualDraftingEnabled} onClick={() => resumeSavedDraft(recoveryFailure.source)}>Retry saved draft recovery</button>}
+      {retrySnapshotSource && retrySnapshotSource !== "csv" && (
+        <button type="button" disabled={!manualDraftingEnabled} onClick={() => resumeSavedDraft(retrySnapshotSource)}>
+          Retry saved draft recovery
+        </button>
+      )}
+      {retrySnapshotSource === "csv" && manualDraftingEnabled && csvRecoverySources.map((source) => (
+        <button type="button" key={source} onClick={() => resumeSavedDraft(source, true)}>
+          {source === "tab" ? "Restore saved tab draft" : "Restore saved device draft"}
+        </button>
+      ))}
       <div
         id="mobile-draft-panel-setup"
         className={styles.setupPanel}
@@ -3974,10 +4057,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
               fantraxLeagueOverride: data.fantraxLeagueOverride ?? null, espnLeagueOverride: data.espnLeagueOverride ?? null,
               preserveExactCategoryWeights: data.preserveExactCategoryWeights,
               prorate84: data.prorate84 ?? false, riskSd: data.riskSd ?? 12, configured: true,
-            } as DraftSnapshotV2);
+            } as DraftSnapshotV2, true);
             const rows = prepared.browser.customCsvList as SessionCsvEntry[];
             const snapshot = JSON.stringify({ ...prepared.browser, ts: Date.now(), prorate84: data.prorate84 ?? false, riskSd: data.riskSd ?? 12 });
-            if (!persistRecoveredDraft(rows, snapshot)) return { status: "failed", message: "Could not save this bookmark in this tab. The current draft has not changed. Free browser storage, then retry." };
+            if (!persistRecoveredDraft(rows, snapshot, undefined, prepared.replacesDuplicateCsv)) return { status: "failed", message: "Could not save this bookmark in this tab. The current draft has not changed. Free browser storage, then retry." };
             prepared.apply();
             setSettingsSaveError(null);
             setDataRefreshKey((key) => key + 1);
@@ -4244,7 +4327,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           baselineMode={baselineMode}
           nextPickNumber={nextPickNumber}
           onDraftPlayer={(id) => draftPlayer(id)}
-          canDraft={manualDraftingEnabled && settingsConfigured && settingsValidation.valid}
+          canDraft={canMakeManualPick}
           personalRankByPlayerId={personalRankByPlayerId}
           leagueType={draftSettings.leagueType || "points"}
           catNeeds={catNeeds}
@@ -4359,7 +4442,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             allPlayers={allPlayers}
             onDraftPlayer={(id) => draftPlayer(id)}
             onMovePlayer={assignPlayerToSlot}
-            canDraft={manualDraftingEnabled && settingsConfigured && settingsValidation.valid}
+            canDraft={canMakeManualPick}
             currentPick={currentPick}
             currentTurn={currentTurn}
             teamOptions={teamOptions}
@@ -4443,10 +4526,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           }));
         }}
         onImported={({ headers, rows, playerType, label, resolution }) => {
-          // Append to list with incremental id custom_csv_1..n
           const list = getCsvList();
-          const nextIndex = Math.max(0, ...list.map((entry) => Number(entry.id.replace("custom_csv_", "")) || 0)) + 1;
-          const id = reimportSourceId ?? `custom_csv_${nextIndex}`;
+          const id = reimportSourceId ?? createCustomCsvId(list);
           const next = [
             ...list.filter((entry) => entry.id !== id),
             {

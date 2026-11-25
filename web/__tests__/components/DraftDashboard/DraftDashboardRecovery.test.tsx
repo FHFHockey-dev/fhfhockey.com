@@ -172,6 +172,154 @@ it("keeps the previous draft on failed import, reports failure, and accepts a re
   expect(JSON.parse(sessionStorage.getItem("draft.customCsvList.v3")!)[0]).toEqual(csv);
 });
 
+it.each(["draft.customCsvList.v3", "draft.customCsvList.v2"])(
+  "holds ambiguous CSVs in %s until an explicit replacement is durably saved",
+  async (key) => {
+    const raw = JSON.stringify([csv, { ...csv, label: "Conflicting source" }]);
+    const priorTab = JSON.stringify(snapshot());
+    const priorDevice = JSON.stringify({ ...snapshot(), currentPick: 3 });
+    sessionStorage.setItem(key, raw);
+    sessionStorage.setItem("draft.snapshot.v2", priorTab);
+    localStorage.setItem("draftDashboard.session.v1", priorDevice);
+
+    const view = render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
+    await waitFor(() => expect(dialog().textContent).toContain(`Duplicate projection CSV source ID "${csv.id}"`));
+    expect(dialog().textContent).toContain("import a valid draft bookmark");
+    expect((screen.getByRole("button", { name: "Draft recovery player", hidden: true }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(within(dialog()).getByRole("button", { name: "Done" }));
+    management();
+    fireEvent.click(screen.getByRole("button", { name: "Start New Draft" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel New Draft" }));
+
+    const setItem = Storage.prototype.setItem;
+    let rejectSnapshot = true;
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, storageKey, value) {
+      if (rejectSnapshot && this === sessionStorage && storageKey === "draft.snapshot.v2") throw new DOMException("quota", "QuotaExceededError");
+      return setItem.call(this, storageKey, value);
+    });
+    importBookmark({ ...bookmark(), customCsvList: [], customSourceMetadata: [], sourceControls: { dtz_skaters: { isSelected: true, weight: 1 } } });
+    expect(dialog().textContent).toContain("The current draft has not changed");
+    expect(dialog().textContent).toContain("Duplicate projection CSV source ID");
+    expect(sessionStorage.getItem(key)).toBe(raw);
+    expect(sessionStorage.getItem("draft.customCsvList.v3")).toBe(key.endsWith("v3") ? raw : null);
+    expect(sessionStorage.getItem("draft.snapshot.v2")).toBe(priorTab);
+    expect(localStorage.getItem("draftDashboard.session.v1")).toBe(priorDevice);
+
+    rejectSnapshot = false;
+    fireEvent.click(screen.getByRole("button", { name: "Import Bookmark" }));
+    await waitFor(() => expect(dialog().textContent).toContain("Draft bookmark imported."));
+    expect(dialog().textContent).not.toContain("Duplicate projection CSV source ID");
+    expect(sessionStorage.getItem("draft.customCsvList.v3")).toBe("[]");
+    expect(saved().customCsvList).toEqual([]);
+
+    view.unmount();
+    render(<DraftDashboard />);
+    await waitFor(() => expect(saved().customCsvList).toEqual([]));
+    expect(screen.queryByText(/Duplicate projection CSV source ID/)).toBeNull();
+  },
+);
+
+it("retains saved bytes after a failed clean start, then clears the duplicate on retry", async () => {
+  const raw = JSON.stringify([csv, { ...csv, label: "Conflicting source" }]);
+  const prior = JSON.stringify(snapshot());
+  sessionStorage.setItem("draft.customCsvList.v3", raw);
+  sessionStorage.setItem("draft.snapshot.v2", prior);
+  localStorage.setItem("draftDashboard.session.v1", prior);
+
+  render(<DraftDashboard />);
+  await waitFor(() => expect(dialog().textContent).toContain("Duplicate projection CSV source ID"));
+  management();
+  const removeItem = Storage.prototype.removeItem;
+  let rejectCsvRemoval = true;
+  vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function (this: Storage, key) {
+    if (rejectCsvRemoval && this === sessionStorage && key === "draft.customCsvList.v3") throw new DOMException("blocked", "SecurityError");
+    return removeItem.call(this, key);
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Start New Draft" }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirm Start New Draft" }));
+
+  expect(dialog().textContent).toContain("Duplicate projection CSV source ID");
+  expect(dialog().textContent).toContain("Could not clear the saved draft");
+  expect(sessionStorage.getItem("draft.customCsvList.v3")).toBe(raw);
+  expect(sessionStorage.getItem("draft.snapshot.v2")).toBe(prior);
+  expect(localStorage.getItem("draftDashboard.session.v1")).toBe(prior);
+
+  rejectCsvRemoval = false;
+  management();
+  fireEvent.click(screen.getByRole("button", { name: "Start New Draft" }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirm Start New Draft" }));
+  await waitFor(() => expect(saved().draftSettings.teamCount).toBe(12));
+  expect(sessionStorage.getItem("draft.customCsvList.v3")).toBeNull();
+  expect(dialog().textContent).not.toContain("Duplicate projection CSV source ID");
+});
+
+it.each(["tab", "device"] as const)(
+  "explicitly restores the existing %s draft without trusting duplicate rows",
+  async (source) => {
+    const tabKey = "draft.snapshot.v2";
+    const deviceKey = "draftDashboard.session.v1";
+    const csvKey = "draft.customCsvList.v3";
+    const unreliable = { ...csv, rows: [{ Player_Name: "Wrong player", Goals: 999 }] };
+    const raw = JSON.stringify([unreliable, { ...unreliable, label: "Other conflicting source" }]);
+    const prior = {
+      ...snapshot(),
+      draftSettings: { ...settings, isKeeper: true },
+      customCsvList: source === "tab" ? [csv] : undefined,
+      customSourceMetadata: [{ id: csv.id, label: csv.label }],
+    };
+    const store = source === "tab" ? sessionStorage : localStorage;
+    const key = source === "tab" ? tabKey : deviceKey;
+    sessionStorage.setItem(csvKey, raw);
+    store.setItem(key, JSON.stringify(prior));
+    render(<DraftDashboard />);
+    const restore = await screen.findByRole("button", { name: `Restore saved ${source} draft` });
+    expect(sessionStorage.getItem(csvKey)).toBe(raw);
+
+    const setItem = Storage.prototype.setItem;
+    let failSnapshot = true;
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, storageKey, value) {
+      if (failSnapshot && this === sessionStorage && storageKey === tabKey) throw new DOMException("quota", "QuotaExceededError");
+      return setItem.call(this, storageKey, value);
+    });
+    fireEvent.click(restore);
+    expect(dialog().textContent).toContain("Duplicate projection CSV source ID");
+    expect(dialog().textContent).toContain("Could not save imported projections");
+    expect(sessionStorage.getItem(csvKey)).toBe(raw);
+    expect(store.getItem(key)).toBe(JSON.stringify(prior));
+
+    failSnapshot = false;
+    fireEvent.click(restore);
+    await waitFor(() => expect(saved().draftedPlayers).toContainEqual(prior.draftedPlayers[0]));
+    expect(saved()).toMatchObject({ currentPick: prior.currentPick, draftHistory: prior.draftHistory });
+    const expected = source === "tab" ? [csv] : [{ id: csv.id, label: csv.label, playerType: "skater", rows: [] }];
+    expect(saved().customCsvList).toEqual(expected);
+    expect(JSON.parse(sessionStorage.getItem(csvKey)!)).toEqual(expected);
+    expect(screen.queryByText(/Duplicate projection CSV source ID/)).toBeNull();
+    if (source === "device") {
+      expect(dialog().textContent).toContain("Reimport or remove this source before drafting");
+    }
+  },
+);
+
+it("keeps an old bookmark unresolved after a different CSV is imported into an empty list", async () => {
+  render(<DraftDashboard />);
+  management();
+  fireEvent.click(within(dialog()).getByRole("button", { name: "Import CSV" }));
+  fireEvent.click(screen.getByRole("button", { name: "Complete CSV reimport" }));
+  await waitFor(() => expect(saved().customCsvList).toHaveLength(1));
+
+  const oldId = "custom_csv_1";
+  importBookmark({
+    ...bookmark(),
+    customCsvList: undefined,
+    customSourceMetadata: [{ id: oldId, label: "Earlier projections" }],
+    sourceControls: { [oldId]: { isSelected: true, weight: 1 } },
+  });
+  await waitFor(() => expect(saved().customCsvList).toEqual([
+    { id: oldId, label: "Earlier projections", playerType: "skater", rows: [] },
+  ]));
+});
+
 it("restores source controls once and retains missing-source repair controls", async () => {
   sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({ ...snapshot(), configured: true, keepers: [], draftedPlayers: [], currentPick: 1, customCsvList: undefined, customSourceMetadata: [{ id: csv.id, label: csv.label }] }));
   render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
