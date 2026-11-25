@@ -2372,6 +2372,48 @@ it("keeps the schedule placeholder out of team matching on retained injury wordi
   expect(club.metadata?.teamLabelMatches).toEqual(["UTA"]);
 });
 
+it("retains a separately listed seventh defender without requesting another identity review", () => {
+  vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+  try {
+    const players = [
+      [8480426, "Charle-Edouard D'Astous"], [8474590, "John Carlson"],
+      [8474151, "Ryan McDonagh"], [8478416, "Erik Cernak"],
+      [8475167, "Victor Hedman"], [8481719, "Max Crozier"], [8482655, "J.J. Moser"],
+    ] as const;
+    const defenders: { playerId: number; fullName: string; lastName: string; teamId: number; position: string }[] = players.map(([playerId, fullName]) => ({
+      playerId, fullName, lastName: fullName.split(" ").at(-1)!, teamId: 14, position: "D",
+    }));
+    const text = "#GoBolts warmup lines\nDefense:\nD'Astous - Carlson\nMcDonagh - Cernak\nHedman - Crozier\nMoser";
+    const publishedAt = "2026-11-08T22:39:23.000Z";
+    const read = (body = text, members = defenders) => {
+      const roster = new Map([[14, members]]);
+      const source = buildLinesCccSourceFromIftttEvent({
+        snapshotDate: "2026-11-08", teams: [lightning!], rosterByTeam: roster,
+        inferenceRosterByTeam: roster, inferencePublishedAt: publishedAt,
+        event: { id: "defense-block", source: "fxtwitter", source_account: "GameDayLines", text: body,
+          username: "GameDayLines", link_to_tweet: null, tweet_id: null, tweet_created_at: publishedAt,
+          created_at_label: null, received_at: "2026-11-08T22:42:00Z", raw_payload: {} },
+      });
+      return toLinesCccRow({ source, rosterEntries: members });
+    };
+    const queued = (row: ReturnType<typeof read>) => collectUnresolvedNamesFromLineRows([row]).map(r => r.raw_name);
+    const row = read();
+    const interpretation = row.metadata!.interpretation as TweetInterpretation;
+    expect(interpretation.excludedUnits).toContainEqual(expect.objectContaining({
+      situation: "es_defense", complete: false, players: [{ playerId: 8482655, name: "J.J. Moser" }],
+    }));
+    expect(interpretation.units.flatMap(u => u.players.map(p => p.playerId))).not.toContain(8482655);
+    expect(queued(row)).not.toContain("Moser");
+    const stale = structuredClone(row);
+    (stale.metadata!.intakeRosterEvidence as { publishedAt: string }).publishedAt = "2026-11-09T22:39:23.000Z";
+    expect(queued(stale)).toContain("Moser");
+    expect(queued(read(text.replace("McDonagh - Cernak\n", "")))).toContain("Moser");
+    expect(queued(read(text, [...defenders, { ...defenders[6]!, playerId: 123, fullName: "Other Moser" }]))).toContain("Moser");
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});
+
 it("omits resolved two-name forward fragments only with proof from the full dated roster", () => {
   try {
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");

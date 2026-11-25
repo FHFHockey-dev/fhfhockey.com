@@ -1820,6 +1820,7 @@ function resolvedNameReviewFragments(args: {
   publishedAt: string;
   roster: Map<number, RosterNameEntry[]>;
   ordinary: Map<number, RosterNameEntry[]>;
+  establishedTeam: boolean;
   interpretation: TweetInterpretation;
   review: readonly { start: number; end: number }[];
 }) {
@@ -1853,6 +1854,30 @@ function resolvedNameReviewFragments(args: {
     return isResolved ? [{ start, end, text: fragment, publishedAt, teamId, playerIds: ids }] : [];
   });
 
+  const defense = (interpretation.excludedUnits ?? []).flatMap(unit => {
+    if (!args.establishedTeam || unit.situation !== "es_defense" || unit.complete || unit.group != null
+      || unit.players.length !== 1 || unit.evidence.length !== 1) return [];
+    const span = unit.evidence[0]!, id = unit.players[0]!.playerId;
+    const name = normalizeIdentityName(span.text);
+    const matches = players.filter(player => player.teamId === teamId && keys(player).includes(name));
+    if (matches.length !== 1 || matches[0]!.playerId !== id || playerPositionRole(matches[0]!) !== "es_defense"
+      || ![matches[0]!.fullName, matches[0]!.lastName].some(canonical => normalizeIdentityName(canonical) === name)
+      || players.some(player => player.playerId === id && player.teamId !== teamId)
+      || ordinaryPlayers.some(player => player.teamId === teamId && player.playerId !== id && keys(player).includes(name))
+      || review.some(hit => hit.start < span.end && span.start < hit.end)) return [];
+    const endOfLine = text.indexOf("\n", span.end);
+    if (text.slice(span.start, span.end) !== span.text
+      || text.slice(text.lastIndexOf("\n", span.start - 1) + 1, endOfLine < 0 ? text.length : endOfLine).trim() !== span.text) return [];
+    const pairs = interpretation.units.filter(row => row.situation === "es_defense" && row.group == null && row.complete);
+    const ids = pairs.flatMap(row => row.players.map(player => player.playerId));
+    const previous = pairs[2]?.evidence.at(-1);
+    if (pairs.length !== 3 || !pairs.every((row, i) => row.number === i + 1 && row.players.length === 2)
+      || new Set(ids).size !== 6 || ids.includes(id) || !previous || previous.end >= span.start
+      || !/^[ \t\r]*\n[ \t]*$/.test(text.slice(previous.end, span.start))) return [];
+    // His identity is settled. The interpretation still retains a partial row, with no D4 assignment.
+    return [{ ...span, teamId, publishedAt, playerIds: [id], situation: "es_defense" }];
+  });
+
   const starts = interpretation.unresolved.flatMap(issue => {
     if (issue.situation !== "goalie" || issue.reason !== "missing_player" || issue.candidates?.length) return [];
     const { start, end, text: fragment } = issue;
@@ -1876,7 +1901,7 @@ function resolvedNameReviewFragments(args: {
       && event.evidence.start === start && event.evidence.end === end && event.evidence.text === fragment);
     return event ? [{ start, end, text: fragment, publishedAt, teamId, playerIds: [goalie.playerId] }] : [];
   });
-  return [...forwards, ...starts];
+  return [...forwards, ...defense, ...starts];
 }
 
 type NativeDfoHeading = { sourceId: string; publishedAt: string };
@@ -2041,7 +2066,7 @@ function interpretSourceRoster(args: TweetRosterContext & {
     reviewSpans: review.map(({ start, end }) => ({ start, end })),
   } : null;
   const resolvedFragments = team && dated && publishedAt && interpreted
-    ? resolvedNameReviewFragments({ text, teamId: team.id, publishedAt, roster: dated, ordinary: roster, interpretation: interpreted, review }) : [];
+    ? resolvedNameReviewFragments({ text, teamId: team.id, publishedAt, roster: dated, ordinary: roster, establishedTeam: inference?.establishedTeamId === team.id, interpretation: interpreted, review }) : [];
   const dfoHeading = team && dated && args.nativeDfoHeading && args.nativeDfoHeading.publishedAt === publishedAt && interpreted?.events
     ? verifiedDfoHeadingSubject(text, args.nativeDfoHeading, team.id, dated, roster, review, interpreted.events) : null;
   const queueReview = (team && established?.id === team.id && dated && interpreted?.units.length && review.length

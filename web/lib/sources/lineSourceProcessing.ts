@@ -445,6 +445,12 @@ export function collectUnresolvedNamesFromLineRows(
             && proof.start === issue.start && proof.end === issue.end && proof.text === issue.text
             && Array.isArray(proof.playerIds) && proof.playerIds.length === 2
             && proof.playerIds[0] === issue.candidates?.[0] && proof.playerIds[1] === issue.candidates?.[1])) continue;
+        if (verified && issue.reason === "invalid_extraction" && issue.situation === "es_defense"
+          && issue.candidates?.length === 1 && primaryText!.slice(issue.start, issue.end) === issue.text
+          && proofs.some(proof => proof?.situation === "es_defense" && proof.publishedAt === roster.publishedAt
+            && proof.teamId === row.team_id && proof.start === issue.start && proof.end === issue.end && proof.text === issue.text
+            && Array.isArray(proof.playerIds) && proof.playerIds.length === 1 && proof.playerIds[0] === issue.candidates?.[0]
+            && roster.players.some(player => player.id === proof.playerIds[0] && player.team_id === row.team_id && player.position === "D"))) continue;
         if (verified && issue.reason === "missing_player" && issue.situation === "goalie" && !issue.candidates?.length
           && primaryText!.slice(issue.start, issue.end) === issue.text
           && proofs.some(proof => proof?.publishedAt === roster.publishedAt && proof?.teamId === row.team_id

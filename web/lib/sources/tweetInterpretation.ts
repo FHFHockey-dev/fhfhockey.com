@@ -3,7 +3,7 @@ import { resolveTweetRosterIdentity } from "./tweetNameLexicon";
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
 import { breakIdentityTie, normalizeIdentityName, positionSlotRole, type PlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-11-24.33";
+export const TWEET_INTERPRETATION_VERSION = "2026-11-25.15";
 export type TweetInitialsEvidence = EvidenceSpan & { playerId: number; teamId: number };
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
