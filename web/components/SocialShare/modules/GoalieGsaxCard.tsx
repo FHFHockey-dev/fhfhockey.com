@@ -8,6 +8,10 @@ import styles from "./GoalieGsaxCard.module.scss";
 const signed = (value: number | null, digits: number) => value === null ? "—" : `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toFixed(digits)}`;
 export default function GoalieGsaxCard({ data, logos }: SharePostCardProps<GoalieGsaxSettings, GoalieGsaxData>) {
   const { sides, onBoth } = boardSides(data.rows, goalieGsaxRanks, data.board, GSAX_SHOWN), largest = largestShown(sides, row => row.gsax);
+  const sameThrough = data.nstSourceThrough === data.nstThrough;
+  const cardThrough = `${sameThrough ? "" : "card "}through ${data.nstThrough}`;
+  const sourceThrough = data.nstSourceThrough && !sameThrough ? `; NST source through ${data.nstSourceThrough}` : "";
+  const lag = data.nstSourceThrough && data.lagDays ? `, ${gsaxLagLabel(data.lagDays)} behind NHL.com` : "";
   const renderRow = (row: GoalieGsaxRow, rank: number) => {
     const team = row.teams[row.teams.length - 1];
     return <div className={styles.goalie} data-testid="goalie-gsax-row">
@@ -17,7 +21,7 @@ export default function GoalieGsaxCard({ data, logos }: SharePostCardProps<Goali
     </div>;
   };
   return <div className={styles.card} data-testid="goalie-gsax-card">
-    <h3 className={styles.lead}><small>{data.windowLabel}.</small> NST model, {data.strengthLabel}, through {data.nstThrough}{data.lagDays ? `, ${gsaxLagLabel(data.lagDays)} behind NHL.com` : ""}</h3>
+    <h3 className={styles.lead}><small>{data.windowLabel}.</small> NST model, {data.strengthLabel}, {cardThrough}{sourceThrough}{lag}</h3>
     {data.ranked ? <GoalieBoards sides={sides} rowKey={row => row.goalieId} renderRow={renderRow} note={bothSidesNote(onBoth.length, data.ranked)} /> : <PostEmpty>No goalie has {countOf(data.minAppearances, "appearance")} at {data.minCoverage}% NST coverage{data.window !== null && typeof data.window === "object" ? ` in ${data.windowLabel}` : ""}</PostEmpty>}
     <p className={styles.legend}>GSAx = NST expected goals against − goals against. Above 0: fewer goals allowed than this model expected.</p>
   </div>;
