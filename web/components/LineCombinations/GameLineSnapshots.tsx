@@ -81,6 +81,9 @@ function unitStatus(selection: SelectedLineUnit, games: LineGame[], decision?: P
     return { label: `Carried forward from ${origin ? gameLabel(origin) : "an earlier game"}`, tone: "carried" };
   }
   if (selection.claims.some((claim) => claim.context === "practice")) return { label: "Practice report, not game-confirmed", tone: "practice" };
+  // An in-game report bound by NHL on-ice corroboration: the reporter's unit, not game-verified personnel.
+  if (selection.designation === "reported" && selection.claims.some((claim) => claim.phase === "in_game" && claim.binding.evidence.some((item) => item.startsWith("nhl_pp_faceoff:"))))
+    return { label: "Reporter-confirmed", tone: "reported" };
   // Goalie lists confirm who dressed, never who starts.
   if (selection.designation === "confirmed") return { label: selection.unit.situation === "goalie" ? "Tandem confirmed" : "Confirmed", tone: "confirmed" };
   if (selection.designation === "projected") return { label: "Projected", tone: "projected" };
@@ -148,6 +151,20 @@ function EsGroups({ units, games }: { units: SelectedLineUnit[]; games: LineGame
   })}</>;
 }
 
+function PracticeDiffers({ note }: { note: NonNullable<PPDecision["practiceDiffers"]> }) {
+  const id = useId();
+  return <div role="group" aria-labelledby={id} className={styles.notice}>
+    <p id={id}><strong>Newer practice units differ</strong></p>
+    <p className={styles.sourceLine}>{note.author && note.sourceUrl
+      ? <a className={styles.source} href={note.sourceUrl} target="_blank" rel="noreferrer">@{note.author}</a>
+      : <span className={styles.source}>{ORIGINAL_SOURCE_PENDING}</span>}
+      {note.postedAt && <> · Posted <time dateTime={note.postedAt}>{formatTime(note.postedAt)}</time></>}</p>
+    <ul className={styles.units}>{note.units.map((unit) => <li key={unit.number}>
+      PP{unit.number}: {unit.players.map((player) => player.name).join(" — ")} <span className={styles.muted}>* Practice, not confirmed for this game</span>
+    </li>)}</ul>
+  </div>;
+}
+
 function ppEmptyCopy(number: number, decision: PPDecision | undefined): string {
   if (decision?.conflict) return `Sources disagree on PP${number}.`;
   if (decision?.reason?.startsWith("PP swap observed")) return `A PP${number} swap was reported, but there's no full unit to apply it to yet.`;
@@ -166,6 +183,7 @@ function PowerPlay({ team, games }: { team: GameTeamLines; games: LineGame[] }) 
         ? <ul className={styles.units}><UnitRow selection={selection} games={games} decision={decision?.selection ? decision : undefined} /></ul>
         : <p className={styles.muted}>{ppEmptyCopy(number, decision)}</p>}
       {decision?.endReason && <p className={styles.notice}>Carried PP{number} ended: {endReasonCopy(decision.endReason)}.</p>}
+      {decision?.practiceDiffers && <PracticeDiffers note={decision.practiceDiffers} />}
     </Group>;
   })}
   {anyCarried && <p className={styles.muted}>Carried units come from an earlier game and haven&apos;t been confirmed for this one.</p>}</>;

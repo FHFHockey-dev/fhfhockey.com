@@ -18,8 +18,9 @@ type Play = {
   typeDescKey: string;
   situationCode: string;
   sortOrder: number;
+  details?: { descKey?: string; committedByPlayerId?: number; drawnByPlayerId?: number; eventOwnerTeamId?: number };
 };
-type PlayByPlay = {
+export type PlayByPlay = {
   id: number;
   gameDate: string;
   homeTeam: { id: number };
@@ -41,7 +42,123 @@ const eventTypes: Record<string, string> = {
   PEND: "period-end",
 };
 const normalized = (value: string) => value.normalize("NFD").replace(/\p{M}/gu, "").trim().toLowerCase();
-const eventsCache = createSharedReadCache<OfficialPowerPlayObservation[] | null>(60_000, 64);
+const eventsCache = createSharedReadCache<OfficialPowerPlayEvidence | null>(60_000, 64);
+
+/** A penalty from the play-by-play. `penalizedTeamId` is the event owner. */
+export type OfficialPenalty = {
+  eventId: number; order: number; period: number; elapsed: string;
+  committedByPlayerId: number | null; drawnByPlayerId: number | null; infraction: string; penalizedTeamId: number;
+};
+/** Official wall-clock period anchors from the HTML report's PSTR/PEND rows (minute precision). */
+export type PeriodAnchor = { period: number; startedAt: string | null; endedAt: string | null; precisionSeconds: 60 };
+/** One power-play opportunity, from play-by-play strength: `fromOrder` is the penalty, `toOrder` the first play after the advantage. */
+export type OpportunitySpan = {
+  penaltyEventId: number; beneficiaryTeamId: number; fromOrder: number; toOrder: number;
+  endedBy: "goal" | "expiry" | "penalty" | "period_end" | "unknown";
+};
+export type OfficialPowerPlayEvidence = {
+  observations: OfficialPowerPlayObservation[]; penalties: OfficialPenalty[]; periods: PeriodAnchor[];
+  opportunities: OpportunitySpan[]; gameEndedAt: string | null;
+  /** Play-by-play event IDs of faceoffs; observations carry no event type. */
+  faceoffEventIds: number[];
+  /** Both teams' roster spots, for reading a penalty clue's names. */
+  roster: { playerId: number; name: string; teamId: number }[];
+};
+
+export function officialPenalties(pbp: PlayByPlay): OfficialPenalty[] {
+  return pbp.plays.filter((play) => play.typeDescKey === "penalty" && play.details?.descKey && Number.isSafeInteger(play.details.eventOwnerTeamId)
+    && Number.isSafeInteger(play.periodDescriptor?.number))
+    .map((play) => ({ eventId: play.eventId, order: play.sortOrder, period: play.periodDescriptor.number, elapsed: play.timeInPeriod,
+      committedByPlayerId: play.details!.committedByPlayerId ?? null, drawnByPlayerId: play.details!.drawnByPlayerId ?? null,
+      infraction: play.details!.descKey!, penalizedTeamId: play.details!.eventOwnerTeamId! }))
+    .sort((a, b) => a.order - b.order);
+}
+
+const skaters = (code: string, home: boolean) => /^\d{4}$/.test(code) ? Number(code[home ? 2 : 1]) : null;
+/**
+ * The span of each penalty's advantage. Only the clean case is read: even strength (1551) at the penalty, then a
+ * beneficiary advantage before play resumes. Anything else (coincidental minors, an existing PP, a missing code) is `unknown`.
+ */
+export function opportunitySpans(pbp: PlayByPlay): OpportunitySpan[] {
+  const plays = [...pbp.plays].sort((a, b) => a.sortOrder - b.sortOrder);
+  return officialPenalties(pbp).map((penalty) => {
+    const beneficiaryTeamId = penalty.penalizedTeamId === pbp.homeTeam.id ? pbp.awayTeam.id : pbp.homeTeam.id;
+    const home = beneficiaryTeamId === pbp.homeTeam.id;
+    const unknown = { penaltyEventId: penalty.eventId, beneficiaryTeamId, fromOrder: penalty.order, toOrder: penalty.order, endedBy: "unknown" as const };
+    const at = plays.findIndex((play) => play.eventId === penalty.eventId);
+    if (at < 0 || plays[at]!.situationCode !== "1551") return unknown;
+    const advantage = (play: Play) => {
+      const own = skaters(play.situationCode, home), other = skaters(play.situationCode, !home);
+      return own != null && other != null && own > other;
+    };
+    let started = false;
+    for (const play of plays.slice(at + 1)) {
+      if (play.periodDescriptor?.number !== penalty.period) return started ? { ...unknown, toOrder: play.sortOrder, endedBy: "period_end" as const } : unknown;
+      if (play.typeDescKey === "period-end") return started ? { ...unknown, toOrder: play.sortOrder, endedBy: "period_end" as const } : unknown;
+      if (play.typeDescKey === "penalty") return started ? { ...unknown, toOrder: play.sortOrder, endedBy: "penalty" as const } : unknown;
+      if (!started) {
+        if (advantage(play)) started = true;
+        else if (play.typeDescKey !== "stoppage") return unknown;
+        continue;
+      }
+      if (play.typeDescKey === "goal" && play.details?.eventOwnerTeamId === beneficiaryTeamId) {
+        const next = plays.find((candidate) => candidate.sortOrder > play.sortOrder);
+        return { ...unknown, toOrder: next?.sortOrder ?? play.sortOrder + 1, endedBy: "goal" as const };
+      }
+      if (!advantage(play)) return { ...unknown, toOrder: play.sortOrder, endedBy: "expiry" as const };
+    }
+    return unknown;
+  });
+}
+
+const ZONE_OFFSETS: Record<string, number> = { EST: -5, EDT: -4, CST: -6, CDT: -5, MST: -7, MDT: -6, PST: -8, PDT: -7, AST: -4, ADT: -3 };
+/**
+ * Period anchors from "Local time: 7:09 MST". The report has no AM/PM: the first anchor takes the half-day nearest the stored
+ * actual start, or PM (12 = noon) without one; each later anchor is the first candidate at or after the one before.
+ */
+export function officialPeriodAnchors(html: string, gameDate: string, actualStart: string | null): { periods: PeriodAnchor[]; gameEndedAt: string | null } {
+  const rows: { period: number; kind: string; hour: number; minute: number; zone: string }[] = [];
+  for (const row of parse(html).querySelectorAll("tr[id^=PL-]")) {
+    const cells = row.childNodes.filter((c): c is HTMLElement => c instanceof HTMLElement && c.tagName === "TD");
+    if (cells.length !== 8) continue;
+    const kind = cells[4]!.text.trim();
+    if (!["PSTR", "PEND", "GEND"].includes(kind)) continue;
+    const time = cells[5]!.text.match(/Local time:\s*(\d{1,2}):([0-5]\d)\s*([A-Z]{3})/);
+    const period = Number(cells[1]!.text.trim());
+    if (!time || !Number.isSafeInteger(period)) continue;
+    rows.push({ period, kind, hour: Number(time[1]), minute: Number(time[2]), zone: time[3]! });
+  }
+  const periods = new Map<number, PeriodAnchor>();
+  let previous: number | null = null, gameEndedAt: string | null = null;
+  const start = actualStart ? Date.parse(actualStart) : NaN;
+  for (const row of rows) {
+    const offset = ZONE_OFFSETS[row.zone];
+    if (offset == null || row.hour < 1 || row.hour > 12) continue;
+    const base = Date.parse(`${gameDate}T00:00:00Z`) - offset * 3_600_000 + row.minute * 60_000;
+    const am = base + (row.hour % 12) * 3_600_000, pm = am + 12 * 3_600_000;
+    let at: number;
+    if (previous == null) at = Number.isFinite(start) ? (Math.abs(am - start) < Math.abs(pm - start) ? am : pm) : pm;
+    else { at = am; while (at < previous) at += 12 * 3_600_000; }
+    previous = at;
+    const iso = new Date(at).toISOString().replace(".000Z", "Z");
+    const anchor = periods.get(row.period) ?? { period: row.period, startedAt: null, endedAt: null, precisionSeconds: 60 as const };
+    if (row.kind === "PSTR") anchor.startedAt = iso;
+    else if (row.kind === "PEND") anchor.endedAt = iso;
+    else gameEndedAt = iso;
+    periods.set(row.period, anchor);
+  }
+  return { periods: [...periods.values()].sort((a, b) => a.period - b.period), gameEndedAt };
+}
+
+/** Everything the PP binder needs from one game's official reports, or null when the reports do not validate. */
+export function officialPowerPlayEvidence(game: LineGame, pbp: PlayByPlay, html: string, sourceUrl: string): OfficialPowerPlayEvidence | null {
+  const observations = officialPowerPlayEvents(game, pbp, html, sourceUrl);
+  if (!observations) return null;
+  const { periods, gameEndedAt } = officialPeriodAnchors(html, game.date, game.actualStart);
+  return { observations, penalties: officialPenalties(pbp), periods, gameEndedAt, opportunities: opportunitySpans(pbp),
+    faceoffEventIds: pbp.plays.filter((play) => play.typeDescKey === "faceoff").map((play) => play.eventId),
+    roster: pbp.rosterSpots.map((spot) => ({ playerId: spot.playerId, name: [spot.firstName?.default, spot.lastName?.default].filter(Boolean).join(" "), teamId: spot.teamId })) };
+}
 
 function onIce(cell: HTMLElement, teamId: number, roster: Spot[], skaterCount: number) {
   const players: { playerId: number; name: string }[] = [];
@@ -133,7 +250,11 @@ export function officialPowerPlayEvents(
   return [...matched.values()].sort((a, b) => b.order - a.order);
 }
 
-export function readOfficialPowerPlay(game: LineGame) {
+export async function readOfficialPowerPlay(game: LineGame) {
+  return (await readOfficialPowerPlayEvidence(game))?.observations ?? null;
+}
+
+export function readOfficialPowerPlayEvidence(game: LineGame) {
   const id = String(game.id);
   const season = id.slice(0, 4);
   const sourceUrl = `https://www.nhl.com/scores/htmlreports/${season}${Number(season) + 1}/PL${id.slice(4)}.HTM`;
@@ -147,7 +268,7 @@ export function readOfficialPowerPlay(game: LineGame) {
           return response.text();
         }),
       ]);
-      return officialPowerPlayEvents(game, pbp, html, sourceUrl);
+      return officialPowerPlayEvidence(game, pbp, html, sourceUrl);
     } catch {
       return null;
     }

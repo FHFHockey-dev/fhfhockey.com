@@ -65,7 +65,11 @@ export type PPEndReason =
 /** A PP unit built by applying a partial swap to an accepted 5-player base unit. */
 export type PPDerivation = { baseClaimIds: string[]; swapClaimIds: string[]; playersIn: number[]; playersOut: number[] };
 export type PPDecision = { id: string; revision: number; gameId: number; teamId: number; unitNumber: number; selection: SelectedLineUnit | null; conflict: LineConflict | null; replacesId: string | null; reason: string; decidedAt: string; selectorVersion: string;
-  endReason?: PPEndReason | null; derivation?: PPDerivation | null };
+  endReason?: PPEndReason | null; derivation?: PPDerivation | null;
+  /** Display only (PPCF P3): a newer, unbound practice report whose units differ from the carried unit. Never changes `selection`. */
+  practiceDiffers?: PPPracticeNote | null };
+export type PPPracticeNote = { claimIds: string[]; sourceUrl: string | null; author: string | null; postedAt: string | null;
+  units: { number: 1 | 2; players: { playerId: number; name: string }[] }[] };
 /** One raw capture for the source feed. Relays collapse under their original. */
 export type SourceFeedItem = {
   id: string; originalIdentity: string | null; originalAuthor: string | null; authorityTier: AuthorityTier;
@@ -119,5 +123,22 @@ export function instant(value: string | null | undefined): number | null {
   if (!value || !/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/i.test(value)) return null;
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+/**
+ * Two schedule identities (`gameId:start:state`, start possibly containing ':') name the same scheduled game. An exact match
+ * always counts; otherwise the game ids and states must match and both starts must parse to the same instant, so "…Z" and
+ * "…+00:00" agree while a reschedule or an unreadable start does not.
+ */
+export function sameScheduleIdentity(a: unknown, b: unknown): boolean {
+  if (typeof a !== "string" || typeof b !== "string" || !a || !b) return false;
+  if (a === b) return true;
+  const split = (value: string) => {
+    const first = value.indexOf(":"), last = value.lastIndexOf(":");
+    return first > 0 && last > first ? { id: value.slice(0, first), start: value.slice(first + 1, last), state: value.slice(last + 1) } : null;
+  };
+  const left = split(a), right = split(b);
+  if (!left || !right || left.id !== right.id || left.state !== right.state) return false;
+  const at = instant(left.start);
+  return at != null && at === instant(right.start);
 }
 export function unitKey(unit: TweetUnit): string { return `${unit.situation}:${unit.number ?? "unassigned"}:${unit.group ?? "main"}`; }

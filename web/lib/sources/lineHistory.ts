@@ -2,7 +2,7 @@ import { sanitizePublicNewsText } from "lib/newsFeed";
 import { easternReportDate, verifiedOriginalTweetUrl } from "./projectedLineups";
 import { tweetPipelineFlags } from "./tweetInterpretation";
 import { eligibleClaim } from "lib/lines/reconcile";
-import type { LineClaim } from "lib/lines/types";
+import { sameScheduleIdentity, type LineClaim } from "lib/lines/types";
 
 export type LineHistoryItem = {
   id: string;
@@ -213,7 +213,7 @@ function publicGameClaim(value: unknown, scope: LineHistoryQuery, games: Map<num
     claim.accepted !== true || claim.explicit !== true || !Array.isArray(claim.reviewReasons) || claim.reviewReasons.length !== 0 ||
     claim.identityStatus !== "resolved_at_event" || !strings(claim.identityEvidence) ||
     !strings(claim.publicationEvidence) || !strings(claim.binding.evidence) || claim.binding.status !== "bound" ||
-    claim.binding.scheduleIdentity !== game.scheduleIdentity || typeof claim.binding.resolverVersion !== "string" ||
+    !sameScheduleIdentity(claim.binding.scheduleIdentity, game.scheduleIdentity) || typeof claim.binding.resolverVersion !== "string" ||
     !["pregame", "in_game"].includes(String(claim.phase))) return null;
 
   const decision = claim.decisionEvidence;

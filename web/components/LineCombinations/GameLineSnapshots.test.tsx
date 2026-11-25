@@ -6,6 +6,7 @@ import { formatTime } from "./reviewReasonCopy";
 import { fixtureClaim, fixtureGame, fixtureNext, fixtureNow, fixturePP, fixtureResponse, fixtureUnit } from "lib/lines/testFixtures";
 import { reconcileEntry, reconcilePP } from "lib/lines/reconcile";
 import type { GameLinesResponse, PPDecision } from "lib/lines/types";
+import { curtisBound, game0356, game0397, rawal } from "lib/lines/testPpFixtures";
 
 vi.mock("next/script", () => ({ default: () => null }));
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
@@ -353,5 +354,33 @@ describe("loading and automatic refresh", () => {
     await act(async () => { vi.advanceTimersByTime(60_000); await Promise.resolve(); await Promise.resolve(); });
     expect(screen.getByText(/Couldn't refresh. Showing lineups as of/)).toBeTruthy();
     expect(screen.getByText("Mikheyev — Point — Kucherov")).toBeTruthy();
+  });
+});
+
+describe("PPCF carried unit with a newer practice note (MTL–COL 2026020397)", () => {
+  const response = (game: typeof game0397, claims: Parameters<typeof reconcilePP>[0]["claims"]): GameLinesResponse => {
+    const data = fixtureResponse(0);
+    const games = [game0356, game0397];
+    return { ...data, game, games, teams: [{ ...data.teams[0]!, teamId: 21, abbreviation: "COL", entry: null, entryRevisions: [], fallback: null,
+      ppDefaults: reconcilePP({ game, teamId: 21, games, claims, now: "2026-11-26T02:00:00Z", carryForward: true }) }], entryView: { mode: "expected", frozenAt: null, basis: null } };
+  };
+  it("renders the carried unit with the practice note", () => {
+    render(<GameLineSnapshots data={response(game0397, [curtisBound, rawal(1), rawal(2)])} />);
+    const pp1 = screen.getByRole("group", { name: "Power play 1" });
+    expect(within(pp1).getByText(/^Carried forward from/)).toBeTruthy();
+    expect(within(pp1).getByText("T.J. Hughes — Nazem Kadri — Artturi Lehkonen — Martin Necas — Devon Toews")).toBeTruthy();
+    const note = within(pp1).getByRole("group", { name: "Newer practice units differ" });
+    expect(within(note).getAllByText("* Practice, not confirmed for this game")).toHaveLength(2);
+    expect(within(note).getByRole("link", { name: "@evanrawal" }).getAttribute("href")).toBe("https://x.com/evanrawal/status/2125298833580339606");
+    expect(within(note).getByText(/Cale Makar/)).toBeTruthy();
+    expect(within(pp1).queryByText("Confirmed")).toBeNull();
+    expect(screen.queryByText(/cleared/i)).toBeNull();
+    expect(within(screen.getByRole("group", { name: "Power play 2" })).getByText("No PP2 report yet.")).toBeTruthy();
+  });
+  it("labels the corroborated in-game report on its own game as reporter-confirmed", () => {
+    render(<GameLineSnapshots data={response({ ...game0356, phase: "final" }, [curtisBound])} />);
+    const pp1 = screen.getByRole("group", { name: "Power play 1" });
+    expect(within(pp1).getByText("Reporter-confirmed")).toBeTruthy();
+    expect(within(pp1).queryByText("Confirmed")).toBeNull();
   });
 });
