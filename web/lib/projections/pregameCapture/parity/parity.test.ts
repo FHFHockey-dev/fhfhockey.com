@@ -5,6 +5,9 @@
  * which was done on the unmodified writer (1216f6e17, 52c3b6919); the oracle must never be re-recorded to fit a change.
  * One TJ-approved re-record (2026-11-15, trend-band reader integration) changed only the trend read and the renamed
  * counter; every difference is listed in tasks/artifacts/forge-pregame-capture-2026-11-14/trend-band-reader/ORACLE-DIFF-20261115.md.
+ * A second re-record (2026-11-25, FORGE projection math H4/L1/M3) changed only the previous-game PBP completeness
+ * reads, forge_runs metrics and, where team 10 projects 17 skaters, its capped pool. Every difference and its approval
+ * status: tasks/artifacts/forge-projection-audit-2026-11-16/projection-math/ORACLE-DIFF-20261125.md.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -373,7 +376,9 @@ describe.skipIf(RECORD)("season bootstrap decision", () => {
 const INTENTIONALLY_EMPTY: Record<string, string> = {
   market_prices_daily: "markets feed output flags only, never projections",
   prop_market_prices_daily: "markets feed output flags only, never projections",
-  pbp_plays: "the target game is pregame: no plays may exist",
+  pbp_games: "L1: the writer checks only each team's previous game, and the fixture stores no PBP for it; the healthy "
+    + "path is run-forge-projections.projection-math.test.ts",
+  pbp_plays: "L1: the writer checks only each team's previous game, and the fixture stores no PBP for it",
   nst_team_stats: "fallback read only when nst_team_all has no row",
   player_forecast_goalie_start_observations: "goalie confirmations are covered by the roster-event override",
   player_forecast_observation_conflicts: "no conflicts in the fixture",
