@@ -28,36 +28,39 @@ from .orchestrator import orchestrate_full_run
 from .config_loader import load_config
 
 
-def _synthetic_games(n_players: int, n_games: int, season_id: int = 2025) -> List[Dict[str, Any]]:
+def _synthetic_games(
+    n_players: int, n_games: int, season_id: int = 2025, *, seed: int | None = None,
+) -> List[Dict[str, Any]]:
+    rng = random if seed is None else random.Random(seed)
     games: List[Dict[str, Any]] = []
     # Pre-generate per-player position
-    positions = {pid: ("F" if random.random() < 0.7 else "D") for pid in range(1, n_players + 1)}
+    positions = {pid: ("F" if rng.random() < 0.7 else "D") for pid in range(1, n_players + 1)}
     # Game date spacing: assume 2-day increments
     for g_idx in range(n_games):
         game_date = f"2025-01-{1 + g_idx:02d}" if g_idx < 31 else f"2025-02-{(g_idx-30):02d}"
         for pid in range(1, n_players + 1):
             pos = positions[pid]
-            shots = random.poisson(3.2) if hasattr(random, 'poisson') else int(random.gauss(3.2, 1.2))
+            shots = rng.poisson(3.2) if hasattr(rng, 'poisson') else int(rng.gauss(3.2, 1.2))
             if shots < 0:
                 shots = 0
             goals = 0
             for _ in range(shots):
-                if random.random() < 0.11:
+                if rng.random() < 0.11:
                     goals += 1
-            onice_shots_for = max(shots + int(random.gauss(15, 4)), 0)
+            onice_shots_for = max(shots + int(rng.gauss(15, 4)), 0)
             onice_goals_for = 0
             for _ in range(onice_shots_for):
-                if random.random() < 0.08:
+                if rng.random() < 0.08:
                     onice_goals_for += 1
             points = goals
             # ixG approximation
-            ixg_goals = sum(random.uniform(0.6, 1.1) for _ in range(goals))
-            ixg_nongoals = sum(random.uniform(0.05, 0.12) for _ in range(max(shots - goals, 0)))
+            ixg_goals = sum(rng.uniform(0.6, 1.1) for _ in range(goals))
+            ixg_nongoals = sum(rng.uniform(0.05, 0.12) for _ in range(max(shots - goals, 0)))
             ixg = ixg_goals + ixg_nongoals
-            icf = shots + int(random.gauss(2, 1))
+            icf = shots + int(rng.gauss(2, 1))
             if icf < shots:
                 icf = shots
-            hdcf = max(int(goals + random.gauss(1.2, 0.8)), 0)
+            hdcf = max(int(goals + rng.gauss(1.2, 0.8)), 0)
             games.append({
                 'player_id': pid,
                 'season_id': season_id,
@@ -81,7 +84,10 @@ def run_performance_benchmark(
     n_games: int = 40,
     season_id: int = 2025,
     fast: bool | None = None,
+    *,
+    seed: int | None = None,
 ) -> Dict[str, Any]:
+    """Run an offline benchmark with optional repeatable synthetic inputs."""
     # Fast mode override for CI or local quick check
     if fast is None:
         fast = os.getenv("SUSTAIN_BENCH_FAST") == "1"
@@ -90,7 +96,9 @@ def run_performance_benchmark(
         n_games = min(n_games, 15)
 
     t0 = time.perf_counter()
-    games = _synthetic_games(n_players=n_players, n_games=n_games, season_id=season_id)
+    games = _synthetic_games(
+        n_players=n_players, n_games=n_games, season_id=season_id, seed=seed,
+    )
     t_gen = time.perf_counter()
     cfg = load_config()  # fallback config acceptable for synthetic
     t_cfg = time.perf_counter()

@@ -24,6 +24,7 @@ import time
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, Iterable, List, Optional
 
+from .anomalies import compute_anomaly_stats
 from .pipeline import run_full_scoring_pipeline
 from .offline import OFFLINE_PERSISTENCE_MESSAGE, OfflinePersistenceDisabledError
 from .config_loader import load_config, SustainabilityConfig
@@ -126,6 +127,11 @@ def orchestrate_full_run(
         "windows": len(result.get("windows", [])),
         "windows_scored": len(result.get("windows_scored", [])),
     }
+
+    phases["anomalies"] = compute_anomaly_stats(
+        result.get("windows_scored", []),
+        extreme_threshold=cfg.constants.get("extreme_z_threshold", 4.0),
+    )
 
     snapshot = result.get("snapshot")
     snapshot_n = snapshot.get("n") if snapshot else None
