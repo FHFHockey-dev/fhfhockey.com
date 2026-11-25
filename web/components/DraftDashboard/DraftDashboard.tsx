@@ -4134,7 +4134,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         settings={draftSettings}
         sourceControls={sourceControls}
         goalieSourceControls={goalieSourceControls}
-        open={settingsOpen}
+        open={settingsOpen && !isImportCsvOpen}
         full={fullSettings}
         configured={settingsConfigured}
         draftProEligible={draftProEligible}

@@ -67,15 +67,18 @@ vi.mock("components/DraftDashboard/DraftBoard", () => ({ default: () => null }))
 vi.mock("components/DraftDashboard/LeagueStandings", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/DraftSummaryModal", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/ImportCsvModal", () => ({
-  default: ({ open, onImported }: any) => open ? (
+  default: ({ open, onImported, onClose }: any) => open ? (
     <div role="dialog" aria-label="CSV reimport">
-      <button type="button" onClick={() => onImported({
-        headers: [{ original: "Name", standardized: "full_name", selected: true }],
-        rows: [{ full_name: "Recovery Player", player_id: 2, goals: 12 }],
-        sourceId: "boundary_generated_id",
-        label: "Recovered source",
-        resolution: { totalRows: 1, idMatched: 1, nameMatched: 0, fuzzyMatched: 0, manualOverrides: 0, unresolved: 0, invalidIds: 0, coverage: 100, lastUpdated: 1, unresolvedNames: [] },
-      })}>Complete CSV reimport</button>
+      <button type="button" onClick={() => {
+        onImported({
+          headers: [{ original: "Name", standardized: "full_name", selected: true }],
+          rows: [{ full_name: "Recovery Player", player_id: 2, goals: 12 }],
+          sourceId: "boundary_generated_id",
+          label: "Recovered source",
+          resolution: { totalRows: 1, idMatched: 1, nameMatched: 0, fuzzyMatched: 0, manualOverrides: 0, unresolved: 0, invalidIds: 0, coverage: 100, lastUpdated: 1, unresolvedNames: [] },
+        });
+        onClose();
+      }}>Complete CSV reimport</button>
     </div>
   ) : null,
 }));

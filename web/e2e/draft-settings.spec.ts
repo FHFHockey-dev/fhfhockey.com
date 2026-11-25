@@ -422,6 +422,35 @@ async function recoveryImport(page: Page, data: unknown, fromFile = false) {
   } else await page.getByLabel("Import draft bookmark", { exact: true }).fill(JSON.stringify(data));
   await page.getByRole("button", { name: "Import Bookmark", exact: true }).click();
 }
+const recoveryCsvSidecar = (page: Page) => page.evaluate(() =>
+  JSON.parse(sessionStorage.getItem("draft.customCsvList.v3") ?? "[]"),
+);
+
+function replacementRecoveryBookmark(teamCount: number, label: string) {
+  const bookmark = recoveryBookmark();
+  const draftOrder = Array.from({ length: teamCount }, (_, index) => `New Team ${index + 1}`);
+  return {
+    ...bookmark,
+    settings: { ...bookmark.settings, teamCount, draftOrder },
+    myTeamId: draftOrder[0],
+    customCsvList: [{
+      ...recoveryCsv,
+      label,
+      rows: recoveryCsv.rows.map((row) => ({ ...row, Goals: row.Goals + 3 })),
+    }],
+    customSourceMetadata: [{ id: recoveryCsv.id, label }],
+  };
+}
+
+async function reloadWithoutCsvSidecar(page: Page) {
+  await expect.poll(async () => (await recoverySnapshot(page)).customSourceMetadata?.[0]?.label)
+    .toBe(recoveryCsv.label);
+  expect(await recoveryCsvSidecar(page)).toEqual([recoveryCsv]);
+  await page.evaluate(() => sessionStorage.removeItem("draft.customCsvList.v3"));
+  await page.reload();
+  await expect(recoveryDialog(page)).toContainText(`Imported projection CSV rows are unavailable for ${recoveryCsv.label}`);
+}
+
 async function recoveryDone(page: Page) {
   await recoveryDialog(page).getByRole("button", { name: "Done", exact: true }).click();
   await expect(recoveryDialog(page)).toBeHidden();
@@ -484,23 +513,36 @@ test.describe("recovery port", () => {
       await page.setViewportSize({ width, height: width === 1440 ? 900 : 760 });
       await recoveryFixtures(page);
       await page.goto("/draft-dashboard"); await expect(recoveryDialog(page)).toBeVisible();
-      const missing = recoveryBookmark(); missing.customCsvList = undefined;
-      await recoveryImport(page, missing);
-      await expect(recoveryDialog(page).getByRole("alert").last()).toContainText("must be reimported or removed");
-      await recoveryDialog(page).getByRole("tab", { name: /^Projections/ }).click();
+      await recoveryImport(page, recoveryBookmark());
+      await recoveryDone(page);
+      await reloadWithoutCsvSidecar(page);
+
+      await settingsDomain(page, "Projections");
       const sources = recoveryDialog(page).getByRole("region", { name: "Skaters projection sources" });
-      await expect(sources.getByRole("button", { name: "Reimport Recovery fixture" })).toBeVisible();
-      await expect(sources.getByRole("button", { name: "Remove Recovery fixture" })).toBeVisible();
+      const reimport = sources.getByRole("button", { name: "Reimport Recovery fixture" });
+      const remove = sources.getByRole("button", { name: "Remove Recovery fixture" });
+      await expect(sources.getByText(recoveryCsv.label, { exact: true })).toBeVisible();
+      await expect(reimport).toBeVisible();
+      await expect(remove).toBeVisible();
       expect((await recoverySnapshot(page)).sourceControls.custom_csv_fixture.weight).toBe(0.7);
       const bounds = await sources.evaluate(node => ({ scroll: node.scrollWidth, client: node.clientWidth }));
       expect(bounds.scroll).toBeLessThanOrEqual(bounds.client + 1);
       await page.screenshot({ path: testInfo.outputPath(`missing-${width}.png`) });
-      await page.reload();
-      await expect(recoveryDialog(page)).toBeVisible();
       await expect(page.getByText("Loading draft sources", { exact: true })).toHaveCount(0);
-      await recoveryDialog(page).getByRole("tab", { name: /^Projections/ }).click();
-      await recoveryDialog(page).getByRole("button", { name: "Remove Recovery fixture" }).click();
-      await expect.poll(async () => (await recoverySnapshot(page)).customCsvList.length).toBe(0);
+
+      await recoveryDialog(page).getByRole("button", { name: "Done", exact: true }).click();
+      await expect(recoveryDialog(page)).toBeVisible();
+      await reimport.click();
+      const csvDialog = page.getByRole("dialog", { name: "Import Projections (CSV)" });
+      await expect(csvDialog.getByLabel("CSV File Input")).toBeAttached();
+      await csvDialog.getByRole("button", { name: "Close", exact: true }).click();
+      await expect(csvDialog).toBeHidden();
+      await expect(recoveryDialog(page)).toBeVisible();
+      await expect(recoveryDialog(page).getByRole("tab", { name: /^Projections/ })).toHaveAttribute("aria-selected", "true");
+
+      await remove.click();
+      await expect(sources.getByText(recoveryCsv.label, { exact: true })).toHaveCount(0);
+      await expect.poll(() => page.evaluate(() => sessionStorage.getItem("draft.customCsvList.v3"))).toBe("[]");
       await recoveryDone(page);
     });
   }
@@ -541,22 +583,84 @@ test.describe("recovery port", () => {
     page.removeAllListeners("dialog"); page.once("dialog", dialog => dialog.dismiss());
     await page.reload();
     await expect(recoveryDialog(page)).toBeVisible();
-    await expect.poll(async () => (await recoverySnapshot(page)).draftSettings.teamCount).toBe(12);
+    await expect.poll(async () => {
+      const draft = await recoverySnapshot(page);
+      return { teamCount: draft.draftSettings?.teamCount, picks: draft.draftedPlayers, sources: draft.customSourceMetadata };
+    }).toEqual({ teamCount: 12, picks: [], sources: [] });
     expect(await page.evaluate(() => sessionStorage.getItem("draft.customCsvList.v3"))).toBeNull();
+
     page.on("dialog", dialog => dialog.accept());
-    await recoveryImport(page, recoveryBookmark()); await recoveryDone(page); await page.reload();
+    const replacement = replacementRecoveryBookmark(10, "Second recovery fixture");
+    await recoveryImport(page, replacement);
+    await settingsDomain(page, "Projections");
+    const sources = recoveryDialog(page).getByRole("region", { name: "Skaters projection sources" });
+    await expect(sources.getByText("Second recovery fixture", { exact: true })).toBeVisible();
+    await expect(sources.getByText(recoveryCsv.label, { exact: true })).toHaveCount(0);
+    await recoveryDone(page);
+    await page.reload();
     await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible();
-    expect((await recoverySnapshot(page)).draftSettings.teamCount).toBe(2);
-    await recoveryOpen(page); await recoveryDialog(page).getByRole("button", { name: "Management", exact: true }).click();
+    await expect.poll(async () => (await recoverySnapshot(page)).draftSettings?.teamCount).toBe(10);
+    expect((await recoverySnapshot(page)).customSourceMetadata[0].label).toBe("Second recovery fixture");
+    expect(await recoveryCsvSidecar(page)).toEqual(replacement.customCsvList);
+
+    await openDraftManagement(page);
     await recoveryDialog(page).getByRole("button", { name: "Start New Draft", exact: true }).click();
     await recoveryDialog(page).getByRole("button", { name: "Cancel New Draft", exact: true }).click();
-    expect((await recoverySnapshot(page)).customCsvList.length).toBe(1);
+    expect(await recoveryCsvSidecar(page)).toEqual(replacement.customCsvList);
     await recoveryDialog(page).getByRole("button", { name: "Start New Draft", exact: true }).click();
     await recoveryDialog(page).getByRole("button", { name: "Confirm Start New Draft", exact: true }).click();
-    await expect.poll(async () => (await recoverySnapshot(page)).customCsvList.length).toBe(0);
-    expect((await recoverySnapshot(page)).draftSettings.teamCount).toBe(12);
+    await expect.poll(async () => {
+      const draft = await recoverySnapshot(page);
+      return { teamCount: draft.draftSettings?.teamCount, picks: draft.draftedPlayers, sources: draft.customSourceMetadata };
+    }).toEqual({ teamCount: 12, picks: [], sources: [] });
+    expect(await recoveryCsvSidecar(page)).toEqual([]);
     expect(await page.evaluate(() => localStorage.getItem("unrelated-auth-fixture"))).toBe("preserved");
     expect(await page.evaluate(() => sessionStorage.getItem("unrelated-fixture"))).toBe("preserved");
+  });
+
+  test("JSON file bookmark replaces a missing source and invalid file preserves the replacement", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await recoveryFixtures(page);
+    await page.goto("/draft-dashboard");
+    await expect(recoveryDialog(page)).toBeVisible();
+    await recoveryImport(page, recoveryBookmark());
+    await recoveryDone(page);
+    await reloadWithoutCsvSidecar(page);
+
+    const replacement = replacementRecoveryBookmark(8, "File recovery fixture");
+    await recoveryImport(page, replacement, true);
+    await expect(page.getByLabel("Import draft bookmark", { exact: true })).toHaveCount(0);
+    await settingsDomain(page, "Projections");
+    const sources = recoveryDialog(page).getByRole("region", { name: "Skaters projection sources" });
+    await expect(sources.getByText("File recovery fixture", { exact: true })).toBeVisible();
+    await expect(sources.getByText(recoveryCsv.label, { exact: true })).toHaveCount(0);
+    await expect.poll(async () => (await recoverySnapshot(page)).draftSettings?.teamCount).toBe(8);
+    expect(await recoveryCsvSidecar(page)).toEqual(replacement.customCsvList);
+    await recoveryDone(page);
+
+    const absent = { id: "custom_csv_absent", label: "Absent recovery fixture" };
+    const requiredSource = { [absent.id]: { isSelected: true, weight: 0.7 } };
+    await recoveryImport(page, {
+      ...replacement,
+      customCsvList: undefined,
+      customSourceMetadata: [absent],
+      sourceControls: { dtz_skaters: replacement.sourceControls.dtz_skaters, ...requiredSource },
+      goalieSourceControls: { ...replacement.goalieSourceControls, ...requiredSource },
+    });
+    await expect(recoveryDialog(page).getByRole("alert").last()).toContainText("must be reimported or removed");
+    await expect(page.getByLabel("Import draft bookmark", { exact: true })).toHaveCount(0);
+    const acceptedSidecar = await recoveryCsvSidecar(page);
+
+    await recoveryDialog(page).getByRole("button", { name: "Import bookmark", exact: true }).click();
+    const file = page.getByLabel("Read draft bookmark file", { exact: true });
+    const invalid = "{not valid json}";
+    await file.setInputFiles({ name: "invalid.json", mimeType: "application/json", buffer: Buffer.from(invalid) });
+    await expect(page.getByLabel("Import draft bookmark", { exact: true })).toHaveValue(invalid);
+    await page.getByRole("button", { name: "Import Bookmark", exact: true }).click();
+    await expect(recoveryDialog(page).getByRole("alert").last()).toContainText("Unsupported bookmark");
+    await expect(file).toBeVisible();
+    expect((await recoverySnapshot(page)).draftSettings.teamCount).toBe(8);
+    expect(await recoveryCsvSidecar(page)).toEqual(acceptedSidecar);
   });
 
   test("abandoned file read cannot replace a subsequent bookmark and invalid input stays open", async ({ page }) => {
