@@ -2,7 +2,7 @@
 import React from "react";
 import type { SessionCsvEntry } from "lib/draftDashboard/csvImportSession";
 import type { BookmarkImportResult } from "lib/draftDashboard/recovery";
-import type { DashboardMatchupWeek } from "lib/draftDashboard/scheduleMetrics";
+import { normalizeScheduleSettings, type DashboardMatchupWeek } from "lib/draftDashboard/scheduleMetrics";
 import {
   decompressFromEncodedURIComponent,
 } from "lz-string";
@@ -46,6 +46,8 @@ interface DraftSettingsProps {
   riskSd?: number;
   matchupWeeks?: readonly DashboardMatchupWeek[];
   matchupWeeksError?: string | null;
+  scheduleLoading?: boolean;
+  scheduleError?: string | null;
   validation?: DraftSettingsValidation;
   variant?: "standalone" | "inline" | "full";
   activeSection?: SettingsDomain;
@@ -139,6 +141,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   riskSd,
   matchupWeeks = [],
   matchupWeeksError,
+  scheduleLoading = false,
+  scheduleError,
   validation,
   variant = "standalone",
   activeSection = "league",
@@ -292,6 +296,10 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
 
   const leagueType: LeagueType = settings.leagueType || "points";
   const useLeagueViews = variant === "inline";
+  const { playoffWeeks: selectedPlayoffWeeks, scheduleScope } = normalizeScheduleSettings(settings);
+  const canUsePlayoffs = !matchupWeeksError &&
+    matchupWeeks.some(({ week }) => selectedPlayoffWeeks.includes(week));
+  const effectiveScheduleScope = canUsePlayoffs ? scheduleScope : "season";
 
   const stepRoster = (position: string, delta: number) => {
     const current =
@@ -569,8 +577,23 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
             </div>}
 
             <div className={styles.playoffWeeks} hidden={useLeagueViews && leagueView !== "schedule"}>
+              <label htmlFor="draft-schedule-period">Schedule period</label>
+              <select id="draft-schedule-period" value={effectiveScheduleScope} disabled={draftLocked}
+                aria-describedby={canUsePlayoffs ? undefined : "draft-schedule-period-help"}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  if (!draftLocked && (value === "season" || (value === "playoffs" && canUsePlayoffs))) {
+                    onSettingsChange({ scheduleScope: value });
+                  }
+                }}>
+                <option value="season">Season</option>
+                <option value="playoffs" disabled={!canUsePlayoffs}>Playoffs</option>
+              </select>
+              {!canUsePlayoffs && <small id="draft-schedule-period-help">Select at least one available playoff week to use Playoffs.</small>}
+              {!matchupWeeksError && matchupWeeks.length > 0 && (scheduleError || scheduleLoading) &&
+                <small role="status">{scheduleError ?? "Loading schedule…"}</small>}
               <label htmlFor="draft-playoff-weeks">Playoff Weeks</label>
-              <select id="draft-playoff-weeks" multiple size={5} value={(settings.playoffWeeks ?? []).map(String)} disabled={!matchupWeeks.length}
+              <select id="draft-playoff-weeks" multiple size={5} value={(settings.playoffWeeks ?? []).map(String)} disabled={draftLocked || !matchupWeeks.length}
                 aria-describedby="playoff-weeks-help"
                 onChange={(event) => {
                   const playoffWeeks = Array.from(event.currentTarget.selectedOptions, (option) => Number(option.value));
@@ -579,7 +602,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                 {matchupWeeks.map((week) => <option key={week.week} value={week.week}>Week {week.week} · {week.start_date} – {week.end_date}</option>)}
               </select>
               <small id="playoff-weeks-help">{matchupWeeksError ?? (matchupWeeks.length ? "Select your Yahoo playoff weeks. Hold Command/Ctrl to select separate weeks." : "Loading Yahoo weeks…")}</small>
-              <button type="button" disabled={!settings.playoffWeeks?.length} onClick={() => onSettingsChange({ playoffWeeks: [], scheduleScope: "season" })}>Clear playoff weeks</button>
+              <button type="button" disabled={draftLocked || !settings.playoffWeeks?.length} onClick={() => onSettingsChange({ playoffWeeks: [], scheduleScope: "season" })}>Clear playoff weeks</button>
             </div>
 
             <div className={styles.leagueFormatView} hidden={useLeagueViews && leagueView !== "format"}>

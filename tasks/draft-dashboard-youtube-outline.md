@@ -179,7 +179,7 @@ Prepared September 7, 2026. Target runtime: **59 minutes**. Presenter bullets an
 - **Show:** Playoff Weeks in League & Draft.
 - Select the actual matchup weeks using the displayed date ranges. Hold Command/Ctrl for separate selections; choose the full playoff period, not just the championship week.
 - These are Yahoo matchup-week/date definitions. For other providers, check date alignment rather than matching week numbers blindly.
-- Above Available Players, switch **Schedule period** between Season and Playoffs. Playoffs is unavailable until valid weeks are selected; clearing playoff weeks returns the scope to Season.
+- In **League & Draft → Schedule**, use **Schedule period** beside Playoff Weeks to switch between Season and Playoffs. Playoffs is unavailable until valid weeks are selected; clearing playoff weeks returns the scope to Season.
 - Explain now that this changes schedule counts/analysis for the chosen period. It does not turn season projections into a complete playoff-only fantasy forecast.
 - **Show:** Integrations & Live Sync.
   - Connected league settings can reduce manual entry; always review imported teams, roster, scoring, and warnings before drafting.

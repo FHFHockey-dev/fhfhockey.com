@@ -14,13 +14,27 @@ it("shares NHL windows across scope changes and maps missing teams to unavailabl
   mocks.teams.mockResolvedValue([{ id: 1, abbreviation: "CAR" }, { id: 2, abbreviation: "TBL" }]);
   mocks.schedule.mockImplementation(async (start: string) => ({ coveredDates: Array.from({ length: 7 }, (_, i) => shiftScheduleDate(start, i)), numGamesPerDay: [], data: { 1: { MON: { id: Number(start.replaceAll("-", "")), gameDate: shiftScheduleDate(start, 1), gameType: 2, season: 20262027, homeTeam: { id: 1 }, awayTeam: { id: 2 } } } } }));
   const players = [{ playerId: 1, displayTeam: "CAR" }, { playerId: 2, displayTeam: "UNKNOWN" }, { playerId: 3, displayTeam: "TB" }] as any;
-  const { result, rerender } = renderHook(({ scope }) => useDraftSchedule(players, [24], scope), { initialProps: { scope: "season" as "season" | "playoffs" } });
+  const { result, rerender } = renderHook(
+    ({ scope, selected }) => useDraftSchedule(players, selected, scope),
+    { initialProps: { scope: "season" as "season" | "playoffs", selected: [24] } },
+  );
   await waitFor(() => expect(result.current.playerMetrics?.get("1")?.games).toBe(2));
   expect(result.current.playerMetrics?.has("2")).toBe(false);
   expect(result.current.playerMetrics?.get("3")).toEqual({ games: 2, off: 2, b2b: 0 });
   const requests = mocks.schedule.mock.calls.length;
-  rerender({ scope: "playoffs" });
+  rerender({ scope: "playoffs", selected: [24, 99] });
+  expect(result.current.selectedWeeks.map(({ week }) => week)).toEqual([24]);
   expect(result.current.playerMetrics?.get("1")?.games).toBe(1);
+  expect(result.current.weeks.map(({ week }) => week)).toEqual([24, 25]);
+
+  rerender({ scope: "season", selected: [24, 99] });
+  expect(result.current.playerMetrics?.get("1")?.games).toBe(2);
+  rerender({ scope: "playoffs", selected: [99] });
+  expect(result.current.scope).toBe("season");
+  expect(result.current.playerMetrics?.get("1")?.games).toBe(2);
+  rerender({ scope: "playoffs", selected: [] });
+  expect(result.current.scope).toBe("season");
+  expect(result.current.playerMetrics?.get("1")?.games).toBe(2);
   expect(mocks.schedule).toHaveBeenCalledTimes(requests);
   expect(mocks.schedule).toHaveBeenCalledWith("2027-03-14", { includeOdds: false });
 });

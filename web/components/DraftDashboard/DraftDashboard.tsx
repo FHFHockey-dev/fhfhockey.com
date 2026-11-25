@@ -4194,6 +4194,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         fantraxLeagueEligibilityAvailable={fantraxLeagueEligibilityAvailable}
         matchupWeeks={draftSchedule.weeks}
         matchupWeeksError={draftSchedule.weeksError}
+        scheduleLoading={draftSchedule.loading}
+        scheduleError={draftSchedule.error}
         ref={settingsEditorRef}
         validation={settingsValidation}
         variant="inline"

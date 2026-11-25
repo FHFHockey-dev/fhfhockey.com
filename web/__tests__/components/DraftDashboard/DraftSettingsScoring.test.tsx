@@ -286,12 +286,15 @@ describe("DraftSettings inline league views", () => {
 
     expect(screen.getByRole("button", { name: "Format" }).getAttribute("aria-pressed")).toBe("true");
     const playoffWeeks = screen.getByLabelText("Playoff Weeks");
+    const period = screen.getByLabelText("Schedule period");
+    expect(period.closest("[hidden]")).toBeTruthy();
     const teamCount = screen.getByLabelText("Number of teams");
     expect(playoffWeeks.closest("[hidden]")).toBeTruthy();
     expect(teamCount.closest("[hidden]")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Schedule" }));
     expect(playoffWeeks.closest("[hidden]")).toBeNull();
+    expect(period.closest("[hidden]")).toBeNull();
     expect(teamCount.closest("[hidden]")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Management" }));
@@ -531,6 +534,84 @@ describe("DraftSettings Yahoo lock", () => {
   });
 });
 
+
+describe("DraftSettings schedule period", () => {
+  const matchupWeeks = [
+    { week: 24, start_date: "2027-03-15", end_date: "2027-03-21" },
+    { week: 27, start_date: "2027-04-05", end_date: "2027-04-11" },
+  ];
+  const props = () => ({
+    settings: { ...settings, playoffWeeks: [24, 27], scheduleScope: "season" as const },
+    matchupWeeks,
+    onSettingsChange: vi.fn(),
+    myTeamId: "Team 1",
+    onMyTeamIdChange: vi.fn(),
+    undoLastPick: vi.fn(),
+    resetDraft: vi.fn(),
+    draftHistory: [],
+    draftedPlayers: [{ playerId: "1", teamId: "Team 1", pickNumber: 1, round: 1, pickInRound: 1 }],
+    currentPick: 2,
+  });
+
+  it("switches schedule period both ways without changing weeks or draft settings", () => {
+    const inputs = props();
+    const view = render(<DraftSettings {...inputs} />);
+    const period = screen.getByRole<HTMLSelectElement>("combobox", { name: "Schedule period" });
+    expect(period.value).toBe("season");
+    fireEvent.change(period, { target: { value: "playoffs" } });
+    expect(inputs.onSettingsChange).toHaveBeenLastCalledWith({ scheduleScope: "playoffs" });
+
+    view.rerender(<DraftSettings {...inputs} settings={{ ...inputs.settings, scheduleScope: "playoffs" }} />);
+    expect(period.value).toBe("playoffs");
+    expect([...screen.getByRole<HTMLSelectElement>("listbox", { name: "Playoff Weeks" }).selectedOptions].map(({ value }) => value)).toEqual(["24", "27"]);
+    fireEvent.change(period, { target: { value: "season" } });
+    expect(inputs.onSettingsChange).toHaveBeenLastCalledWith({ scheduleScope: "season" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear playoff weeks" }));
+    expect(inputs.onSettingsChange).toHaveBeenLastCalledWith({ playoffWeeks: [], scheduleScope: "season" });
+    view.rerender(<DraftSettings {...inputs} settings={{ ...inputs.settings, playoffWeeks: [], scheduleScope: "season" }} />);
+    expect(period.value).toBe("season");
+    expect(within(period).getByRole<HTMLOptionElement>("option", { name: "Playoffs" }).disabled).toBe(true);
+  });
+
+  it("disables unavailable weeks without erasing the stored playoff preference", () => {
+    const inputs = props();
+    const stored = { ...inputs.settings, playoffWeeks: [99], scheduleScope: "playoffs" as const };
+    const view = render(<DraftSettings {...inputs} settings={stored} />);
+    const period = screen.getByRole<HTMLSelectElement>("combobox", { name: "Schedule period" });
+    const playoffs = within(period).getByRole<HTMLOptionElement>("option", { name: "Playoffs" });
+    expect(period.value).toBe("season");
+    expect(playoffs.disabled).toBe(true);
+    fireEvent.change(period, { target: { value: "playoffs" } });
+    expect(inputs.onSettingsChange).not.toHaveBeenCalled();
+
+    const partial = { ...stored, playoffWeeks: [24, 99] };
+    view.rerender(<DraftSettings {...inputs} settings={partial} matchupWeeks={[]} />);
+    expect(screen.getByText("Loading Yahoo weeks…")).toBeTruthy();
+    expect(playoffs.disabled).toBe(true);
+    view.rerender(<DraftSettings {...inputs} settings={partial} matchupWeeks={[]} matchupWeeksError="Yahoo weeks unavailable." />);
+    expect(screen.getByText("Yahoo weeks unavailable.")).toBeTruthy();
+    expect(playoffs.disabled).toBe(true);
+
+    view.rerender(<DraftSettings {...inputs} settings={partial} scheduleLoading />);
+    expect(screen.getByRole("status").textContent).toContain("Loading schedule…");
+    expect(period.value).toBe("playoffs");
+    expect(playoffs.disabled).toBe(false);
+    view.rerender(<DraftSettings {...inputs} settings={partial} scheduleError="NHL counts unavailable." />);
+    expect(screen.getByRole("status").textContent).toContain("NHL counts unavailable.");
+    expect(playoffs.disabled).toBe(false);
+    expect(inputs.onSettingsChange).not.toHaveBeenCalled();
+  });
+
+  it("preserves the live-sync lock on the period and week controls", () => {
+    const inputs = props();
+    render(<DraftSettings {...inputs} draftLocked />);
+    expect(screen.getByRole<HTMLSelectElement>("combobox", { name: "Schedule period" }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLSelectElement>("listbox", { name: "Playoff Weeks" }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Clear playoff weeks" }).disabled).toBe(true);
+    expect(inputs.onSettingsChange).not.toHaveBeenCalled();
+  });
+});
 
 it("selects nonconsecutive playoff weeks and clears playoff scope", () => {
   const onSettingsChange = vi.fn();

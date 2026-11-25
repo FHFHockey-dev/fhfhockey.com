@@ -1852,6 +1852,7 @@
 }
 .playoffWeeks {
   display: grid;
+  &[hidden] { display: none; }
   gap: 8px;
   margin-block: 16px;
   min-width: 0;
