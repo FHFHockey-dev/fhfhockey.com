@@ -306,7 +306,21 @@ test("free CSV source blends and restores after autosave", async ({ page }) => {
   await expect(players.locator("tbody tr").first()).toBeVisible({ timeout: 60_000 });
   await page.getByLabel("Position filter").selectOption("C");
   await players.locator("tbody tr").first().getByRole("button", { name: "Draft", exact: true }).click();
-  const draftedBefore = await page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers);
+  const storedDraft = () => page.evaluate(() => {
+    const snapshot = JSON.parse(sessionStorage.getItem("draft.snapshot.v2") ?? "{}");
+    const sources = JSON.parse(sessionStorage.getItem("draft.customCsvList.v3") ?? "[]") as Array<{ id: string; label: string; rows: unknown[] }>;
+    const metadata = snapshot.customSourceMetadata?.find((entry: { label: string }) => entry.label === "Fixture CSV");
+    const entry = sources.find(({ id }) => id === metadata?.id);
+    return {
+      compact: snapshot.tabCsvSidecar === true && snapshot.customCsvList === undefined,
+      metadata,
+      entry,
+      sourceControls: snapshot.sourceControls,
+      draftedPlayers: snapshot.draftedPlayers,
+    };
+  });
+  await expect.poll(async () => (await storedDraft()).draftedPlayers).toMatchObject([{ playerId: "1001" }]);
+  const draftedBefore = (await storedDraft()).draftedPlayers;
 
   await page.getByRole("button", { name: "Open full draft settings", exact: true }).click();
   await page.getByRole("tab", { name: "League & Draft", exact: true }).click();
@@ -328,28 +342,33 @@ test("free CSV source blends and restores after autosave", async ({ page }) => {
   for (const input of await weights.all()) if (await input.isEnabled()) await input.fill("0");
   await skaterSources.getByLabel("Fixture CSV weight percent", { exact: true }).fill("100");
   await page.getByRole("button", { name: "Done", exact: false }).click();
-  await expect.poll(() => page.evaluate(() =>
-    JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").customCsvList?.[0]?.rows?.[0],
-  )).toMatchObject({ player_id: 1002, Goals: 65, Assists: 60, Shots_on_Goal: 300 });
-  await expect.poll(() => page.evaluate(() =>
-    JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").sourceControls,
-  )).toMatchObject({
+  const expectedCsv = {
+    compact: true,
+    metadata: { id: expect.stringMatching(/^custom_csv_/), label: "Fixture CSV", contentFingerprint: expect.any(String) },
+    entry: { label: "Fixture CSV", rows: [{ player_id: 1002, Goals: 65, Assists: 60, Shots_on_Goal: 300 }] },
+  };
+  await expect.poll(storedDraft).toMatchObject(expectedCsv);
+  const storedBeforeReload = await storedDraft();
+  const sourceId = storedBeforeReload.metadata.id;
+  expect(storedBeforeReload.entry?.id).toBe(sourceId);
+  expect(storedBeforeReload.sourceControls).toMatchObject({
     ag_skaters: { isSelected: true, weight: 0 },
     cullen_skaters: { isSelected: true, weight: 0 },
     dtz_skaters: { isSelected: true, weight: 0 },
     "5v5_skaters": { isSelected: true, weight: 0 },
-    custom_csv_1: { isSelected: true, weight: 1 },
+    [sourceId]: { isSelected: true, weight: 1 },
   });
   await expect(players.locator('tr[data-player-id="1002"]')).toContainText("418.0");
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
-  await expect.poll(() => page.evaluate(() =>
-    JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").customCsvList?.[0]?.rows?.[0],
-  )).toMatchObject({ player_id: 1002, Goals: 65, Assists: 60, Shots_on_Goal: 300 });
-  await expect.poll(() => page.evaluate(() =>
-    JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers,
-  )).toEqual(draftedBefore);
+  await expect.poll(storedDraft).toMatchObject({
+    ...expectedCsv,
+    metadata: storedBeforeReload.metadata,
+    entry: { id: sourceId, ...expectedCsv.entry },
+    sourceControls: { [sourceId]: { isSelected: true, weight: 1 } },
+    draftedPlayers: draftedBefore,
+  });
   await expect(players.locator('tr[data-player-id="1001"]')).toHaveCount(0);
   await page.getByRole("button", { name: "Open full draft settings", exact: true }).click();
   await page.getByRole("tab", { name: "Projections", exact: true }).click();
