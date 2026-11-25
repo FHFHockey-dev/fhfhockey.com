@@ -8,6 +8,7 @@ const external = vi.hoisted(() => ({
   espnState: null as any,
   showRoster: false,
   showDraftButtons: false,
+  renderProjectionPanels: false,
   players: null as any[] | null,
   filledSlots: {} as Record<string, number>,
   proEnabled: false,
@@ -49,7 +50,10 @@ vi.mock("hooks/useEspnDraftSync", () => ({ useEspnDraftSync: () => ({ enabled: f
 vi.mock("hooks/useProcessedProjectionsData", () => ({ useProcessedProjectionsData: ({ activePlayerType }: { activePlayerType: string }) => ({ processedPlayers: activePlayerType === "goalie" ? noGoalies : external.players ?? recoveryPlayers, isLoading: false, error: null, customSourceResolutions: {}, customFallbackUsage: { total: 0 }, sourceWarnings: [], yahooMappingDiagnostics: null, inclusionDiagnostics: null }) }));
 vi.mock("hooks/useVORPCalculations", () => ({ useVORPCalculations: ({ myFilledSlots }: { myFilledSlots: Record<string, number> }) => {
   external.filledSlots = myFilledSlots;
-  return { playerMetrics: new Map(), replacementByPos: {}, expectedTakenByPos: {}, expectedN: 0 };
+  const playerMetrics = external.renderProjectionPanels
+    ? new Map(recoveryPlayers.map((p) => [String(p.playerId), { vorp: 5, vbd: 5, vona: 1 }]))
+    : new Map();
+  return { playerMetrics, replacementByPos: {}, expectedTakenByPos: {}, expectedN: 0 };
 } }));
 vi.mock("hooks/useRosterScheduleOptimizer", () => ({ useRosterScheduleOptimizer: () => ({ status: "idle" }) }));
 vi.mock("components/PlayerAutocomplete", () => ({ default: () => null }));
@@ -89,21 +93,28 @@ vi.mock("hooks/useProviderSyncAccess", () => ({ useProviderSyncAccess: () => ({ 
 vi.mock("hooks/useDraftProAccess", () => ({ useDraftProAccess: () => ({ access: external.proEnabled ? { eligible: true, capabilities: ["recommendations"] } : null }) }));
 vi.mock("hooks/useDraftProDust", () => ({ useDraftProDust: () => ({ data: null, error: null, isLoading: false }) }));
 vi.mock("hooks/useDraftSchedule", () => ({ useDraftSchedule: () => ({ playerMetrics: new Map(), weeks: [], selectedWeeks: [], weeksError: null, periodLabel: "Season" }) }));
-vi.mock("components/DraftDashboard/ProjectionsTable", () => ({ default: ({ allPlayers, onDraftPlayer, canDraft }: React.ComponentProps<typeof import("../../../components/DraftDashboard/ProjectionsTable").default>) => {
-  external.tablePlayers = allPlayers ?? [];
-  return external.showDraftButtons
-    ? (allPlayers ?? []).map((row) => (
-        <button key={row.playerId} disabled={!canDraft} onClick={() => onDraftPlayer(String(row.playerId))}>
-          Draft {row.fullName}
-        </button>
-      ))
-    : null;
-} }));
-vi.mock("components/DraftDashboard/SuggestedPicks", () => ({ default: ({ tierPositions, adpSource }: any) => {
-  external.tierPositions = tierPositions;
-  external.tierAdpSource = adpSource;
-  return null;
-} }));
+vi.mock("components/DraftDashboard/ProjectionsTable", async () => {
+  const { default: Table } = await vi.importActual<typeof import("../../../components/DraftDashboard/ProjectionsTable")>("components/DraftDashboard/ProjectionsTable");
+  return { default: (props: React.ComponentProps<typeof Table>) => {
+    external.tablePlayers = props.allPlayers ?? [];
+    if (external.renderProjectionPanels) return <Table {...props} />;
+    return external.showDraftButtons
+      ? external.tablePlayers.map((row) => (
+          <button key={row.playerId} disabled={!props.canDraft} onClick={() => props.onDraftPlayer(String(row.playerId))}>
+            Draft {row.fullName}
+          </button>
+        ))
+      : null;
+  } };
+});
+vi.mock("components/DraftDashboard/SuggestedPicks", async () => {
+  const { default: Suggested } = await vi.importActual<typeof import("../../../components/DraftDashboard/SuggestedPicks")>("components/DraftDashboard/SuggestedPicks");
+  return { default: (props: React.ComponentProps<typeof Suggested>) => {
+    external.tierPositions = props.tierPositions ?? [];
+    external.tierAdpSource = props.adpSource ?? "";
+    return external.renderProjectionPanels ? <Suggested {...props} /> : null;
+  } };
+});
 vi.mock("components/DraftDashboard/GodView", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/DustMatrix", () => ({ default: () => null }));
 
@@ -165,13 +176,19 @@ function management() {
 }
 
 beforeEach(() => {
+  vi.stubGlobal("ResizeObserver", class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  });
+  Object.defineProperty(HTMLElement.prototype, "scrollTo", { configurable: true, value: vi.fn() });
   Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() });
   Object.defineProperty(window, "matchMedia", { configurable: true, value: vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })) });
   vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 afterEach(() => {
   cleanup(); sessionStorage.clear(); localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals();
-  external.showRoster = false; external.showDraftButtons = false; external.players = null; external.filledSlots = {};
+  external.renderProjectionPanels = false; external.showRoster = false; external.showDraftButtons = false; external.players = null; external.filledSlots = {};
   external.proEnabled = false; external.providerSyncEnabled = false; external.fantraxPlayers = []; external.tablePlayers = []; external.tierPositions = []; external.tierAdpSource = "";
   external.user = null; external.espnState = null; external.loadSettings.mockReset(); external.loadSettings.mockResolvedValue({ data: null, error: null });
 });
@@ -1147,4 +1164,73 @@ it("captures roster overrides for a corrected pick without changing the later pi
     positionOverrides: { "2": "UTILITY" },
     draftHistory: [],
   }));
+});
+
+
+it("shows the drafted player and no-pick keeper in the full table while keeping both draft actions disabled", async () => {
+  external.renderProjectionPanels = true;
+  const legacy = { ...legacyV4Draft(), settings: { ...settings, isKeeper: true },
+    keepers: [{ playerId: "9", teamId: "Team 2", cost: "none" }],
+    sourceControls: { dtz_skaters: { isSelected: true, weight: 1 } }, csvMetadata: [],
+  };
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify(legacy));
+  localStorage.setItem("projections.hideDrafted", "true");
+  render(<DraftDashboard />);
+  fireEvent.click(await screen.findByRole("button", { name: "Restore legacy saved tab draft" }));
+  fireEvent.click(within(dialog()).getByRole("button", { name: "Done" }));
+  const tableRow = (id: string) => document.querySelector<HTMLElement>(`tr[data-player-id="${id}"]`);
+  await waitFor(() => expect(saved().currentPick).toBe(2));
+  expect(tableRow("2")).toBeNull();
+  expect(tableRow("9")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Toggle hide drafted" }));
+  await waitFor(() => expect(tableRow("2")).toBeTruthy());
+  expect(within(tableRow("2")!).getByTitle("Player already drafted").hasAttribute("disabled")).toBe(true);
+  expect(within(tableRow("9")!).getByTitle("Keeper player").hasAttribute("disabled")).toBe(true);
+  expect(document.querySelector('[role="listitem"][data-player-id="2"], [role="listitem"][data-player-id="9"]')).toBeNull();
+});
+
+it("updates the rendered table and suggested pick from the recovered availability spread", async () => {
+  external.renderProjectionPanels = true;
+  external.players = [{ ...player, yahooAvgPick: 2 }, keeperPlayer];
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({ ...snapshot(), draftedPlayers: [], keepers: [],
+    draftHistory: [], currentPick: 1, positionOverrides: {}, myTeamId: "Team 2", riskSd: 28,
+  }));
+  render(<DraftDashboard />);
+  const suggested = () => document.querySelector('[role="listitem"][data-player-id="2"] [title$="remaining available at your next pick"]');
+  const table = () => document.querySelector('tr[data-player-id="2"] [title*="estimated available at your next pick"]');
+  await waitFor(() => {
+    expect(suggested()?.textContent).toMatch(/\d+%/);
+    expect(table()?.textContent).toBe(suggested()?.textContent);
+  });
+  const before = suggested()!.textContent;
+  fireEvent.click(screen.getByRole("button", { name: "Open settings drawer" }));
+  fireEvent.change(screen.getByLabelText("SD (picks): 28"), { target: { value: "4" } });
+  await waitFor(() => {
+    expect(saved().riskSd).toBe(4);
+    expect(localStorage.getItem("projections.riskSd")).toBe("4");
+    expect(suggested()!.textContent).not.toBe(before);
+    expect(table()?.textContent).toBe(suggested()!.textContent);
+  });
+});
+
+it("shows one compact draft status on each mobile working tab and hides it while Setup is open", async () => {
+  vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+    matches: query === "(max-width: 799px)", addEventListener: vi.fn(), removeEventListener: vi.fn(),
+  }) as unknown as MediaQueryList);
+  sessionStorage.setItem("draftDashboard.mobileTab.v1", "players");
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({ ...snapshot(), draftedPlayers: [], keepers: [],
+    draftHistory: [], currentPick: 1, positionOverrides: {},
+  }));
+  render(<DraftDashboard />);
+  const tabs = within(screen.getByRole("tablist", { name: "Draft Dashboard workspace" }));
+  for (const tab of ["Players", "Suggested", "Roster", "Board"]) {
+    fireEvent.click(tabs.getByRole("tab", { name: tab }));
+    const summaries = await screen.findAllByRole("region", { name: "Draft Status summary" });
+    expect(summaries).toHaveLength(1);
+    expect(within(summaries[0]).getByText("On clock")).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Draft Status" })).toBeNull();
+  }
+  fireEvent.click(tabs.getByRole("tab", { name: "Setup" }));
+  expect(dialog()).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Draft Status summary" })).toBeNull();
 });

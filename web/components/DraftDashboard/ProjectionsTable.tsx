@@ -46,6 +46,7 @@ interface ProjectionsTableProps {
   // Full pool including drafted; used for diagnostics cross-check
   allPlayers?: ProcessedPlayer[];
   draftedPlayers: DraftedPlayer[];
+  keeperPlayerIds?: ReadonlySet<string>;
   unavailablePlayerIds?: ReadonlySet<string>;
   isLoading: boolean;
   error: string | null;
@@ -195,6 +196,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   players,
   allPlayers,
   draftedPlayers,
+  keeperPlayerIds,
   unavailablePlayerIds,
   isLoading,
   error,
@@ -734,8 +736,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     const s = new Set<string>();
     draftedPlayers?.forEach((dp) => s.add(String(dp.playerId)));
     unavailablePlayerIds?.forEach((playerId) => s.add(String(playerId)));
+    keeperPlayerIds?.forEach((playerId) => s.add(String(playerId)));
     return s;
-  }, [draftedPlayers, unavailablePlayerIds]);
+  }, [draftedPlayers, keeperPlayerIds, unavailablePlayerIds]);
 
   const diagnostics = useMemo(() => {
     return diagnoseProjectionVisibility({
@@ -818,12 +821,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     const risks = new Map<string, number>();
     for (const player of players) {
       const id = String(player.playerId);
-      if (unavailablePlayerIds?.has(id) || draftedPlayers.some(pick => String(pick.playerId) === id)) continue;
+      if (draftedIdSet.has(id)) continue;
       const availability = estimatePlayerAvailability(player.yahooAvgPick, selectionHorizon, riskSd);
       if (availability !== null) risks.set(id, 1 - availability);
     }
     return risks;
-  }, [players, draftedPlayers, unavailablePlayerIds, selectionHorizon, riskSd]);
+  }, [players, draftedIdSet, selectionHorizon, riskSd]);
 
   // Filter and sort players
   const filteredAndSortedPlayers = useMemo(() => {
@@ -1149,8 +1152,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   };
 
   const handleDraftClick = (playerId: number) => {
-    if (!canDraft) return;
-    onDraftPlayer(String(playerId));
+    const id = String(playerId);
+    if (!canDraft || draftedIdSet.has(id)) return;
+    onDraftPlayer(id);
   };
 
   // Get unique positions for filter
@@ -1962,6 +1966,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             {(() => {
               return displayPlayers.flatMap((player, rowIndex) => {
                 const key = String(player.playerId);
+                const isKeeper = keeperPlayerIds?.has(key);
+                const isUnavailable = draftedIdSet.has(key);
+                const draftAction = isKeeper ? "Keeper" : isUnavailable ? "Drafted" : "Draft";
+                const draftActionTitle = isKeeper ? "Keeper player" : isUnavailable ? "Player already drafted" : "Draft this player";
                 const m = vorpMap.get(key);
                 const vorp = m?.vorp ?? null;
                 const vona = m?.vona ?? null;
@@ -2472,16 +2480,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         className={styles.draftButton}
                         data-control-variant="primary"
                         onClick={() => handleDraftClick(player.playerId)}
-                        disabled={!canDraft || draftedIdSet.has(key)}
-                        title={
-                          !canDraft
-                            ? draftUnavailableReason
-                            : draftedIdSet.has(key)
-                              ? "Player already drafted"
-                              : "Draft this player"
-                        }
+                        disabled={!canDraft || isUnavailable}
+                        title={canDraft ? draftActionTitle : draftUnavailableReason}
                       >
-                        {draftedIdSet.has(key) ? "Drafted" : "Draft"}
+                        {draftAction}
                       </button>
                     </td>
                     <td className={`${styles.compareCell}`}>

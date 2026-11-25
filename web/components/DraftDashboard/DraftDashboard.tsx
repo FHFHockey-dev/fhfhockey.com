@@ -2191,6 +2191,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     () => [...draftedPlayers, ...noPickKeeperAssignments],
     [draftedPlayers, noPickKeeperAssignments],
   );
+  const keeperPlayerIds = useMemo(
+    () => new Set(rosterAssignments.filter((assignment) => assignment.isKeeper).map((assignment) => assignment.playerId)),
+    [rosterAssignments],
+  );
   const unavailablePlayerIds = useMemo(
     () => new Set(rosterAssignments.map((assignment) => assignment.playerId)),
     [rosterAssignments],
@@ -3988,8 +3992,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             picksBeforeTurn={myPickWindows[0]?.offset}
             onRefresh={() => setDataRefreshKey((k) => k + 1)}
             projectionSeasonId={FANTASY_PROJECTION_SEASON_ID}
-            players={tableAvailablePlayers}
+            players={tableAllPlayers}
             allPlayers={tableAllPlayers}
+            keeperPlayerIds={keeperPlayerIds}
             draftedPlayers={draftedPlayers}
             unavailablePlayerIds={unavailablePlayerIds}
             isLoading={isLoading}
@@ -4049,7 +4054,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             onOpenRosterImpact={canUseProScenarios ? openRosterImpact : undefined}
           />
   ), [
-    myPickWindows, currentSeasonId, tableAvailablePlayers, tableAllPlayers, draftedPlayers,
+    myPickWindows, currentSeasonId, tableAllPlayers, keeperPlayerIds, draftedPlayers,
     unavailablePlayerIds, isLoading, errorMessage, draftPlayer,
     manualDraftingEnabled, canMakeManualPick, draftProEligible, adpSource, positionSource, fantraxLeagueEligibilityAvailable, fantraxPlayerDataLoaded,
     personalRankByPlayerId, vorpMetrics, replacementByPos, referenceLabel, referenceLabel, baselineMode,
@@ -4069,6 +4074,19 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     (analysisPreferenceSaveErrors.prorate84 || analysisPreferenceSaveErrors.riskSd) &&
       "Analysis preferences could not be saved on this device. Export a bookmark to retain your settings.",
   ].filter(Boolean).join(" ");
+
+  const draftStatus = (
+    <DraftStatus
+      compact={mobileWorkspaceEnabled}
+      round={currentTurn.round}
+      rounds={rosterRoundCount(draftSettings.rosterConfig)}
+      currentPick={currentPick}
+      totalPicks={draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig)}
+      teamName={customTeamNames[currentTurn.teamId] || currentTurn.teamId}
+      nextPick={nextPickNumber}
+      picksUntilNext={nextPickNumber == null ? undefined : nextPickNumber - currentPick}
+    />
+  );
 
   return (
     <main
@@ -4090,6 +4108,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           setActiveMobileTab(tab);
         }}
       />
+
+      {mobileWorkspaceEnabled && !settingsOpen && activeMobileTab !== "setup" && draftStatus}
 
       <YahooDraftOrderReminder
         state={draftMode === "yahoo" ? yahooDraftSync.draftState : null}
@@ -4575,20 +4595,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           }
           hidden={mobileWorkspaceEnabled && activeMobileTab !== "board"}
         >
-          <DraftStatus
-            round={currentTurn.round}
-            rounds={rosterRoundCount(draftSettings.rosterConfig)}
-            currentPick={currentPick}
-            totalPicks={
-              draftSettings.teamCount *
-              rosterRoundCount(draftSettings.rosterConfig)
-            }
-            teamName={
-              customTeamNames[currentTurn.teamId] || currentTurn.teamId
-            }
-            nextPick={nextPickNumber}
-            picksUntilNext={nextPickNumber == null ? undefined : nextPickNumber - currentPick}
-          />
+          {!mobileWorkspaceEnabled && draftStatus}
           <DraftBoard
             rankHistory={roundRankHistory}
             expandedMetrics={<>

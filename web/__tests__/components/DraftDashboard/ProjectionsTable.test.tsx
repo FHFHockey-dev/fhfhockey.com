@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -553,6 +554,42 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect(screen.queryByText("Healthy Player")).toBeNull();
     expect(screen.queryByText("Data notices")).toBeNull();
     expect(screen.getByRole("button", { name: "Legend" })).toBeTruthy();
+  });
+
+  it("keeps assigned keepers and picks visible without exposing a draft action", () => {
+    const pool = [player(1, "Available Player", "C"), player(2, "Drafted Player", "D"), player(3, "Keeper Player", "C")];
+    const onDraftPlayer = vi.fn();
+    const props = {
+      players: pool,
+      allPlayers: pool,
+      draftedPlayers: [{ playerId: "2", teamId: "Team 1", pickNumber: 1, round: 1, pickInRound: 1 }],
+      keeperPlayerIds: new Set(["3"]),
+      unavailablePlayerIds: new Set(["3"]),
+      isLoading: false,
+      error: null,
+      onDraftPlayer,
+    };
+    const view = render(<ProjectionsTable {...props} canDraft />);
+    const keeper = within(screen.getByRole("row", { name: /Keeper Player/ })).getByRole("button", { name: "Keeper" });
+    const drafted = within(screen.getByRole("row", { name: /Drafted Player/ })).getByRole("button", { name: "Drafted" });
+    expect(keeper.hasAttribute("disabled")).toBe(true);
+    expect(keeper.getAttribute("title")).toBe("Keeper player");
+    expect(drafted.hasAttribute("disabled")).toBe(true);
+    fireEvent.click(keeper);
+    fireEvent.click(drafted);
+    expect(onDraftPlayer).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole("row", { name: /Available Player/ })).getByRole("button", { name: "Draft" }));
+    expect(onDraftPlayer).toHaveBeenCalledExactlyOnceWith("1");
+
+    const providerReason = "Fantrax live sync controls picks. Stop sync to draft manually.";
+    view.rerender(<ProjectionsTable {...props} canDraft={false} draftUnavailableReason={providerReason} />);
+    expect(keeper.getAttribute("title")).toBe(providerReason);
+    expect(keeper.hasAttribute("disabled")).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle hide drafted" }));
+    expect(screen.queryByRole("row", { name: /Keeper Player/ })).toBeNull();
+    expect(screen.queryByRole("row", { name: /Drafted Player/ })).toBeNull();
+    expect(screen.getByRole("row", { name: /Available Player/ })).toBeTruthy();
   });
 
   it("keeps drafted players visible until requested and reports source inclusion", () => {

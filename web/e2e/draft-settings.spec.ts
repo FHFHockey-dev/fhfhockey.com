@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { installDraftProFreeFixtures } from "./draft-pro-fixtures";
 
 const settings = (page: Page) =>
-  page.getByRole("region", { name: "Draft Settings", exact: true });
+  page.getByRole("dialog", { name: "Draft Settings", exact: true });
 const session = (page: Page) =>
   page.evaluate(() =>
     JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}"),
@@ -19,24 +19,104 @@ async function fitsViewport(page: Page) {
   ).toEqual({ vertical: true, horizontal: true });
 }
 async function fitsSettingsPanel(page: Page, domain: string) {
-  expect(
-    await page.locator(`#draft-domain-${domain}`).evaluate((panel) => {
-      const bounds = panel.getBoundingClientRect();
-      const visibleChildren = Array.from(panel.querySelectorAll("*"))
-        .map((element) => element.getBoundingClientRect())
-        .filter((rect) => rect.width > 0 && rect.height > 0);
-      return {
-        vertical: panel.scrollHeight <= panel.clientHeight,
-        horizontal: panel.scrollWidth <= panel.clientWidth,
-        childrenVisible: visibleChildren.every(
-          (rect) =>
-            rect.bottom <= bounds.bottom + 0.5 &&
-            rect.right <= bounds.right + 0.5 &&
-            rect.left >= bounds.left - 0.5,
-        ),
-      };
-    }),
-  ).toEqual({ vertical: true, horizontal: true, childrenVisible: true });
+  const panel = page.locator(`#draft-domain-${domain}`);
+  const controls = panel.locator("button:visible, input:visible, select:visible, textarea:visible, [role='button']:visible");
+  expect(await controls.count()).toBeGreaterThan(0);
+  // The current shell deliberately scrolls long domains. Each control must fit
+  // within the panel horizontally, and the last control must be reachable.
+  expect(await controls.evaluateAll((elements, panelId) => {
+    const bounds = document.getElementById(panelId)!.getBoundingClientRect();
+    return elements.every((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1;
+    });
+  }, `draft-domain-${domain}`)).toBe(true);
+  await controls.last().scrollIntoViewIfNeeded();
+  expect(await controls.last().evaluate((control) => {
+    const rect = control.getBoundingClientRect();
+    return rect.top >= 0 && rect.bottom <= innerHeight;
+  })).toBe(true);
+}
+
+const workflowPlayers = [
+  { player_id: 1001, Player_Name: "Fixture Center", Position: "C" },
+  { player_id: 1002, Player_Name: "Fixture Wing", Position: "LW" },
+  { player_id: 1003, Player_Name: "Fixture Defense", Position: "D" },
+  ...["One", "Two", "Three", "Four"].map((name, index) => ({
+    player_id: 2101 + index, Player_Name: `Fixture Goalie ${name}`, Position: "G",
+  })),
+].map((player) => ({
+  ...player,
+  Team_Abbreviation: "AAA",
+  Games_Played: 82,
+  Goals: 25,
+  Assists: 40,
+  Hits: 75,
+  Wins_Goalie: player.Position === "G" ? 30 : 0,
+  Saves_Goalie: player.Position === "G" ? 1400 : 0,
+}));
+
+const workflowCsv = {
+  id: "custom_csv_browser_workflow",
+  label: "Browser workflow fixture",
+  playerType: "both",
+  rows: workflowPlayers,
+};
+
+const workflowSourceControls = (builtInSources: string[]) => ({
+  ...Object.fromEntries(builtInSources.map((id) => [id, { isSelected: false, weight: 0 }])),
+  [workflowCsv.id]: { isSelected: true, weight: 1 },
+});
+
+async function activateDraftWorkflow(page: Page) {
+  await page.route("**/*", (route) => {
+    const url = new URL(route.request().url());
+    if (["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) && !url.pathname.startsWith("/api/")) {
+      return route.continue();
+    }
+    return route.abort();
+  });
+  await recoveryFixtures(page, { acceptDialogs: false });
+  await page.route(/\/rest\/v1\/players(?:\?|$)/, (route) => route.fulfill({
+    json: workflowPlayers.map((player) => ({
+      id: player.player_id,
+      fullName: player.Player_Name,
+      position: player.Position,
+      lastName: player.Player_Name.split(" ").at(-1),
+    })),
+  }));
+  await page.goto("/draft-dashboard");
+  await expect(settings(page)).toBeVisible();
+  await recoveryImport(page, {
+    v: 3,
+    settings: {
+      teamCount: 12,
+      draftOrder: Array.from({ length: 12 }, (_, index) => `Team ${index + 1}`),
+      draftOrderMode: "snake",
+      rosterConfig: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 4, utility: 1 },
+      scoringCategories: { GOALS: 3, ASSISTS: 2, HITS: 0.2 },
+      leagueType: "points",
+      isKeeper: false,
+    },
+    draftedPlayers: [],
+    currentPick: 1,
+    myTeamId: "Team 1",
+    sourceControls: workflowSourceControls(["ag_skaters", "blake_ag_skaters", "nate_ag_skaters", "cullen_skaters", "dtz_skaters", "5v5_skaters"]),
+    goalieSourceControls: workflowSourceControls(["cullen_goalies", "dtz_goalies", "5v5_goalies"]),
+    goalieScoringCategories: { WINS_GOALIE: 4, SAVES_GOALIE: 0.2 },
+    customCsvList: [workflowCsv],
+    customSourceMetadata: [{ id: workflowCsv.id, label: workflowCsv.label }],
+  });
+  await expect.poll(async () => (await session(page)).sourceControls?.[workflowCsv.id]?.weight).toBe(1);
+}
+
+const settingsDomain = (page: Page, name: string) =>
+  settings(page).getByRole("tab", { name: new RegExp(`^${name}(?: ⚠)?$`) }).click();
+
+async function openDraftManagement(page: Page) {
+  await recoveryOpen(page);
+  await settingsDomain(page, "League & Draft");
+  await settings(page).getByRole("button", { name: "Management", exact: true }).click();
 }
 
 for (const viewport of [
@@ -50,14 +130,12 @@ for (const viewport of [
     await page.setViewportSize(viewport);
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto("/draft-dashboard");
-    await expect(settings(page)).toHaveAttribute("data-full", "true");
-    for (const domain of ["league", "roster", "scoring", "projections"])
-      await expect(page.locator(`#draft-domain-${domain}`)).toBeVisible();
+    await activateDraftWorkflow(page);
+    await expect(settings(page)).toBeVisible();
     await fitsViewport(page);
-    await page.screenshot({ path: testInfo.outputPath("full-setup.png") });
+    await page.screenshot({ path: testInfo.outputPath("initial-settings.png") });
     await done(page);
-    await expect(settings(page)).toHaveAttribute("data-open", "false");
+    await expect(settings(page)).toBeHidden();
     await expect(
       page.locator("#mobile-draft-panel-players tbody tr").first(),
     ).toBeVisible({ timeout: 60_000 });
@@ -66,26 +144,23 @@ for (const viewport of [
       .locator("#mobile-draft-panel-players")
       .evaluate((el) => el.getBoundingClientRect().toJSON());
     await page.screenshot({ path: testInfo.outputPath("collapsed.png") });
-    await settings(page).getByRole("button", { name: "Edit Settings" }).click();
-    await expect(settings(page)).toHaveAttribute("data-full", "false");
+    await recoveryOpen(page);
+    await expect(settings(page)).toBeVisible();
     for (const domain of [
       "Roster",
       "Scoring",
       "Projections",
       "League & Draft",
     ]) {
-      await settings(page)
-        .getByRole("tab", { name: domain, exact: true })
-        .click();
+      await settingsDomain(page, domain);
       await fitsViewport(page);
       if (domain !== "League & Draft")
         await fitsSettingsPanel(page, domain.toLowerCase());
     }
-    await page.waitForTimeout(250);
-    await page.screenshot({ path: testInfo.outputPath("quick-settings.png") });
+    await page.screenshot({ path: testInfo.outputPath("settings-reopened.png") });
+    await done(page);
     for (const id of ["suggested", "players", "roster", "board"])
       await expect(page.locator(`#mobile-draft-panel-${id}`)).toBeVisible();
-    await done(page);
     expect(
       await page
         .locator("#mobile-draft-panel-players")
@@ -100,8 +175,7 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
 }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1728, height: 900 });
-  await page.goto("/draft-dashboard");
-  await expect(settings(page)).toHaveAttribute("data-full", "true");
+  await activateDraftWorkflow(page);
   await done(page);
   const players = page.locator("#mobile-draft-panel-players");
   await expect(players.locator("tbody tr").first()).toBeVisible({
@@ -125,11 +199,15 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
     .locator("div")
     .nth(1);
   const pointsBefore = await rosterPoints.innerText();
-  const row = players.locator("tbody tr").first();
+  const row = players.locator('tr[data-player-id="2104"]');
   const selectedPlayerId = await row.getAttribute("data-player-id");
   await row.getByRole("checkbox").last().check();
   await row.getByRole("button", { name: /^Favorite / }).click();
   await row.getByRole("button", { name: /^Expand details/ }).click();
+  const playerSortHeader = players.getByRole("columnheader", { name: "Player", exact: true });
+  await playerSortHeader.getByRole("button", { name: "Player", exact: true }).click();
+  const sortBefore = await playerSortHeader.getAttribute("aria-sort");
+  expect(["ascending", "descending"]).toContain(sortBefore);
   await page.getByRole("textbox", { name: "Search players" }).fill("a");
   await page.getByLabel("Position filter").selectOption("G");
   await page.getByLabel("Available players per page").selectOption("15");
@@ -139,7 +217,7 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
     );
   });
   const url = page.url();
-  await settings(page).getByRole("button", { name: "Edit Settings" }).click();
+  await recoveryOpen(page);
   await settings(page)
     .getByRole("tab", { name: "League & Draft", exact: true })
     .click();
@@ -167,6 +245,8 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
   ).toHaveValue("a");
   await expect(page.getByLabel("Position filter")).toHaveValue("G");
   await expect(page.getByLabel("Available players per page")).toHaveValue("15");
+  await expect(playerSortHeader).toHaveAttribute("aria-sort", sortBefore!);
+  await expect(players.getByText("Compare (1)", { exact: true })).toBeVisible();
   expect(
     await page.evaluate(
       () =>
@@ -194,11 +274,12 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
   expect(page.url()).toBe(url);
   expect((await session(page)).draftedPlayers).toEqual(before.draftedPlayers);
   expect((await session(page)).currentPick).toBe(before.currentPick);
-  await page.getByRole("button", { name: "Setup", exact: true }).click();
-  await expect(settings(page)).toHaveAttribute("data-full", "true");
+  await recoveryOpen(page);
+  await settingsDomain(page, "Scoring");
   await expect(
     page.getByLabel("GOALS skater weight", { exact: true }),
   ).toHaveValue("4");
+  await settingsDomain(page, "Roster");
   await expect(page.getByTestId("roster-input-bench")).toHaveValue("5");
   await page.getByTestId("roster-input-bench").fill("0");
   await page.getByTestId("roster-input-G").fill("0");
@@ -207,35 +288,32 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
     "drafted positions exceed",
   );
   await page.getByTestId("roster-input-bench").fill("5");
+  await settingsDomain(page, "Scoring");
   await page.getByTitle("Manage / Add scoring stats").click();
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Remove HITS", exact: true }).click();
   expect(
     (await session(page)).draftSettings.scoringCategories.HITS,
   ).toBeUndefined();
-  await settings(page)
-    .getByRole("button", { name: "Projections", exact: true })
-    .first()
-    .click();
+  await settingsDomain(page, "Projections");
   await page.getByRole("button", { name: "Multipliers", exact: true }).click();
   await page.getByRole("button", { name: "Edit Weights", exact: true }).click();
   const skaterSources = page.getByRole("region", {
     name: "Skaters projection sources",
   });
-  const sourceWeights = skaterSources.getByRole("spinbutton");
-  for (const input of await sourceWeights.all())
-    if (await input.isEnabled()) await input.fill("0");
+  const sourceWeight = skaterSources.getByLabel(`${workflowCsv.label} numeric weight multiplier`);
+  await sourceWeight.fill("0");
   await done(page);
   await expect(settings(page)).toHaveAttribute("data-open", "true");
   await expect(settings(page).getByRole("alert")).toContainText(
     "Skater projections need an enabled source",
   );
-  await sourceWeights.first().fill("1");
+  await sourceWeight.fill("1");
   await done(page);
   expect((await session(page)).draftedPlayers).toEqual(before.draftedPlayers);
-  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await recoveryOpen(page);
   await settings(page)
-    .getByRole("button", { name: "Import", exact: true })
+    .getByRole("button", { name: "Import bookmark", exact: true })
     .click();
   await page
     .getByLabel("Import draft bookmark", { exact: true })
@@ -252,7 +330,7 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
     .click();
   const downloadPromise = page.waitForEvent("download");
   await settings(page)
-    .getByRole("button", { name: "Export", exact: true })
+    .getByRole("button", { name: "Export bookmark", exact: true })
     .click();
   const download = await downloadPromise;
   expect(await download.failure()).toBeNull();
@@ -261,7 +339,7 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
     before.draftedPlayers,
   );
   await settings(page)
-    .getByRole("button", { name: "Import", exact: true })
+    .getByRole("button", { name: "Import bookmark", exact: true })
     .click();
   await page
     .getByLabel("Import draft bookmark", { exact: true })
@@ -277,6 +355,7 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
   await page
     .getByRole("button", { name: "Cancel Import", exact: true })
     .click();
+  await openDraftManagement(page);
   await page.getByTestId("reset-draft-btn").click();
   await page.getByRole("button", { name: "Cancel Reset", exact: true }).click();
   expect((await session(page)).draftedPlayers).toEqual(before.draftedPlayers);
@@ -287,7 +366,7 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
     .toBe(0);
   expect((await session(page)).currentPick).toBe(1);
   await settings(page)
-    .getByRole("button", { name: "Import", exact: true })
+    .getByRole("button", { name: "Import bookmark", exact: true })
     .click();
   await page
     .getByLabel("Import draft bookmark", { exact: true })
@@ -321,12 +400,12 @@ const recoveryCsv = { id: "custom_csv_fixture", label: "Recovery fixture", playe
   { player_id: 1002, Player_Name: "Fixture Center Two", Position: "C", Team_Abbreviation: "CCC", Goals: 25, Games_Played: 84 },
 ] };
 const recoveryBookmark = () => ({ v: 3, settings: { teamCount: 2, draftOrder: ["Team 1", "Team 2"], draftOrderMode: "custom", reversedRounds: [2], rosterConfig: { C: 1, LW: 0, RW: 0, D: 0, G: 1, bench: 2, utility: 0 }, scoringCategories: { GOALS: 3 }, leagueType: "points", isKeeper: false }, draftedPlayers: [] as Array<{ playerId: string; teamId: string; pickNumber: number; round: number; pickInRound: number }>, currentPick: 1, myTeamId: "Team 1", sourceControls: { dtz_skaters: { isSelected: true, weight: 0.3 }, custom_csv_fixture: { isSelected: true, weight: 0.7 } }, goalieSourceControls: { dtz_goalies: { isSelected: true, weight: 1 } }, goalieScoringCategories: { WINS_GOALIE: 4 }, customCsvList: [recoveryCsv] as typeof recoveryCsv[] | undefined, customSourceMetadata: [{ id: recoveryCsv.id, label: recoveryCsv.label }], keepers: [], pickTrades: [] as Array<{ round: number; pickInRound: number; currentTeamId: string }> });
-async function recoveryFixtures(page: Page) {
+async function recoveryFixtures(page: Page, { acceptDialogs = true } = {}) {
   await page.route("**/api/**", route => route.fulfill({ json: route.request().url().endsWith("/season") ? { seasonId: 20262027 } : [] }));
   await installDraftProFreeFixtures(page, { seedSnapshot: false, skaterCount: 5 });
   await page.route("**/api/v1/roster-schedule-optimizer/schedule**", route => route.fulfill({ json: { success: true, data: { gameKey: "477", startWeek: 1, endWeek: 27, games: [], version: "recovery-fixture", freshness: { latestFetchedAt: "2026-10-02T00:00:00Z", oldestFetchedAt: "2026-10-02T00:00:00Z", rowCount: 0 } } } }));
   await page.route("**/rest/v1/yahoo_matchup_weeks**", route => route.fulfill({ json: [] }));
-  page.on("dialog", dialog => dialog.accept());
+  if (acceptDialogs) page.on("dialog", dialog => dialog.accept());
 }
 async function recoveryOpen(page: Page) {
   if (!await recoveryDialog(page).isVisible()) {
@@ -527,3 +606,43 @@ test.describe("recovery port", () => {
     });
   }
 });
+
+
+for (const width of [320, 390]) {
+  test(`mobile working tabs retain one draft status summary at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 760 });
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await activateDraftWorkflow(page);
+    await done(page);
+
+    const summary = page.getByRole("region", { name: "Draft Status summary", exact: true });
+    for (const tab of ["Suggested", "Roster", "Players"]) {
+      await page.getByRole("tab", { name: tab, exact: true }).click();
+      await expect(summary).toHaveCount(1);
+      await expect(summary).toBeVisible();
+      await expect(summary).toContainText("Pick");
+      await expect(summary).toContainText("On clock");
+      await expect(summary).toContainText("Next pick");
+      await expect(page.getByRole("region", { name: "Draft Status", exact: true })).toBeHidden();
+    }
+    await expect(page.getByRole("textbox", { name: "Search players" })).toBeVisible();
+    expect(await page.evaluate(() => ({
+      viewport: innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      statusAnnouncements: document.querySelectorAll('[aria-label="Draft Status summary"] [aria-live]').length,
+    }))).toEqual({ viewport: width, documentWidth: width, statusAnnouncements: 0 });
+
+    if (width === 390) {
+      page.once("dialog", (dialog) => dialog.accept());
+      await page.reload();
+      await expect(summary).toBeVisible();
+      await expect(page.getByRole("textbox", { name: "Search players" })).toBeVisible();
+      await expect(page.getByText("Runtime Error", { exact: true })).toHaveCount(0);
+    }
+    await page.getByRole("tab", { name: "Setup", exact: true }).click();
+    await expect(settings(page)).toBeVisible();
+    await expect(summary).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+}
