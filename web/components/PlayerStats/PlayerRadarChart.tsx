@@ -84,7 +84,10 @@ const SPOKEN_STAT_NAMES: Record<string, string> = {
   giveaways: "Giveaways", wins: "Wins", save_pct: "Save %", saves: "Saves",
   goals_against_avg: "Goals-against average", shutouts: "Shutouts",
   quality_start: "Quality starts",
+  hdcf_per_60: "On-ice high-danger chances for per 60 minutes",
 };
+const radarStatName = (stat: string) =>
+  stat === "hdcf_per_60" ? "HDCF/60" : SHARED_STAT_DISPLAY_NAMES[stat] || stat;
 const spokenStatName = (stat: string) =>
   SPOKEN_STAT_NAMES[stat] ?? stat.replace(/_/g, " ");
 const ordinal = (n: number) => {
@@ -176,7 +179,7 @@ const STAT_CALCULATION_METHODS: Record<string, StatCalculationInfo> = {
   },
   hdcf_per_60: {
     method: "per_60",
-    description: "High danger chances for per 60 minutes",
+    description: "On-ice high-danger chances for per 60 minutes at 5v5",
   },
   hdca_per_60: {
     method: "per_60",
@@ -464,7 +467,7 @@ export function PlayerRadarChart({
       };
     });
     return {
-      labels: selectedStats.map((stat) => SHARED_STAT_DISPLAY_NAMES[stat] || stat),
+      labels: selectedStats.map(radarStatName),
       datasets: [
         {
           label: player.fullName,
@@ -533,11 +536,7 @@ export function PlayerRadarChart({
         usePointStyle: true,
         callbacks: {
           title: (context: any) => {
-            const statIndex = context[0].dataIndex;
-            return (
-              SHARED_STAT_DISPLAY_NAMES[selectedStats[statIndex]] ||
-              selectedStats[statIndex]
-            );
+            return radarStatName(selectedStats[context[0].dataIndex]);
           },
           label: (context: any) => {
             const statIndex = context.dataIndex;
@@ -636,16 +635,15 @@ export function PlayerRadarChart({
 
   const belowMinimum = currentComparison?.belowMinimum ?? {};
   const viewMissing = currentComparison?.viewMissing ?? {};
-  const statName = (stat: string) => SHARED_STAT_DISPLAY_NAMES[stat] || stat;
   const unavailableStatNames = selectedStats
     .filter((stat) => radarData.percentiles[stat] === undefined && viewMissing[stat])
-    .map(statName);
+    .map(radarStatName);
   const unrankedStatNames = selectedStats
     .filter((stat) => radarData.percentiles[stat] === undefined && !belowMinimum[stat] && !viewMissing[stat])
-    .map(statName);
+    .map(radarStatName);
   const belowMinimumNotes = selectedStats
     .filter((stat) => radarData.percentiles[stat] === undefined && belowMinimum[stat])
-    .map((stat) => `${statName(stat)} (needs ${belowMinimum[stat]})`);
+    .map((stat) => `${radarStatName(stat)} (needs ${belowMinimum[stat]})`);
 
   return (
     <div className={styles.radarContainer}>
@@ -791,7 +789,7 @@ export function PlayerRadarChart({
                 <div key={stat} className={styles.calculationItem}>
                   <div className={styles.statHeader}>
                     <span className={styles.statNameInfo}>
-                      {SHARED_STAT_DISPLAY_NAMES[stat] || stat}
+                      {radarStatName(stat)}
                     </span>
                     <span className={styles.statDescription}>
                       {method?.description || "Per game average"}
@@ -880,7 +878,7 @@ export function PlayerRadarChart({
           return (
             <div key={stat} className={styles.statBreakdown}>
               <span className={styles.statName}>
-                {SHARED_STAT_DISPLAY_NAMES[stat] || stat}:
+                {radarStatName(stat)}:
               </span>
               <span className={styles.statValue}>
                 {formatStatValue(radarData.averages[stat], stat)}
