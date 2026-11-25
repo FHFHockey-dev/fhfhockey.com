@@ -528,7 +528,8 @@ test.describe("recovery port", () => {
       const bounds = await sources.evaluate(node => ({ scroll: node.scrollWidth, client: node.clientWidth }));
       expect(bounds.scroll).toBeLessThanOrEqual(bounds.client + 1);
       await page.screenshot({ path: testInfo.outputPath(`missing-${width}.png`) });
-      await expect(page.getByText("Loading draft sources", { exact: true })).toHaveCount(0);
+      await expect(page.locator('button[title="Loading draft sources"]')).toHaveCount(0);
+      await expect(page.getByText("Loading player projections…", { exact: true })).toHaveCount(0);
 
       await recoveryDialog(page).getByRole("button", { name: "Done", exact: true }).click();
       await expect(recoveryDialog(page)).toBeVisible();
@@ -637,6 +638,11 @@ test.describe("recovery port", () => {
     await expect.poll(async () => (await recoverySnapshot(page)).draftSettings?.teamCount).toBe(8);
     expect(await recoveryCsvSidecar(page)).toEqual(replacement.customCsvList);
     await recoveryDone(page);
+    await page.reload();
+    await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible();
+    await expect.poll(async () => (await recoverySnapshot(page)).customSourceMetadata?.[0]?.label)
+      .toBe("File recovery fixture");
+    expect(await recoveryCsvSidecar(page)).toEqual(replacement.customCsvList);
 
     const absent = { id: "custom_csv_absent", label: "Absent recovery fixture" };
     const requiredSource = { [absent.id]: { isSelected: true, weight: 0.7 } };
