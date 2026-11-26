@@ -2562,19 +2562,14 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     const goalies = filteredPlayers.filter((p) => p.player_type === "goalie");
 
     function computePercentile(
-      values: (number | null)[],
+      sortedValues: number[],
       value: number | null
     ): number | null {
       if (value === null || value === undefined) return null;
-      const validValues = values.filter(
-        (v) => v !== null && v !== undefined
-      ) as number[];
-      if (validValues.length === 0) return 0;
-      validValues.sort((a, b) => a - b);
-      const count = validValues.length;
+      const count = sortedValues.length;
       let numBelow = 0;
       let numEqual = 0;
-      for (const v of validValues) {
+      for (const v of sortedValues) {
         if (v < value) numBelow++;
         else if (v === value) numEqual++;
         else break;
@@ -2583,19 +2578,14 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       return count > 0 ? ((numBelow + 0.5 * numEqual) / count) * 100 : 0;
     }
     function computeInvertedPercentile(
-      values: (number | null)[],
+      sortedValues: number[],
       value: number | null
     ): number | null {
       if (value === null || value === undefined) return null;
-      const validValues = values.filter(
-        (v) => v !== null && v !== undefined
-      ) as number[];
-      if (validValues.length === 0) return 0;
-      validValues.sort((a, b) => a - b);
-      const count = validValues.length;
+      const count = sortedValues.length;
       let numAbove = 0;
       let numEqual = 0;
-      for (const v of validValues) {
+      for (const v of sortedValues) {
         if (v > value) {
           numAbove++;
         } else if (v === value) {
@@ -2611,13 +2601,15 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       metrics: MetricDefinition[]
     ): PlayerWithPercentiles[] {
       if (group.length === 0) return [];
-      const metricValuesMap: Map<MetricKey, (number | null)[]> = new Map();
+      const metricValuesMap: Map<MetricKey, number[]> = new Map();
 
       metrics.forEach(({ key }) => {
-        metricValuesMap.set(
-          key,
-          group.map((p) => p[key as keyof UnifiedPlayerData] as number | null)
-        );
+        // Every player in this group is ranked against the same sorted values.
+        const sortedValues = group
+          .map((player) => player[key as keyof UnifiedPlayerData] as number | null)
+          .filter((value): value is number => value != null)
+          .sort((a, b) => a - b);
+        metricValuesMap.set(key, sortedValues);
       });
 
       return group.map((player) => {
