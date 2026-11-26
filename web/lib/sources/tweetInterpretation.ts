@@ -3,7 +3,7 @@ import { resolveTweetRosterIdentity } from "./tweetNameLexicon";
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
 import { breakIdentityTie, normalizeIdentityName, positionSlotRole, type PlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-11-25.15";
+export const TWEET_INTERPRETATION_VERSION = "2026-11-25.16";
 export type TweetInitialsEvidence = EvidenceSpan & { playerId: number; teamId: number };
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
@@ -583,6 +583,7 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     if (rowKind) { number = null; explicitNumber = false; }
   }
   flush();
+  if (!spotTakeoverDisputedText.test(text) && !result.units.some((unit) => unit.situation === "pp")) readSpotTakeoverUnit(text, roster, result);
   const changes = extractTweetUnitChanges(text, roster, result.unresolved);
   if (changes.length) {
     result.changes = changes;
@@ -629,6 +630,41 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     });
   }
   return result;
+}
+
+// Refusals for the spot-takeover reader, kept here so it does not depend on other readers' guards.
+const spotTakeoverDisputedText = /\b(?:correction|corrected|last game|prior game|retract\w*|ignore|instead|previous|yesterday|if|would|might|projected|expected|5[- ](?:on[- ])?3|five[- ]on[- ]three)\b|[?“”"]/i;
+const SPOT_TAKEOVER = /^(?:RT @\w{1,15}:[ \t]*)?[^\n]*?\btakes? [^\n]+?['’]s spot on (?:the )?PP ?([12])[.!]?[ \t]*\n(?:[ \t]*\n)?[ \t]*(?:So,?[ \t]+)?([^\n]+?)[ \t]+(?:are[ \t]+)?out there(?:[ \t]+now)?[.!]?[ \t]*$/iu;
+/**
+ * "X takes Y's spot on PP1" followed by the five ("So A, B, C, D, E out there now"): the first line names the unit
+ * and the list is its five. Only the listed names are read; the replaced player is not part of the unit and may have
+ * left the roster. Every name must resolve on the supplied roster (a surname only when it is unique there) to a skater.
+ */
+function readSpotTakeoverUnit(text: string, roster: PlayerIdentity[], result: TweetInterpretation) {
+  const match = SPOT_TAKEOVER.exec(text);
+  if (!match) return;
+  const number = Number(match[1]);
+  const listStart = text.indexOf(match[2]!, text.indexOf("\n"));
+  const names: EvidenceSpan[] = [];
+  let cursor = listStart;
+  for (const part of match[2]!.split(/,[ \t]*(?:and[ \t]+)?|[ \t]+and[ \t]+/)) {
+    const name = part.trim();
+    if (!/^[\p{L}.'’ -]+$/u.test(name)) return;
+    const start = text.indexOf(name, cursor);
+    names.push({ start, end: start + name.length, text: name });
+    cursor = start + name.length;
+  }
+  if (names.length !== 5) return;
+  const players: TweetUnit["players"] = [];
+  for (const span of names) {
+    const resolution = resolveTweetRosterIdentity(span.text, roster);
+    const role = resolution.status === "matched" ? playerPositionRole(resolution.player) : null;
+    if (resolution.status === "matched" && (role === "es_forward" || role === "es_defense")) players.push({ playerId: resolution.player.playerId, name: resolution.player.fullName });
+    else result.unresolved.push({ ...span, situation: "pp", number, reason: resolution.status === "ambiguous" ? "ambiguous" : resolution.status === "matched" ? "invalid_extraction" : "missing_player",
+      candidates: resolution.status === "matched" ? [resolution.player.playerId] : resolution.candidates.map((candidate) => candidate.playerId) });
+  }
+  if (players.length === 5 && new Set(players.map((player) => player.playerId)).size === 5)
+    result.units.push({ situation: "pp", number, explicitNumber: true, players, evidence: names, group: null, complete: true });
 }
 
 /** Accept a whole declared formation, never a cardinality-only approximation. */
