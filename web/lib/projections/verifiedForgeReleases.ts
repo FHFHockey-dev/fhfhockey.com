@@ -267,6 +267,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "November 25 combined release, rebuilt November 26 on 5e8ba0e28: the projection-math fixes (e1c078506, closure fbd0b9da) plus the projection-accuracy fix (rebase of 579e79c91: exact forge_goalie_game appearances and qualified wgo_goalie_stats decisions). The verifier found no excluded projection inputs in the 244-module producer closure.",
   },
+  {
+    closureSha256: "7cf8e3e25442eec42e9bd994f920bc119588afd422e4529db631801da87bf3c2",
+    commit: "5979aceebe5729b24b27685a5c31d3712208f832",
+    receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/5979aceebe5729b24b27685a5c31d3712208f832.json",
+    receiptSha256: "f1f8ab226f8aebbb454acd2b6c33a0d41061bbacf8d4df8707cdff610cbfd899",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 26 shift corroboration on d2a484e74: a non-empty shiftcharts feed whose only defects are clock/duration mismatch rows (covered, or for a player with boxscore TOI 00:00) and exact duplicate intervals is stored as the strict htmlreports envelope when the HTML report and boxscore corroborate it, by both shift writers (new nhlShiftCorroboration.mjs). The verifier found no excluded projection inputs in the 245-module producer closure.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
