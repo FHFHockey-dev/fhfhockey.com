@@ -651,6 +651,31 @@ describe("/api/v1/db/run-projection-accuracy", () => {
     expect(rpc.mock.calls[0][1].p_rows).toEqual([]);
   });
 
+  it("counts a game whose played goalies have no FORGE appearance as an unknown-start gap and still writes the date", async () => {
+    // Shape of 2026-11-25 game 2026020399: both clubs' WGO goalies played and started, but the source-rejected shift
+    // feed left no forge_goalie_game row. Game 1 beside it is complete.
+    const { res, rpc, upserts } = await runAccuracyWithTables({
+      games: [game(), game(2)],
+      forge_goalie_projections: [goalieProjection(), goalieProjection([candidate(40)], 2, 8),
+        goalieProjection([candidate(41)], 2, 10)],
+      forge_goalie_game: [goalieAppearance(30)],
+      wgo_goalie_stats: [wgoAppearance(30, 1), wgoAppearance(40, 1, 2, "MTL"), wgoAppearance(41, 1, 2, "TOR")],
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ success: true, goalieRows: 1,
+      unknownStatSkips: { actual: { starter_probability: 2 } },
+      goalieMatchDiagnostics: { goalieCandidateCount: 3, goalieMatchedByPlayer: 1 },
+      goalieProbabilityCalibration: { starter_probability: { sample_count: 1 },
+        all_candidate_starter_probability: { sample_count: 1 } } });
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls[0][1]).toMatchObject({ p_actual_date: "2026-03-20" });
+    const goalieRows = (rpc.mock.calls[0][1].p_rows as any[]).filter(row => [30, 40, 41].includes(row.player_id));
+    expect(goalieRows.map(row => row.player_id)).toEqual([30]);
+    const saves = upserts.filter(u => u.table === "forge_projection_accuracy_stat_daily").flatMap(u => u.rows as any[])
+      .find(row => row.scope === "goalie" && row.stat_key === "saves");
+    expect(saves?.player_count).toBe(1);
+  });
+
   it.each(["teams", "forge_goalie_game", "wgo_goalie_stats"])("surfaces %s read failures before replacement", async table => {
     const { res, rpc, upserts } = await runAccuracyWithTables({ games: [game()], forge_goalie_projections: [goalieProjection()],
       forge_goalie_game: [goalieAppearance(30)], wgo_goalie_stats: [wgoAppearance(30)] }, table);
