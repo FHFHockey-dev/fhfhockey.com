@@ -24,6 +24,7 @@ import {
   buildShiftStrengthUpserts,
   fetchAllNhleShiftChartsSnapshotForGame,
 } from "lib/projections/ingest/shifts";
+import type { ShiftCorroboration } from "lib/supabase/Upserts/nhlShiftCorroboration.mjs";
 import { captureProjectionRawSourceSnapshots } from "lib/projections/ingest/rawSnapshotPersistence";
 import {
   persistCapturedGameNormalization,
@@ -99,6 +100,15 @@ type Result = {
     pending: number;
     final: number;
   };
+  // Games stored from the official HTML report because it and the boxscore
+  // corroborated dropping inconsistent shiftcharts rows; the raw snapshot
+  // keeps the verbatim JSON and the evidence.
+  shiftCorroborations?: Array<{
+    gameId: number;
+    rule: ShiftCorroboration["rule"];
+    excluded: ShiftCorroboration["excluded"];
+    duplicates: ShiftCorroboration["duplicates"];
+  }>;
   errors: Array<{
     gameId: number;
     date: string;
@@ -648,6 +658,9 @@ export async function ingestProjectionInputsHandler(
     maxGames,
     nextGameId,
     lastCompletedGameId: null,
+    // Declared ahead of `errors`, so the cron audit's 4,000-character response
+    // preview keeps it; it is omitted from the JSON until a game is corroborated.
+    shiftCorroborations: undefined,
     ...(debug
       ? {
           debug: {
@@ -721,6 +734,7 @@ export async function ingestProjectionInputsHandler(
     // Set only while validating the NHL shift payload itself: those failures
     // belong to this game's source data, not to the run or the database.
     let shiftSourceRejected = false;
+    let shiftCorroborationError: string | undefined;
     try {
       const gameId = g.id;
       stage = "precheck_pbp";
@@ -731,8 +745,11 @@ export async function ingestProjectionInputsHandler(
         throw new Error(`PBP is not final and complete for game ${gameId}`);
       }
       stage = "fetch_shifts";
-      const shiftSnapshot =
-        await fetchAllNhleShiftChartsSnapshotForGame(gameId);
+      const shiftSnapshot = await fetchAllNhleShiftChartsSnapshotForGame(
+        gameId,
+        { pbp: sharedPbp },
+      );
+      shiftCorroborationError = shiftSnapshot.corroborationError;
       const sourceShiftRows = shiftSnapshot.rows;
       const expectedPlayerIds = sourceShiftRows.map((row) => row.playerId);
       stage = "precheck_shifts";
@@ -783,6 +800,18 @@ export async function ingestProjectionInputsHandler(
       result.pbpPlaysPruned += receipt.prunedPlayRows;
       result.shiftRowsPruned += receipt.prunedStrengthRows;
       result.rowsPruned += receipt.prunedPlayRows + receipt.prunedStrengthRows;
+      const corroboration =
+        shiftSnapshot.rawPayload.source === "htmlreports"
+          ? shiftSnapshot.rawPayload.corroboration
+          : undefined;
+      if (corroboration) {
+        (result.shiftCorroborations ??= []).push({
+          gameId,
+          rule: corroboration.rule,
+          excluded: corroboration.excluded,
+          duplicates: corroboration.duplicates,
+        });
+      }
       if (receipt.idempotent) {
         result.gamesIdempotent += 1;
       } else {
@@ -877,7 +906,11 @@ export async function ingestProjectionInputsHandler(
         });
       }
     } catch (e) {
-      const message = (e as any)?.message ?? String(e);
+      const message =
+        ((e as any)?.message ?? String(e)) +
+        (shiftSourceRejected && shiftCorroborationError
+          ? ` (shift corroboration refused: ${shiftCorroborationError})`
+          : "");
       const insideRetryWindow = g.date > sourceRejectionCutoffDate;
       if (isParked) {
         // A parked game never holds the slate. It stays parked while inside

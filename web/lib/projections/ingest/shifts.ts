@@ -4,9 +4,18 @@ import { buildPenaltyClock } from "../penaltyClock";
 import type { TablesInsert } from "lib/supabase/database-generated.types";
 
 import {
+  fetchCorroboratedShiftReportPayload,
   fetchHtmlShiftReportPayload,
   type PlayByPlayPayload,
 } from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
+import {
+  buildBoxscoreUrl,
+  findShiftClockMismatchRows,
+  isShiftCorroborationEnabled,
+  verifyShiftCorroboration,
+  type ShiftCorroboration,
+  type ShiftCorroborationFailure,
+} from "lib/supabase/Upserts/nhlShiftCorroboration.mjs";
 
 import { nhleFetchJson } from "./nhleFetch";
 import { formatSecondsToClock } from "./time";
@@ -43,6 +52,8 @@ export type NhleShiftChartsRawPayload =
       source: "htmlreports";
       upstream: { json: ShiftchartsResponse };
       htmlReports: { visitorUrl: string; homeUrl: string };
+      /** Set when the report replaces a non-empty JSON feed the official record corroborated. */
+      corroboration?: ShiftCorroboration;
     });
 
 export type NhleShiftSource = NhleShiftChartsRawPayload["source"];
@@ -53,6 +64,8 @@ export type NhleShiftChartsSnapshot = {
   source: NhleShiftSource;
   /** Why the HTML fallback produced no rows for an empty final JSON feed. */
   htmlFallbackError: string | null;
+  /** Set when a clock/duration mismatch could not be corroborated away. */
+  corroborationError?: ShiftCorroborationFailure;
 };
 
 export type ShiftStrengthUpsert = Pick<
@@ -333,6 +346,22 @@ export async function fetchAllNhleShiftChartsSnapshotForGame(
     source: "json-api",
   };
   let htmlFallbackError: string | null = null;
+  let corroborationError: ShiftCorroborationFailure | undefined;
+  if (declaredTotal > 0 && findShiftClockMismatchRows(rows).length > 0) {
+    // The validator would reject this feed. Store the official HTML report
+    // instead only when it and the boxscore corroborate the mismatched rows.
+    const attempt = await corroborateShiftClockMismatches(
+      gameId,
+      { total: rows.length, data: rows },
+      options.pbp,
+    );
+    if (attempt.payload) {
+      rawPayload = attempt.payload as unknown as NhleShiftChartsRawPayload;
+      rows = rawPayload.data;
+    } else {
+      corroborationError = attempt.failure;
+    }
+  }
   if (declaredTotal === 0 && isProjectionShiftHtmlFallbackEnabled()) {
     const pbp = options.pbp ?? (await fetchPbpGame(gameId));
     if (pbp.id === gameId && isCompleteFinalPbpPayload(pbp)) {
@@ -358,7 +387,41 @@ export async function fetchAllNhleShiftChartsSnapshotForGame(
       htmlFallbackError = `PBP is not final and complete for game ${gameId}`;
     }
   }
-  return buildShiftSnapshotFromRawPayload(gameId, rawPayload, htmlFallbackError);
+  const snapshot = buildShiftSnapshotFromRawPayload(gameId, rawPayload, htmlFallbackError);
+  return corroborationError ? { ...snapshot, corroborationError } : snapshot;
+}
+
+/** Never throws; any failure is a bounded reason and the JSON feed stays. */
+async function corroborateShiftClockMismatches(
+  gameId: number,
+  jsonPayload: ShiftchartsResponse,
+  knownPbp: Awaited<ReturnType<typeof fetchPbpGame>> | undefined,
+): Promise<
+  Awaited<ReturnType<typeof fetchCorroboratedShiftReportPayload>> | {
+    payload: null;
+    failure: ShiftCorroborationFailure;
+  }
+> {
+  if (!isShiftCorroborationEnabled()) return { payload: null, failure: "DISABLED" };
+  let pbp: Awaited<ReturnType<typeof fetchPbpGame>>;
+  let boxscore: unknown;
+  try {
+    pbp = knownPbp ?? (await fetchPbpGame(gameId));
+    if (pbp.id !== gameId || !isCompleteFinalPbpPayload(pbp)) {
+      return { payload: null, failure: "PBP_NOT_FINAL" };
+    }
+    boxscore = await nhleFetchJson<unknown>(buildBoxscoreUrl(gameId));
+  } catch {
+    return { payload: null, failure: "SOURCES_UNAVAILABLE" };
+  }
+  return fetchCorroboratedShiftReportPayload(
+    gameId,
+    Number(pbp.season),
+    // The unmodified provider JSON carries `rosterSpots` and shift `id`.
+    pbp as unknown as PlayByPlayPayload,
+    jsonPayload as unknown as Parameters<typeof fetchCorroboratedShiftReportPayload>[3],
+    boxscore,
+  );
 }
 
 /**
@@ -371,6 +434,15 @@ export function buildShiftSnapshotFromRawPayload(
   rawPayload: NhleShiftChartsRawPayload,
   htmlFallbackError: string | null = null,
 ): NhleShiftChartsSnapshot {
+  const corroboration = (rawPayload as { corroboration?: unknown }).corroboration;
+  if (corroboration !== undefined) {
+    // A corroborated report replaced a rejected JSON feed: re-check its
+    // evidence (verbatim JSON, report rows, boxscore TOI) on every read.
+    if (rawPayload.source !== "htmlreports") {
+      throw new Error(`Invalid NHL shift corroboration for game ${gameId}`);
+    }
+    verifyShiftCorroboration(gameId, rawPayload);
+  }
   const rows = rawPayload.data;
   const identities = new Set<string>();
   const uniqueRows: NhleShiftRow[] = [];

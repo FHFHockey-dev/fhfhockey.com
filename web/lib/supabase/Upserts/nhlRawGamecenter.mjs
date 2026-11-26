@@ -1,6 +1,13 @@
 import crypto from "node:crypto";
 import { parse as parseHtml } from "node-html-parser";
 
+import {
+  buildCorroboratedShiftPayload,
+  findShiftClockMismatchRows,
+  isShiftCorroborationEnabled,
+  ShiftCorroborationError,
+} from "./nhlShiftCorroboration.mjs";
+
 export const PARSER_VERSION = 1;
 // v2: decisions 70 and 84. Must equal STRENGTH_CLASSIFIER_VERSION in
 // nhlStrengthState.ts (asserted by nhlRawGamecenter.test.ts).
@@ -565,20 +572,76 @@ export async function fetchHtmlShiftReportPayload(
   };
 }
 
+/**
+ * For a final game whose non-empty JSON feed has clock/duration mismatch rows,
+ * fetches both HTML shift reports and builds the strict `htmlreports` envelope
+ * (verbatim JSON in `upstream.json`) only if the official record corroborates
+ * dropping those rows (nhlShiftCorroboration.mjs). Both shift writers call
+ * this, so they store byte-identical envelopes. It never throws: any failure
+ * returns a bounded reason and the caller keeps the JSON feed.
+ */
+export async function fetchCorroboratedShiftReportPayload(
+  gameId,
+  seasonId,
+  game,
+  jsonPayload,
+  boxscore,
+  { fetchOptions = {} } = {},
+) {
+  if (!isShiftCorroborationEnabled()) return { payload: null, failure: "DISABLED" };
+  if (findShiftClockMismatchRows(jsonPayload?.data).length === 0) {
+    return { payload: null, failure: "INVALID_EVIDENCE" };
+  }
+  let htmlPayload;
+  try {
+    ({ payload: htmlPayload } = await fetchHtmlShiftReportPayload(
+      gameId,
+      seasonId,
+      game,
+      jsonPayload,
+      { strict: true, fetchOptions },
+    ));
+  } catch {
+    return { payload: null, failure: "SOURCES_UNAVAILABLE" };
+  }
+  if (!htmlPayload) return { payload: null, failure: "SOURCES_UNAVAILABLE" };
+  try {
+    return {
+      payload: buildCorroboratedShiftPayload({ gameId, htmlPayload, boxscore }),
+      failure: null,
+    };
+  } catch (error) {
+    return {
+      payload: null,
+      failure: error instanceof ShiftCorroborationError ? error.reason : "INVALID_EVIDENCE",
+    };
+  }
+}
+
 async function fetchShiftChartsWithFallback(
   gameId,
   seasonId,
   game,
   landing,
+  boxscore,
   fetchOptions = {},
 ) {
   const jsonPayload = await fetchShiftCharts(gameId, fetchOptions);
-  if (
-    jsonPayload.total > 0 ||
-    !FINISHED_GAME_STATES.has(
-      normalizeWhitespace(landing?.gameState).toUpperCase(),
-    )
-  ) {
+  const finished = FINISHED_GAME_STATES.has(
+    normalizeWhitespace(landing?.gameState).toUpperCase(),
+  );
+  if (jsonPayload.total > 0 || !finished) {
+    if (finished && findShiftClockMismatchRows(jsonPayload.data).length > 0) {
+      const corroborated = await fetchCorroboratedShiftReportPayload(
+        gameId,
+        seasonId,
+        game,
+        jsonPayload,
+        boxscore,
+        { fetchOptions },
+      );
+      if (corroborated.payload) return corroborated.payload;
+    }
     return {
       ...jsonPayload,
       source: "json-api",
@@ -622,6 +685,7 @@ export async function fetchNhlApiRawGamePayloads(gameId, fetchOptions = {}) {
     Number(pbp.season),
     pbp,
     landing,
+    boxscore,
     fetchOptions,
   );
   // Refuse an off-game, mixed or truncated feed before any raw snapshot is
