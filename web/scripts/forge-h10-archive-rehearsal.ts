@@ -37,7 +37,7 @@ const exec = promisify(execFile);
 const [packet, out, scratch] = process.argv.slice(2), bin = process.env.FORGE_V2_POSTGRES_BIN;
 if (!packet || !out || !scratch || !bin) throw new Error("usage: <packet-dir> <out.json> <scratch-dir> with FORGE_V2_POSTGRES_BIN");
 const ASOF = "2026-11-23T17:20:00.000Z", SEASON = 20262027, NIGHTS = Math.min(Number(process.env.H10_REHEARSAL_NIGHTS ?? 30), 30);
-const MIGRATIONS = ["20261029235656_forge_v2_immutable_history.sql", "20261123200000_forge_v2_goalie_h10.sql", "20261123210000_forge_v2_h10_partitions_archive.sql"];
+const MIGRATIONS = ["20261029235656_forge_v2_immutable_history.sql", "20261123200000_forge_v2_goalie_h10.sql", "20261123210000_forge_v2_h10_partitions_archive.sql", "20261124000000_forge_h10_interval_editions.sql"];
 const environment: NodeJS.ProcessEnv = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))), NODE_ENV: "test" };
 
 async function cluster(port: number) {

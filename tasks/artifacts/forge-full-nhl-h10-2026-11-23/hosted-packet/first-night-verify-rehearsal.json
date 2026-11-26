@@ -1,0 +1,142 @@
+{
+  "version": "forge-h10-first-night-rehearsal-v1",
+  "dispatches": [
+    {
+      "tick": "queued",
+      "httpStatus": 200,
+      "status": "continued",
+      "reason": null,
+      "runKey": "nightly:2026-11-23",
+      "scopes": 7320,
+      "jobs": {
+        "published": 4863
+      },
+      "gaps": {}
+    },
+    {
+      "tick": "queued",
+      "httpStatus": 200,
+      "status": "complete",
+      "reason": null,
+      "runKey": "nightly:2026-11-23",
+      "scopes": 7320,
+      "jobs": {
+        "published": 7320
+      },
+      "gaps": {}
+    },
+    {
+      "tick": "queued",
+      "httpStatus": 200,
+      "status": "complete",
+      "reason": null,
+      "runKey": "nightly:2026-11-23",
+      "scopes": null,
+      "jobs": {
+        "published": 7320
+      },
+      "gaps": null
+    }
+  ],
+  "runDate": "2026-11-23",
+  "midRun": {
+    "ms": 1331,
+    "stdout": "Pager usage is off.\nNull display is \"(null)\".\nBEGIN\nSET\nSET\nOutput format is csv.\nOutput format is aligned.\nROLLBACK\nFORGE H10 first-night verification written to first-night-verify-2026-11-23",
+    "stderr": "",
+    "files": [
+      "00-parameters.txt",
+      "01-dispatches.txt",
+      "02-dispatch-list.txt",
+      "03-ticks.txt",
+      "04-freeze.txt",
+      "05-reconcile.txt",
+      "06-route-gaps.txt",
+      "07-missing.csv",
+      "08-extra.csv",
+      "09-duplicate.csv",
+      "10-lineage.txt",
+      "11-lineage-values.txt",
+      "12-uncertainty.txt",
+      "13-load.txt"
+    ],
+    "reconcile": " class  | horizon | expected | stored | missing | extra | duplicate_keys | numeric_complete | reported_gap | unpublished_vintages \n--------+---------+----------+--------+---------+-------+----------------+------------------+--------------+----------------------\n skater | 1       |      732 |    501 |     231 |     0 |              0 |              501 |            0 |                    0\n skater | 2       |      732 |    501 |     231 |     0 |              0 |              501 |            0 |                    0\n skater | 3       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 4       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 5       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 6       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 7       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 8       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 9       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 10      |      732 |    501 |     231 |     0 |              0 |              501 |            0 |                    0\n skater | all     |     7320 |   4863 |    2457 |     0 |              0 |             4863 |            0 |                    0\n goalie | 1       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 2       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 3       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 4       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 5       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 6       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 7       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 8       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 9       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 10      |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | all     |      720 |      0 |     720 |     0 |              0 |                0 |            0 |                    0\n(22 rows)\n\n"
+  },
+  "complete": {
+    "ms": 1928,
+    "stdout": "Pager usage is off.\nNull display is \"(null)\".\nBEGIN\nSET\nSET\nOutput format is csv.\nOutput format is aligned.\nROLLBACK\nFORGE H10 first-night verification written to first-night-verify-2026-11-23",
+    "stderr": "",
+    "files": [
+      "00-parameters.txt",
+      "01-dispatches.txt",
+      "02-dispatch-list.txt",
+      "03-ticks.txt",
+      "04-freeze.txt",
+      "05-reconcile.txt",
+      "06-route-gaps.txt",
+      "07-missing.csv",
+      "08-extra.csv",
+      "09-duplicate.csv",
+      "10-lineage.txt",
+      "11-lineage-values.txt",
+      "12-uncertainty.txt",
+      "13-load.txt"
+    ],
+    "reconcile": " class  | horizon | expected | stored | missing | extra | duplicate_keys | numeric_complete | reported_gap | unpublished_vintages \n--------+---------+----------+--------+---------+-------+----------------+------------------+--------------+----------------------\n skater | 1       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 2       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 3       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 4       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 5       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 6       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 7       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 8       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 9       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 10      |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | all     |     7320 |   7320 |       0 |     0 |              0 |             7320 |            0 |                    0\n goalie | 1       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 2       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 3       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 4       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 5       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 6       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 7       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 8       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 9       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 10      |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | all     |      720 |    720 |       0 |     0 |              0 |              720 |            0 |                    0\n(22 rows)\n\n"
+  },
+  "seeded": {
+    "missingAndUnpublished": {
+      "skaterH3": "vintage:a796fb8d8fdd2bd13e022e3b4e2c55cd7c4141ea59898f24c098810050cf89fd"
+    },
+    "extra": {
+      "skaterH5_gameNotFrozen": 1,
+      "skaterH7_otherDenominator": 1,
+      "goalieH2_teamDiffers": 1
+    },
+    "duplicate": {
+      "skaterH7": 1,
+      "alsoLackingModelLineage": 1
+    },
+    "ignoredPriorNightEdition": {
+      "skaterH5": 1
+    },
+    "freezeSha": "db6a1efeee14079998a53aa2cf6a797b05642a9a5c2e8095b08f9b05ec4f409f"
+  },
+  "defects": {
+    "ms": 1942,
+    "stdout": "Pager usage is off.\nNull display is \"(null)\".\nBEGIN\nSET\nSET\nOutput format is csv.\nOutput format is aligned.\nROLLBACK\nFORGE H10 first-night verification written to first-night-verify-2026-11-23",
+    "stderr": "",
+    "files": [
+      "00-parameters.txt",
+      "01-dispatches.txt",
+      "02-dispatch-list.txt",
+      "03-ticks.txt",
+      "04-freeze.txt",
+      "05-reconcile.txt",
+      "06-route-gaps.txt",
+      "07-missing.csv",
+      "08-extra.csv",
+      "09-duplicate.csv",
+      "10-lineage.txt",
+      "11-lineage-values.txt",
+      "12-uncertainty.txt",
+      "13-load.txt"
+    ],
+    "reconcile": " class  | horizon | expected | stored | missing | extra | duplicate_keys | numeric_complete | reported_gap | unpublished_vintages \n--------+---------+----------+--------+---------+-------+----------------+------------------+--------------+----------------------\n skater | 1       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 2       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 3       |      732 |    731 |       1 |     0 |              0 |              731 |            0 |                    1\n skater | 4       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 5       |      732 |    732 |       0 |     1 |              0 |              732 |            0 |                    0\n skater | 6       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 7       |      732 |    732 |       0 |     1 |              1 |              732 |            0 |                    0\n skater | 8       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 9       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 10      |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | all     |     7320 |   7319 |       1 |     2 |              1 |             7319 |            0 |                    1\n goalie | 1       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 2       |       72 |     72 |       0 |     1 |              1 |               72 |            0 |                    0\n goalie | 3       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 4       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 5       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 6       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 7       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 8       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 9       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 10      |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | all     |      720 |    720 |       0 |     1 |              1 |              720 |            0 |                    0\n(22 rows)\n\n"
+  },
+  "noFreeze": {
+    "ms": 25,
+    "stdout": "Pager usage is off.\nNull display is \"(null)\".\nBEGIN\nSET\nSET\nROLLBACK\nFORGE H10 first-night verification written to first-night-verify-2026-11-22",
+    "stderr": "",
+    "files": [
+      "00-parameters.txt",
+      "01-dispatches.txt",
+      "02-dispatch-list.txt",
+      "03-ticks.txt",
+      "04-freeze.txt",
+      "06-route-gaps.txt",
+      "13-load.txt"
+    ],
+    "reconcile": null
+  },
+  "note": "Local disposable PostgreSQL 17, real bounded reads + saved NHL rosters, real tick->verify->begin->route->finish path; run date 2026-11-23 (a future cutoff cannot be issued locally). The goalie regexes in 06 were corrected after this run and checked separately on full and cached response bodies (720/0/gaps-by-reason; 720/3/12)."
+}

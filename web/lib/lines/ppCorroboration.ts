@@ -3,14 +3,17 @@ import type { PenaltyClue } from "./ppClue";
 import { instant, type LineClaim, type LineGame } from "./types";
 
 export type PPCorroboration =
-  | { status: "bound"; gameId: number; scheduleIdentity: string; evidence: string[] }
+  /** `metadata` is stored with the binding but kept out of the claim ID (it can change as the report fills in). */
+  | { status: "bound"; gameId: number; scheduleIdentity: string; evidence: string[]; metadata?: string[] }
   | { status: "unresolved" | "pending"; evidence: string[] };
 
 const SLACK_MS = 60_000;
 /** A claim the binder may consider: an explicitly numbered, resolved, in-game PP five with a verified original time, still unbound. */
 export function qualifiesForPPCorroboration(claim: LineClaim): boolean {
   const unit = claim.unit;
-  return claim.kind === "pp" && claim.phase === "in_game" && claim.binding.status === "unresolved" && claim.gameId == null
+  // Phase "unknown" with no stated context qualifies: TJ 2026-11-25, session context comes from timing (in game = confirmed).
+  const timedPhase = claim.phase === "in_game" || claim.phase === "unknown" && (claim.context == null || claim.context === "game");
+  return claim.kind === "pp" && timedPhase && claim.binding.status === "unresolved" && claim.gameId == null
     && claim.identityStatus === "resolved_at_event" && !!unit && unit.situation === "pp" && unit.explicitNumber && (unit.number === 1 || unit.number === 2)
     && unit.group == null && unit.players.length === 5 && unit.players.every((player) => Number.isSafeInteger(player.playerId) && player.playerId > 0)
     && new Set(unit.players.map((player) => player.playerId)).size === 5 && instant(claim.time.originalPublishedAt) != null
@@ -21,8 +24,9 @@ const clockSeconds = (value: string) => { const [m, s] = value.split(":").map(Nu
 const infractionMatches = (clue: string, descKey: string) => descKey === clue || descKey.startsWith(clue + "-");
 
 /**
- * Bind an in-game PP report to its game when the original names a penalty that matches exactly one NHL power-play opportunity
- * and the reported five were on the ice together at a faceoff inside that opportunity. The reporter's number stands; NHL data
+ * Bind an in-game PP report to its game. With a penalty clue in the original (optional extra evidence), the clue must match
+ * exactly one NHL power-play opportunity and the five must be on the ice at a faceoff inside it. Without one, the
+ * post must fall inside an official period and the five must be on the team's power play together in that game (bindByPeriodTime). The reporter's number stands; NHL data
  * only verifies personnel. The result depends only on the evidence (no read clock), so identical evidence gives an identical result.
  */
 export function corroborateInGamePP(
@@ -52,7 +56,7 @@ export function corroborateInGamePP(
   const official = evidence(game.id);
   if (!official) return { status: "pending", evidence: ["nhl_corroboration_pending"] };
   const specific = typeof clue === "function" ? clue(game.id) : clue;
-  if (!specific) return { status: "unresolved", evidence: ["no_specific_clue"] };
+  if (!specific) return bindByPeriodTime(claim, game, official, published);
   const teamObservations = official.observations.filter((item) => item.teamId === claim.teamId);
   if (!teamObservations.length) return { status: "pending", evidence: ["nhl_corroboration_pending"] };
   // Earliest possible wall time of a clock event (official period start + elapsed − 60 s); null without that period's anchor.
@@ -89,4 +93,38 @@ export function corroborateInGamePP(
   return { status: "bound", gameId: game.id, scheduleIdentity: game.scheduleIdentity, evidence: [
     `live_game:${game.id}`, `nhl_penalty:${penalty.eventId}`, ...listed.map((item) => `nhl_pp_faceoff:${item.eventId}`),
     `nhl_report:${earliest.sourceUrl.replace(/#.*$/, "")}`, "faceoff_before_publication:unverified"] };
+}
+
+/**
+ * TJ 2026-11-25: no clue needed. The original publication time falls inside an official period of the team's one live game
+ * (PSTR/PEND anchors, minute precision, never the scheduled start) and the official on-ice report has the exact five together
+ * on the team's power play in that game. Only on-ice events that could precede the post are listed (else the earliest one),
+ * so a fuller report later gives the same result. NHL data verifies personnel only; the reporter's number stands.
+ */
+function bindByPeriodTime(claim: LineClaim, game: LineGame, official: OfficialPowerPlayEvidence, published: number): PPCorroboration {
+  const anchored = official.periods.filter((period) => instant(period.startedAt) != null).sort((a, b) => a.period - b.period);
+  if (!anchored.length) return { status: "pending", evidence: ["period_anchor_missing"] };
+  // An anchor is the minute the event happened in: the period surely started by start + 60 s and surely ran until its end anchor.
+  const last = anchored.at(-1)!;
+  const open = (period: (typeof anchored)[number]) => period === last && period.endedAt == null && official.gameEndedAt == null && game.phase === "live";
+  const inside = anchored.find((period) => instant(period.startedAt)! + SLACK_MS <= published
+    && (period.endedAt != null ? published <= instant(period.endedAt)! : open(period)));
+  if (!inside) {
+    const unknownEnd = anchored.some((period) => period.endedAt == null && !open(period) && instant(period.startedAt)! <= published);
+    return unknownEnd ? { status: "pending", evidence: ["period_end_unknown"] } : { status: "unresolved", evidence: ["publication_outside_period"] };
+  }
+  const five = new Set(claim.unit!.players.map((player) => player.playerId));
+  const matched = official.observations.filter((item) => item.teamId === claim.teamId && item.players.length === 5 && item.players.every((player) => five.has(player.playerId)))
+    .sort((a, b) => a.order - b.order);
+  // A live report can still be catching up; a final one cannot.
+  if (!matched.length) return game.phase === "live" ? { status: "pending", evidence: ["nhl_corroboration_pending"] } : { status: "unresolved", evidence: ["five_not_on_ice"] };
+  const startOf = (period: number) => instant(official.periods.find((item) => item.period === period)?.startedAt);
+  const earliestAt = (period: number, elapsed: string) => { const start = startOf(period); return start == null ? Infinity : start + clockSeconds(elapsed) * 1000 - SLACK_MS; };
+  const before = matched.filter((item) => earliestAt(item.period, item.elapsed) <= published);
+  const listed = before.length ? before : matched.slice(0, 1);
+  return { status: "bound", gameId: game.id, scheduleIdentity: game.scheduleIdentity, evidence: [
+    `live_game:${game.id}`, "binding_basis:period_time", `nhl_period:${inside.period}:${inside.startedAt}`,
+    ...listed.map((item) => `nhl_pp_on_ice:${item.eventId}`), `nhl_report:${listed[0]!.sourceUrl.replace(/#.*$/, "")}`,
+    "personnel_verified_no_penalty_clue", "faceoff_before_publication:unverified"],
+  metadata: [`nhl_period_window:${inside.period}:${inside.startedAt}/${inside.endedAt ?? "open"}`] };
 }

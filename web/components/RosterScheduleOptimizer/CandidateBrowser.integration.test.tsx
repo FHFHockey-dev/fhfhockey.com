@@ -100,9 +100,11 @@ it("automatically renders full-roster schedule-only swaps before any plan select
   await screen.findAllByLabelText(/^Result /);
   const cards = screen.getAllByRole("article");
   expect(cards.map(card => card.getAttribute("data-rso-candidate-id"))).toEqual(["c", "d"]);
-  expect(within(cards[0]).getByLabelText("Net plan comparison").textContent).toBe("—Net Pts+1Net AGP");
-  expect(within(cards[1]).getByLabelText("Net plan comparison").textContent).toBe("—Net Pts0Net AGP");
+  expect(within(cards[0]).getByLabelText("Net plan comparison").textContent).toBe("unknownNet Pts+1Net AGP");
+  expect(within(cards[1]).getByLabelText("Net plan comparison").textContent).toBe("unknownNet Pts0Net AGP");
   expect(within(cards[0]).getByText("DROP")).toBeTruthy();
+  // Drop safety display (TJ 2026-11-23): the dropped player's ownership and what the swap gives up.
+  expect(within(cards[0]).getByText(/^Ownership 10% · /).textContent).toMatch(/^Ownership 10% · (loses [\d.]+ pts( \(partial\))?|points impact unknown) · ([\d.]+ AGP|AGP impact unknown)$/);
   expect(LocalCandidateWorker.instances).toHaveLength(1);
   expect(LocalCandidateWorker.instances[0].postMessage.mock.calls[0][0].intent.steps).toEqual([]);
   expect(props.add).not.toHaveBeenCalled();

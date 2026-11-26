@@ -62,3 +62,9 @@
 @media (min-width: 1101px) { .context summary { min-height: 24px; padding-block: 2px; } }
 // Phones scroll the cards sideways; each keeps room for a full seven-day week.
 @media (max-width: 1100px) { .cards { grid-template-columns: repeat(5, minmax(280px, 1fr)); } }
+// The flex summary drops the native disclosure triangle, so collapsed (phones) it read as an empty card; draw it back.
+.context summary::before { content: ""; flex: none; width: 0; height: 0; border-block: 5px solid transparent; border-left: 7px solid s.$ink-muted; transition: transform 120ms ease; }
+.context[open] summary::before { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .context summary::before { transition: none; } }
+// Phones (TJ 2026-11-23): the top-five strip helps on Week and Candidates only; Roster and Matchup start with their content.
+@media (max-width: 1100px) { [data-rso-tab="roster"] .context, [data-rso-tab="matchup"] .context { display: none; } }

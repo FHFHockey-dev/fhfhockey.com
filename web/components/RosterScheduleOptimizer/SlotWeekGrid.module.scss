@@ -66,7 +66,7 @@ td[data-pulse] .cellButton, td[data-pulse] .cellBody, td[data-pulse] .empty { an
 .noGameTag { align-self: flex-start; color: s.$bad; font-size: s.$text-micro; line-height: 14px; }
 @keyframes columnPulse {
   0% { box-shadow: 0 0 0 0 rgba(v.$primary-color, 0); }
-  35% { box-shadow: 0 0 0 2px rgba(v.$primary-color, .7), 0 0 14px rgba(v.$primary-color, .45); }
+  35% { box-shadow: 0 0 0 2px rgba(v.$primary-color, .7); } // a ring flash, no glow (unslop pass)
   100% { box-shadow: 0 0 0 0 rgba(v.$primary-color, 0); }
 }
 @keyframes headPulse {
@@ -122,3 +122,24 @@ td[data-pulse] .cellButton, td[data-pulse] .cellBody, td[data-pulse] .empty { an
 .grid td[data-greyed] > *, .grid th[data-greyed] { opacity: .3; filter: saturate(.25); }
 // Greyed days also drop the position tint behind their cells, so the planned days carry the colour.
 .grid td[data-greyed] { border-radius: s.$radius-small; background: color-mix(in srgb, #{v.$draft-surface} 70%, transparent); }
+
+// Cell layout (TJ 2026-11-23): the player's name takes the whole top line so it reads at 1440 (it had ~10 px beside
+// the points box, and none in goalie cells); opponent and projected points share the second line. Goalie rows are
+// taller and give the if-starts value its own third line instead of overlapping the opponent.
+.cellButton, .cellBody { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name name" "opp points"; }
+.cellButton > .nameLine, .cellBody > .nameLine { grid-area: name; }
+.cellButton > :is(.opp, .noGameTag), .cellBody > :is(.opp, .noGameTag) { grid-area: opp; align-self: center; }
+.cellButton > .points, .cellBody > .points, .cellButton > .forecastPoints, .cellBody > .forecastPoints { grid-area: points; align-self: center; margin: 0; }
+.cellButton > .points, .cellBody > .points, .forecastPoints .points { padding: 0 3px; font-size: s.$text-sm; }
+.cellButton, .cellBody { column-gap: 4px; }
+.group[data-position="G"] { --cell-height: 58px; }
+.group[data-position="G"] :is(.cellButton, .cellBody) { grid-template-areas: "name name" "opp points" "cond cond"; }
+.group[data-position="G"] .forecastPoints[data-goalie] { display: contents; }
+.group[data-position="G"] .forecastPoints[data-goalie] .points { grid-area: points; align-self: center; }
+.group[data-position="G"] .forecastPoints[data-goalie] .conditionalPoints { grid-area: cond; justify-self: end; }
+.group[data-position="G"] .forecastPoints[data-goalie] .points small { display: none; } // the labelled "if GS" line below names the pair
+.opp > .start { margin-left: 4px; }
+.grid :is(.cellButton, .cellBody) { padding: 2px 4px; } // outranks the workspace's generic button padding (4px 8px)
+:is(.cellButton, .cellBody) > .nameLine { gap: 2px; }
+.nameLine .logo { width: 16px; height: 16px; } // a 16 px crest leaves a goalie's full surname room at 1440
+:is(.cellButton, .cellBody) :is(.opp, .noGameTag) { font-size: s.$text-xs; } // 12 px opponents fit beside the points box in an 88 px cell

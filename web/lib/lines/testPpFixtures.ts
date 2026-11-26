@@ -36,3 +36,29 @@ export const rawal = (number: 1 | 2, overrides: Partial<LineClaim> = {}): LineCl
   gameId: null, phase: "pregame", context: "practice", specificity: "practice", time: rawalTime, explicit: false,
   binding: { status: "unresolved", evidence: ["no_game_binding_evidence"], resolverVersion: "2026-11-18.1", scheduleIdentity: null }, reviewReasons: ["no_game_binding_evidence", "binding_decision_unverified"],
   unit: { ...curtisClaim.unit!, number, players: rawalUnits[number], evidence: [] }, ...overrides });
+
+// PHI@WSH 2026020392 → FLA@WSH 2026020406 (Silber's in-game PP1, Nov 25). Trimmed official reports; offline evidence only.
+export const pbp0392 = JSON.parse(readFileSync(resolve(__dirname, "fixtures/pbp-2026020392.json"), "utf8")) as PlayByPlay;
+export const html0392 = readFileSync(resolve(__dirname, "fixtures/pl-020392-trimmed.html"), "utf8");
+export const url0392 = "https://www.nhl.com/scores/htmlreports/20262027/PL020392.HTM";
+export const game0392: LineGame = { id: 2026020392, date: "2026-11-25", homeTeamId: 15, awayTeamId: 4, homeAbbreviation: "WSH", awayAbbreviation: "PHI",
+  scheduledStart: "2026-11-26T00:00:00Z", phase: "live", actualStart: "2026-11-26T00:17:00Z", observedAt: "2026-11-26T00:28:00Z", stateSource: "fixture",
+  scheduleIdentity: "2026020392:2026-11-26T00:00:00Z:OK", replacesGameId: null };
+export const game0406: LineGame = { id: 2026020406, date: "2026-11-27", homeTeamId: 15, awayTeamId: 13, homeAbbreviation: "WSH", awayAbbreviation: "FLA",
+  scheduledStart: "2026-11-27T20:00:00Z", phase: "scheduled", actualStart: null, observedAt: null, stateSource: null,
+  scheduleIdentity: "2026020406:2026-11-27T20:00:00Z:OK", replacesGameId: null };
+/** Silber's post as the production snapshot's primary (enriched) text stores it: one newline between the two lines. */
+export const silberText = "Justin Sourdif takes Jordan Kyrou's spot on PP1\nSo Strome, Wilson, Sourdif, Chychrun, Ovechkin out there now";
+export const silberUrl = "https://x.com/sammisilber/status/2125747628642336776";
+export const silberPostedAt = "2026-11-26T00:25:03.000Z";
+/** Strome, Wilson, Sourdif, Chychrun, Ovechkin. */
+export const silberFive = [8478440, 8476880, 8482088, 8479345, 8471214];
+
+/** The production publication roster for Silber's post (includes Kyrou, the replaced player, and two Protas) and the five's rosters rows. */
+const wshPublication = JSON.parse(readFileSync(resolve(__dirname, "fixtures/wsh-publication-roster-2026-11-26.json"), "utf8")) as { rosterRevision: string;
+  rosters: { playerId: number; teamId: number; seasonId: number; created_at: string; ended_at: string | null }[] };
+export const wshPublicationRoster = wshPublication.rosterRevision.split("|").map((entry) => {
+  const [id, fullName, lastName, teamId, position, ...aliases] = entry.split(":");
+  return { playerId: Number(id), fullName: fullName!, lastName: lastName!, teamId: Number(teamId), position: position!, aliases: [...new Set(aliases)] };
+});
+export const wshFiveRosterRows = wshPublication.rosters;

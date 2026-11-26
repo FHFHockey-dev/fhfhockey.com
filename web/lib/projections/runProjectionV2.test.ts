@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { capIncompletePoolShotTarget, computeMissingSkaterCoverage } from "./calculators/scenario-blending";
 import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
 import { captureForgeIssuedContexts, forgeIssuedContextsFingerprint } from "./issuedContext";
 import { capturedReadReceipt, captureProjectionInputs, interceptProjectionQuery, replayProjectionInputs } from "./inputCapture";
@@ -1433,14 +1434,25 @@ describe("skater pool recovery safeguards", () => {
     expect(constrained).toEqual([20, 21, 22]);
   });
 
-  it("keeps an undersized pool's own exposure without a 15 -> 14 cliff and reports the rest (D7)", () => {
-    const at = (count: number) => computeSkaterTeamToiTargetWithPoolGuard({
-      canonicalTargetSeconds: 18000, projectedSkaterCount: count, ppShare: 0.085, preAllocationTotalSeconds: count * 1150,
+  it("caps an incomplete pool's own exposure at its lineup share, never scaling up (H4, TJ 2026-11-16)", () => {
+    const at = (count: number, perSkater: number) => computeSkaterTeamToiTargetWithPoolGuard({
+      canonicalTargetSeconds: 18000, projectedSkaterCount: count, ppShare: 0.085, preAllocationTotalSeconds: count * perSkater,
     });
-    expect(at(15)).toMatchObject({ targetSeconds: 18000, wasCapped: false });
-    // Was 7,809 s at 14 skaters; now their own 16,100 s, with 1,900 s unmodeled.
-    expect(at(14)).toMatchObject({ targetSeconds: 16100, wasCapped: true, unmodeledResidualSeconds: 1900 });
-    expect(at(0)).toMatchObject({ targetSeconds: 0, unmodeledResidualSeconds: 18000 });
+    // A full pool keeps the canonical budget whatever its own exposure.
+    expect(at(18, 900)).toEqual({ targetSeconds: 18000, wasCapped: false, capReason: null, modeledShare: 1 });
+    // Own exposure above the pool's share (1,150 s each) is scaled down to pool/18 of the budget. Before H4, 15 and 17
+    // skaters kept the full 18,000 s and 14 kept its own 16,100 s.
+    expect(at(17, 1150)).toEqual({ targetSeconds: 17000, wasCapped: true, capReason: "undersized_projected_pool",
+      unmodeledResidualSeconds: 1000, modeledShare: 17000 / 18000, poolCeilingSeconds: 17000 });
+    expect(at(15, 1150)).toMatchObject({ targetSeconds: 15000, unmodeledResidualSeconds: 3000, poolCeilingSeconds: 15000 });
+    expect(at(14, 1150)).toMatchObject({ targetSeconds: 14000, unmodeledResidualSeconds: 4000, poolCeilingSeconds: 14000 });
+    // Own exposure below the share is kept, never scaled up to it.
+    expect(at(17, 900)).toMatchObject({ targetSeconds: 15300, wasCapped: true, unmodeledResidualSeconds: 2700, poolCeilingSeconds: 17000 });
+    expect(at(15, 900)).toMatchObject({ targetSeconds: 13500, modeledShare: 0.75 });
+    expect(at(14, 900)).toMatchObject({ targetSeconds: 12600, modeledShare: 0.7 });
+    // Per-skater minutes never rise as the pool shrinks: 1,000 s each at the cap, own minutes below it.
+    for (const count of [14, 15, 16, 17]) expect(at(count, 1150).targetSeconds / count).toBe(1000);
+    expect(at(0, 1150)).toMatchObject({ targetSeconds: 0, unmodeledResidualSeconds: 18000, modeledShare: 0 });
   });
 
   it("caps team skater TOI target when projected pool is undersized", () => {
@@ -1464,14 +1476,14 @@ describe("skater pool recovery safeguards", () => {
     expect(guarded.targetSeconds).toBe(18000);
   });
 
-  it("keeps canonical team skater TOI target at the minimum valid projected pool size", () => {
+  it("caps a 15-skater pool at its lineup share when no own exposure is given (was the canonical 18,000 s before H4)", () => {
     const guarded = computeSkaterTeamToiTargetWithPoolGuard({
       canonicalTargetSeconds: 18000,
       projectedSkaterCount: 15,
       ppShare: 0.11
     });
-    expect(guarded.wasCapped).toBe(false);
-    expect(guarded.targetSeconds).toBe(18000);
+    expect(guarded.wasCapped).toBe(true);
+    expect(guarded.targetSeconds).toBe(15000);
   });
 
   it("caps team skater TOI target immediately below the minimum valid projected pool size", () => {
@@ -1482,6 +1494,34 @@ describe("skater pool recovery safeguards", () => {
     });
     expect(guarded.wasCapped).toBe(true);
     expect(guarded.targetSeconds).toBeLessThan(18000);
+  });
+});
+
+describe("incomplete skater pool coverage (H4, TJ 2026-11-16)", () => {
+  it("caps a pool's team-average shots at team x modeled share, never raising them, and leaves full pools alone", () => {
+    const cap = (rawPoolTotal: number, modeledShare: number, fromTeamAverage = true) =>
+      capIncompletePoolShotTarget({ fullTeamTarget: 27, rawPoolTotal, modeledShare, fromTeamAverage });
+    expect(cap(20, 1)).toBe(27);
+    expect(cap(30, 15 / 18)).toBeCloseTo(22.5, 10);
+    expect(cap(20, 15 / 18)).toBe(20);
+    // No raw shots to scale: the ceiling is the allocation, as the fallback weights did before.
+    expect(cap(0, 15 / 18)).toBeCloseTo(22.5, 10);
+    // A target that is the pool's own total (no team average) is not a team figure: unchanged.
+    expect(cap(30, 15 / 18, false)).toBe(27);
+  });
+
+  it("reports the absent skaters' minutes and shots as missing coverage, with goal scales back to the team total", () => {
+    const full = { es: 14455, pp: 1705, pk: 1840 };
+    expect(computeMissingSkaterCoverage({ projectedSkaterCount: 18, modeledShare: 1, fullToiSeconds: full, modeledToiSeconds: full,
+      fullShots: { es: 26, pp: 7, pk: 0.5 }, modeledShots: { es: 26, pp: 7, pk: 0.5 } })).toBeNull();
+    const coverage = computeMissingSkaterCoverage({
+      projectedSkaterCount: 15, modeledShare: 15000 / 18000, fullToiSeconds: full,
+      modeledToiSeconds: { es: 12046, pp: 1421, pk: 1533 },
+      fullShots: { es: 26, pp: 7, pk: 0.5 }, modeledShots: { es: 20, pp: 7, pk: 0 },
+    })!;
+    expect(coverage).toMatchObject({ projected_skater_count: 15, full_pool_skater_count: 18, modeled_share: 0.8333,
+      unmodeled_toi_seconds: { es: 2409, pp: 284, pk: 307 }, unmodeled_shots: { es: 6, pp: 0, pk: 0.5 },
+      goal_scale: { es: 1.3, pp: 1, pk: 1 } });
   });
 });
 

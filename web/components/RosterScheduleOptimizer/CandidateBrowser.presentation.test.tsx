@@ -5,9 +5,9 @@ import { defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 import type { PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { CandidateComparison, CandidateDiagnostic } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 
-const fixture = vi.hoisted(() => ({ candidates: undefined as CandidateComparison[] | undefined, diagnostics: undefined as CandidateDiagnostic[] | undefined, goalieBoost: undefined as boolean | undefined }));
-vi.mock("hooks/useCandidateMetrics", () => ({ useCandidateMetrics: () => ({ metrics: fixture.candidates ? { candidates: fixture.candidates, diagnostics: fixture.diagnostics, goalieBoost: fixture.goalieBoost } : undefined, loading: false, error: null }) }));
-afterEach(() => { cleanup(); fixture.candidates = undefined; fixture.diagnostics = undefined; fixture.goalieBoost = undefined; vi.useRealTimers(); });
+const fixture = vi.hoisted(() => ({ candidates: undefined as CandidateComparison[] | undefined, diagnostics: undefined as CandidateDiagnostic[] | undefined, goalieBoost: undefined as boolean | undefined, retained: false }));
+vi.mock("hooks/useCandidateMetrics", () => ({ useCandidateMetrics: () => ({ metrics: fixture.candidates ? { candidates: fixture.candidates, diagnostics: fixture.diagnostics, goalieBoost: fixture.goalieBoost } : undefined, loading: false, error: null, retained: fixture.retained }) }));
+afterEach(() => { cleanup(); fixture.candidates = undefined; fixture.diagnostics = undefined; fixture.goalieBoost = undefined; fixture.retained = false; vi.useRealTimers(); });
 it("starts with individual cards and respects the selected result count when filtering and expanding", () => {
   const workspace = defaultWorkspace();
   const players: PlanningPlayer[] = Array.from({ length: 12 }, (_, index) => ({ id: String(index), nhlId: null, name: `Candidate ${index}`,
@@ -66,7 +66,7 @@ it.each([6, 3])("shares one display budget across %i supported and unavailable p
   fireEvent.click(screen.getByRole("button", { name: /^Show more recommendations/ }));
   expect(ids()).toEqual(players.slice(0, 10).map(player => player.id));
   for (const article of screen.getAllByRole("article").slice(count)) {
-    expect(within(article).getByText("—", { selector: "strong" }).getAttribute("title")).toBe("Not enough projection data yet");
+    expect(within(article).getByText("unknown", { selector: "strong" }).getAttribute("title")).toBe("Not enough projection data yet");
   }
   if (count === 6) {
     expect(screen.getByLabelText("Result 10")).toBeTruthy();
@@ -155,6 +155,33 @@ it("separates known, partly known and unusable input facts without granting waiv
 it("asks for a roster instead of the loading copy when the roster is empty", () => {
   render(<CandidateBrowser {...discoveryFixture()} emptyRoster />);
   expect(screen.getByRole("status").textContent).toBe("Add your roster to rank free agents for it.");
+});
+
+it("says swaps are updating while a protection-only edit keeps the previous rankings on screen (TJ, 2026-11-23)", () => {
+  const { unmount } = render(<CandidateBrowser {...discoveryFixture()} />);
+  expect(screen.queryByText("Updating swaps for your protected players…")).toBeNull();
+  unmount();
+  fixture.retained = true;
+  render(<CandidateBrowser {...discoveryFixture()} />);
+  expect(screen.getByText("Updating swaps for your protected players…").getAttribute("role")).toBe("status");
+});
+
+it("says nobody is marked available, not that rankings are loading, once projections have loaded (TJ 2026-11-23)", () => {
+  const props = discoveryFixture();
+  const loaded = { ...props.snapshot!, forecasts: [{ playerId: "alpha", gameId: "g1" }] } as unknown as PlanningSnapshot;
+  render(<CandidateBrowser {...props} snapshot={loaded} manual />);
+  expect(screen.getByRole("status").textContent).toBe("No one is marked available yet. Mark available on a card, or import your Yahoo league.");
+});
+
+it("closes the phone Filters dropdown after a team is picked, and keeps it open on desktop (TJ 2026-11-23)", () => {
+  for (const phone of [true, false]) {
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: phone && query.includes("max-width: 640px") }));
+    const { container, unmount } = render(<CandidateBrowser {...discoveryFixture()} />);
+    const details = container.querySelector("details")!; details.open = true;
+    fireEvent.change(screen.getByRole("combobox", { name: "Team" }), { target: { value: "AAA" } });
+    expect(details.open).toBe(!phone);
+    unmount(); vi.unstubAllGlobals();
+  }
 });
 
 it("leaves unavailable comparisons unranked and names alphabetical browsing for either selected net sort", () => {

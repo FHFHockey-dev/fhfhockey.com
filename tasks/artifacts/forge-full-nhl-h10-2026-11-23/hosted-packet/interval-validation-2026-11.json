@@ -1,0 +1,2906 @@
+{
+  "version": "forge-h10-interval-validation-v1",
+  "dataReadAt": "2026-11-23T17:20:00.000Z",
+  "season": 20262027,
+  "policy": {
+    "minimumEffectiveSupport": 30,
+    "calibrationMinimumSupport": 40,
+    "calibrationStepDays": 3,
+    "calibrationCutoffs": 10
+  },
+  "levels": [
+    0.5,
+    0.9
+  ],
+  "design": {
+    "evaluationCutoffs": [
+      "2026-10-24T09:00:00.000Z",
+      "2026-10-27T09:00:00.000Z",
+      "2026-10-30T09:00:00.000Z",
+      "2026-11-02T09:00:00.000Z",
+      "2026-11-05T09:00:00.000Z",
+      "2026-11-08T09:00:00.000Z",
+      "2026-11-11T09:00:00.000Z",
+      "2026-11-14T09:00:00.000Z",
+      "2026-11-17T09:00:00.000Z",
+      "2026-11-20T09:00:00.000Z"
+    ],
+    "replayGrid": {
+      "cutoffs": 20,
+      "first": "2026-09-24T09:00:00.000Z",
+      "last": "2026-11-20T09:00:00.000Z"
+    },
+    "information": "model, rates and calibration at each E use only rows received by E; calibration dependencyAvailableAt <= E is asserted",
+    "conditional": "skaters scored on realized appearances, goalies on realized starts (if-playing / if-starting bands)",
+    "baseline": "Poisson (counts) or Bernoulli (WIN, SHUTOUT) equal-tail bands around the same kernel mean",
+    "intervalScore": "Winkler: width + (2/alpha) * shortfall below + (2/alpha) * excess above; lower is better",
+    "horizon": "k-th game of the player's team after the cutoff (team schedule, regular season)"
+  },
+  "replayMs": 25269,
+  "nightlyCalibrationMs": 17307,
+  "productionCalibration": {
+    "cutoff": "2026-11-23T09:00:00.000Z",
+    "version": "bcb86fbd53cdad0ea0e423cb899eb75c92a56f17564ec20f4caa37d4509287ae",
+    "observations": 278244,
+    "cellsFitted": 120,
+    "cellsThin": []
+  },
+  "calibrations": [
+    {
+      "cutoff": "2026-10-24T09:00:00.000Z",
+      "version": "cc268c9e7df8c09c39e40a37aa17f63dfa491993eeddcf3d2073480421a80146",
+      "observations": 145630,
+      "cellsFitted": 105,
+      "cellsThin": 15,
+      "dependencyAvailableAt": "2026-10-24T07:30:00.000Z"
+    },
+    {
+      "cutoff": "2026-10-27T09:00:00.000Z",
+      "version": "c33e6d6e47c30a969e442c6ac3ec90bd3885015eee89517dfb6cc4ab2907c7b3",
+      "observations": 185072,
+      "cellsFitted": 110,
+      "cellsThin": 10,
+      "dependencyAvailableAt": "2026-10-27T07:30:00.000Z"
+    },
+    {
+      "cutoff": "2026-10-30T09:00:00.000Z",
+      "version": "15ed9617de225bcac7dc3a7ffb22e8f5c9db888d095f986169f53db86ebd3f35",
+      "observations": 237316,
+      "cellsFitted": 120,
+      "cellsThin": 0,
+      "dependencyAvailableAt": "2026-10-30T07:30:00.000Z"
+    },
+    {
+      "cutoff": "2026-11-02T09:00:00.000Z",
+      "version": "fe07e45f4cc3479e85908301cbb32f875494d7bfc6d218f6a95f0dc657a289be",
+      "observations": 273472,
+      "cellsFitted": 120,
+      "cellsThin": 0,
+      "dependencyAvailableAt": "2026-11-02T07:30:00.000Z"
+    },
+    {
+      "cutoff": "2026-11-05T09:00:00.000Z",
+      "version": "2ce2a4b5936319e9ae0f4e52aeec6eb9633a78299e7fa609e5de6c4cbff5af60",
+      "observations": 271411,
+      "cellsFitted": 120,
+      "cellsThin": 0,
+      "dependencyAvailableAt": "2026-11-05T07:30:00.000Z"
+    },
+    {
+      "cutoff": "2026-11-08T09:00:00.000Z",
+      "version": "835d65cc03641ba22f41fa9d08a081020034d95b6c6c5adc9a9bb0f594669a79",
+      "observations": 281898,
+      "cellsFitted": 120,
+      "cellsThin": 0,
+      "dependencyAvailableAt": "2026-11-08T07:30:00.000Z"
+    },
+    {
+      "cutoff": "2026-11-11T09:00:00.000Z",
+      "version": "e47ef043dbee45b12a8735cd471c5820d6a47fcdac6e95efb302c2693aeb9d5d",
+      "observations": 272473,
+      "cellsFitted": 120,
+      "cellsThin": 0,
+      "dependencyAvailableAt": "2026-11-11T07:30:00.000Z"
+    },
+    {
+      "cutoff": "2026-11-14T09:00:00.000Z",
+      "version": "f69539dcbccff496fe20b495debf1df05078df4aed5c99c1e0993bdbe4ed4d25",
+      "observations": 270777,
+      "cellsFitted": 120,
+      "cellsThin": 0,
+      "dependencyAvailableAt": "2026-11-14T07:30:00.000Z"
+    },
+    {
+      "cutoff": "2026-11-17T09:00:00.000Z",
+      "version": "3dc165b768552e218cf7a12e7423906245d32dcce372d55f0fae7a86677b2827",
+      "observations": 271825,
+      "cellsFitted": 120,
+      "cellsThin": 0,
+      "dependencyAvailableAt": "2026-11-17T07:30:00.000Z"
+    },
+    {
+      "cutoff": "2026-11-20T09:00:00.000Z",
+      "version": "0e173d4c79ee4e9ac22d457063e9ba0e58dc128e2824f0dae62bf0b63f33d248",
+      "observations": 281650,
+      "cellsFitted": 120,
+      "cellsThin": 0,
+      "dependencyAvailableAt": "2026-11-20T07:30:00.000Z"
+    }
+  ],
+  "orderAndNesting": {
+    "raw": {
+      "bands": 278244,
+      "invalid": 0
+    },
+    "calibrated": {
+      "bands": 277464,
+      "invalid": 0
+    },
+    "baseline": {
+      "bands": 278244,
+      "invalid": 0
+    }
+  },
+  "rawRefusalsAtEvaluationCutoffs": {},
+  "gapsByClassHorizonReason": {
+    "goalie:H8:calibration_support_too_thin": 160,
+    "goalie:H9:calibration_support_too_thin": 315,
+    "goalie:H10:calibration_support_too_thin": 305
+  },
+  "goaliePolicy": {
+    "version": "forge-h10-goalie-band-policy-v1",
+    "rule": {
+      "candidateCells": "goalie 90% at H1-H7, per category x horizon",
+      "minimumDistinctStarts": 150,
+      "criterion": "one-sided 95% bootstrap upper bound (95th percentile of resampled means) of the mean paired interval-score difference, candidate minus baseline, per distinct start, below 0",
+      "bootstrap": {
+        "resamples": 2000,
+        "seed": 20261124,
+        "unit": "distinct goalie start (player, game)"
+      },
+      "selectionWindow": {
+        "first": "2026-10-24T09:00:00.000Z",
+        "last": "2026-11-20T09:00:00.000Z",
+        "stepDays": 3,
+        "outcomesReceivedBy": "2026-11-21T09:00:00.000Z"
+      },
+      "holdout": {
+        "cutoffs": [
+          "2026-11-21T09:00:00.000Z",
+          "2026-11-22T09:00:00.000Z",
+          "2026-11-23T09:00:00.000Z"
+        ],
+        "note": "outcomes after the selection data; daily cutoffs"
+      }
+    },
+    "selection": {
+      "cells": {
+        "GOALS_ALLOWED:H1": {
+          "distinctStarts": 280,
+          "meanDifference": -0.1143,
+          "upper95": 0.375,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H2": {
+          "distinctStarts": 269,
+          "meanDifference": -0.1617,
+          "upper95": 0.329,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H3": {
+          "distinctStarts": 242,
+          "meanDifference": -0.2479,
+          "upper95": 0.2934,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H4": {
+          "distinctStarts": 217,
+          "meanDifference": -0.1152,
+          "upper95": 0.447,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H5": {
+          "distinctStarts": 191,
+          "meanDifference": 0.1047,
+          "upper95": 0.7644,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H6": {
+          "distinctStarts": 166,
+          "meanDifference": -0.2651,
+          "upper95": 0.3675,
+          "selected": false
+        },
+        "GOALS_ALLOWED:H7": {
+          "distinctStarts": 146,
+          "meanDifference": -0.1096,
+          "upper95": 0.5753,
+          "selected": false
+        },
+        "SAVES:H1": {
+          "distinctStarts": 280,
+          "meanDifference": -0.6946,
+          "upper95": 1.3,
+          "selected": false
+        },
+        "SAVES:H2": {
+          "distinctStarts": 269,
+          "meanDifference": -3.4796,
+          "upper95": -0.5762,
+          "selected": true
+        },
+        "SAVES:H3": {
+          "distinctStarts": 242,
+          "meanDifference": -1.9194,
+          "upper95": 0.4442,
+          "selected": false
+        },
+        "SAVES:H4": {
+          "distinctStarts": 217,
+          "meanDifference": -3.0599,
+          "upper95": -0.318,
+          "selected": true
+        },
+        "SAVES:H5": {
+          "distinctStarts": 191,
+          "meanDifference": -0.5969,
+          "upper95": 2.0131,
+          "selected": false
+        },
+        "SAVES:H6": {
+          "distinctStarts": 166,
+          "meanDifference": -0.5542,
+          "upper95": 2.3976,
+          "selected": false
+        },
+        "SAVES:H7": {
+          "distinctStarts": 146,
+          "meanDifference": -2.9726,
+          "upper95": 0.5411,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H1": {
+          "distinctStarts": 280,
+          "meanDifference": -0.5893,
+          "upper95": 1.0357,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H2": {
+          "distinctStarts": 269,
+          "meanDifference": -1.3178,
+          "upper95": 0.855,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H3": {
+          "distinctStarts": 242,
+          "meanDifference": 0.0021,
+          "upper95": 1.9091,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H4": {
+          "distinctStarts": 217,
+          "meanDifference": -0.9908,
+          "upper95": 0.8456,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H5": {
+          "distinctStarts": 191,
+          "meanDifference": 0.5969,
+          "upper95": 2.7487,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H6": {
+          "distinctStarts": 166,
+          "meanDifference": 0.8735,
+          "upper95": 3.3614,
+          "selected": false
+        },
+        "SHOTS_AGAINST:H7": {
+          "distinctStarts": 146,
+          "meanDifference": -0.2192,
+          "upper95": 2.9178,
+          "selected": false
+        },
+        "SHUTOUT:H1": {
+          "distinctStarts": 280,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "SHUTOUT:H2": {
+          "distinctStarts": 269,
+          "meanDifference": 0.0037,
+          "upper95": 0.0929,
+          "selected": false
+        },
+        "SHUTOUT:H3": {
+          "distinctStarts": 242,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "SHUTOUT:H4": {
+          "distinctStarts": 217,
+          "meanDifference": 0.0276,
+          "upper95": 0.0461,
+          "selected": false
+        },
+        "SHUTOUT:H5": {
+          "distinctStarts": 191,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "SHUTOUT:H6": {
+          "distinctStarts": 166,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "SHUTOUT:H7": {
+          "distinctStarts": 146,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H1": {
+          "distinctStarts": 280,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H2": {
+          "distinctStarts": 269,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H3": {
+          "distinctStarts": 242,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H4": {
+          "distinctStarts": 217,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H5": {
+          "distinctStarts": 191,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H6": {
+          "distinctStarts": 166,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        },
+        "WIN:H7": {
+          "distinctStarts": 146,
+          "meanDifference": 0,
+          "upper95": 0,
+          "selected": false
+        }
+      },
+      "chosen": [
+        "SAVES:H2",
+        "SAVES:H4"
+      ]
+    },
+    "candidate90": [
+      "SAVES:H2",
+      "SAVES:H4"
+    ],
+    "holdout": {
+      "cutoffs": [
+        "2026-11-21T09:00:00.000Z",
+        "2026-11-22T09:00:00.000Z",
+        "2026-11-23T09:00:00.000Z"
+      ],
+      "scoredPredictions": 240,
+      "distinctStarts": 38,
+      "byHorizon": {
+        "H1|0.5": {
+          "distinctStarts": 38,
+          "policy": {
+            "n": 205,
+            "coverage": 0.7122,
+            "meanWidth": 3.3317,
+            "intervalScore": 8.9902
+          },
+          "candidate": {
+            "n": 205,
+            "coverage": 0.7415,
+            "meanWidth": 3.9073,
+            "intervalScore": 8.9805
+          },
+          "baseline": {
+            "n": 205,
+            "coverage": 0.7122,
+            "meanWidth": 3.3317,
+            "intervalScore": 8.9902
+          }
+        },
+        "H1|0.9": {
+          "distinctStarts": 38,
+          "policy": {
+            "n": 205,
+            "coverage": 0.9024,
+            "meanWidth": 8.0683,
+            "intervalScore": 18.1171
+          },
+          "candidate": {
+            "n": 205,
+            "coverage": 0.9073,
+            "meanWidth": 9.9659,
+            "intervalScore": 16.2098
+          },
+          "baseline": {
+            "n": 205,
+            "coverage": 0.9024,
+            "meanWidth": 8.0683,
+            "intervalScore": 18.1171
+          }
+        },
+        "H2|0.5": {
+          "distinctStarts": 7,
+          "policy": {
+            "n": 35,
+            "coverage": 0.8857,
+            "meanWidth": 3.2857,
+            "intervalScore": 6.4857
+          },
+          "candidate": {
+            "n": 35,
+            "coverage": 0.9143,
+            "meanWidth": 4,
+            "intervalScore": 6.7429
+          },
+          "baseline": {
+            "n": 35,
+            "coverage": 0.8857,
+            "meanWidth": 3.2857,
+            "intervalScore": 6.4857
+          }
+        },
+        "H2|0.9": {
+          "distinctStarts": 7,
+          "policy": {
+            "n": 35,
+            "coverage": 0.9429,
+            "meanWidth": 9.6286,
+            "intervalScore": 15.9143
+          },
+          "candidate": {
+            "n": 35,
+            "coverage": 0.9429,
+            "meanWidth": 11.0857,
+            "intervalScore": 14.5143
+          },
+          "baseline": {
+            "n": 35,
+            "coverage": 0.9429,
+            "meanWidth": 8.1429,
+            "intervalScore": 17.2857
+          }
+        }
+      },
+      "bandsByMethod": {
+        "0.5:poisson_baseline": 144,
+        "0.5:bernoulli_baseline": 96,
+        "0.9:poisson_baseline": 137,
+        "0.9:bernoulli_baseline": 96,
+        "0.9:kernel_calibrated": 7
+      }
+    },
+    "ruleCheck": {
+      "selectedOn": {
+        "cutoffs": [
+          "2026-10-24T09:00:00.000Z",
+          "2026-10-27T09:00:00.000Z",
+          "2026-10-30T09:00:00.000Z",
+          "2026-11-02T09:00:00.000Z",
+          "2026-11-05T09:00:00.000Z"
+        ],
+        "outcomesReceivedBy": "2026-11-08T09:00:00.000Z"
+      },
+      "chosen": [],
+      "scoredOn": [
+        "2026-11-08T09:00:00.000Z",
+        "2026-11-11T09:00:00.000Z",
+        "2026-11-14T09:00:00.000Z",
+        "2026-11-17T09:00:00.000Z",
+        "2026-11-20T09:00:00.000Z"
+      ],
+      "byHorizon": {
+        "H1|0.5": {
+          "distinctStarts": 153,
+          "policy": {
+            "n": 795,
+            "coverage": 0.717,
+            "meanWidth": 3.317,
+            "intervalScore": 7.8151
+          },
+          "candidate": {
+            "n": 795,
+            "coverage": 0.7572,
+            "meanWidth": 4.0969,
+            "intervalScore": 7.8151
+          },
+          "baseline": {
+            "n": 795,
+            "coverage": 0.717,
+            "meanWidth": 3.317,
+            "intervalScore": 7.8151
+          }
+        },
+        "H1|0.9": {
+          "distinctStarts": 153,
+          "policy": {
+            "n": 795,
+            "coverage": 0.9182,
+            "meanWidth": 8.0503,
+            "intervalScore": 14.7421
+          },
+          "candidate": {
+            "n": 795,
+            "coverage": 0.9308,
+            "meanWidth": 10.0629,
+            "intervalScore": 13.9874
+          },
+          "baseline": {
+            "n": 795,
+            "coverage": 0.9182,
+            "meanWidth": 8.0503,
+            "intervalScore": 14.7421
+          }
+        },
+        "H2|0.5": {
+          "distinctStarts": 129,
+          "policy": {
+            "n": 670,
+            "coverage": 0.7104,
+            "meanWidth": 3.3104,
+            "intervalScore": 7.8657
+          },
+          "candidate": {
+            "n": 670,
+            "coverage": 0.7597,
+            "meanWidth": 4.1507,
+            "intervalScore": 7.8224
+          },
+          "baseline": {
+            "n": 670,
+            "coverage": 0.7104,
+            "meanWidth": 3.3104,
+            "intervalScore": 7.8657
+          }
+        },
+        "H2|0.9": {
+          "distinctStarts": 129,
+          "policy": {
+            "n": 670,
+            "coverage": 0.9149,
+            "meanWidth": 8.0418,
+            "intervalScore": 15.5343
+          },
+          "candidate": {
+            "n": 670,
+            "coverage": 0.9358,
+            "meanWidth": 10.7149,
+            "intervalScore": 14.1478
+          },
+          "baseline": {
+            "n": 670,
+            "coverage": 0.9149,
+            "meanWidth": 8.0418,
+            "intervalScore": 15.5343
+          }
+        },
+        "H3|0.5": {
+          "distinctStarts": 113,
+          "policy": {
+            "n": 590,
+            "coverage": 0.7119,
+            "meanWidth": 3.3136,
+            "intervalScore": 7.578
+          },
+          "candidate": {
+            "n": 590,
+            "coverage": 0.7542,
+            "meanWidth": 4.0966,
+            "intervalScore": 7.5475
+          },
+          "baseline": {
+            "n": 590,
+            "coverage": 0.7119,
+            "meanWidth": 3.3136,
+            "intervalScore": 7.578
+          }
+        },
+        "H3|0.9": {
+          "distinctStarts": 113,
+          "policy": {
+            "n": 590,
+            "coverage": 0.9339,
+            "meanWidth": 8.0373,
+            "intervalScore": 13.8339
+          },
+          "candidate": {
+            "n": 590,
+            "coverage": 0.9458,
+            "meanWidth": 10.5814,
+            "intervalScore": 13.7678
+          },
+          "baseline": {
+            "n": 590,
+            "coverage": 0.9339,
+            "meanWidth": 8.0373,
+            "intervalScore": 13.8339
+          }
+        },
+        "H4|0.5": {
+          "distinctStarts": 89,
+          "policy": {
+            "n": 470,
+            "coverage": 0.7489,
+            "meanWidth": 3.2979,
+            "intervalScore": 7.6638
+          },
+          "candidate": {
+            "n": 470,
+            "coverage": 0.7766,
+            "meanWidth": 4.0979,
+            "intervalScore": 7.6979
+          },
+          "baseline": {
+            "n": 470,
+            "coverage": 0.7489,
+            "meanWidth": 3.2979,
+            "intervalScore": 7.6638
+          }
+        },
+        "H4|0.9": {
+          "distinctStarts": 89,
+          "policy": {
+            "n": 470,
+            "coverage": 0.9298,
+            "meanWidth": 8.0298,
+            "intervalScore": 15.6468
+          },
+          "candidate": {
+            "n": 470,
+            "coverage": 0.9489,
+            "meanWidth": 10.5872,
+            "intervalScore": 14.8
+          },
+          "baseline": {
+            "n": 470,
+            "coverage": 0.9298,
+            "meanWidth": 8.0298,
+            "intervalScore": 15.6468
+          }
+        },
+        "H5|0.5": {
+          "distinctStarts": 64,
+          "policy": {
+            "n": 340,
+            "coverage": 0.7206,
+            "meanWidth": 3.2971,
+            "intervalScore": 7.8147
+          },
+          "candidate": {
+            "n": 340,
+            "coverage": 0.7647,
+            "meanWidth": 4.1765,
+            "intervalScore": 7.7412
+          },
+          "baseline": {
+            "n": 340,
+            "coverage": 0.7206,
+            "meanWidth": 3.2971,
+            "intervalScore": 7.8147
+          }
+        },
+        "H5|0.9": {
+          "distinctStarts": 64,
+          "policy": {
+            "n": 340,
+            "coverage": 0.9294,
+            "meanWidth": 8.0118,
+            "intervalScore": 14.4824
+          },
+          "candidate": {
+            "n": 340,
+            "coverage": 0.9441,
+            "meanWidth": 10.8088,
+            "intervalScore": 13.9265
+          },
+          "baseline": {
+            "n": 340,
+            "coverage": 0.9294,
+            "meanWidth": 8.0118,
+            "intervalScore": 14.4824
+          }
+        },
+        "H6|0.5": {
+          "distinctStarts": 38,
+          "policy": {
+            "n": 205,
+            "coverage": 0.7317,
+            "meanWidth": 3.3073,
+            "intervalScore": 8.0878
+          },
+          "candidate": {
+            "n": 205,
+            "coverage": 0.761,
+            "meanWidth": 4.1073,
+            "intervalScore": 8.0488
+          },
+          "baseline": {
+            "n": 205,
+            "coverage": 0.7317,
+            "meanWidth": 3.3073,
+            "intervalScore": 8.0878
+          }
+        },
+        "H6|0.9": {
+          "distinctStarts": 38,
+          "policy": {
+            "n": 205,
+            "coverage": 0.9122,
+            "meanWidth": 7.9902,
+            "intervalScore": 16.1854
+          },
+          "candidate": {
+            "n": 205,
+            "coverage": 0.9317,
+            "meanWidth": 10.4195,
+            "intervalScore": 15.0049
+          },
+          "baseline": {
+            "n": 205,
+            "coverage": 0.9122,
+            "meanWidth": 7.9902,
+            "intervalScore": 16.1854
+          }
+        },
+        "H7|0.5": {
+          "distinctStarts": 15,
+          "policy": {
+            "n": 75,
+            "coverage": 0.72,
+            "meanWidth": 3.2933,
+            "intervalScore": 8.5733
+          },
+          "candidate": {
+            "n": 75,
+            "coverage": 0.7333,
+            "meanWidth": 4.24,
+            "intervalScore": 8.4533
+          },
+          "baseline": {
+            "n": 75,
+            "coverage": 0.72,
+            "meanWidth": 3.2933,
+            "intervalScore": 8.5733
+          }
+        },
+        "H7|0.9": {
+          "distinctStarts": 15,
+          "policy": {
+            "n": 75,
+            "coverage": 0.9333,
+            "meanWidth": 8,
+            "intervalScore": 16.5333
+          },
+          "candidate": {
+            "n": 75,
+            "coverage": 0.9467,
+            "meanWidth": 11.2533,
+            "intervalScore": 13.3867
+          },
+          "baseline": {
+            "n": 75,
+            "coverage": 0.9333,
+            "meanWidth": 8,
+            "intervalScore": 16.5333
+          }
+        },
+        "H8|0.5": {
+          "distinctStarts": 3,
+          "policy": {
+            "n": 15,
+            "coverage": 0.8,
+            "meanWidth": 3.2,
+            "intervalScore": 4.2667
+          },
+          "candidate": {
+            "n": 15,
+            "coverage": 0.9333,
+            "meanWidth": 4.3333,
+            "intervalScore": 4.6
+          },
+          "baseline": {
+            "n": 15,
+            "coverage": 0.8,
+            "meanWidth": 3.2,
+            "intervalScore": 4.2667
+          }
+        },
+        "H8|0.9": {
+          "distinctStarts": 3,
+          "policy": {
+            "n": 15,
+            "coverage": 1,
+            "meanWidth": 8,
+            "intervalScore": 8
+          },
+          "candidate": {
+            "n": 15,
+            "coverage": 1,
+            "meanWidth": 10.8,
+            "intervalScore": 10.8
+          },
+          "baseline": {
+            "n": 15,
+            "coverage": 1,
+            "meanWidth": 8,
+            "intervalScore": 8
+          }
+        }
+      },
+      "bandsByMethod": {
+        "0.5:poisson_baseline": 1896,
+        "0.5:bernoulli_baseline": 1264,
+        "0.9:poisson_baseline": 1896,
+        "0.9:bernoulli_baseline": 1264
+      }
+    },
+    "selectionWindowInSample": {
+      "byHorizon": {
+        "H1|0.5": {
+          "distinctStarts": 311,
+          "policy": {
+            "n": 1595,
+            "coverage": 0.7129,
+            "meanWidth": 3.2865,
+            "intervalScore": 7.6075
+          },
+          "candidate": {
+            "n": 1595,
+            "coverage": 0.7655,
+            "meanWidth": 4.3498,
+            "intervalScore": 7.6426
+          },
+          "baseline": {
+            "n": 1595,
+            "coverage": 0.7129,
+            "meanWidth": 3.2865,
+            "intervalScore": 7.6075
+          }
+        },
+        "H1|0.9": {
+          "distinctStarts": 311,
+          "policy": {
+            "n": 1595,
+            "coverage": 0.9266,
+            "meanWidth": 8.0251,
+            "intervalScore": 14.0063
+          },
+          "candidate": {
+            "n": 1595,
+            "coverage": 0.9429,
+            "meanWidth": 10.2746,
+            "intervalScore": 13.4846
+          },
+          "baseline": {
+            "n": 1595,
+            "coverage": 0.9266,
+            "meanWidth": 8.0251,
+            "intervalScore": 14.0063
+          }
+        },
+        "H2|0.5": {
+          "distinctStarts": 287,
+          "policy": {
+            "n": 1470,
+            "coverage": 0.715,
+            "meanWidth": 3.2878,
+            "intervalScore": 7.9571
+          },
+          "candidate": {
+            "n": 1470,
+            "coverage": 0.7776,
+            "meanWidth": 4.4231,
+            "intervalScore": 7.9878
+          },
+          "baseline": {
+            "n": 1470,
+            "coverage": 0.715,
+            "meanWidth": 3.2878,
+            "intervalScore": 7.9571
+          }
+        },
+        "H2|0.9": {
+          "distinctStarts": 287,
+          "policy": {
+            "n": 1470,
+            "coverage": 0.9388,
+            "meanWidth": 9.7878,
+            "intervalScore": 15.0939
+          },
+          "candidate": {
+            "n": 1470,
+            "coverage": 0.9442,
+            "meanWidth": 11.0014,
+            "intervalScore": 14.634
+          },
+          "baseline": {
+            "n": 1470,
+            "coverage": 0.917,
+            "meanWidth": 8.019,
+            "intervalScore": 16.019
+          }
+        },
+        "H3|0.5": {
+          "distinctStarts": 271,
+          "policy": {
+            "n": 1390,
+            "coverage": 0.7295,
+            "meanWidth": 3.277,
+            "intervalScore": 7.6367
+          },
+          "candidate": {
+            "n": 1390,
+            "coverage": 0.7741,
+            "meanWidth": 4.4504,
+            "intervalScore": 7.7597
+          },
+          "baseline": {
+            "n": 1390,
+            "coverage": 0.7295,
+            "meanWidth": 3.277,
+            "intervalScore": 7.6367
+          }
+        },
+        "H3|0.9": {
+          "distinctStarts": 271,
+          "policy": {
+            "n": 1390,
+            "coverage": 0.9281,
+            "meanWidth": 8.0151,
+            "intervalScore": 14.6194
+          },
+          "candidate": {
+            "n": 1390,
+            "coverage": 0.9439,
+            "meanWidth": 10.5403,
+            "intervalScore": 13.9504
+          },
+          "baseline": {
+            "n": 1390,
+            "coverage": 0.9281,
+            "meanWidth": 8.0151,
+            "intervalScore": 14.6194
+          }
+        },
+        "H4|0.5": {
+          "distinctStarts": 247,
+          "policy": {
+            "n": 1270,
+            "coverage": 0.7409,
+            "meanWidth": 3.2661,
+            "intervalScore": 7.4835
+          },
+          "candidate": {
+            "n": 1270,
+            "coverage": 0.7827,
+            "meanWidth": 4.3236,
+            "intervalScore": 7.5898
+          },
+          "baseline": {
+            "n": 1270,
+            "coverage": 0.7409,
+            "meanWidth": 3.2661,
+            "intervalScore": 7.4835
+          }
+        },
+        "H4|0.9": {
+          "distinctStarts": 247,
+          "policy": {
+            "n": 1270,
+            "coverage": 0.9441,
+            "meanWidth": 9.5228,
+            "intervalScore": 14.1528
+          },
+          "candidate": {
+            "n": 1270,
+            "coverage": 0.9433,
+            "meanWidth": 10.2992,
+            "intervalScore": 13.9055
+          },
+          "baseline": {
+            "n": 1270,
+            "coverage": 0.9276,
+            "meanWidth": 8.0134,
+            "intervalScore": 14.7693
+          }
+        },
+        "H5|0.5": {
+          "distinctStarts": 222,
+          "policy": {
+            "n": 1140,
+            "coverage": 0.7132,
+            "meanWidth": 3.2684,
+            "intervalScore": 7.5912
+          },
+          "candidate": {
+            "n": 1140,
+            "coverage": 0.786,
+            "meanWidth": 4.8289,
+            "intervalScore": 7.8184
+          },
+          "baseline": {
+            "n": 1140,
+            "coverage": 0.7132,
+            "meanWidth": 3.2684,
+            "intervalScore": 7.5912
+          }
+        },
+        "H5|0.9": {
+          "distinctStarts": 222,
+          "policy": {
+            "n": 1140,
+            "coverage": 0.9289,
+            "meanWidth": 8.0105,
+            "intervalScore": 14.2561
+          },
+          "candidate": {
+            "n": 1140,
+            "coverage": 0.943,
+            "meanWidth": 10.8684,
+            "intervalScore": 14.114
+          },
+          "baseline": {
+            "n": 1140,
+            "coverage": 0.9289,
+            "meanWidth": 8.0105,
+            "intervalScore": 14.2561
+          }
+        },
+        "H6|0.5": {
+          "distinctStarts": 195,
+          "policy": {
+            "n": 1000,
+            "coverage": 0.736,
+            "meanWidth": 3.258,
+            "intervalScore": 7.438
+          },
+          "candidate": {
+            "n": 1000,
+            "coverage": 0.803,
+            "meanWidth": 4.581,
+            "intervalScore": 7.549
+          },
+          "baseline": {
+            "n": 1000,
+            "coverage": 0.736,
+            "meanWidth": 3.258,
+            "intervalScore": 7.438
+          }
+        },
+        "H6|0.9": {
+          "distinctStarts": 195,
+          "policy": {
+            "n": 1000,
+            "coverage": 0.932,
+            "meanWidth": 7.998,
+            "intervalScore": 14.558
+          },
+          "candidate": {
+            "n": 1000,
+            "coverage": 0.946,
+            "meanWidth": 10.705,
+            "intervalScore": 14.225
+          },
+          "baseline": {
+            "n": 1000,
+            "coverage": 0.932,
+            "meanWidth": 7.998,
+            "intervalScore": 14.558
+          }
+        },
+        "H7|0.5": {
+          "distinctStarts": 171,
+          "policy": {
+            "n": 865,
+            "coverage": 0.7121,
+            "meanWidth": 3.2497,
+            "intervalScore": 7.9572
+          },
+          "candidate": {
+            "n": 865,
+            "coverage": 0.7769,
+            "meanWidth": 4.7156,
+            "intervalScore": 7.8925
+          },
+          "baseline": {
+            "n": 865,
+            "coverage": 0.7121,
+            "meanWidth": 3.2497,
+            "intervalScore": 7.9572
+          }
+        },
+        "H7|0.9": {
+          "distinctStarts": 171,
+          "policy": {
+            "n": 865,
+            "coverage": 0.9202,
+            "meanWidth": 8.0012,
+            "intervalScore": 14.452
+          },
+          "candidate": {
+            "n": 865,
+            "coverage": 0.9538,
+            "meanWidth": 11.163,
+            "intervalScore": 13.4289
+          },
+          "baseline": {
+            "n": 865,
+            "coverage": 0.9202,
+            "meanWidth": 8.0012,
+            "intervalScore": 14.452
+          }
+        },
+        "H8|0.5": {
+          "distinctStarts": 150,
+          "policy": {
+            "n": 760,
+            "coverage": 0.7368,
+            "meanWidth": 3.2513,
+            "intervalScore": 7.325
+          },
+          "candidate": {
+            "n": 600,
+            "coverage": 0.8183,
+            "meanWidth": 4.9167,
+            "intervalScore": 7.5233
+          },
+          "baseline": {
+            "n": 760,
+            "coverage": 0.7368,
+            "meanWidth": 3.2513,
+            "intervalScore": 7.325
+          }
+        },
+        "H8|0.9": {
+          "distinctStarts": 150,
+          "policy": {
+            "n": 760,
+            "coverage": 0.9303,
+            "meanWidth": 8.0079,
+            "intervalScore": 14.0605
+          },
+          "candidate": {
+            "n": 600,
+            "coverage": 0.9533,
+            "meanWidth": 11.5567,
+            "intervalScore": 14.4233
+          },
+          "baseline": {
+            "n": 760,
+            "coverage": 0.9303,
+            "meanWidth": 8.0079,
+            "intervalScore": 14.0605
+          }
+        },
+        "H9|0.5": {
+          "distinctStarts": 125,
+          "policy": {
+            "n": 630,
+            "coverage": 0.7016,
+            "meanWidth": 3.273,
+            "intervalScore": 7.4
+          },
+          "candidate": {
+            "n": 315,
+            "coverage": 0.7873,
+            "meanWidth": 5.1079,
+            "intervalScore": 8.2698
+          },
+          "baseline": {
+            "n": 630,
+            "coverage": 0.7016,
+            "meanWidth": 3.273,
+            "intervalScore": 7.4
+          }
+        },
+        "H9|0.9": {
+          "distinctStarts": 125,
+          "policy": {
+            "n": 630,
+            "coverage": 0.927,
+            "meanWidth": 8.0175,
+            "intervalScore": 13.1286
+          },
+          "candidate": {
+            "n": 315,
+            "coverage": 0.9365,
+            "meanWidth": 10.9524,
+            "intervalScore": 14.3175
+          },
+          "baseline": {
+            "n": 630,
+            "coverage": 0.927,
+            "meanWidth": 8.0175,
+            "intervalScore": 13.1286
+          }
+        },
+        "H10|0.5": {
+          "distinctStarts": 100,
+          "policy": {
+            "n": 500,
+            "coverage": 0.742,
+            "meanWidth": 3.3,
+            "intervalScore": 7.436
+          },
+          "candidate": {
+            "n": 195,
+            "coverage": 0.8205,
+            "meanWidth": 5.0872,
+            "intervalScore": 8.1436
+          },
+          "baseline": {
+            "n": 500,
+            "coverage": 0.742,
+            "meanWidth": 3.3,
+            "intervalScore": 7.436
+          }
+        },
+        "H10|0.9": {
+          "distinctStarts": 100,
+          "policy": {
+            "n": 500,
+            "coverage": 0.936,
+            "meanWidth": 8.016,
+            "intervalScore": 15.096
+          },
+          "candidate": {
+            "n": 195,
+            "coverage": 0.9385,
+            "meanWidth": 13.3179,
+            "intervalScore": 16.6
+          },
+          "baseline": {
+            "n": 500,
+            "coverage": 0.936,
+            "meanWidth": 8.016,
+            "intervalScore": 15.096
+          }
+        }
+      },
+      "bandsByMethod": {
+        "0.5:poisson_baseline": 6372,
+        "0.5:bernoulli_baseline": 4248,
+        "0.9:poisson_baseline": 5824,
+        "0.9:bernoulli_baseline": 4248,
+        "0.9:kernel_calibrated": 548
+      }
+    }
+  },
+  "overall": {
+    "goalie|0.5": {
+      "baseline": {
+        "n": 10620,
+        "coverage": 0.7233,
+        "meanWidth": 3.2727,
+        "intervalScore": 7.6151
+      },
+      "calibrated": {
+        "n": 9840,
+        "coverage": 0.7829,
+        "meanWidth": 4.5562,
+        "intervalScore": 7.7595
+      },
+      "raw": {
+        "n": 10620,
+        "coverage": 0.7718,
+        "meanWidth": 4.2757,
+        "intervalScore": 7.6313
+      }
+    },
+    "goalie|0.9": {
+      "baseline": {
+        "n": 10620,
+        "coverage": 0.9266,
+        "meanWidth": 8.0134,
+        "intervalScore": 14.5746
+      },
+      "calibrated": {
+        "n": 9840,
+        "coverage": 0.9449,
+        "meanWidth": 10.7747,
+        "intervalScore": 14.0653
+      },
+      "raw": {
+        "n": 10620,
+        "coverage": 0.9403,
+        "meanWidth": 9.876,
+        "intervalScore": 13.8082
+      }
+    },
+    "skater|0.5": {
+      "baseline": {
+        "n": 267624,
+        "coverage": 0.804,
+        "meanWidth": 0.7937,
+        "intervalScore": 1.922
+      },
+      "calibrated": {
+        "n": 267624,
+        "coverage": 0.8329,
+        "meanWidth": 0.7439,
+        "intervalScore": 1.8563
+      },
+      "raw": {
+        "n": 267624,
+        "coverage": 0.8329,
+        "meanWidth": 0.7439,
+        "intervalScore": 1.8563
+      }
+    },
+    "skater|0.9": {
+      "baseline": {
+        "n": 267624,
+        "coverage": 0.9592,
+        "meanWidth": 2.0159,
+        "intervalScore": 3.5275
+      },
+      "calibrated": {
+        "n": 267624,
+        "coverage": 0.9725,
+        "meanWidth": 2.3261,
+        "intervalScore": 3.3994
+      },
+      "raw": {
+        "n": 267624,
+        "coverage": 0.9724,
+        "meanWidth": 2.3218,
+        "intervalScore": 3.3972
+      }
+    }
+  },
+  "matched": {
+    "goalie|0.5": {
+      "baseline": {
+        "n": 9840,
+        "coverage": 0.7233,
+        "meanWidth": 3.266,
+        "intervalScore": 7.6566
+      },
+      "calibrated": {
+        "n": 9840,
+        "coverage": 0.7829,
+        "meanWidth": 4.5562,
+        "intervalScore": 7.7595
+      },
+      "raw": {
+        "n": 9840,
+        "coverage": 0.7706,
+        "meanWidth": 4.2639,
+        "intervalScore": 7.6668
+      }
+    },
+    "goalie|0.9": {
+      "baseline": {
+        "n": 9840,
+        "coverage": 0.9263,
+        "meanWidth": 8.0128,
+        "intervalScore": 14.6937
+      },
+      "calibrated": {
+        "n": 9840,
+        "coverage": 0.9449,
+        "meanWidth": 10.7747,
+        "intervalScore": 14.0653
+      },
+      "raw": {
+        "n": 9840,
+        "coverage": 0.9398,
+        "meanWidth": 9.8873,
+        "intervalScore": 13.9015
+      }
+    },
+    "skater|0.5": {
+      "baseline": {
+        "n": 267624,
+        "coverage": 0.804,
+        "meanWidth": 0.7937,
+        "intervalScore": 1.922
+      },
+      "calibrated": {
+        "n": 267624,
+        "coverage": 0.8329,
+        "meanWidth": 0.7439,
+        "intervalScore": 1.8563
+      },
+      "raw": {
+        "n": 267624,
+        "coverage": 0.8329,
+        "meanWidth": 0.7439,
+        "intervalScore": 1.8563
+      }
+    },
+    "skater|0.9": {
+      "baseline": {
+        "n": 267624,
+        "coverage": 0.9592,
+        "meanWidth": 2.0159,
+        "intervalScore": 3.5275
+      },
+      "calibrated": {
+        "n": 267624,
+        "coverage": 0.9725,
+        "meanWidth": 2.3261,
+        "intervalScore": 3.3994
+      },
+      "raw": {
+        "n": 267624,
+        "coverage": 0.9724,
+        "meanWidth": 2.3218,
+        "intervalScore": 3.3972
+      }
+    }
+  },
+  "byHorizon": {
+    "goalie|H1|0.5": {
+      "baseline": {
+        "n": 1595,
+        "coverage": 0.7129,
+        "meanWidth": 3.2865,
+        "intervalScore": 7.6075
+      },
+      "calibrated": {
+        "n": 1595,
+        "coverage": 0.7655,
+        "meanWidth": 4.3498,
+        "intervalScore": 7.6426
+      },
+      "raw": {
+        "n": 1595,
+        "coverage": 0.7605,
+        "meanWidth": 4.1893,
+        "intervalScore": 7.605
+      }
+    },
+    "goalie|H1|0.9": {
+      "baseline": {
+        "n": 1595,
+        "coverage": 0.9266,
+        "meanWidth": 8.0251,
+        "intervalScore": 14.0063
+      },
+      "calibrated": {
+        "n": 1595,
+        "coverage": 0.9429,
+        "meanWidth": 10.2746,
+        "intervalScore": 13.4846
+      },
+      "raw": {
+        "n": 1595,
+        "coverage": 0.9398,
+        "meanWidth": 9.8734,
+        "intervalScore": 13.3592
+      }
+    },
+    "goalie|H2|0.5": {
+      "baseline": {
+        "n": 1470,
+        "coverage": 0.715,
+        "meanWidth": 3.2878,
+        "intervalScore": 7.9571
+      },
+      "calibrated": {
+        "n": 1470,
+        "coverage": 0.7776,
+        "meanWidth": 4.4231,
+        "intervalScore": 7.9878
+      },
+      "raw": {
+        "n": 1470,
+        "coverage": 0.768,
+        "meanWidth": 4.2272,
+        "intervalScore": 7.9361
+      }
+    },
+    "goalie|H2|0.9": {
+      "baseline": {
+        "n": 1470,
+        "coverage": 0.917,
+        "meanWidth": 8.019,
+        "intervalScore": 16.019
+      },
+      "calibrated": {
+        "n": 1470,
+        "coverage": 0.9442,
+        "meanWidth": 11.0014,
+        "intervalScore": 14.634
+      },
+      "raw": {
+        "n": 1470,
+        "coverage": 0.934,
+        "meanWidth": 9.8823,
+        "intervalScore": 14.685
+      }
+    },
+    "goalie|H3|0.5": {
+      "baseline": {
+        "n": 1390,
+        "coverage": 0.7295,
+        "meanWidth": 3.277,
+        "intervalScore": 7.6367
+      },
+      "calibrated": {
+        "n": 1390,
+        "coverage": 0.7741,
+        "meanWidth": 4.4504,
+        "intervalScore": 7.7597
+      },
+      "raw": {
+        "n": 1390,
+        "coverage": 0.7683,
+        "meanWidth": 4.2432,
+        "intervalScore": 7.6446
+      }
+    },
+    "goalie|H3|0.9": {
+      "baseline": {
+        "n": 1390,
+        "coverage": 0.9281,
+        "meanWidth": 8.0151,
+        "intervalScore": 14.6194
+      },
+      "calibrated": {
+        "n": 1390,
+        "coverage": 0.9439,
+        "meanWidth": 10.5403,
+        "intervalScore": 13.9504
+      },
+      "raw": {
+        "n": 1390,
+        "coverage": 0.9417,
+        "meanWidth": 9.9058,
+        "intervalScore": 13.7906
+      }
+    },
+    "goalie|H4|0.5": {
+      "baseline": {
+        "n": 1270,
+        "coverage": 0.7409,
+        "meanWidth": 3.2661,
+        "intervalScore": 7.4835
+      },
+      "calibrated": {
+        "n": 1270,
+        "coverage": 0.7827,
+        "meanWidth": 4.3236,
+        "intervalScore": 7.5898
+      },
+      "raw": {
+        "n": 1270,
+        "coverage": 0.7803,
+        "meanWidth": 4.248,
+        "intervalScore": 7.5583
+      }
+    },
+    "goalie|H4|0.9": {
+      "baseline": {
+        "n": 1270,
+        "coverage": 0.9276,
+        "meanWidth": 8.0134,
+        "intervalScore": 14.7693
+      },
+      "calibrated": {
+        "n": 1270,
+        "coverage": 0.9433,
+        "meanWidth": 10.2992,
+        "intervalScore": 13.9055
+      },
+      "raw": {
+        "n": 1270,
+        "coverage": 0.9409,
+        "meanWidth": 9.8992,
+        "intervalScore": 13.852
+      }
+    },
+    "goalie|H5|0.5": {
+      "baseline": {
+        "n": 1140,
+        "coverage": 0.7132,
+        "meanWidth": 3.2684,
+        "intervalScore": 7.5912
+      },
+      "calibrated": {
+        "n": 1140,
+        "coverage": 0.786,
+        "meanWidth": 4.8289,
+        "intervalScore": 7.8184
+      },
+      "raw": {
+        "n": 1140,
+        "coverage": 0.764,
+        "meanWidth": 4.2956,
+        "intervalScore": 7.5693
+      }
+    },
+    "goalie|H5|0.9": {
+      "baseline": {
+        "n": 1140,
+        "coverage": 0.9289,
+        "meanWidth": 8.0105,
+        "intervalScore": 14.2561
+      },
+      "calibrated": {
+        "n": 1140,
+        "coverage": 0.943,
+        "meanWidth": 10.8684,
+        "intervalScore": 14.114
+      },
+      "raw": {
+        "n": 1140,
+        "coverage": 0.9395,
+        "meanWidth": 9.8912,
+        "intervalScore": 13.7684
+      }
+    },
+    "goalie|H6|0.5": {
+      "baseline": {
+        "n": 1000,
+        "coverage": 0.736,
+        "meanWidth": 3.258,
+        "intervalScore": 7.438
+      },
+      "calibrated": {
+        "n": 1000,
+        "coverage": 0.803,
+        "meanWidth": 4.581,
+        "intervalScore": 7.549
+      },
+      "raw": {
+        "n": 1000,
+        "coverage": 0.785,
+        "meanWidth": 4.293,
+        "intervalScore": 7.501
+      }
+    },
+    "goalie|H6|0.9": {
+      "baseline": {
+        "n": 1000,
+        "coverage": 0.932,
+        "meanWidth": 7.998,
+        "intervalScore": 14.558
+      },
+      "calibrated": {
+        "n": 1000,
+        "coverage": 0.946,
+        "meanWidth": 10.705,
+        "intervalScore": 14.225
+      },
+      "raw": {
+        "n": 1000,
+        "coverage": 0.944,
+        "meanWidth": 9.877,
+        "intervalScore": 14.077
+      }
+    },
+    "goalie|H7|0.5": {
+      "baseline": {
+        "n": 865,
+        "coverage": 0.7121,
+        "meanWidth": 3.2497,
+        "intervalScore": 7.9572
+      },
+      "calibrated": {
+        "n": 865,
+        "coverage": 0.7769,
+        "meanWidth": 4.7156,
+        "intervalScore": 7.8925
+      },
+      "raw": {
+        "n": 865,
+        "coverage": 0.7561,
+        "meanWidth": 4.3318,
+        "intervalScore": 7.8601
+      }
+    },
+    "goalie|H7|0.9": {
+      "baseline": {
+        "n": 865,
+        "coverage": 0.9202,
+        "meanWidth": 8.0012,
+        "intervalScore": 14.452
+      },
+      "calibrated": {
+        "n": 865,
+        "coverage": 0.9538,
+        "meanWidth": 11.163,
+        "intervalScore": 13.4289
+      },
+      "raw": {
+        "n": 865,
+        "coverage": 0.9422,
+        "meanWidth": 9.8775,
+        "intervalScore": 13.3688
+      }
+    },
+    "goalie|H8|0.5": {
+      "baseline": {
+        "n": 760,
+        "coverage": 0.7368,
+        "meanWidth": 3.2513,
+        "intervalScore": 7.325
+      },
+      "calibrated": {
+        "n": 600,
+        "coverage": 0.8183,
+        "meanWidth": 4.9167,
+        "intervalScore": 7.5233
+      },
+      "raw": {
+        "n": 760,
+        "coverage": 0.7842,
+        "meanWidth": 4.3711,
+        "intervalScore": 7.45
+      }
+    },
+    "goalie|H8|0.9": {
+      "baseline": {
+        "n": 760,
+        "coverage": 0.9303,
+        "meanWidth": 8.0079,
+        "intervalScore": 14.0605
+      },
+      "calibrated": {
+        "n": 600,
+        "coverage": 0.9533,
+        "meanWidth": 11.5567,
+        "intervalScore": 14.4233
+      },
+      "raw": {
+        "n": 760,
+        "coverage": 0.9434,
+        "meanWidth": 9.8618,
+        "intervalScore": 13.4408
+      }
+    },
+    "goalie|H9|0.5": {
+      "baseline": {
+        "n": 630,
+        "coverage": 0.7016,
+        "meanWidth": 3.273,
+        "intervalScore": 7.4
+      },
+      "calibrated": {
+        "n": 315,
+        "coverage": 0.7873,
+        "meanWidth": 5.1079,
+        "intervalScore": 8.2698
+      },
+      "raw": {
+        "n": 630,
+        "coverage": 0.7619,
+        "meanWidth": 4.3794,
+        "intervalScore": 7.4206
+      }
+    },
+    "goalie|H9|0.9": {
+      "baseline": {
+        "n": 630,
+        "coverage": 0.927,
+        "meanWidth": 8.0175,
+        "intervalScore": 13.1286
+      },
+      "calibrated": {
+        "n": 315,
+        "coverage": 0.9365,
+        "meanWidth": 10.9524,
+        "intervalScore": 14.3175
+      },
+      "raw": {
+        "n": 630,
+        "coverage": 0.9333,
+        "meanWidth": 9.819,
+        "intervalScore": 13.0254
+      }
+    },
+    "goalie|H10|0.5": {
+      "baseline": {
+        "n": 500,
+        "coverage": 0.742,
+        "meanWidth": 3.3,
+        "intervalScore": 7.436
+      },
+      "calibrated": {
+        "n": 195,
+        "coverage": 0.8205,
+        "meanWidth": 5.0872,
+        "intervalScore": 8.1436
+      },
+      "raw": {
+        "n": 500,
+        "coverage": 0.818,
+        "meanWidth": 4.402,
+        "intervalScore": 7.514
+      }
+    },
+    "goalie|H10|0.9": {
+      "baseline": {
+        "n": 500,
+        "coverage": 0.936,
+        "meanWidth": 8.016,
+        "intervalScore": 15.096
+      },
+      "calibrated": {
+        "n": 195,
+        "coverage": 0.9385,
+        "meanWidth": 13.3179,
+        "intervalScore": 16.6
+      },
+      "raw": {
+        "n": 500,
+        "coverage": 0.95,
+        "meanWidth": 9.778,
+        "intervalScore": 14.458
+      }
+    },
+    "skater|H1|0.5": {
+      "baseline": {
+        "n": 40194,
+        "coverage": 0.8055,
+        "meanWidth": 0.7938,
+        "intervalScore": 1.9251
+      },
+      "calibrated": {
+        "n": 40194,
+        "coverage": 0.8332,
+        "meanWidth": 0.7441,
+        "intervalScore": 1.8651
+      },
+      "raw": {
+        "n": 40194,
+        "coverage": 0.8332,
+        "meanWidth": 0.7441,
+        "intervalScore": 1.8651
+      }
+    },
+    "skater|H1|0.9": {
+      "baseline": {
+        "n": 40194,
+        "coverage": 0.9589,
+        "meanWidth": 2.0148,
+        "intervalScore": 3.5693
+      },
+      "calibrated": {
+        "n": 40194,
+        "coverage": 0.9723,
+        "meanWidth": 2.323,
+        "intervalScore": 3.4391
+      },
+      "raw": {
+        "n": 40194,
+        "coverage": 0.9723,
+        "meanWidth": 2.323,
+        "intervalScore": 3.4391
+      }
+    },
+    "skater|H2|0.5": {
+      "baseline": {
+        "n": 37044,
+        "coverage": 0.8035,
+        "meanWidth": 0.7934,
+        "intervalScore": 1.9212
+      },
+      "calibrated": {
+        "n": 37044,
+        "coverage": 0.8326,
+        "meanWidth": 0.7431,
+        "intervalScore": 1.8554
+      },
+      "raw": {
+        "n": 37044,
+        "coverage": 0.8326,
+        "meanWidth": 0.7431,
+        "intervalScore": 1.8554
+      }
+    },
+    "skater|H2|0.9": {
+      "baseline": {
+        "n": 37044,
+        "coverage": 0.9592,
+        "meanWidth": 2.0171,
+        "intervalScore": 3.5169
+      },
+      "calibrated": {
+        "n": 37044,
+        "coverage": 0.9717,
+        "meanWidth": 2.3238,
+        "intervalScore": 3.4074
+      },
+      "raw": {
+        "n": 37044,
+        "coverage": 0.9717,
+        "meanWidth": 2.3238,
+        "intervalScore": 3.4074
+      }
+    },
+    "skater|H3|0.5": {
+      "baseline": {
+        "n": 35028,
+        "coverage": 0.8024,
+        "meanWidth": 0.794,
+        "intervalScore": 1.9277
+      },
+      "calibrated": {
+        "n": 35028,
+        "coverage": 0.8319,
+        "meanWidth": 0.7462,
+        "intervalScore": 1.8608
+      },
+      "raw": {
+        "n": 35028,
+        "coverage": 0.8319,
+        "meanWidth": 0.7462,
+        "intervalScore": 1.8608
+      }
+    },
+    "skater|H3|0.9": {
+      "baseline": {
+        "n": 35028,
+        "coverage": 0.9592,
+        "meanWidth": 2.0175,
+        "intervalScore": 3.5231
+      },
+      "calibrated": {
+        "n": 35028,
+        "coverage": 0.9725,
+        "meanWidth": 2.3249,
+        "intervalScore": 3.3949
+      },
+      "raw": {
+        "n": 35028,
+        "coverage": 0.9725,
+        "meanWidth": 2.3249,
+        "intervalScore": 3.3949
+      }
+    },
+    "skater|H4|0.5": {
+      "baseline": {
+        "n": 32004,
+        "coverage": 0.8036,
+        "meanWidth": 0.7961,
+        "intervalScore": 1.9372
+      },
+      "calibrated": {
+        "n": 32004,
+        "coverage": 0.8328,
+        "meanWidth": 0.7454,
+        "intervalScore": 1.8715
+      },
+      "raw": {
+        "n": 32004,
+        "coverage": 0.8328,
+        "meanWidth": 0.7454,
+        "intervalScore": 1.8715
+      }
+    },
+    "skater|H4|0.9": {
+      "baseline": {
+        "n": 32004,
+        "coverage": 0.9587,
+        "meanWidth": 2.0211,
+        "intervalScore": 3.5903
+      },
+      "calibrated": {
+        "n": 32004,
+        "coverage": 0.9718,
+        "meanWidth": 2.3258,
+        "intervalScore": 3.4531
+      },
+      "raw": {
+        "n": 32004,
+        "coverage": 0.9718,
+        "meanWidth": 2.3258,
+        "intervalScore": 3.4531
+      }
+    },
+    "skater|H5|0.5": {
+      "baseline": {
+        "n": 28728,
+        "coverage": 0.8057,
+        "meanWidth": 0.7953,
+        "intervalScore": 1.9335
+      },
+      "calibrated": {
+        "n": 28728,
+        "coverage": 0.8345,
+        "meanWidth": 0.7443,
+        "intervalScore": 1.8672
+      },
+      "raw": {
+        "n": 28728,
+        "coverage": 0.8345,
+        "meanWidth": 0.7443,
+        "intervalScore": 1.8672
+      }
+    },
+    "skater|H5|0.9": {
+      "baseline": {
+        "n": 28728,
+        "coverage": 0.9583,
+        "meanWidth": 2.0206,
+        "intervalScore": 3.6142
+      },
+      "calibrated": {
+        "n": 28728,
+        "coverage": 0.9715,
+        "meanWidth": 2.3248,
+        "intervalScore": 3.4854
+      },
+      "raw": {
+        "n": 28728,
+        "coverage": 0.9715,
+        "meanWidth": 2.3248,
+        "intervalScore": 3.4854
+      }
+    },
+    "skater|H6|0.5": {
+      "baseline": {
+        "n": 25200,
+        "coverage": 0.8048,
+        "meanWidth": 0.7993,
+        "intervalScore": 1.9173
+      },
+      "calibrated": {
+        "n": 25200,
+        "coverage": 0.8338,
+        "meanWidth": 0.7496,
+        "intervalScore": 1.8525
+      },
+      "raw": {
+        "n": 25200,
+        "coverage": 0.8338,
+        "meanWidth": 0.7496,
+        "intervalScore": 1.8525
+      }
+    },
+    "skater|H6|0.9": {
+      "baseline": {
+        "n": 25200,
+        "coverage": 0.9592,
+        "meanWidth": 2.0163,
+        "intervalScore": 3.4949
+      },
+      "calibrated": {
+        "n": 25200,
+        "coverage": 0.9733,
+        "meanWidth": 2.3254,
+        "intervalScore": 3.3579
+      },
+      "raw": {
+        "n": 25200,
+        "coverage": 0.9733,
+        "meanWidth": 2.3254,
+        "intervalScore": 3.3579
+      }
+    },
+    "skater|H7|0.5": {
+      "baseline": {
+        "n": 21798,
+        "coverage": 0.8051,
+        "meanWidth": 0.7982,
+        "intervalScore": 1.9233
+      },
+      "calibrated": {
+        "n": 21798,
+        "coverage": 0.8323,
+        "meanWidth": 0.7483,
+        "intervalScore": 1.8653
+      },
+      "raw": {
+        "n": 21798,
+        "coverage": 0.8323,
+        "meanWidth": 0.7483,
+        "intervalScore": 1.8653
+      }
+    },
+    "skater|H7|0.9": {
+      "baseline": {
+        "n": 21798,
+        "coverage": 0.9594,
+        "meanWidth": 2.0123,
+        "intervalScore": 3.5308
+      },
+      "calibrated": {
+        "n": 21798,
+        "coverage": 0.9726,
+        "meanWidth": 2.3228,
+        "intervalScore": 3.4018
+      },
+      "raw": {
+        "n": 21798,
+        "coverage": 0.9726,
+        "meanWidth": 2.3228,
+        "intervalScore": 3.4018
+      }
+    },
+    "skater|H8|0.5": {
+      "baseline": {
+        "n": 19152,
+        "coverage": 0.803,
+        "meanWidth": 0.7925,
+        "intervalScore": 1.9038
+      },
+      "calibrated": {
+        "n": 19152,
+        "coverage": 0.831,
+        "meanWidth": 0.7405,
+        "intervalScore": 1.835
+      },
+      "raw": {
+        "n": 19152,
+        "coverage": 0.831,
+        "meanWidth": 0.7405,
+        "intervalScore": 1.835
+      }
+    },
+    "skater|H8|0.9": {
+      "baseline": {
+        "n": 19152,
+        "coverage": 0.959,
+        "meanWidth": 2.0109,
+        "intervalScore": 3.4134
+      },
+      "calibrated": {
+        "n": 19152,
+        "coverage": 0.9723,
+        "meanWidth": 2.3166,
+        "intervalScore": 3.2742
+      },
+      "raw": {
+        "n": 19152,
+        "coverage": 0.9723,
+        "meanWidth": 2.3166,
+        "intervalScore": 3.2742
+      }
+    },
+    "skater|H9|0.5": {
+      "baseline": {
+        "n": 15876,
+        "coverage": 0.8058,
+        "meanWidth": 0.7855,
+        "intervalScore": 1.888
+      },
+      "calibrated": {
+        "n": 15876,
+        "coverage": 0.8364,
+        "meanWidth": 0.7375,
+        "intervalScore": 1.8129
+      },
+      "raw": {
+        "n": 15876,
+        "coverage": 0.8364,
+        "meanWidth": 0.7375,
+        "intervalScore": 1.8129
+      }
+    },
+    "skater|H9|0.9": {
+      "baseline": {
+        "n": 15876,
+        "coverage": 0.9621,
+        "meanWidth": 2.0098,
+        "intervalScore": 3.4245
+      },
+      "calibrated": {
+        "n": 15876,
+        "coverage": 0.9757,
+        "meanWidth": 2.345,
+        "intervalScore": 3.31
+      },
+      "raw": {
+        "n": 15876,
+        "coverage": 0.9751,
+        "meanWidth": 2.3088,
+        "intervalScore": 3.2901
+      }
+    },
+    "skater|H10|0.5": {
+      "baseline": {
+        "n": 12600,
+        "coverage": 0.7987,
+        "meanWidth": 0.777,
+        "intervalScore": 1.9113
+      },
+      "calibrated": {
+        "n": 12600,
+        "coverage": 0.8298,
+        "meanWidth": 0.7298,
+        "intervalScore": 1.8337
+      },
+      "raw": {
+        "n": 12600,
+        "coverage": 0.8298,
+        "meanWidth": 0.7298,
+        "intervalScore": 1.8337
+      }
+    },
+    "skater|H10|0.9": {
+      "baseline": {
+        "n": 12600,
+        "coverage": 0.9594,
+        "meanWidth": 2.0094,
+        "intervalScore": 3.4427
+      },
+      "calibrated": {
+        "n": 12600,
+        "coverage": 0.9742,
+        "meanWidth": 2.347,
+        "intervalScore": 3.3105
+      },
+      "raw": {
+        "n": 12600,
+        "coverage": 0.9732,
+        "meanWidth": 2.3027,
+        "intervalScore": 3.29
+      }
+    }
+  },
+  "byCategory": {
+    "goalie|GOALS_ALLOWED|0.5": {
+      "baseline": {
+        "n": 2124,
+        "coverage": 0.6883,
+        "meanWidth": 2,
+        "intervalScore": 3.6667
+      },
+      "calibrated": {
+        "n": 1968,
+        "coverage": 0.6916,
+        "meanWidth": 2,
+        "intervalScore": 3.6565
+      },
+      "raw": {
+        "n": 2124,
+        "coverage": 0.6883,
+        "meanWidth": 2,
+        "intervalScore": 3.6667
+      }
+    },
+    "goalie|GOALS_ALLOWED|0.9": {
+      "baseline": {
+        "n": 2124,
+        "coverage": 0.9906,
+        "meanWidth": 5.9986,
+        "intervalScore": 6.1869
+      },
+      "calibrated": {
+        "n": 1968,
+        "coverage": 0.9243,
+        "meanWidth": 4.5163,
+        "intervalScore": 6.0508
+      },
+      "raw": {
+        "n": 2124,
+        "coverage": 0.9233,
+        "meanWidth": 4.4972,
+        "intervalScore": 6.0508
+      }
+    },
+    "goalie|SAVES|0.5": {
+      "baseline": {
+        "n": 2124,
+        "coverage": 0.4727,
+        "meanWidth": 6.4506,
+        "intervalScore": 16.7349
+      },
+      "calibrated": {
+        "n": 1968,
+        "coverage": 0.6255,
+        "meanWidth": 9.8206,
+        "intervalScore": 17.0808
+      },
+      "raw": {
+        "n": 2124,
+        "coverage": 0.5979,
+        "meanWidth": 9.0231,
+        "intervalScore": 16.7236
+      }
+    },
+    "goalie|SAVES|0.9": {
+      "baseline": {
+        "n": 2124,
+        "coverage": 0.8347,
+        "meanWidth": 16.0683,
+        "intervalScore": 33.1022
+      },
+      "calibrated": {
+        "n": 1968,
+        "coverage": 0.9197,
+        "meanWidth": 24.3496,
+        "intervalScore": 31.1077
+      },
+      "raw": {
+        "n": 2124,
+        "coverage": 0.9077,
+        "meanWidth": 22.0113,
+        "intervalScore": 30.533
+      }
+    },
+    "goalie|SHOTS_AGAINST|0.5": {
+      "baseline": {
+        "n": 2124,
+        "coverage": 0.4972,
+        "meanWidth": 6.9129,
+        "intervalScore": 16.5061
+      },
+      "calibrated": {
+        "n": 1968,
+        "coverage": 0.6387,
+        "meanWidth": 9.9604,
+        "intervalScore": 16.8953
+      },
+      "raw": {
+        "n": 2124,
+        "coverage": 0.6144,
+        "meanWidth": 9.3555,
+        "intervalScore": 16.5984
+      }
+    },
+    "goalie|SHOTS_AGAINST|0.9": {
+      "baseline": {
+        "n": 2124,
+        "coverage": 0.8493,
+        "meanWidth": 17,
+        "intervalScore": 31.7458
+      },
+      "calibrated": {
+        "n": 1968,
+        "coverage": 0.9207,
+        "meanWidth": 23.9736,
+        "intervalScore": 31.3313
+      },
+      "raw": {
+        "n": 2124,
+        "coverage": 0.9124,
+        "meanWidth": 21.8715,
+        "intervalScore": 30.6191
+      }
+    },
+    "goalie|SHUTOUT|0.5": {
+      "baseline": {
+        "n": 2124,
+        "coverage": 0.9581,
+        "meanWidth": 0,
+        "intervalScore": 0.1676
+      },
+      "calibrated": {
+        "n": 1968,
+        "coverage": 0.9588,
+        "meanWidth": 0,
+        "intervalScore": 0.1646
+      },
+      "raw": {
+        "n": 2124,
+        "coverage": 0.9581,
+        "meanWidth": 0,
+        "intervalScore": 0.1676
+      }
+    },
+    "goalie|SHUTOUT|0.9": {
+      "baseline": {
+        "n": 2124,
+        "coverage": 0.9581,
+        "meanWidth": 0,
+        "intervalScore": 0.838
+      },
+      "calibrated": {
+        "n": 1968,
+        "coverage": 0.9599,
+        "meanWidth": 0.034,
+        "intervalScore": 0.8369
+      },
+      "raw": {
+        "n": 2124,
+        "coverage": 0.9581,
+        "meanWidth": 0,
+        "intervalScore": 0.838
+      }
+    },
+    "goalie|WIN|0.5": {
+      "baseline": {
+        "n": 2124,
+        "coverage": 1,
+        "meanWidth": 1,
+        "intervalScore": 1
+      },
+      "calibrated": {
+        "n": 1968,
+        "coverage": 1,
+        "meanWidth": 1,
+        "intervalScore": 1
+      },
+      "raw": {
+        "n": 2124,
+        "coverage": 1,
+        "meanWidth": 1,
+        "intervalScore": 1
+      }
+    },
+    "goalie|WIN|0.9": {
+      "baseline": {
+        "n": 2124,
+        "coverage": 1,
+        "meanWidth": 1,
+        "intervalScore": 1
+      },
+      "calibrated": {
+        "n": 1968,
+        "coverage": 1,
+        "meanWidth": 1,
+        "intervalScore": 1
+      },
+      "raw": {
+        "n": 2124,
+        "coverage": 1,
+        "meanWidth": 1,
+        "intervalScore": 1
+      }
+    },
+    "skater|A|0.5": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.8681,
+        "meanWidth": 0.4735,
+        "intervalScore": 1.0896
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.8296,
+        "meanWidth": 0.2848,
+        "intervalScore": 1.0875
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.8296,
+        "meanWidth": 0.2848,
+        "intervalScore": 1.0875
+      }
+    },
+    "skater|A|0.9": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.9607,
+        "meanWidth": 1.0387,
+        "intervalScore": 1.984
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.9693,
+        "meanWidth": 1.2186,
+        "intervalScore": 1.9405
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.9686,
+        "meanWidth": 1.189,
+        "intervalScore": 1.9255
+      }
+    },
+    "skater|BLK|0.5": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.8112,
+        "meanWidth": 1,
+        "intervalScore": 2.1639
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.8112,
+        "meanWidth": 1,
+        "intervalScore": 2.1639
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.8112,
+        "meanWidth": 1,
+        "intervalScore": 2.1639
+      }
+    },
+    "skater|BLK|0.9": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.9376,
+        "meanWidth": 2.0849,
+        "intervalScore": 3.9681
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.975,
+        "meanWidth": 2.9965,
+        "intervalScore": 3.698
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.975,
+        "meanWidth": 2.9965,
+        "intervalScore": 3.698
+      }
+    },
+    "skater|G|0.5": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.8442,
+        "meanWidth": 0.0006,
+        "intervalScore": 0.7114
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.8441,
+        "meanWidth": 0.0003,
+        "intervalScore": 0.7115
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.8441,
+        "meanWidth": 0.0003,
+        "intervalScore": 0.7115
+      }
+    },
+    "skater|G|0.9": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.9811,
+        "meanWidth": 1,
+        "intervalScore": 1.4373
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.9811,
+        "meanWidth": 1.0002,
+        "intervalScore": 1.4375
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.9811,
+        "meanWidth": 1.0002,
+        "intervalScore": 1.4375
+      }
+    },
+    "skater|HIT|0.5": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.8339,
+        "meanWidth": 1.9901,
+        "intervalScore": 3.1878
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.8343,
+        "meanWidth": 1.9971,
+        "intervalScore": 3.1933
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.8343,
+        "meanWidth": 1.9971,
+        "intervalScore": 3.1933
+      }
+    },
+    "skater|HIT|0.9": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.9252,
+        "meanWidth": 3.0139,
+        "intervalScore": 5.5751
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.9675,
+        "meanWidth": 4.0024,
+        "intervalScore": 5.1057
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.9675,
+        "meanWidth": 4.0024,
+        "intervalScore": 5.1057
+      }
+    },
+    "skater|PIM|0.5": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.8263,
+        "meanWidth": 1,
+        "intervalScore": 2.3099
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.8263,
+        "meanWidth": 0,
+        "intervalScore": 2.0045
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.8263,
+        "meanWidth": 0,
+        "intervalScore": 2.0045
+      }
+    },
+    "skater|PIM|0.9": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.9647,
+        "meanWidth": 2,
+        "intervalScore": 5.0765
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.9647,
+        "meanWidth": 2.0001,
+        "intervalScore": 5.0765
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.9647,
+        "meanWidth": 2.0001,
+        "intervalScore": 5.0765
+      }
+    },
+    "skater|PPP|0.5": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.8996,
+        "meanWidth": 0.0007,
+        "intervalScore": 0.4613
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.8994,
+        "meanWidth": 0.0004,
+        "intervalScore": 0.462
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.8994,
+        "meanWidth": 0.0004,
+        "intervalScore": 0.462
+      }
+    },
+    "skater|PPP|0.9": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.9867,
+        "meanWidth": 1.0001,
+        "intervalScore": 1.2982
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.9868,
+        "meanWidth": 1.0007,
+        "intervalScore": 1.2957
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.9868,
+        "meanWidth": 1.0007,
+        "intervalScore": 1.2957
+      }
+    },
+    "skater|SOG|0.5": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.545,
+        "meanWidth": 1.0911,
+        "intervalScore": 3.5301
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.7853,
+        "meanWidth": 1.925,
+        "intervalScore": 3.3713
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.7853,
+        "meanWidth": 1.925,
+        "intervalScore": 3.3713
+      }
+    },
+    "skater|SOG|0.9": {
+      "baseline": {
+        "n": 38232,
+        "coverage": 0.9583,
+        "meanWidth": 3.9741,
+        "intervalScore": 5.353
+      },
+      "calibrated": {
+        "n": 38232,
+        "coverage": 0.9633,
+        "meanWidth": 4.064,
+        "intervalScore": 5.2416
+      },
+      "raw": {
+        "n": 38232,
+        "coverage": 0.9633,
+        "meanWidth": 4.064,
+        "intervalScore": 5.2416
+      }
+    }
+  },
+  "byHistory": {
+    "goalie|established|0.5": {
+      "baseline": {
+        "n": 5380,
+        "coverage": 0.7283,
+        "meanWidth": 3.253,
+        "intervalScore": 7.4396
+      },
+      "calibrated": {
+        "n": 5165,
+        "coverage": 0.7806,
+        "meanWidth": 4.4099,
+        "intervalScore": 7.575
+      },
+      "raw": {
+        "n": 5380,
+        "coverage": 0.7723,
+        "meanWidth": 4.2175,
+        "intervalScore": 7.4807
+      }
+    },
+    "goalie|established|0.9": {
+      "baseline": {
+        "n": 5380,
+        "coverage": 0.926,
+        "meanWidth": 8.0108,
+        "intervalScore": 14.1892
+      },
+      "calibrated": {
+        "n": 5165,
+        "coverage": 0.9481,
+        "meanWidth": 10.716,
+        "intervalScore": 13.6589
+      },
+      "raw": {
+        "n": 5380,
+        "coverage": 0.9433,
+        "meanWidth": 9.9015,
+        "intervalScore": 13.4703
+      }
+    },
+    "goalie|sparse|0.5": {
+      "baseline": {
+        "n": 5240,
+        "coverage": 0.7181,
+        "meanWidth": 3.2929,
+        "intervalScore": 7.7952
+      },
+      "calibrated": {
+        "n": 4675,
+        "coverage": 0.7855,
+        "meanWidth": 4.7179,
+        "intervalScore": 7.9632
+      },
+      "raw": {
+        "n": 5240,
+        "coverage": 0.7712,
+        "meanWidth": 4.3355,
+        "intervalScore": 7.7859
+      }
+    },
+    "goalie|sparse|0.9": {
+      "baseline": {
+        "n": 5240,
+        "coverage": 0.9271,
+        "meanWidth": 8.016,
+        "intervalScore": 14.9702
+      },
+      "calibrated": {
+        "n": 4675,
+        "coverage": 0.9414,
+        "meanWidth": 10.8396,
+        "intervalScore": 14.5144
+      },
+      "raw": {
+        "n": 5240,
+        "coverage": 0.9372,
+        "meanWidth": 9.8498,
+        "intervalScore": 14.1552
+      }
+    },
+    "skater|established|0.5": {
+      "baseline": {
+        "n": 228228,
+        "coverage": 0.7998,
+        "meanWidth": 0.7978,
+        "intervalScore": 1.9522
+      },
+      "calibrated": {
+        "n": 228228,
+        "coverage": 0.8255,
+        "meanWidth": 0.7451,
+        "intervalScore": 1.8977
+      },
+      "raw": {
+        "n": 228228,
+        "coverage": 0.8255,
+        "meanWidth": 0.7451,
+        "intervalScore": 1.8977
+      }
+    },
+    "skater|established|0.9": {
+      "baseline": {
+        "n": 228228,
+        "coverage": 0.9578,
+        "meanWidth": 2.0167,
+        "intervalScore": 3.5608
+      },
+      "calibrated": {
+        "n": 228228,
+        "coverage": 0.9715,
+        "meanWidth": 2.3298,
+        "intervalScore": 3.4302
+      },
+      "raw": {
+        "n": 228228,
+        "coverage": 0.9714,
+        "meanWidth": 2.3259,
+        "intervalScore": 3.4284
+      }
+    },
+    "skater|sparse|0.5": {
+      "baseline": {
+        "n": 39396,
+        "coverage": 0.8286,
+        "meanWidth": 0.7697,
+        "intervalScore": 1.7472
+      },
+      "calibrated": {
+        "n": 39396,
+        "coverage": 0.8757,
+        "meanWidth": 0.7371,
+        "intervalScore": 1.6163
+      },
+      "raw": {
+        "n": 39396,
+        "coverage": 0.8757,
+        "meanWidth": 0.7371,
+        "intervalScore": 1.6163
+      }
+    },
+    "skater|sparse|0.9": {
+      "baseline": {
+        "n": 39396,
+        "coverage": 0.9671,
+        "meanWidth": 2.0114,
+        "intervalScore": 3.3344
+      },
+      "calibrated": {
+        "n": 39396,
+        "coverage": 0.9785,
+        "meanWidth": 2.3044,
+        "intervalScore": 3.2207
+      },
+      "raw": {
+        "n": 39396,
+        "coverage": 0.9784,
+        "meanWidth": 2.2983,
+        "intervalScore": 3.2167
+      }
+    }
+  }
+}

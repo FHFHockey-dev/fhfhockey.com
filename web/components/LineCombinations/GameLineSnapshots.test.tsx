@@ -383,4 +383,9 @@ describe("PPCF carried unit with a newer practice note (MTL–COL 2026020397)", 
     expect(within(pp1).getByText("Reporter-confirmed")).toBeTruthy();
     expect(within(pp1).queryByText("Confirmed")).toBeNull();
   });
+  it("labels an in-game report bound by period time (no penalty clue) as reporter-confirmed too", () => {
+    const timed = { ...curtisBound, binding: { ...curtisBound.binding, evidence: ["live_game:2026020356", "binding_basis:period_time", "personnel_verified_no_penalty_clue", "faceoff_before_publication:unverified"] } };
+    render(<GameLineSnapshots data={response({ ...game0356, phase: "final" }, [timed])} />);
+    expect(within(screen.getByRole("group", { name: "Power play 1" })).getByText("Reporter-confirmed")).toBeTruthy();
+  });
 });

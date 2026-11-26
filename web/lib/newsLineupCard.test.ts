@@ -54,6 +54,9 @@ Fowler`
     // The internal review editor still previews the reviewer's own draft card.
     const draft = readNewsLineupPresentation({ reviewDraft: true, metadata: { lineupCard: { forwards: [[], ["First", null, "Third"]], goalies: ["Goalie"] } } });
     expect(draft.rows.map((row) => row.label)).toEqual(["F2", "G1"]);
+    expect(draft.rows[0]).toMatchObject({ label: "F2", players: ["First", null, "Third"], partial: true });
+    expect(draft.startingGoalie).toBeNull();
+    expect(draft.notice).toContain("Partial snapshot");
     expect(readNewsLineupPresentation({ metadata: null })).toMatchObject({ rows: [], notice: "Structured lineup unavailable for this report. See the source report." });
   });
 

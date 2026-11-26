@@ -126,7 +126,7 @@ it.each(["manual", "yahoo"] as const)("collects only missing %s acquisition rule
   };
   fillPeriod(0, "2026-10-04", "2026-10-05", "2");
   fillPeriod(1, "2026-10-06", "2026-10-07", "4");
-  await waitFor(() => expect(within(candidate()).getByLabelText("Net plan comparison").textContent).toBe("—Net Pts+1Net AGP"));
+  await waitFor(() => expect(within(candidate()).getByLabelText("Net plan comparison").textContent).toBe("unknownNet Pts+1Net AGP"));
   const persisted = saved(state.workspace.context);
   expect(persisted.managerRuleOverrides).toMatchObject({ acquisitionTiming: "next_day", ...(provider === "manual" ? { acquisitionCost: 2 } : {}), periods: [
     { start: "2026-10-04T04:00:00.000Z", end: "2026-10-06T04:00:00.000Z", remaining: 2, source: "manager" },
@@ -142,7 +142,7 @@ it.each(["manual", "yahoo"] as const)("collects only missing %s acquisition rule
   expect(state.fetch.mock.calls.slice(initialRequests).every(([url, init]) => url.includes("/data?") && init?.method === "GET")).toBe(true);
   first.unmount();
   render(<RosterScheduleOptimizer />);
-  await waitFor(() => expect(candidate() && within(candidate()).getByLabelText("Net plan comparison").textContent).toBe("—Net Pts+1Net AGP"));
+  await waitFor(() => expect(candidate() && within(candidate()).getByLabelText("Net plan comparison").textContent).toBe("unknownNet Pts+1Net AGP"));
   expect(saved(state.workspace.context).managerRuleOverrides).toEqual(persisted.managerRuleOverrides);
   expect(saved(state.workspace.context).intent).toEqual(originalIntent);
   expect(LocalPlanningWorker.packets.every(row => row.packet.intent.steps.length === 0)).toBe(true);

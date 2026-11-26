@@ -130,8 +130,18 @@ const db = vi.hoisted(() => {
         } else throw new Error(`unsupported not(${column}, ${operator})`);
         return query;
       },
+      lt: (column: string, value: unknown) => {
+        filters.push((row) => read(row, column) != null && String(read(row, column)) < String(value));
+        return query;
+      },
       // Readers' h1 horizon fence (releasedRunFence.runHorizonFilter): stamped h1, or unstamped with no or an h1 resume scope.
       or: (expression: string) => {
+        // A slate team's previous game (audit L1 completeness read); no games are stored here, so none is found.
+        const team = /^homeTeamId\.eq\.(\d+),awayTeamId\.eq\.(\d+)$/.exec(expression);
+        if (team) {
+          filters.push((row) => String(row.homeTeamId) === team[1] || String(row.awayTeamId) === team[2]);
+          return query;
+        }
         if (expression !== runHorizonFilter(1)) throw new Error(`unsupported or(${expression})`);
         filters.push((row) => {
           const horizon = row.metrics?.horizon_games, scope = row.metrics?.resume?.scope_key;

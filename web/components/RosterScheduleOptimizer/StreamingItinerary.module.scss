@@ -12,7 +12,7 @@
 .body[hidden] { display: none; }
 .itinerary p { margin: 0; }
 .spots { display: flex; flex-wrap: wrap; gap: 6px; }
-.spots button[aria-pressed="true"], .options button[aria-pressed="true"] { border-color: v.$primary-color; color: s.$accent; }
+.spots button[aria-pressed="true"], .options button[aria-pressed="true"] { @include s.toggle-on; border-color: v.$primary-color; }
 .totals { font-family: v.$font-family-numbers; font-weight: s.$weight-bold; }
 .days { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .day { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; padding: 4px 0; border-top: v.$border-subtle; }
@@ -25,7 +25,7 @@
 .options { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
 .options button { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 3px 6px; text-align: left; }
 .options small { color: s.$ink-muted; font-size: s.$text-micro; }
-.use { align-self: flex-start; }
+.use { align-self: flex-start; @include s.house-button; font-weight: s.$weight-bold; }
 .note { color: s.$ink-muted; font-size: s.$text-xs; }
 // The panel's standard button, on its own line under the reason.
 .noteAction { display: block; margin-top: v.$space-xs; }
@@ -34,3 +34,8 @@
 @media (max-width: 480px) {
   .day { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
+.dropFacts { display: block; color: s.$ink-muted; font-size: s.$text-xs; }
+// Collapsed, the plan is one 34px bar (TJ 2026-11-23): no padding around the 32px toggle, which spans the bar so the
+// whole row opens it.
+.itinerary:has(> h3 > .toggle[aria-expanded="false"]) { padding-block: 0; }
+.toggle.toggle { width: 100%; }

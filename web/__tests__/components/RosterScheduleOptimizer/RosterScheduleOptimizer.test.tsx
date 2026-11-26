@@ -2125,7 +2125,10 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(byPosition.getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("table", { name: "Lineup by position" })).toBeTruthy();
     const button = screen.getByRole("button", { name: "Show lineup by player" });
-    expect(button.textContent).toBe("By player");
+    // Full label for everyone; the short "Player" is a desktop-only visual (aria-hidden) (TJ 2026-11-23).
+    expect(button.firstElementChild?.textContent).toBe("By player");
+    expect(button.lastElementChild?.getAttribute("aria-hidden")).toBe("true");
+    expect(button.lastElementChild?.textContent).toBe("Player");
     fireEvent.click(button);
     expect(button.getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByText("Date controls")).toBeTruthy();
@@ -2896,14 +2899,14 @@ describe("RosterScheduleOptimizer workspace", () => {
     const details = screen.getByLabelText("Alpha range contribution");
     expect(details).toHaveProperty("open", false);
     const summary = within(details.querySelector("summary")!);
-    for (const label of ["Remaining GP: 4", "AGP: 3", "DUST/bench: 1", "Active points: 12.375"])
+    for (const label of ["Remaining GP: 4", "AGP: 3", "DUST/bench: 1", "Active points: 12.4"])
       expect(summary.getByLabelText(label)).toBeTruthy();
     expect(within(details).getByText(/Reserve; outside active pool/)).toBeTruthy();
     view.rerender(<RosterContribution name="Alpha" nameOf={id => id} contribution={{ ...contribution,
       activeGames: 0, knownActiveGames: 0, benchGames: 0, knownBenchGames: 0, projectedPoints: 0 }} />);
     expect(summary.getByLabelText("AGP: 0")).toBeTruthy();
     expect(summary.getByLabelText("DUST/bench: 0")).toBeTruthy();
-    expect(summary.getByLabelText("Active points: 0")).toBeTruthy();
+    expect(summary.getByLabelText("Active points: 0.0")).toBeTruthy();
     expect(screen.queryByText(/DROP|low usable contribution/)).toBeNull();
   });
 
@@ -3314,6 +3317,16 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it("holds Review pasted names until the player list loads, so early pastes aren't all marked unresolved", async () => {
+    vi.stubGlobal("fetch", vi.fn((url: string) => url.includes("/data?") ? new Promise(() => undefined)
+      : Promise.resolve({ ok: true, json: async () => ({ data: null }) })));
+    render(<RosterScheduleOptimizer />);
+    fireEvent.change(await screen.findByLabelText("Paste roster names"), { target: { value: "Alpha Center" } });
+    const review = screen.getByRole("button", { name: "Review pasted names" }) as HTMLButtonElement;
+    expect(review.disabled).toBe(true);
+    expect(document.getElementById(review.getAttribute("aria-describedby")!)?.textContent).toBe("Player names are still loading.");
+  });
+
   it("explains disabled manual controls and invalid rule-window dates using visible descriptions", async () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
@@ -3397,6 +3410,8 @@ describe("RosterScheduleOptimizer workspace", () => {
       plans: [{ objective: "outcome", steps: [step], netAGP: 1, netPoints: 2, dropped: [], displacedPlayerIds: [] }] }] };
     window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     render(<RosterScheduleOptimizer />);
+    // The streaming plan starts closed on every width (TJ 2026-11-23).
+    fireEvent.click(await screen.findByRole("button", { name: "Streaming plan" }));
     const use = await screen.findByRole("button", { name: "Use this streaming plan" }) as HTMLButtonElement;
     fireEvent.click(screen.getByRole("button", { name: "All players" }));
     const swap = await screen.findByRole("button", { name: /^Use this swap: add Beta Wing/ }) as HTMLButtonElement;

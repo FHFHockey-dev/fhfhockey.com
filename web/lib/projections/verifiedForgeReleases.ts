@@ -251,6 +251,30 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "November 23 lines, news and tweet-intake release on 65e029190 (master 7db94da1d merged with octoberBranch): source-dated goalie start reports, explicit PP unit numbers and reported club roster moves. The verifier found no excluded projection inputs in the 244-module producer closure.",
   },
+  {
+    closureSha256: "fbd0b9da0dcf23badd0ee5cca2f6141833c8732452f043e986f96a22e2872c0e",
+    commit: "e1c078506c51c5cd24b1b2ce6091a6ad7388bc83",
+    receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/e1c078506c51c5cd24b1b2ce6091a6ad7388bc83.json",
+    receiptSha256: "ee89d44bed8f76f8b0dd2c7fc122071396d2719f573b4b2c5fe11e1c75ccac24",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 25 projection-math fixes, rebuilt November 26 on e1c078506 (master 7b9493a91 plus the clean rebase of the November 16 lane): H4 caps an incomplete skater pool at its lineup share, M3 counts dressed skaters without a current roster row, L1 checks each team's previous game for stored PBP. The verifier found no excluded projection inputs in the 244-module producer closure.",
+  },
+  {
+    closureSha256: "75a49fed27cbbfb6d7c635ba112f1f6f5fc3e132939943a7c56abc3b9b136496",
+    commit: "5e8ba0e28b642fb7e54676cfe5a1de7625e968f2",
+    receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/5e8ba0e28b642fb7e54676cfe5a1de7625e968f2.json",
+    receiptSha256: "e8a451e8ccfbeac6558b792f85055bafc14fcd87dc49bf54c3e512c9095d2fcc",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 25 combined release, rebuilt November 26 on 5e8ba0e28: the projection-math fixes (e1c078506, closure fbd0b9da) plus the projection-accuracy fix (rebase of 579e79c91: exact forge_goalie_game appearances and qualified wgo_goalie_stats decisions). The verifier found no excluded projection inputs in the 244-module producer closure.",
+  },
+  {
+    closureSha256: "7cf8e3e25442eec42e9bd994f920bc119588afd422e4529db631801da87bf3c2",
+    commit: "5979aceebe5729b24b27685a5c31d3712208f832",
+    receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/5979aceebe5729b24b27685a5c31d3712208f832.json",
+    receiptSha256: "f1f8ab226f8aebbb454acd2b6c33a0d41061bbacf8d4df8707cdff610cbfd899",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 26 shift corroboration on d2a484e74: a non-empty shiftcharts feed whose only defects are clock/duration mismatch rows (covered, or for a player with boxscore TOI 00:00) and exact duplicate intervals is stored as the strict htmlreports envelope when the HTML report and boxscore corroborate it, by both shift writers (new nhlShiftCorroboration.mjs). The verifier found no excluded projection inputs in the 245-module producer closure.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;

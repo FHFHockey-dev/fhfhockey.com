@@ -11,7 +11,7 @@ import { tweetClaimAttribution, verifiedFxSnapshotUrl } from "./tweetSourceDirec
 import { hasMixedMedicalMoves, reportedClubRosterMoves, rosterMoveClub } from "./reportedClubRosterMoves";
 import { isVerifiedRelayQuoteSummary, verifiedFxRelayQuoteClocks } from "./fxtwitterQueuePayload";
 import { BEAT_REPORTER_REVIEWS } from "lib/lines/beatReporters";
-import { inferTweetRosterNames, type TweetRosterScopedName } from "./tweetNameInference";
+import { inferTweetRosterNames, type TweetRosterNameMatch, type TweetRosterScopedName } from "./tweetNameInference";
 import { bulletinNamesOpponent, expectedLineupBulletin, expectedLineupEvent, expectedLineupFitsGame, reportedLineupEntries } from "./reportedLineupEntry";
 import type { TweetNewsRosterEvidence } from "./tweetNewsRosterEvidence";
 import { normalizeIdentityName, type PlayerSlotRole } from "./playerIdentity";
@@ -1710,6 +1710,25 @@ const provenanceHandle = (value: unknown) => typeof value === "string" ? value.m
 const provenanceId = (value: unknown) => typeof value === "string" && /^\d+$/.test(value) ? value : typeof value === "number" && Number.isSafeInteger(value) ? String(value) : null;
 const sameHandle = (left: string | null, right: string | null) => !!left && !!right && left.toLowerCase() === right.toLowerCase();
 
+// Fx and oEmbed expose two spellings of the same terminal media link.
+const dfoMediaLink = / (?:https:\/\/t\.co\/|(?:https:\/\/)?pic\.twitter\.com\/)([A-Za-z0-9]+)$/u;
+const dfoNamedHeading = /^([\p{L}\p{M}.'’ -]+): (Injury|Goalie Start): ([\p{L}\p{M}.'’ -]+?) (.+)\.$/u;
+const weekday = "(?:Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)";
+const dfoInjuryReturn = new RegExp(String.raw`^\(undisclosed\) will return vs\. (?:the )?([\p{L}\p{M} '-]+) on ${weekday}$`, "u");
+const dfoExpectedStart = new RegExp(String.raw`^is expected to start ${weekday} in ([\p{L}\p{M} '-]+)$`, "u");
+
+function readDfoNamedHeading(text: string) {
+  const match = dfoNamedHeading.exec(text.replace(dfoMediaLink, ""));
+  if (!match) return null;
+  const [, name, kind, surname, predicate] = match;
+  if (!name!.endsWith(" " + surname!)) return null;
+  const subjectStart = name!.length + kind!.length + 4;
+  const goalie = kind === "Goalie Start";
+  const opponent = (goalie ? dfoExpectedStart : dfoInjuryReturn).exec(predicate!)?.[1];
+  if (!opponent) return null;
+  return { name: name!, surname: surname!, subjectStart, subjectEnd: subjectStart + surname!.length, goalie, opponent };
+}
+
 export function buildTweetSourceProvenance(event: LinesCccIftttEventInput): TweetSourceProvenance {
   const raw = (event.raw_payload ?? {}) as Record<string, any>;
   const fx = raw.provider === "fxtwitter" && raw.fx && typeof raw.fx === "object" ? raw.fx as Record<string, any> : null;
@@ -1772,6 +1791,175 @@ type TweetRosterContext = {
   inferredBeatTeamIds?: number[];
 };
 
+/** A surname inside an already confirmed, role-scoped alias is part of that same mention. */
+function reviewsOutsideSavedLineupAliases(
+  reviews: TweetRosterNameMatch[], units: TweetInterpretation["units"], text: string, teamId: number, datedRoster: RosterNameEntry[],
+) {
+  return reviews.filter(hit => {
+    if (hit.reason !== "ambiguous_name" || (hit.teamId !== null && hit.teamId !== teamId)
+      || text.slice(hit.start, hit.end) !== hit.rawName) return true;
+    return !units.some(unit => {
+      const role = unit.situation;
+      if (!unit.complete || (role !== "es_forward" && role !== "es_defense")) return false;
+      return unit.evidence.some((span, index) => {
+        if (span.end !== hit.end || span.start >= hit.start || text.slice(span.start, span.end) !== span.text
+          || !/^\p{Lu}\p{Ll}{0,3}\.[ \t]*$/u.test(text.slice(span.start, hit.start))) return false;
+        const player = resolveTweetNameToRosterEntry(span.text, datedRoster, role);
+        return player != null && player.teamId === teamId && player.playerId === unit.players[index]?.playerId
+          && hit.candidatePlayerIds.includes(player.playerId) && playerPositionRole(player) === role
+          && player.roleAliases?.some(alias => alias.role === role && alias.alias.toLowerCase() === span.text.toLowerCase());
+      });
+    });
+  });
+}
+
+/** Keep incomplete lineup rows, but avoid identity review when both literal names are settled. */
+function resolvedNameReviewFragments(args: {
+  text: string;
+  teamId: number;
+  publishedAt: string;
+  roster: Map<number, RosterNameEntry[]>;
+  ordinary: Map<number, RosterNameEntry[]>;
+  establishedTeam: boolean;
+  interpretation: TweetInterpretation;
+  review: readonly { start: number; end: number }[];
+}) {
+  const { text, teamId, publishedAt, roster, ordinary, interpretation, review } = args;
+  if (!interpretation.excludedUnits?.length
+    && !interpretation.unresolved.some(issue => issue.situation === "goalie" && issue.reason === "missing_player")) return [];
+  const players = [...roster.values()].flat();
+  const ordinaryPlayers = [...ordinary.values()].flat();
+  const keys = (p: RosterNameEntry) => [p.fullName, p.lastName, ...(p.aliases ?? []), ...(p.roleAliases ?? []).map(a => a.alias)]
+    .map(normalizeIdentityName);
+  const forwards = (interpretation.excludedUnits ?? []).flatMap(unit => {
+    if (unit.situation !== "es_forward" || unit.complete || unit.players.length !== 2 || unit.evidence.length !== 2) return [];
+    const [first, second] = unit.evidence;
+    if (!first || !second || first.end >= second.start
+      || !/^[ \t]*[-‐‑–—−]+[ \t]*$/u.test(text.slice(first.end, second.start))) return [];
+    const start = first.start, end = second.end;
+    if (review.some(span => span.start < end && span.end > start)) return [];
+    const fragment = text.slice(start, end);
+    const compound = normalizeIdentityName(fragment);
+    if ([...players, ...ordinaryPlayers].some(player => keys(player).includes(compound))) return [];
+    const ids = unit.players.map(player => player.playerId);
+    if (ids[0] === ids[1]) return [];
+    const isResolved = unit.evidence.every((span, index) => {
+      if (!span.text || span.start >= span.end || text.slice(span.start, span.end) !== span.text) return false;
+      const name = normalizeIdentityName(span.text);
+      const matching = players.filter(player => player.teamId === teamId && keys(player).includes(name));
+      return matching.length === 1 && matching[0]!.playerId === ids[index] && playerPositionRole(matching[0]!) === "es_forward"
+        && [matching[0]!.fullName, matching[0]!.lastName].some(canonical => normalizeIdentityName(canonical) === name)
+        && !ordinaryPlayers.some(player => player.teamId === teamId && player.playerId !== ids[index] && keys(player).includes(name));
+    });
+    return isResolved ? [{ start, end, text: fragment, publishedAt, teamId, playerIds: ids }] : [];
+  });
+
+  const defense = (interpretation.excludedUnits ?? []).flatMap(unit => {
+    if (!args.establishedTeam || unit.situation !== "es_defense" || unit.complete || unit.group != null
+      || unit.players.length !== 1 || unit.evidence.length !== 1) return [];
+    const span = unit.evidence[0]!, id = unit.players[0]!.playerId;
+    const name = normalizeIdentityName(span.text);
+    const matches = players.filter(player => player.teamId === teamId && keys(player).includes(name));
+    if (matches.length !== 1 || matches[0]!.playerId !== id || playerPositionRole(matches[0]!) !== "es_defense"
+      || ![matches[0]!.fullName, matches[0]!.lastName].some(canonical => normalizeIdentityName(canonical) === name)
+      || players.some(player => player.playerId === id && player.teamId !== teamId)
+      || ordinaryPlayers.some(player => player.teamId === teamId && player.playerId !== id && keys(player).includes(name))
+      || review.some(hit => hit.start < span.end && span.start < hit.end)) return [];
+    const endOfLine = text.indexOf("\n", span.end);
+    if (text.slice(span.start, span.end) !== span.text
+      || text.slice(text.lastIndexOf("\n", span.start - 1) + 1, endOfLine < 0 ? text.length : endOfLine).trim() !== span.text) return [];
+    const pairs = interpretation.units.filter(row => row.situation === "es_defense" && row.group == null && row.complete);
+    const ids = pairs.flatMap(row => row.players.map(player => player.playerId));
+    const previous = pairs[2]?.evidence.at(-1);
+    if (pairs.length !== 3 || !pairs.every((row, i) => row.number === i + 1 && row.players.length === 2)
+      || new Set(ids).size !== 6 || ids.includes(id) || !previous || previous.end >= span.start
+      || !/^[ \t\r]*\n[ \t]*$/.test(text.slice(previous.end, span.start))) return [];
+    // His identity is settled. The interpretation still retains a partial row, with no D4 assignment.
+    return [{ ...span, teamId, publishedAt, playerIds: [id], situation: "es_defense" }];
+  });
+
+  const starts = interpretation.unresolved.flatMap(issue => {
+    if (issue.situation !== "goalie" || issue.reason !== "missing_player" || issue.candidates?.length) return [];
+    const { start, end, text: fragment } = issue;
+    const subject = /^(.+?)[ \t]+starts$/iu.exec(fragment)?.[1];
+    const lineStart = text.lastIndexOf("\n", start - 1) + 1;
+    const lineEnd = text.indexOf("\n", end);
+    if (!subject || text.slice(start, end) !== fragment
+      || text.slice(lineStart, lineEnd === -1 ? text.length : lineEnd).trim() !== fragment
+      || review.some(span => span.start < end && span.end > start)) return [];
+    const whole = normalizeIdentityName(fragment);
+    if ([...players, ...ordinaryPlayers].some(player => keys(player).includes(whole))) return [];
+    const name = normalizeIdentityName(subject);
+    const matches = players.filter(player => keys(player).includes(name));
+    const goalie = matches[0];
+    if (matches.length !== 1 || !goalie || goalie.teamId !== teamId || playerPositionRole(goalie) !== "goalie"
+      || ![goalie.fullName, goalie.lastName].some(canonical => normalizeIdentityName(canonical) === name)
+      || ordinaryPlayers.some(player => player.playerId !== goalie.playerId && keys(player).includes(name))) return [];
+    const event = interpretation.events?.some(event => event.kind === "goalie" && event.state === "confirmed"
+      && event.goalieRole === "starter" && event.modality === "affirmative" && !event.observation && !event.reviewReason
+      && event.playerId === goalie.playerId && event.teamId === teamId && event.times?.observation === publishedAt
+      && event.evidence.start === start && event.evidence.end === end && event.evidence.text === fragment);
+    return event ? [{ start, end, text: fragment, publishedAt, teamId, playerIds: [goalie.playerId] }] : [];
+  });
+  return [...forwards, ...defense, ...starts];
+}
+
+type NativeDfoHeading = { sourceId: string; publishedAt: string };
+
+function verifiedDfoHeadingSource(source: Pick<ParsedLinesCccSource, "primaryTextSource" | "rawText" | "rawPayload"
+  | "tweetId" | "tweetPostedAt" | "sourceUrl" | "sourceHandle" | "metadata">,
+  provenance: TweetSourceProvenance | undefined, sourceAccount: unknown, selected: string): NativeDfoHeading | null {
+  if (provenance?.provider !== "fxtwitter" || provenance.postKind !== "post" || !provenance.timestampIsOriginal
+    || !sameHandle(provenance.originalAuthor, "DFOFantasy") || !sameHandle(provenance.originalAuthor, provenanceHandle(sourceAccount))
+    || (source.primaryTextSource !== "ifttt_text" && source.primaryTextSource !== "wrapper_oembed")) return null;
+  const { rawText, rawPayload } = source;
+  const fx = rawPayload?.fx as Record<string, any> | undefined;
+  if (!rawText || fx?.raw_text?.text !== rawText || fx.reposted_by || fx.repost_wrapper_id || fx.quote || rawPayload?.quote
+    || fx.replying_to || fx.replying_to_handle || fx.replying_to_status || fx.replying_to_status_id
+    || !readDfoNamedHeading(rawText) || selected.replace(dfoMediaLink, " $1") !== rawText.replace(dfoMediaLink, " $1")) return null;
+  const sourceId = provenance.originalTweetId, publishedAt = normalizeTweetPostedAt(source.tweetPostedAt);
+  const providerUrl = typeof source.metadata?.providerPostUrl === "string" ? source.metadata.providerPostUrl : null;
+  const statusId = (url: string | null | undefined) =>
+    /^https:\/\/(?:x|twitter)\.com\/DFOFantasy\/status\/(\d+)\/?(?:[?#][^\s]*)?$/iu.exec(url ?? "")?.[1];
+  const nativeClock = providerUrl && tweetPublicationFromUrl(providerUrl);
+  if (!sourceId || sourceId !== source.tweetId || sourceId !== fx.id || sourceId !== statusId(providerUrl)
+    || !sameHandle(provenanceHandle(fx.author?.screen_name), "DFOFantasy") || !sameHandle(provenanceHandle(source.sourceHandle), "DFOFantasy")
+    || (source.primaryTextSource === "wrapper_oembed" && statusId(source.sourceUrl) !== sourceId)
+    || !publishedAt || publishedAt !== provenance.publishedAt || !nativeClock || !Number.isSafeInteger(fx.created_timestamp)
+    || fx.created_timestamp !== Math.floor(Date.parse(publishedAt) / 1000)
+    || fx.created_timestamp !== Math.floor(Date.parse(nativeClock) / 1000)) return null;
+  return { sourceId, publishedAt };
+}
+
+function verifiedDfoHeadingSubject(text: string, native: NativeDfoHeading, teamId: number, dated: Map<number, RosterNameEntry[]>,
+  ordinary: Map<number, RosterNameEntry[]>, review: TweetRosterNameMatch[], events: readonly TweetPlayerEvent[]) {
+  const report = readDfoNamedHeading(text);
+  if (!report || normalizeIdentityName(report.opponent).includes(normalizeIdentityName(report.surname))) return null;
+  const opponents = Object.values(teamsInfo).filter(team => bulletinNamesOpponent(report.opponent, team.id));
+  if (opponents.length !== 1 || opponents[0]!.id === teamId) return null;
+  const candidates = [...dated.values()].flat().filter(player => player.fullName === report.name);
+  const subject = candidates[0], role = subject && playerPositionRole(subject);
+  if (candidates.length !== 1 || !subject || subject.lastName !== report.surname || subject.teamId !== teamId
+    || (report.goalie ? role !== "goalie" : role !== "es_forward" && role !== "es_defense")) return null;
+  const existing = [...ordinary.values()].flat().filter(player => player.fullName === report.name);
+  if (existing.length !== 1 || existing[0]?.playerId !== subject.playerId || existing[0].teamId !== teamId
+    || playerPositionRole(existing[0]) !== role) return null;
+  const hits = review.filter(hit => hit.start < report.subjectEnd && hit.end > report.subjectStart);
+  const hit = hits[0];
+  if (hits.length !== 1 || !hit || hit.reason !== "ambiguous_name" || hit.rawName !== report.surname
+    || hit.start !== report.subjectStart || hit.end !== report.subjectEnd || (hit.teamId != null && hit.teamId !== teamId)
+    || !hit.candidatePlayerIds.includes(subject.playerId)
+    || review.some(other => other !== hit && other.start < report.name.length)) return null;
+  const headings = events.filter(event => event.playerId === subject.playerId && event.playerName === report.name
+    && event.teamId === teamId && event.resolutionBasis === "full_name" && event.times?.observation === native.publishedAt
+    && event.kind === (report.goalie ? "goalie" : "injury") && event.evidence.start === 0
+    && event.evidence.end === hit.start - 1 && event.evidence.text === text.slice(0, hit.start - 1));
+  if (headings.length !== 1) return null;
+  return { hit, witness: { ...native, playerId: subject.playerId, teamId, role,
+    headingSpan: { start: 0, end: report.name.length, text: report.name },
+    bodySpan: { start: hit.start, end: hit.end, text: hit.rawName } } };
+}
+
 function interpretSourceRoster(args: TweetRosterContext & {
   text: string;
   snapshotDate: string;
@@ -1780,6 +1968,7 @@ function interpretSourceRoster(args: TweetRosterContext & {
   gameIdByTeamId?: Map<number, number>;
   classification: GameDayTweetsClassification;
   nativePostId?: string | null;
+  nativeDfoHeading?: NativeDfoHeading | null;
   sourceHandles: Array<string | null | undefined>;
   originalAuthor?: string | null;
   publishedAt?: string | null;
@@ -1876,9 +2065,18 @@ function interpretSourceRoster(args: TweetRosterContext & {
     })),
     reviewSpans: review.map(({ start, end }) => ({ start, end })),
   } : null;
+  const resolvedFragments = team && dated && publishedAt && interpreted
+    ? resolvedNameReviewFragments({ text, teamId: team.id, publishedAt, roster: dated, ordinary: roster, establishedTeam: inference?.establishedTeamId === team.id, interpretation: interpreted, review }) : [];
+  const dfoHeading = team && dated && args.nativeDfoHeading && args.nativeDfoHeading.publishedAt === publishedAt && interpreted?.events
+    ? verifiedDfoHeadingSubject(text, args.nativeDfoHeading, team.id, dated, roster, review, interpreted.events) : null;
+  const queueReview = (team && established?.id === team.id && dated && interpreted?.units.length && review.length
+    ? reviewsOutsideSavedLineupAliases(review, interpreted.units, text, team.id, dated.get(team.id) ?? []) : review)
+    .filter(hit => hit !== dfoHeading?.hit);
   return { team, rosterEntries, matched, goalieIdentity, structuredContent,
     inferenceMetadata: { ...(intakeRosterEvidence ? { intakeRosterEvidence } : {}),
-      ...(review.length ? { name_inference_review: review, name_inference_published_at: publishedAt } : {}) } };
+      ...(resolvedFragments.length ? { resolvedNameReviewFragments: resolvedFragments } : {}),
+      ...(dfoHeading ? { resolvedDfoHeadingOccurrence: dfoHeading.witness } : {}),
+      ...(queueReview.length ? { name_inference_review: queueReview, name_inference_published_at: publishedAt } : {}) } };
 }
 
 export function buildLinesCccSourceFromIftttEvent(args: TweetRosterContext & {
@@ -1911,6 +2109,7 @@ export function buildLinesCccSourceFromIftttEvent(args: TweetRosterContext & {
     ...args, text, classification, sourceHandles, nonNhl: Boolean(detectedNonNhlLeague),
     bulletinTeam, originalAuthor: provenance.originalAuthor, publishedAt: args.event.tweet_created_at,
     nativePostId: provenance.verifiedDfoBulletinId,
+    nativeDfoHeading: verifiedDfoHeadingSource(primarySource, provenance, args.event.source_account ?? args.event.username, text),
   });
   const nhlFilterStatus: LinesCccNhlFilterStatus = !text
     ? "rejected_insufficient_text"
@@ -2000,7 +2199,9 @@ export function refreshLinesCccSourceFromPrimaryText(args: TweetRosterContext & 
   gameIdByTeamId?: Map<number, number>;
 }): ParsedLinesCccSource {
   const text = getPrimaryTextForSource(args.source).trim();
-  if (!text) return args.source;
+  const metadata = { ...args.source.metadata };
+  delete metadata.resolvedDfoHeadingOccurrence;
+  if (!text) return args.source.metadata?.resolvedDfoHeadingOccurrence ? { ...args.source, metadata } : args.source;
   const classification = classifyGameDayTweet(text);
 
   const sourceHandles = [
@@ -2028,8 +2229,9 @@ export function refreshLinesCccSourceFromPrimaryText(args: TweetRosterContext & 
     ...args, text, classification, sourceHandles, nonNhl: Boolean(detectedNonNhlLeague),
     bulletinTeam, originalAuthor, snapshotDate: args.source.snapshotDate, publishedAt: args.source.tweetPostedAt, selectedQuote: args.source.primaryTextSource === "quoted_oembed",
     nativePostId: text === args.source.rawText && args.source.primaryTextSource !== "quoted_oembed" ? provenance?.verifiedDfoBulletinId : null,
+    nativeDfoHeading: verifiedDfoHeadingSource(args.source, provenance, metadata.iftttSourceAccount ?? args.source.sourceHandle, text),
   });
-  const metadata = { ...args.source.metadata };
+  delete metadata.resolvedNameReviewFragments;
   delete metadata.name_inference_review;
   delete metadata.name_inference_published_at;
   delete metadata.intakeRosterEvidence;

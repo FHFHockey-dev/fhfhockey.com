@@ -69,10 +69,10 @@ export function currentSourceReadings(claims: LineClaim[], identity: (claim: Lin
   return retained;
 }
 
-/** A corroboration-bound PP claim (PPCF P1) and an unbound reading it upgrades: same team, slot and five; the target is unbound. */
+/** A corroboration-bound PP claim (PPCF P1: penalty clue or period time) and an unbound reading it upgrades: same team, slot and five; the target is unbound. */
 export function isBindingUpgrade(claim: LineClaim, target: LineClaim): boolean {
   return claim.kind === "pp" && target.kind === "pp" && claim.binding.status === "bound" && claim.gameId != null
-    && claim.binding.evidence.some((item) => item.startsWith("nhl_penalty:")) && target.gameId == null && target.binding.status !== "bound"
+    && claim.binding.evidence.some((item) => item.startsWith("nhl_penalty:") || item === "binding_basis:period_time") && target.gameId == null && target.binding.status !== "bound"
     && claim.teamId === target.teamId && !!claim.unit && !!target.unit && unitKey(claim.unit) === unitKey(target.unit) && signature(claim) === signature(target);
 }
 

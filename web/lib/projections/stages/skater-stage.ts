@@ -284,6 +284,8 @@ import {
   blendSkaterScenarioStatLines,
   blendSkaterScenarioStatLinesAcrossHorizon,
   buildSkaterScenarioMetadata,
+  capIncompletePoolShotTarget,
+  computeMissingSkaterCoverage,
   computeSkaterTeamToiTargetWithPoolGuard,
   validateReconciledPlayerDistribution,
 } from "../calculators/scenario-blending";
@@ -1583,6 +1585,23 @@ export async function loadSkaterTeamInputs(args: SkaterStageArgs, scope: SkaterG
         );
         await recordTeamLineupUnavailable();
         return null;
+      }
+    }
+    // M3: skaters in the team's last lineup with no current roster row for this team are dropped here. Count and name
+    // each one (a missed call-up, or a trade since that game). Fallback candidates are roster-filtered by design.
+    if (!usedLineComboFallback && activeRosterSkaterIds.length > 0) {
+      const rosterIds = new Set(activeRosterSkaterIds);
+      const notOnRoster = [...new Set(rawSkaterIds)].filter((id) => !rosterIds.has(id));
+      if (notOnRoster.length > 0) {
+        metrics.data_quality.filtered_skater_not_on_team_current_roster =
+          (metrics.data_quality.filtered_skater_not_on_team_current_roster ?? 0) + notOnRoster.length;
+        metrics.data_quality.filtered_skater_not_on_team_current_roster_ids = [
+          ...(metrics.data_quality.filtered_skater_not_on_team_current_roster_ids ?? []),
+          ...notOnRoster.map((playerId) => ({ game_id: game.id, team_id: teamId, player_id: playerId })),
+        ];
+        metrics.warnings.push(
+          `lineup skaters not on the team's current roster were dropped for game=${game.id} team=${teamId}; player_ids=${notOnRoster.join(",")} lineup_date=${lcContext.sourceGameDate ?? "none"}`,
+        );
       }
     }
     rawSkaterIds = constrainSkaterIdsToActiveRoster({
@@ -2886,16 +2905,22 @@ export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: 
     if (guardedTeamToiTarget.wasCapped) {
       metrics.data_quality.skater_pool_emergency_toi_target_caps_applied += 1;
       metrics.warnings.push(
-        `skater pool emergency TOI cap for game=${game.id} team=${teamId}; projected_count=${projectedSkaterCount} canonical_target=${targetSkaterSecondsCanonical} capped_target=${guardedTeamToiTarget.targetSeconds}`,
+        `skater pool coverage cap for game=${game.id} team=${teamId}; projected_count=${projectedSkaterCount} of ${SKATER_POOL_TARGET_COUNT} canonical_target=${targetSkaterSecondsCanonical} pool_ceiling=${guardedTeamToiTarget.poolCeilingSeconds ?? "none"} capped_target=${guardedTeamToiTarget.targetSeconds}`,
       );
     }
     const targetSkaterSeconds = guardedTeamToiTarget.targetSeconds;
+    // H4 (TJ 2026-11-16): below a full lineup the pool's modeled share caps its minutes and its team-average shots.
+    const modeledShare = guardedTeamToiTarget.modeledShare;
     // Exclusive ES/PP/PK targets that add to the budget (decisions 24, 59).
     const teamBudget = splitTeamSkaterBudget({
       totalSeconds: targetSkaterSeconds,
       ppShare,
       strengthAverages,
     });
+    // The full-lineup budget, for the team row and the missing coverage of an incomplete pool.
+    const fullTeamBudget = modeledShare < 1
+      ? splitTeamSkaterBudget({ totalSeconds: targetSkaterSecondsCanonical, ppShare, strengthAverages })
+      : teamBudget;
     const toiPpTarget = teamBudget.toiPpTarget;
     const legacyToiPpTarget = Math.round(
       clamp(legacyPpShare, 0, 0.5) * targetSkaterSeconds,
@@ -3016,6 +3041,7 @@ export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: 
     const pkModeled = pkAllocation != null && teamBudget.shotsPkTarget != null;
     const pkStatus: "modeled" | "unknown_team_pk_exposure" | "no_known_pk_history" =
       pkModeled ? "modeled" : teamBudget.toiPkTarget == null ? "unknown_team_pk_exposure" : "no_known_pk_history";
+    let pkShotsTarget: number | null = null;
     if (pkModeled) {
       const teamPkSecondsAvg = safeNumber(strengthAverages.toiPkSecondsAvg, 0);
       const teamPkShotsPer60 = teamPkSecondsAvg > 0 ? (teamBudget.shotsPkTarget! * 3600) / teamPkSecondsAvg : 0;
@@ -3035,10 +3061,13 @@ export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: 
         rawPkShots += p.shotsPk;
       }
       const toiPkTotal = Array.from(projected.values()).reduce((acc, p) => acc + p.toiPk, 0);
+      pkShotsTarget = capIncompletePoolShotTarget({
+        fullTeamTarget: teamBudget.shotsPkTarget!, rawPoolTotal: rawPkShots, modeledShare, fromTeamAverage: true,
+      });
       for (const p of projected.values()) {
         p.shotsPk = rawPkShots > 0
-          ? (p.shotsPk / rawPkShots) * teamBudget.shotsPkTarget!
-          : toiPkTotal > 0 ? (p.toiPk / toiPkTotal) * teamBudget.shotsPkTarget! : 0;
+          ? (p.shotsPk / rawPkShots) * pkShotsTarget
+          : toiPkTotal > 0 ? (p.toiPk / toiPkTotal) * pkShotsTarget : 0;
       }
     } else {
       metrics.data_quality.pk_bucket_unknown_teams = (metrics.data_quality.pk_bucket_unknown_teams ?? 0) + 1;
@@ -3064,14 +3093,35 @@ export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: 
       0,
     );
 
-    const shotsEsTarget = safeNumber(
+    const teamShotsPpAvg = officialPpUsage?.ppShotsAvg ?? strengthAverages.shotsPpAvg;
+    const fullShotsEsTarget = safeNumber(
       strengthAverages.shotsEsAvg,
       initialShotsEs,
     );
-    const shotsPpTarget = safeNumber(
-      officialPpUsage?.ppShotsAvg ?? strengthAverages.shotsPpAvg,
-      initialShotsPp,
-    );
+    const fullShotsPpTarget = safeNumber(teamShotsPpAvg, initialShotsPp);
+    // H4: an incomplete pool keeps its own shots up to team x modeled share; a full pool is pinned as before.
+    const isTeamFigure = (n: unknown) => typeof n === "number" && Number.isFinite(n);
+    const shotsEsTarget = capIncompletePoolShotTarget({
+      fullTeamTarget: fullShotsEsTarget, rawPoolTotal: initialShotsEs, modeledShare,
+      fromTeamAverage: isTeamFigure(strengthAverages.shotsEsAvg),
+    });
+    const shotsPpTarget = capIncompletePoolShotTarget({
+      fullTeamTarget: fullShotsPpTarget, rawPoolTotal: initialShotsPp, modeledShare,
+      fromTeamAverage: isTeamFigure(teamShotsPpAvg),
+    });
+    // The absent skaters' minutes and shots: missing coverage, added back only at team level (null for a full pool).
+    const missingSkaterCoverage = computeMissingSkaterCoverage({
+      projectedSkaterCount,
+      modeledShare,
+      fullToiSeconds: {
+        es: pkModeled ? fullTeamBudget.toiEsTarget : targetSkaterSecondsCanonical - fullTeamBudget.toiPpTarget,
+        pp: fullTeamBudget.toiPpTarget,
+        pk: pkModeled ? fullTeamBudget.toiPkTarget! : 0,
+      },
+      modeledToiSeconds: { es: toiEsTarget, pp: toiPpTarget, pk: pkModeled ? teamBudget.toiPkTarget! : 0 },
+      fullShots: { es: fullShotsEsTarget, pp: fullShotsPpTarget, pk: pkModeled ? teamBudget.shotsPkTarget! : 0 },
+      modeledShots: { es: shotsEsTarget, pp: shotsPpTarget, pk: pkModeled ? pkShotsTarget! : 0 },
+    });
 
     const reconcileInputs = Array.from(projected.entries()).map(
       ([playerId, p]) => ({
@@ -3275,7 +3325,7 @@ export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: 
       };
       const scaleEs = scaleTo(shotsEsTarget, (line) => line.shotsEs);
       const scalePp = scaleTo(shotsPpTarget, (line) => line.shotsPp);
-      const scalePk = scaleTo(pkModeled ? teamBudget.shotsPkTarget : null, (line) => line.shotsPk);
+      const scalePk = scaleTo(pkModeled ? pkShotsTarget : null, (line) => line.shotsPk);
       for (const line of lines) {
         line.shotsEs *= scaleEs; line.goalsEs *= scaleEs; line.assistsEs *= scaleEs;
         line.shotsPp *= scalePp; line.goalsPp *= scalePp; line.assistsPp *= scalePp;
@@ -3410,11 +3460,15 @@ export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: 
                 total_seconds: teamBudget.totalSeconds,
                 // Exposure of absent skaters, unmodeled (D7); 0 for a complete pool.
                 unmodeled_residual_seconds: guardedTeamToiTarget.unmodeledResidualSeconds ?? 0,
+                ...(missingSkaterCoverage ? {
+                  modeled_share: missingSkaterCoverage.modeled_share,
+                  unmodeled_shots: missingSkaterCoverage.unmodeled_shots,
+                } : {}),
                 projected_skater_count: projectedSkaterCount,
                 es_target_seconds: toiEsTarget,
                 pp_target_seconds: toiPpTarget,
                 pk_target_seconds: pkModeled ? teamBudget.toiPkTarget : null,
-                pk_shots_target: pkModeled ? teamBudget.shotsPkTarget : null,
+                pk_shots_target: pkModeled ? pkShotsTarget : null,
                 pk_share_source: pkModeled ? "forge_team_game_strength_last10" : null,
               },
               extra_attacker: "overlapping_attribute_within_strength_buckets",
@@ -3907,6 +3961,55 @@ export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: 
       }
     }
 
+    // H4 (TJ 2026-11-16): an incomplete pool's absent skaters are missing coverage, not lost team offense. The team row,
+    // the opposing goalie's shots against, team goals and the reserve environment keep the full-team figure: the
+    // modeled pool plus the unmodeled remainder, whose goals convert at the pool's per-shot rates.
+    const teamGoalComponents = { ...teamGoalAccounting.reportedComponents };
+    let teamGoalsAllSituations = pkModeled ? teamGoalAccounting.reportedAllStrengthMean : teamGoalAccounting.reportedEsPpMean;
+    let reserveTeamEnvironment = { ...assistTeam, assistScaleEs, assistScalePp };
+    let missingSkaterCoverageReport: Record<string, unknown> | null = null;
+    if (missingSkaterCoverage) {
+      const { unmodeled_toi_seconds: toi, unmodeled_shots: shots, goal_scale: scale } = missingSkaterCoverage;
+      const gross = (mean: number | null, factor: number) => (mean === null ? null : Number((mean * factor).toFixed(3)));
+      teamGoalComponents.esMean = gross(teamGoalAccounting.reportedComponents.esMean, scale.es);
+      teamGoalComponents.ppMean = gross(teamGoalAccounting.reportedComponents.ppMean, scale.pp);
+      teamGoalComponents.pkMean = gross(teamGoalAccounting.reportedComponents.pkMean, scale.pk);
+      const parts = pkModeled
+        ? [teamGoalComponents.esMean, teamGoalComponents.ppMean, teamGoalComponents.pkMean]
+        : [teamGoalComponents.esMean, teamGoalComponents.ppMean];
+      teamGoalsAllSituations = parts.every((part) => part !== null)
+        ? Number(parts.reduce<number>((sum, part) => sum + (part ?? 0), 0).toFixed(3))
+        : null;
+      teamTotals.toiEsSeconds += toi.es;
+      teamTotals.toiPpSeconds += toi.pp;
+      teamTotals.shotsEs += shots.es;
+      teamTotals.shotsPp += shots.pp;
+      teamTotals.goalsEs *= scale.es;
+      teamTotals.goalsPp *= scale.pp;
+      if (pkModeled) {
+        teamPkTotals.toiSeconds += toi.pk;
+        teamPkTotals.shots += shots.pk;
+        teamPkTotals.goals *= scale.pk;
+      }
+      reserveTeamEnvironment = {
+        ...reserveTeamEnvironment,
+        toiEs: assistTeam.toiEs + toi.es,
+        toiPp: assistTeam.toiPp + toi.pp,
+        goalsEs: assistTeam.goalsEs * scale.es,
+        goalsPp: assistTeam.goalsPp * scale.pp,
+      };
+      const unmodeledGoal = (mean: number | null, grossed: number | null) =>
+        mean === null || grossed === null ? null : Number((grossed - mean).toFixed(3));
+      missingSkaterCoverageReport = {
+        ...missingSkaterCoverage,
+        unmodeled_goals: {
+          es: unmodeledGoal(teamGoalAccounting.reportedComponents.esMean, teamGoalComponents.esMean),
+          pp: unmodeledGoal(teamGoalAccounting.reportedComponents.ppMean, teamGoalComponents.ppMean),
+          pk: unmodeledGoal(teamGoalAccounting.reportedComponents.pkMean, teamGoalComponents.pkMean),
+        },
+      };
+    }
+
     const teamUpsert = {
       run_id: runId,
       as_of_date: asOfDate,
@@ -3929,9 +4032,9 @@ export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: 
         (teamTotals.shotsPp * teamHorizonTotalScalar).toFixed(3),
       ),
       proj_shots_pk: pkModeled ? Number((teamPkTotals.shots * teamHorizonTotalScalar).toFixed(3)) : null,
-      proj_goals_es: teamGoalAccounting.reportedComponents.esMean,
-      proj_goals_pp: teamGoalAccounting.reportedComponents.ppMean,
-      proj_goals_pk: teamGoalAccounting.reportedComponents.pkMean,
+      proj_goals_es: teamGoalComponents.esMean,
+      proj_goals_pp: teamGoalComponents.ppMean,
+      proj_goals_pk: teamGoalComponents.pkMean,
       uncertainty: {
         ...buildTeamUncertainty(
           {
@@ -3948,6 +4051,7 @@ export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: 
         ),
         native_goal_accounting: teamGoalAccounting,
         native_roster_contributor_coverage: nativeRosterCoverage,
+        ...(missingSkaterCoverageReport ? { missing_skater_coverage: missingSkaterCoverageReport } : {}),
       },
       updated_at: new Date().toISOString(),
     };
@@ -3962,7 +4066,6 @@ export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: 
     });
     // Team goals feed goalie win lambdas and game totals: all-situation, or unknown.
     // Without a PK bucket ES holds all non-PP time, so ES + PP is that run's all-situation line.
-    const teamGoalsAllSituations = pkModeled ? teamGoalAccounting.reportedAllStrengthMean : teamGoalAccounting.reportedEsPpMean;
     if (teamGoalsAllSituations === null) teamGoalsByTeamId.delete(teamId);
     else teamGoalsByTeamId.set(teamId, teamGoalsAllSituations);
 
@@ -3998,7 +4101,7 @@ export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: 
               opponentGoalieContextAdjustment.assistRateMultiplier *
               restScheduleAdjustment.assistRateMultiplier,
           },
-          team: { ...assistTeam, assistScaleEs, assistScalePp },
+          team: reserveTeamEnvironment,
         });
         if (!line) {
           coverageUnknownReasonById.set(candidate.playerId, "no_nhl_usage_in_window");

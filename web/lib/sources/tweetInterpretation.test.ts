@@ -120,6 +120,24 @@ describe("source sections and positive role admission", () => {
     expect(result.relationships).toBeUndefined();
     checkSpans(seattleSectionText, result);
   });
+  it.each(["Leafs warm-up lines", "RT @markhmasters: Lines in Leafs warm-up"])("keeps a warm-up title out of defense slots and identity review: %s", title => {
+    const names = ["McCabe", "Raddysh", "Ekman-Larsson", "Tanev", "Rielly", "Stecher"];
+    const roster = names.map((lastName, index) => ({ playerId: index + 1, fullName: "Fixture " + lastName, lastName, teamId: 10, position: "D" }));
+    const rows = ["McCabe - Raddysh", "Ekman-Larsson - Tanev", "Rielly - Stecher"];
+    const parse = (sourceRows: string[]) => {
+      const text = [title, ...sourceRows].join("\n");
+      const parsed = interpretTweetUnits(text, roster);
+      checkSpans(text, parsed);
+      expect(parsed.lineContext?.context).toBe("warmup");
+      return parsed;
+    };
+    const intact = parse(rows);
+    expect(intact.unresolved).toEqual([]);
+    expect(intact.units.map(u => [u.number, u.players.map(p => p.playerId)])).toEqual([[1, [1, 2]], [2, [3, 4]], [3, [5, 6]]]);
+    const gap = parse(["Unresolved - Raddysh", ...rows.slice(1)]);
+    expect(gap.unresolved).toContainEqual(expect.objectContaining({ text: "Unresolved", situation: "es_defense", number: 1 }));
+    expect(gap.units.map(u => u.number)).toEqual([2, 3]);
+  });
   it("does not let short forward extras shift defense ordinals or a lone defenseman become a goalie", () => {
     const result = interpretTweetUnits(edmontonSectionText, edmontonSectionRoster);
     expect(result.context).toBe("practice");
@@ -1483,4 +1501,45 @@ it("keeps the reporter's hedge on a stored return and does not guess between rep
   for (const changed of [text.replace("tonight.", "if cleared."), text + " He is out.", text.replace("Looks like", "Yesterday it looked like")]) {
     expect(reportedLineupExpectation(changed, changed.indexOf("Zack"), changed.indexOf(" will"))).toBeNull();
   }
+});
+
+describe("PP spot takeover with the five listed (Silber WSH PP1, 2026-11-25)", () => {
+  const spots = JSON.parse(readFileSync(resolve(__dirname, "../lines/fixtures/pbp-2026020392.json"), "utf8")).rosterSpots as Array<{ teamId: number; playerId: number; positionCode: string; firstName: { default: string }; lastName: { default: string } }>;
+  // The 0392 publication roster: no Kyrou (the replaced player), two Protas.
+  const roster = spots.filter((spot) => spot.teamId === 15).map((spot) => ({ playerId: spot.playerId, fullName: `${spot.firstName.default} ${spot.lastName.default}`, lastName: spot.lastName.default, position: spot.positionCode, teamId: 15 }));
+  const stored = "Justin Sourdif takes Jordan Kyrou's spot on PP1\nSo Strome, Wilson, Sourdif, Chychrun, Ovechkin out there now";
+  it("reads PP1 as the five listed, from the stored text and from the relay wrapper", () => {
+    for (const text of [stored, "RT @sammisilber: Justin Sourdif takes Jordan Kyrou's spot on PP1\n\nSo Strome, Wilson, Sourdif, Chychrun, Ovechkin out there now"]) {
+      const reading = interpretTweetUnits(text, roster);
+      expect(reading.units).toHaveLength(1);
+      expect(reading.units[0]).toMatchObject({ situation: "pp", number: 1, explicitNumber: true, complete: true, group: null });
+      expect(reading.units[0]!.players.map((player) => player.name)).toEqual(["Dylan Strome", "Tom Wilson", "Justin Sourdif", "Jakob Chychrun", "Alex Ovechkin"]);
+      for (const span of reading.units[0]!.evidence) expect(text.slice(span.start, span.end)).toBe(span.text);
+      // The replaced player is not a unit member and leaves no unresolved PP name behind.
+      expect(reading.unresolved).toEqual([]);
+    }
+  });
+  it("reads the same five on the production publication roster, where the replaced player is still listed", () => {
+    const revision = JSON.parse(readFileSync(resolve(__dirname, "../lines/fixtures/wsh-publication-roster-2026-11-26.json"), "utf8")).rosterRevision as string;
+    const publication = revision.split("|").map((entry) => { const [id, fullName, lastName, teamId, position] = entry.split(":"); return { playerId: Number(id), fullName: fullName!, lastName: lastName!, teamId: Number(teamId), position: position! }; });
+    const reading = interpretTweetUnits(stored, publication);
+    expect(reading.units.map((unit) => [unit.situation, unit.number, unit.players.map((player) => player.playerId)])).toEqual([["pp", 1, [8478440, 8476880, 8482088, 8479345, 8471214]]]);
+    expect(reading.unresolved).toEqual([]);
+    expect(reading.changes ?? []).toEqual([]);
+  });
+  it("refuses a surname that is ambiguous on the publication roster", () => {
+    const reading = interpretTweetUnits(stored.replace("Wilson", "Protas"), roster);
+    expect(reading.units).toEqual([]);
+    expect(reading.unresolved).toEqual([expect.objectContaining({ text: "Protas", situation: "pp", number: 1, reason: "ambiguous" })]);
+  });
+  it("refuses a name missing from the publication roster, a goalie, or a short list", () => {
+    expect(interpretTweetUnits(stored.replace("Wilson", "Kyrou"), roster).units).toEqual([]);
+    expect(interpretTweetUnits(stored.replace("Wilson", "Thompson"), roster).units).toEqual([]);
+    expect(interpretTweetUnits(stored.replace("Wilson, ", ""), roster).units).toEqual([]);
+  });
+  it("refuses a disputed or hypothetical post", () => {
+    expect(interpretTweetUnits(stored.replace("PP1", "PP1 instead"), roster).units).toEqual([]);
+    expect(interpretTweetUnits(`${stored}?`, roster).units).toEqual([]);
+    expect(interpretTweetUnits(stored.replace("PP1", "PP1 last game"), roster).units).toEqual([]);
+  });
 });

@@ -1,0 +1,356 @@
+{
+  "version": "forge-h10-interval-night-rehearsal-v1",
+  "note": "Same real reads, same real tick->verify->begin->route->finish path, run back to back on one laptop: A without the interval migration (phase skipped), B with it. Run date 2026-11-23 (local clock). B's 2 goalie gaps are issuance_lock_closed: game 2026020378 started at 00:00Z during B's run, before the interval phase.",
+  "runs": {
+    "A_without_intervals": {
+      "dispatches": [
+        {
+          "status": "continued",
+          "ms": 200608,
+          "intervals": null
+        },
+        {
+          "status": "complete",
+          "ms": 105162,
+          "intervals": {
+            "complete": true,
+            "pending": 0,
+            "written": 0,
+            "editionsWithGap": 0,
+            "gaps": {},
+            "ms": 0,
+            "skipped": "interval_table_not_migrated"
+          }
+        },
+        {
+          "status": "complete",
+          "ms": 1,
+          "intervals": {
+            "calibrationId": null,
+            "skipped": "interval_table_not_migrated"
+          }
+        }
+      ],
+      "totalDispatchMs": 305771,
+      "storage": [
+        {
+          "table_name": "forge_v2_vintages",
+          "rows_estimate": "7320",
+          "bytes_with_indexes": "21594112",
+          "index_bytes": "3670016"
+        },
+        {
+          "table_name": "forge_v2_records",
+          "rows_estimate": "14811",
+          "bytes_with_indexes": "19128320",
+          "index_bytes": "5980160"
+        },
+        {
+          "table_name": "forge_v2_work_queue",
+          "rows_estimate": "320",
+          "bytes_with_indexes": "6021120",
+          "index_bytes": "32768"
+        },
+        {
+          "table_name": "forge_v2_publication_receipts",
+          "rows_estimate": "7320",
+          "bytes_with_indexes": "3809280",
+          "index_bytes": "2072576"
+        },
+        {
+          "table_name": "forge_v2_goalie_vintages",
+          "rows_estimate": "720",
+          "bytes_with_indexes": "2220032",
+          "index_bytes": "638976"
+        },
+        {
+          "table_name": "forge_v2_goalie_publication_receipts",
+          "rows_estimate": "720",
+          "bytes_with_indexes": "499712",
+          "index_bytes": "221184"
+        },
+        {
+          "table_name": "forge_h10_evidence",
+          "rows_estimate": "42",
+          "bytes_with_indexes": "131072",
+          "index_bytes": "49152"
+        },
+        {
+          "table_name": "forge_h10_dispatches",
+          "rows_estimate": "3",
+          "bytes_with_indexes": "65536",
+          "index_bytes": "49152"
+        },
+        {
+          "table_name": "forge_v2_archives",
+          "rows_estimate": "0",
+          "bytes_with_indexes": "24576",
+          "index_bytes": "16384"
+        },
+        {
+          "table_name": "forge_v2_archive_index",
+          "rows_estimate": "0",
+          "bytes_with_indexes": "24576",
+          "index_bytes": "16384"
+        },
+        {
+          "table_name": "forge_v2_artifacts",
+          "rows_estimate": "0",
+          "bytes_with_indexes": "16384",
+          "index_bytes": "8192"
+        }
+      ],
+      "intervalEditions": null,
+      "verifyReconcile": " class  | horizon | expected | stored | missing | extra | duplicate_keys | numeric_complete | reported_gap | unpublished_vintages \n--------+---------+----------+--------+---------+-------+----------------+------------------+--------------+----------------------\n skater | 1       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 2       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 3       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 4       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 5       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 6       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 7       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 8       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 9       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 10      |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | all     |     7320 |   7320 |       0 |     0 |              0 |             7320 |            0 |                    0\n goalie | 1       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 2       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 3       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 4       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 5       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 6       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 7       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 8       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 9       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 10      |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | all     |      720 |    720 |       0 |     0 |              0 |              720 |            0 |                    0\n(22 rows)\n\n"
+    },
+    "B_with_intervals": {
+      "dispatches": [
+        {
+          "status": "continued",
+          "ms": 200669,
+          "intervals": null
+        },
+        {
+          "status": "complete",
+          "ms": 144655,
+          "intervals": {
+            "complete": true,
+            "pending": 8038,
+            "written": 8038,
+            "editionsWithGap": 0,
+            "gaps": {},
+            "ms": 33830,
+            "calibrationId": "forge-h10-interval-calibration:2026-11-23:9a33a60098fb4c3dc41aa9835915a85449ec6cbd5a8891057ebd57a19f0bc4b3",
+            "calibrationMs": 25247
+          }
+        },
+        {
+          "status": "complete",
+          "ms": 1,
+          "intervals": {
+            "calibrationId": "forge-h10-interval-calibration:2026-11-23:9a33a60098fb4c3dc41aa9835915a85449ec6cbd5a8891057ebd57a19f0bc4b3",
+            "goalie": {
+              "categoryBands": 3590,
+              "categoryBandsExpected": 3600,
+              "editions": 718,
+              "gaps": {},
+              "keys": 720,
+              "keysWithoutEdition": 2,
+              "vintages": 718
+            },
+            "skater": {
+              "categoryBands": 51240,
+              "categoryBandsExpected": 51240,
+              "editions": 7320,
+              "gaps": {},
+              "keys": 7320,
+              "keysWithoutEdition": 0,
+              "vintages": 7320
+            }
+          }
+        }
+      ],
+      "totalDispatchMs": 345325,
+      "storage": [
+        {
+          "table_name": "forge_v2_vintages",
+          "rows_estimate": "7320",
+          "bytes_with_indexes": "21594112",
+          "index_bytes": "3670016"
+        },
+        {
+          "table_name": "forge_h10_interval_editions",
+          "rows_estimate": "8038",
+          "bytes_with_indexes": "19644416",
+          "index_bytes": "3072000"
+        },
+        {
+          "table_name": "forge_v2_records",
+          "rows_estimate": "14812",
+          "bytes_with_indexes": "19103744",
+          "index_bytes": "5955584"
+        },
+        {
+          "table_name": "forge_v2_work_queue",
+          "rows_estimate": "320",
+          "bytes_with_indexes": "5783552",
+          "index_bytes": "32768"
+        },
+        {
+          "table_name": "forge_v2_publication_receipts",
+          "rows_estimate": "7320",
+          "bytes_with_indexes": "3809280",
+          "index_bytes": "2072576"
+        },
+        {
+          "table_name": "forge_v2_goalie_vintages",
+          "rows_estimate": "718",
+          "bytes_with_indexes": "2220032",
+          "index_bytes": "638976"
+        },
+        {
+          "table_name": "forge_v2_goalie_publication_receipts",
+          "rows_estimate": "718",
+          "bytes_with_indexes": "499712",
+          "index_bytes": "221184"
+        },
+        {
+          "table_name": "forge_h10_evidence",
+          "rows_estimate": "42",
+          "bytes_with_indexes": "131072",
+          "index_bytes": "49152"
+        },
+        {
+          "table_name": "forge_h10_dispatches",
+          "rows_estimate": "3",
+          "bytes_with_indexes": "65536",
+          "index_bytes": "49152"
+        },
+        {
+          "table_name": "forge_v2_archives",
+          "rows_estimate": "0",
+          "bytes_with_indexes": "24576",
+          "index_bytes": "16384"
+        },
+        {
+          "table_name": "forge_v2_archive_index",
+          "rows_estimate": "0",
+          "bytes_with_indexes": "24576",
+          "index_bytes": "16384"
+        },
+        {
+          "table_name": "forge_v2_artifacts",
+          "rows_estimate": "0",
+          "bytes_with_indexes": "16384",
+          "index_bytes": "8192"
+        }
+      ],
+      "intervalEditions": [
+        {
+          "player_class": "goalie",
+          "editions": 718,
+          "payload_bytes": "2301387",
+          "calibration_record_bytes": 13927
+        },
+        {
+          "player_class": "skater",
+          "editions": 7320,
+          "payload_bytes": "27930718",
+          "calibration_record_bytes": 13927
+        }
+      ],
+      "verifyReconcile": " class  | horizon | expected | stored | missing | extra | duplicate_keys | numeric_complete | reported_gap | unpublished_vintages \n--------+---------+----------+--------+---------+-------+----------------+------------------+--------------+----------------------\n skater | 1       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 2       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 3       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 4       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 5       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 6       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 7       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 8       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 9       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 10      |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | all     |     7320 |   7320 |       0 |     0 |              0 |             7320 |            0 |                    0\n goalie | 1       |       72 |     70 |       2 |     0 |              0 |               70 |            0 |                    0\n goalie | 2       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 3       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 4       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 5       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 6       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 7       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 8       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 9       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 10      |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | all     |      720 |    718 |       2 |     0 |              0 |              718 |            0 |                    0\n(22 rows)\n\n"
+    },
+    "B2_with_intervals_and_steady_state": {
+      "note": "Final tree (reads bounded to the run). Started after 00:00Z, so games already under way were lock-closed: 96 skater and 17 goalie keys were never issued (issuance_lock_closed). Every published vintage still received an edition.",
+      "dispatches": [
+        {
+          "status": "continued",
+          "ms": 200558,
+          "intervals": null
+        },
+        {
+          "status": "complete",
+          "ms": 121716,
+          "intervals": {
+            "complete": true,
+            "pending": 7927,
+            "written": 7927,
+            "editionsWithGap": 0,
+            "gaps": {},
+            "ms": 23812,
+            "calibrationId": "forge-h10-interval-calibration:2026-11-23:8b2f557bf0e680b82074de6bfd7017c6be497d62985964be5be92dd9811f927c",
+            "calibrationMs": 16067
+          }
+        },
+        {
+          "status": "complete",
+          "ms": 1,
+          "intervals": {
+            "calibrationId": "forge-h10-interval-calibration:2026-11-23:8b2f557bf0e680b82074de6bfd7017c6be497d62985964be5be92dd9811f927c",
+            "goalie": {
+              "categoryBands": 3515,
+              "categoryBandsExpected": 3600,
+              "editions": 703,
+              "gaps": {},
+              "keys": 720,
+              "keysWithoutEdition": 17,
+              "vintages": 703
+            },
+            "skater": {
+              "categoryBands": 50568,
+              "categoryBandsExpected": 51240,
+              "editions": 7224,
+              "gaps": {},
+              "keys": 7320,
+              "keysWithoutEdition": 96,
+              "vintages": 7224
+            }
+          }
+        }
+      ],
+      "steadyState": {
+        "seededPriorNights": 15,
+        "seeded": {
+          "vintages": 118905,
+          "editions": 118905
+        },
+        "tonightOnly": {
+          "phaseMs": 5491,
+          "coverageMs": 390,
+          "pending": 7927,
+          "written": 7927,
+          "gaps": {},
+          "coverage": {
+            "skater": {
+              "keys": 7320,
+              "vintages": 7224,
+              "editions": 7224,
+              "keysWithoutEdition": 96,
+              "categoryBands": 50568,
+              "categoryBandsExpected": 51240,
+              "gaps": {}
+            },
+            "goalie": {
+              "keys": 720,
+              "vintages": 703,
+              "editions": 703,
+              "keysWithoutEdition": 17,
+              "categoryBands": 3515,
+              "categoryBandsExpected": 3600,
+              "gaps": {}
+            }
+          }
+        },
+        "withHistory": {
+          "phaseMs": 5590,
+          "coverageMs": 381,
+          "pending": 7927,
+          "written": 7927,
+          "gaps": {},
+          "coverage": {
+            "skater": {
+              "keys": 7320,
+              "vintages": 7224,
+              "editions": 7224,
+              "keysWithoutEdition": 96,
+              "categoryBands": 50568,
+              "categoryBandsExpected": 51240,
+              "gaps": {}
+            },
+            "goalie": {
+              "keys": 720,
+              "vintages": 703,
+              "editions": 703,
+              "keysWithoutEdition": 17,
+              "categoryBands": 3515,
+              "categoryBandsExpected": 3600,
+              "gaps": {}
+            }
+          }
+        }
+      },
+      "verifyReconcile": " class  | horizon | expected | stored | missing | extra | duplicate_keys | numeric_complete | reported_gap | unpublished_vintages \n--------+---------+----------+--------+---------+-------+----------------+------------------+--------------+----------------------\n skater | 1       |      732 |    636 |      96 |     0 |              0 |              636 |            0 |                    0\n skater | 2       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 3       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 4       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 5       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 6       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 7       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 8       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 9       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 10      |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | all     |     7320 |   7224 |      96 |     0 |              0 |             7224 |            0 |                    0\n goalie | 1       |       72 |     55 |      17 |     0 |              0 |               55 |            0 |                    0\n goalie | 2       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 3       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 4       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 5       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 6       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 7       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 8       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 9       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 10      |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | all     |      720 |    703 |      17 |     0 |              0 |              703 |            0 |                    0\n(22 rows)\n\n"
+    }
+  }
+}

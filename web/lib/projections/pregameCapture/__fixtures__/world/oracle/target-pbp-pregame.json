@@ -795,6 +795,55 @@
     {
      "method": "from",
      "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.10,awayTeamId.eq.10"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "eebb14538ad3ce7848dd728e8422574524aff741e582420eb075895c98b464fd"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
       "pbp_games"
      ]
     },
@@ -808,7 +857,7 @@
      "method": "eq",
      "args": [
       "id",
-      2026020250
+      2026020100
      ]
     },
     {
@@ -816,7 +865,7 @@
      "args": []
     }
    ],
-   "resultHash": "b9fbf10af52b6fc743255f39939a3ca3ce1b716c008332b9207b10a4d0214879"
+   "resultHash": "a9fc17866970a2b2383ccbee620750c536f3b1ebb9fda6a37881528dcbfa4bed"
   },
   {
    "request": [
@@ -840,7 +889,7 @@
      "method": "eq",
      "args": [
       "gameid",
-      2026020250
+      2026020100
      ]
     }
    ],
@@ -868,7 +917,147 @@
      "method": "eq",
      "args": [
       "gameid",
-      2026020250
+      2026020100
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "typedesckey",
+      "game-end"
+     ]
+    }
+   ],
+   "resultHash": "c0937635224c7e77ebf939c247314b51064d6bb430ba03624f798f0746f523b3"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.6,awayTeamId.eq.6"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "28c486552148b77cfdfc21a0101e8c2ed39da02a6b282b9dc4e5fe5fadf89456"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "pbp_games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date,hometeamid,awayteamid,type,season,hometeamabbrev,awayteamabbrev,hometeamscore,awayteamscore"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "id",
+      2026020150
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "a9fc17866970a2b2383ccbee620750c536f3b1ebb9fda6a37881528dcbfa4bed"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "pbp_plays"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id",
+      {
+       "count": "exact",
+       "head": true
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "gameid",
+      2026020150
+     ]
+    }
+   ],
+   "resultHash": "c0937635224c7e77ebf939c247314b51064d6bb430ba03624f798f0746f523b3"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "pbp_plays"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id",
+      {
+       "count": "exact",
+       "head": true
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "gameid",
+      2026020150
      ]
     },
     {
@@ -6119,7 +6308,7 @@
   },
   {
    "table": "forge_runs",
-   "hash": "a45d08a4f1f2699f800ff94a47f5fad80a417934e695e1c0367ed199d0b43cbc"
+   "hash": "f9ffbf898819ab1d04f2c2624fd80d2f227ad59ddb9e38f7fbd367f92ae327c7"
   }
  ],
  "outputHash": "d2b64d9bf23cc6e3d6d8a74a6d072629172e703a6a178ff9c6c116d09e05e47c",

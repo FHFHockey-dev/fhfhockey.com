@@ -81,8 +81,8 @@ function unitStatus(selection: SelectedLineUnit, games: LineGame[], decision?: P
     return { label: `Carried forward from ${origin ? gameLabel(origin) : "an earlier game"}`, tone: "carried" };
   }
   if (selection.claims.some((claim) => claim.context === "practice")) return { label: "Practice report, not game-confirmed", tone: "practice" };
-  // An in-game report bound by NHL on-ice corroboration: the reporter's unit, not game-verified personnel.
-  if (selection.designation === "reported" && selection.claims.some((claim) => claim.phase === "in_game" && claim.binding.evidence.some((item) => item.startsWith("nhl_pp_faceoff:"))))
+  // An in-game report bound by NHL on-ice corroboration (penalty clue or period time): the reporter's unit, not game-verified personnel.
+  if (selection.designation === "reported" && selection.claims.some((claim) => claim.phase === "in_game" && claim.binding.evidence.some((item) => item.startsWith("nhl_pp_faceoff:") || item === "binding_basis:period_time")))
     return { label: "Reporter-confirmed", tone: "reported" };
   // Goalie lists confirm who dressed, never who starts.
   if (selection.designation === "confirmed") return { label: selection.unit.situation === "goalie" ? "Tandem confirmed" : "Confirmed", tone: "confirmed" };

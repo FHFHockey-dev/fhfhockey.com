@@ -25,7 +25,7 @@ export function preparedLedgerRecordId(kind: LedgerKind, value: LedgerValue): st
 
 /** Full snapshots are explicit. A predecessor must already be captured or included earlier in this call.
  * Scientific entity IDs stay inside payloads; observation IDs identify immutable snapshot bytes. */
-function preparedLedgerRecords(input: Omit<PreparedLedgerInput, "store">) {
+export function preparedLedgerRecords(input: Omit<PreparedLedgerInput, "store">) {
   const groups: Array<[LedgerKind, PreparedLedgerObservation<LedgerValue>[]]> = [["opportunity", input.opportunities], ["horizon_episode", input.episodes], ["lock_epoch", input.locks], ["history_event", input.events]];
   if (groups.reduce((sum, [, rows]) => sum + rows.length, 0) > 200) throw new Error("prepared_ledger_capture_limit");
   const records: Array<{ id: string; kind: LedgerKind; scientificId: string; predecessorId: string | null; scopeKey: string; value: LedgerValue }> = [];
@@ -154,7 +154,7 @@ export interface PreparedRunInput {
 export type PreparedRunResult = { state: "published"; publication: PublishedVintage; reusedDraft: boolean }
   | { state: "unavailable"; reason: string; retryable: boolean };
 
-function validPlan(plan: RefreshPlan): void {
+export function validPlan(plan: RefreshPlan): void {
   assertTarget(plan.scope); assertHorizon(plan.scope.horizon);
   assertId(plan.scope.teamId); assertId(plan.scope.opponentId);
   if (plan.scope.teamId === plan.scope.opponentId || typeof plan.scope.home !== "boolean") throw new Error("invalid_prepared_game_sides");
@@ -163,7 +163,7 @@ function validPlan(plan: RefreshPlan): void {
   if (instant(plan.deadlineAt) > instant(plan.lockAt) || instant(plan.lockAt) > instant(plan.scope.scheduledStartAt)) throw new Error("invalid_prepared_plan_lock");
 }
 
-function sameIssuedScope(vintage: Vintage, plan: RefreshPlan): boolean {
+export function sameIssuedScope(vintage: Vintage, plan: RefreshPlan): boolean {
   return vintage.issuanceKey === plan.issuanceKey && targetKey(vintage) === targetKey(plan.scope) && vintage.trigger === plan.trigger
     && ["teamId", "opponentId", "home", "horizon", "scheduleRevision", "affiliationRevision", "scheduledStartAt", "sourceGameDate"].every(key => vintage[key as keyof Vintage] === plan.scope[key as keyof typeof plan.scope]);
 }
@@ -178,7 +178,7 @@ async function assertClaim(input: PreparedRunInput): Promise<void> {
     || live.issuanceKey !== input.plan.issuanceKey || contentHash(live.scope) !== contentHash(input.plan.scope) || contentHash(job.scope) !== contentHash(live.scope)) throw new Error("stale_refresh_claim");
 }
 
-function validatePrepared(plan: RefreshPlan, prepared: PreparedIssuance): void {
+export function validatePrepared(plan: RefreshPlan, prepared: PreparedIssuance): void {
   const { context, episode, lock, accepted } = prepared, scope = plan.scope;
   if (!["fixture", "retrospective_reconstruction", "prospective_shadow"].includes(prepared.evidenceClass)
     || prepared.evidenceClass === "prospective_shadow" && !prepared.shadow?.approvalEvidenceId?.trim()) throw new Error("development_pipeline_cannot_issue_prospective_or_public_evidence");
@@ -314,7 +314,7 @@ export interface PreparedBatchResult {
 export interface PreparedRefreshHistoryEvent extends HistoryEvent {
   queueId: string; jobId: string; issuanceKey: string; attempt: number; startedAt: string | null;
 }
-function refreshEventRecord(input: PreparedBatchInput, job: RefreshJob, kind: HistoryEvent["kind"], reason: string, at: string): QueueHistoryRecord {
+export function refreshEventRecord(input: PreparedBatchInput, job: RefreshJob, kind: HistoryEvent["kind"], reason: string, at: string): QueueHistoryRecord {
   const event: PreparedRefreshHistoryEvent = {
     playerId: job.scope.playerId, gameId: job.scope.gameId, seasonId: job.scope.seasonId, targetVersion: job.scope.targetVersion, conditioning: job.scope.conditioning,
     id: `refresh-event:${contentHash({ queueId: input.queueId, jobId: job.id, attempt: job.attempts, kind, reason, at })}`,

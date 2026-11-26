@@ -133,6 +133,8 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
     source: "htmlreports";
     upstream: { json: ShiftChartsJson };
     htmlReports: { visitorUrl: string; homeUrl: string };
+    /** Set when the report replaces a corroborated non-empty JSON feed. */
+    corroboration?: import("lib/supabase/Upserts/nhlShiftCorroboration.mjs").ShiftCorroboration;
   };
 
   export type ShiftChartsPayload =
@@ -330,6 +332,25 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
     visitorError: string | null;
     homeError: string | null;
   }>;
+  export function fetchCorroboratedShiftReportPayload(
+    gameId: number,
+    seasonId: number,
+    game: PlayByPlayPayload,
+    jsonPayload: ShiftChartsJson,
+    boxscore: unknown,
+    options?: { fetchOptions?: FetchRetryOptions },
+  ): Promise<
+    | {
+        payload: HtmlShiftReportPayload & {
+          corroboration: import("lib/supabase/Upserts/nhlShiftCorroboration.mjs").ShiftCorroboration;
+        };
+        failure: null;
+      }
+    | {
+        payload: null;
+        failure: import("lib/supabase/Upserts/nhlShiftCorroboration.mjs").ShiftCorroborationFailure;
+      }
+  >;
   export function fetchNhlApiRawGamePayloads(
     gameId: number,
     fetchOptions?: FetchRetryOptions,

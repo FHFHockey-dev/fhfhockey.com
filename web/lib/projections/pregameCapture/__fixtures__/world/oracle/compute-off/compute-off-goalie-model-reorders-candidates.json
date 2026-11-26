@@ -315,6 +315,55 @@
       {
        "method": "from",
        "args": [
+        "games"
+       ]
+      },
+      {
+       "method": "select",
+       "args": [
+        "id,date"
+       ]
+      },
+      {
+       "method": "or",
+       "args": [
+        "homeTeamId.eq.10,awayTeamId.eq.10"
+       ]
+      },
+      {
+       "method": "lt",
+       "args": [
+        "date",
+        "2026-11-14"
+       ]
+      },
+      {
+       "method": "order",
+       "args": [
+        "date",
+        {
+         "ascending": false
+        }
+       ]
+      },
+      {
+       "method": "limit",
+       "args": [
+        1
+       ]
+      },
+      {
+       "method": "maybeSingle",
+       "args": []
+      }
+     ],
+     "resultHash": "b49460ae322431efac4c5f3b14da8eaee95020cec5dd59d1387bdf0ee686564e"
+    },
+    {
+     "request": [
+      {
+       "method": "from",
+       "args": [
         "pbp_games"
        ]
       },
@@ -328,7 +377,7 @@
        "method": "eq",
        "args": [
         "id",
-        2026020250
+        2026020100
        ]
       },
       {
@@ -360,7 +409,7 @@
        "method": "eq",
        "args": [
         "gameid",
-        2026020250
+        2026020100
        ]
       }
      ],
@@ -388,7 +437,147 @@
        "method": "eq",
        "args": [
         "gameid",
-        2026020250
+        2026020100
+       ]
+      },
+      {
+       "method": "eq",
+       "args": [
+        "typedesckey",
+        "game-end"
+       ]
+      }
+     ],
+     "resultHash": "c0937635224c7e77ebf939c247314b51064d6bb430ba03624f798f0746f523b3"
+    },
+    {
+     "request": [
+      {
+       "method": "from",
+       "args": [
+        "games"
+       ]
+      },
+      {
+       "method": "select",
+       "args": [
+        "id,date"
+       ]
+      },
+      {
+       "method": "or",
+       "args": [
+        "homeTeamId.eq.6,awayTeamId.eq.6"
+       ]
+      },
+      {
+       "method": "lt",
+       "args": [
+        "date",
+        "2026-11-14"
+       ]
+      },
+      {
+       "method": "order",
+       "args": [
+        "date",
+        {
+         "ascending": false
+        }
+       ]
+      },
+      {
+       "method": "limit",
+       "args": [
+        1
+       ]
+      },
+      {
+       "method": "maybeSingle",
+       "args": []
+      }
+     ],
+     "resultHash": "28c486552148b77cfdfc21a0101e8c2ed39da02a6b282b9dc4e5fe5fadf89456"
+    },
+    {
+     "request": [
+      {
+       "method": "from",
+       "args": [
+        "pbp_games"
+       ]
+      },
+      {
+       "method": "select",
+       "args": [
+        "id,date,hometeamid,awayteamid,type,season,hometeamabbrev,awayteamabbrev,hometeamscore,awayteamscore"
+       ]
+      },
+      {
+       "method": "eq",
+       "args": [
+        "id",
+        2026020150
+       ]
+      },
+      {
+       "method": "maybeSingle",
+       "args": []
+      }
+     ],
+     "resultHash": "a9fc17866970a2b2383ccbee620750c536f3b1ebb9fda6a37881528dcbfa4bed"
+    },
+    {
+     "request": [
+      {
+       "method": "from",
+       "args": [
+        "pbp_plays"
+       ]
+      },
+      {
+       "method": "select",
+       "args": [
+        "id",
+        {
+         "count": "exact",
+         "head": true
+        }
+       ]
+      },
+      {
+       "method": "eq",
+       "args": [
+        "gameid",
+        2026020150
+       ]
+      }
+     ],
+     "resultHash": "c0937635224c7e77ebf939c247314b51064d6bb430ba03624f798f0746f523b3"
+    },
+    {
+     "request": [
+      {
+       "method": "from",
+       "args": [
+        "pbp_plays"
+       ]
+      },
+      {
+       "method": "select",
+       "args": [
+        "id",
+        {
+         "count": "exact",
+         "head": true
+        }
+       ]
+      },
+      {
+       "method": "eq",
+       "args": [
+        "gameid",
+        2026020150
        ]
       },
       {
@@ -6094,11 +6283,11 @@
     },
     {
      "table": "forge_runs",
-     "hash": "c48bd65dae811c5c4d6e9b4ec86caec10ef5d687ae7b007e7ff6ee965ce06d92"
+     "hash": "318f1c66d9b3061ac4fb3bfe20df5d8e8cb4944281d6d486b2663bfb1be095c8"
     },
     {
      "table": "forge_runs",
-     "hash": "aeb8bb73e343bb56840d5bff5d520a55c9ccda6e1d12b716ce08c30a79c6dd53"
+     "hash": "3717190ad61d8ca2f6400a9274a5635d9e1a38444fafd1c499194304d8b8809d"
     }
    ]
   }

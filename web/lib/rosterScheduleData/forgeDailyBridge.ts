@@ -13,7 +13,7 @@ import { readGoalieCandidatesContract, type GoalieCandidateRow, type GoalieCandi
 import { DEFENSE_B2B_FATIGUE_BOOST, OPPONENT_AWAY_PENALTY, OPPONENT_B2B_PENALTY, OPPONENT_HOME_BOOST, OPPONENT_RESTED_BOOST } from "lib/projections/constants/projection-weights";
 import type { TeamStrengthPrior } from "lib/projections/types/run-forge-projections.types";
 import type { GameForecast, PlanningGame, PlanningPlayer, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
-import { abortableReads, pages, withinDeadline } from "./planningInputs";
+import { abortableReads, concurrentPages, pages, withinDeadline } from "./planningInputs";
 import { bridgeAllowedUses, bridgeWireRowBytes, FORGE_DAILY_BRIDGE_VERSION, jsonUtf8Bytes, isReserveLine, RESERVE_FORECAST_NOTES, reserveAppearanceProbability, reserveCodeOf, type BridgeRunProof, type ReserveCode } from "./bridgeForecastWire";
 
 type Row = Record<string, any>;
@@ -935,7 +935,8 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
   const scheduleFrom = new Date(Date.parse(`${from}T12:00:00Z`) - 7 * DAY_MS).toISOString().slice(0, 10);
   const optionalDeadline = Math.min(readDeadline, Date.now() + FORGE_BRIDGE_OPTIONAL_READ_MS);
   const [skaters, goalies, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed, reserves] = await Promise.all([
-    timed("skaters", () => pages(() => db.from("forge_player_projections").select(SKATER_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
+    // The largest read (several thousand rows): pages after the first go four at a time, each re-checking the exact count.
+    timed("skaters", () => concurrentPages(() => db.from("forge_player_projections").select(SKATER_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
       .order("run_id").order("game_id").order("player_id"), readDeadline, 15000, row => [row.run_id, row.game_id, row.player_id])),
     timed("goalies", () => pages(() => db.from("forge_goalie_projections").select(GOALIE_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
       .order("run_id").order("game_id").order("goalie_id"), readDeadline, 2000, row => [row.run_id, row.game_id, row.goalie_id])),

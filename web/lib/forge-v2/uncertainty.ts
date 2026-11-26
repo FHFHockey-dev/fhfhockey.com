@@ -73,7 +73,7 @@ export function validateJoint(joint: JointDistribution): void {
 }
 
 /** Left-continuous inverse CDF convention is pinned, including ties and discrete outcomes. */
-function quantile(rows: Array<{ value: number; probability: number }>, q: number): number {
+export function quantile(rows: Array<{ value: number; probability: number }>, q: number): number {
   const ordered = [...rows].sort((a, b) => a.value - b.value);
   let mass = 0;
   for (const row of ordered) { mass += row.probability; if (mass + 1e-12 >= q) return row.value; }

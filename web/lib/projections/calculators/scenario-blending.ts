@@ -14,7 +14,8 @@ import {
   ROLE_SCENARIO_VOLATILE_REVERSION_BONUS,
   SKATER_POOL_EMERGENCY_MAX_AVG_TOI_SECONDS,
   SKATER_POOL_EMERGENCY_MAX_SINGLE_TOI_SECONDS,
-  SKATER_POOL_MIN_VALID_COUNT
+  SKATER_POOL_MIN_VALID_COUNT,
+  SKATER_POOL_TARGET_COUNT
 } from "../constants/projection-weights";
 import { clamp } from "../utils/number-utils";
 
@@ -418,24 +419,34 @@ export function validateReconciledPlayerDistribution(args: {
   };
 }
 
+/**
+ * Team skater-second target for one team's projected pool.
+ *
+ * A full pool (at least `fullPoolSkaterCount`, 18 by default) keeps the canonical budget. An incomplete pool is
+ * capped at its share of a full lineup (pool / 18 of the budget) and starts from the projected skaters' own
+ * pre-allocation seconds: it is scaled down to that ceiling when above it and never scaled up to reach it (TJ,
+ * 2026-11-16, audit H4). The rest is unmodeled residual exposure of the absent skaters (BC W1-7 D7), and
+ * `modeledShare` (target / canonical) is the ceiling the stage applies to the pool's share of team shots.
+ */
 export function computeSkaterTeamToiTargetWithPoolGuard(args: {
   canonicalTargetSeconds: number;
   projectedSkaterCount: number;
   ppShare: number;
+  fullPoolSkaterCount?: number;
   minValidSkaterCount?: number;
   maxSingleSkaterToiSeconds?: number;
   maxAvgToiPerProjectedSkaterSeconds?: number;
-  /**
-   * The projected skaters' own pre-allocation seconds (BC W1-7 D7). Below the minimum pool size the
-   * target is this exposure (never more than the canonical budget), so present players are not
-   * inflated to cover absent ones; the rest is reported as unmodeled residual exposure.
-   */
+  /** The projected skaters' own pre-allocation seconds (BC W1-7 D7). */
   preAllocationTotalSeconds?: number;
 }): {
   targetSeconds: number;
   wasCapped: boolean;
   capReason: "undersized_projected_pool" | null;
   unmodeledResidualSeconds?: number;
+  /** The pool's modeled share of the team budget: 1 for a full pool. */
+  modeledShare: number;
+  /** pool / full-pool of the canonical budget; present only for an incomplete pool. */
+  poolCeilingSeconds?: number;
 } {
   const canonicalTarget = Math.max(
     0,
@@ -445,29 +456,40 @@ export function computeSkaterTeamToiTargetWithPoolGuard(args: {
     0,
     Math.floor(Number(args.projectedSkaterCount) || 0)
   );
+  const fullPoolSkaterCount = Number.isFinite(args.fullPoolSkaterCount)
+    ? Math.max(1, Math.floor(Number(args.fullPoolSkaterCount)))
+    : SKATER_POOL_TARGET_COUNT;
   const minValidSkaterCount = Number.isFinite(args.minValidSkaterCount)
     ? Math.max(1, Math.floor(Number(args.minValidSkaterCount)))
     : SKATER_POOL_MIN_VALID_COUNT;
-  if (projectedSkaterCount >= minValidSkaterCount || canonicalTarget <= 0) {
+  if (projectedSkaterCount >= fullPoolSkaterCount || canonicalTarget <= 0) {
     return {
       targetSeconds: canonicalTarget,
       wasCapped: false,
-      capReason: null
+      capReason: null,
+      modeledShare: 1
     };
   }
 
-  // Completeness gate: an undersized pool keeps its own exposure, continuous in the pool size
-  // (no 15 -> 14 cliff), with the missing exposure explicit rather than reallocated.
+  const poolCeilingSeconds = Math.round(
+    (canonicalTarget * projectedSkaterCount) / fullPoolSkaterCount
+  );
+  const capped = (targetSeconds: number) => ({
+    targetSeconds,
+    wasCapped: targetSeconds < canonicalTarget,
+    capReason: targetSeconds < canonicalTarget ? ("undersized_projected_pool" as const) : null,
+    unmodeledResidualSeconds: canonicalTarget - targetSeconds,
+    modeledShare: targetSeconds / canonicalTarget,
+    poolCeilingSeconds
+  });
+
+  // Completeness gate: the pool keeps its own exposure up to its lineup share, continuous in the pool size,
+  // with the missing exposure explicit rather than reallocated to the skaters present.
   const ownSeconds = Number(args.preAllocationTotalSeconds);
   if (Number.isFinite(ownSeconds) && ownSeconds >= 0) {
-    const targetSeconds = Math.min(canonicalTarget, Math.round(ownSeconds));
-    return {
-      targetSeconds,
-      wasCapped: targetSeconds < canonicalTarget,
-      capReason: targetSeconds < canonicalTarget ? "undersized_projected_pool" : null,
-      unmodeledResidualSeconds: canonicalTarget - targetSeconds,
-    };
+    return capped(Math.min(poolCeilingSeconds, Math.round(ownSeconds)));
   }
+  if (projectedSkaterCount >= minValidSkaterCount) return capped(poolCeilingSeconds);
 
   const ppShare = clamp(args.ppShare, 0, 0.5);
   const maxSingleSkaterToiSeconds = Number.isFinite(args.maxSingleSkaterToiSeconds)
@@ -490,11 +512,52 @@ export function computeSkaterTeamToiTargetWithPoolGuard(args: {
       ? projectedSkaterCount * maxAvgToiPerProjectedSkaterSeconds
       : 0;
   const emergencyCap = Math.max(1800, Math.min(capByTopShare, capByAvgToi));
-  const targetSeconds = Math.min(canonicalTarget, emergencyCap);
+  return capped(Math.min(poolCeilingSeconds, emergencyCap));
+}
 
+/**
+ * H4 (TJ, 2026-11-16): an incomplete pool's share of a team-average shot total is a ceiling, never a target. The
+ * pool keeps its own projected shots, scaled down only when they exceed team shots x modeled share. A full pool, or
+ * a target that is not a team average (the pool's own total as fallback), keeps the existing target.
+ */
+export function capIncompletePoolShotTarget(args: {
+  fullTeamTarget: number;
+  rawPoolTotal: number;
+  modeledShare: number;
+  fromTeamAverage: boolean;
+}): number {
+  if (!(args.modeledShare < 1) || !args.fromTeamAverage) return args.fullTeamTarget;
+  const ceiling = Math.max(0, args.fullTeamTarget) * Math.max(0, args.modeledShare);
+  return args.rawPoolTotal > 0 ? Math.min(args.rawPoolTotal, ceiling) : ceiling;
+}
+
+export type SkaterStrengthTriple = { es: number; pp: number; pk: number };
+
+/**
+ * The absent skaters' minutes and shots of an incomplete pool, reported as missing skater coverage rather than lost
+ * team offense: team totals are the modeled pool plus this remainder, and unmodeled goals convert at the modeled
+ * skaters' per-shot rates (`goal_scale` = full / modeled shots per strength). Null for a full pool.
+ */
+export function computeMissingSkaterCoverage(args: {
+  projectedSkaterCount: number;
+  modeledShare: number;
+  fullToiSeconds: SkaterStrengthTriple;
+  modeledToiSeconds: SkaterStrengthTriple;
+  fullShots: SkaterStrengthTriple;
+  modeledShots: SkaterStrengthTriple;
+  fullPoolSkaterCount?: number;
+}) {
+  if (!(args.modeledShare < 1)) return null;
+  const strengths = ["es", "pp", "pk"] as const;
+  const each = (pick: (s: (typeof strengths)[number]) => number) =>
+    Object.fromEntries(strengths.map((s) => [s, pick(s)])) as SkaterStrengthTriple;
   return {
-    targetSeconds,
-    wasCapped: targetSeconds < canonicalTarget,
-    capReason: targetSeconds < canonicalTarget ? "undersized_projected_pool" : null
+    projected_skater_count: args.projectedSkaterCount,
+    full_pool_skater_count: args.fullPoolSkaterCount ?? SKATER_POOL_TARGET_COUNT,
+    modeled_share: Number(args.modeledShare.toFixed(4)),
+    unmodeled_toi_seconds: each((s) => Math.max(0, args.fullToiSeconds[s] - args.modeledToiSeconds[s])),
+    unmodeled_shots: each((s) => Math.max(0, args.fullShots[s] - args.modeledShots[s])),
+    goal_scale: each((s) => (args.modeledShots[s] > 0 ? Math.max(1, args.fullShots[s] / args.modeledShots[s]) : 1)),
+    basis: "absent_skaters_convert_at_modeled_per_shot_rates" as const,
   };
 }

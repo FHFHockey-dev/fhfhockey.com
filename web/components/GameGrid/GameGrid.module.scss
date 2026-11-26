@@ -5244,6 +5244,19 @@
   i { width: 4px; height: 4px; border-radius: 50%; background: v.$success-color; }
   i:last-child { background: v.$danger-color; }
 }
+.compactSkaterHeader {
+  .matchupKey {
+    display: grid;
+    grid-template-columns: 4px minmax(0, auto) 4px;
+    column-gap: 2px;
+    padding-inline: 2px;
+    white-space: normal;
+  }
+
+  .masterMetricHeader .masterSortLabelStack {
+    letter-spacing: -0.03em;
+  }
+}
 .masterMetricHeader .masterSortButton { padding-inline: 2px; font-size: .75rem; }
 .masterMetricHeader .masterMetricEyebrow { font-size: .625rem; letter-spacing: 0; }
 

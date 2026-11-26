@@ -546,6 +546,95 @@ SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
     expect(resendSendMock).not.toHaveBeenCalled();
   });
 
+  it("finds older producer receipts for each scheduled forecast GET without changing current failure health", async () => {
+    const routePath = "/api/v1/game-predictions/forecast";
+    const producer = "game-predictions-forecast";
+    const jobs = [7, 3, 1, 0].map((horizon, index) => ({
+      jobid: 383 + index, jobname: `${producer}-h${horizon}`, active: true, method: "GET",
+      schedule: `${35 + index} 11 * * *`,
+      route: `${routePath}?fromOffsetDays=${horizon}&toOffsetDays=${horizon}&limit=16&maxRuntimeMs=240000`,
+    }));
+    readFileMock.mockResolvedValue('```json\n' + JSON.stringify(jobs) + '\n```');
+    cronJobReportSelectMock.mockResolvedValue({ data: jobs.map((job, index) => ({
+      jobid: job.jobid, jobname: job.jobname, scheduled_time: `2026-03-20T11:${35 + index}:00.000Z`,
+      status: "failed", return_message: "synthetic scheduler failure",
+      sql_text: `SELECT net.http_get(url := 'https://example.invalid${job.route}');`,
+    })), error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [], error: null });
+
+    const receipt = (job_name: string, run_time: string, method: string, url: string) => ({
+      job_name, status: "success", run_time, rows_affected: 42,
+      details: { method, url, statusCode: 200, response: { success: true, rowsUpserted: 42 } },
+    });
+    const matchingTimes = jobs.map((_, index) => `2026-03-16T11:${35 + index}:00.000Z`);
+    const matches = jobs.map((job, index) => {
+      const url = new URL(job.route, "https://example.invalid");
+      url.searchParams.sort();
+      return receipt(producer, matchingTimes[index], "GET", url.pathname + url.search);
+    });
+    const decoys = [
+      ...jobs.map(job => receipt(producer, "2026-03-18T11:40:00.000Z", "POST", job.route)),
+      receipt(producer, "2026-03-18T11:41:00.000Z", "GET", jobs[0].route.replace("limit=16", "limit=17")),
+      receipt("unrelated-job", "2026-03-18T11:42:00.000Z", "GET", jobs[0].route),
+    ];
+    cronJobAuditHistorySelectMock.mockResolvedValue({ data: [...decoys, ...matches], error: null });
+
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+
+    expect(res.statusCode).toBe(200);
+    const historyQuery = cronJobAuditHistorySelectMock.mock.calls[0]?.[2];
+    expect(historyQuery).toMatchObject({
+      since: "2026-02-18T12:10:00.000Z", until: "2026-03-19T12:10:00.000Z",
+      statuses: ["success", "succeeded", "ok", "passed"],
+    });
+    expect(new Set(historyQuery.jobNames)).toEqual(new Set([...jobs.map(job => job.jobname), routePath, producer]));
+    expect(res.body.sources.successHistory).toMatchObject({ complete: true, expectedCount: 9 });
+    expect(res.body.counts).toMatchObject({
+      cronFailures: 4, jobsFailingLast: 4, jobsOkLast: 0, jobsMissingLast: 0,
+      auditRuns: 0, auditSuccesses: 0, auditFailures: 0,
+    });
+    expect(res.body.totals).toMatchObject({ rowsUpserted: null });
+    const reports = cronAuditEmailMock.mock.calls.at(-1)?.[0].audits;
+    jobs.forEach((job, index) => {
+      expect(reports.find((row: any) => row.jobName === job.jobname)).toMatchObject({
+        status: "failure", method: "GET", rowsUpserted: null,
+        lastKnownSuccessDisplay: expect.stringContaining(matchingTimes[index]),
+      });
+    });
+  });
+
+  it.each([
+    { name: "game-predictions-forecast-h7", routePath: "/api/v1/game-predictions/forecast",
+      route: "/api/v1/game-predictions/forecast?fromOffsetDays=7&toOffsetDays=7&limit=16&maxRuntimeMs=240000",
+      isForecast: true },
+    { name: "line-refresh", routePath: "/api/v1/db/update-line-combinations",
+      route: "/api/v1/db/update-line-combinations?count=10", isForecast: false },
+  ])("retains route-labeled scheduler history for $name", async ({ name, routePath, route, isForecast }) => {
+    const at = "2026-03-16T11:37:00.000Z";
+    const job = { jobid: 383, jobname: name, active: true, schedule: "35 11 * * *", method: "GET", route };
+    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([job]) + '\n```');
+    cronJobReportSelectMock.mockResolvedValue({ data: [{
+      jobid: job.jobid, jobname: name, scheduled_time: "2026-03-20T11:35:00.000Z",
+      status: "failed", return_message: "synthetic scheduler failure",
+      sql_text: `SELECT net.http_get(url := 'https://example.invalid${route}');`,
+    }], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditHistorySelectMock.mockResolvedValue({ data: [{
+      job_name: routePath, status: "success", run_time: at, details: { method: "GET", url: route },
+    }], error: null });
+
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+
+    expect(res.statusCode).toBe(200);
+    const historyQuery = cronJobAuditHistorySelectMock.mock.calls[0]?.[2];
+    expect(historyQuery?.jobNames).toEqual(expect.arrayContaining([name, routePath]));
+    if (!isForecast) expect(historyQuery.jobNames).not.toContain("game-predictions-forecast");
+    const row = cronAuditEmailMock.mock.calls.at(-1)?.[0].audits.find((entry: any) => entry.jobName === name);
+    expect(row).toMatchObject({ status: "failure", lastKnownSuccessDisplay: expect.stringContaining(at) });
+  });
+
   it("reads paginated success history beyond 24h without borrowing another query or method", async () => {
     readFileMock.mockResolvedValue(`SELECT cron.schedule('h3','0 12 * * *',$$select net.http_post(url:='https://fhfhockey.com/api/v1/game-predictions/forecast?horizonDays=3&mode=daily');$$);`);
     cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });

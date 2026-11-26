@@ -78,11 +78,12 @@
 // Current Roster: Players and Bench days are tabs; Players shows by default.
 .rosterViews { display: flex; gap: v.$space-xs; margin-bottom: v.$space-xs; }
 .rosterViews button { min-height: 32px; padding: 4px 12px; font-size: s.$text-sm; }
-.rosterViews button[aria-pressed="true"] { background: v.$primary-color; color: s.$on-accent; font-weight: s.$weight-bold; }
-.candidateViews button[aria-pressed="true"] { background: v.$primary-color; color: s.$on-accent; font-weight: s.$weight-bold; }
+.rosterViews button[aria-pressed="true"] { @include s.toggle-on; }
+.candidateViews button[aria-pressed="true"] { @include s.toggle-on; }
 .candidateFilters .field { flex: 1 1 90px; min-width: 0; }
 .candidateFilters .field:first-child { flex-basis: 100%; }
 .candidateFilters :is(input, select) { width: 100%; }
+.candidateFilters > .candidateViews { flex-basis: 100%; } // grouping sits on its own line under the fields
 .candidateRow { flex-wrap: wrap; }
 .candidateRow > button:first-child { flex: 1 1 130px; }
 .candidateMetrics { flex: 1 0 100%; font-variant-numeric: tabular-nums; }
@@ -127,7 +128,7 @@
 .settingsGrid :is(input, select, textarea) { width: 100%; }
 .dateStrip { display: flex; gap: v.$space-xs; overflow-x: auto; padding-bottom: v.$space-sm; }
 .dateStrip button { white-space: nowrap; }
-.dateStrip .selectedDate, .mobileTabs .activeTab { background: v.$primary-color; color: s.$on-accent; border-color: v.$primary-color; font-weight: s.$weight-bold; }
+.dateStrip .selectedDate, .mobileTabs .activeTab { @include s.toggle-on; border-color: v.$primary-color; }
 .dateSummary { display: flex; justify-content: space-between; gap: v.$space-sm; padding: v.$space-sm 0; color: s.$ink-muted; }
 .dateSummary strong { color: s.$ink-strong; }
 .gridScroll { overflow-x: auto; border: 1px solid v.$draft-border; border-radius: s.$radius-small; }
@@ -140,6 +141,7 @@
 .streamingGrid td small { color: s.$ink-muted; }
 .streamingGrid .planFromTable { table-layout: fixed; width: 100%; min-width: 720px; }
 .streamingGrid .planFromTable td, .streamingGrid .planFromTable th { overflow: hidden; text-overflow: ellipsis; }
+.streamingGrid td :is(strong, small) { overflow: hidden; text-overflow: ellipsis; } // block lines need their own ellipsis
 .streamingGrid .planFromSlotColumn { width: 96px; }
 .streamingGrid .planFromRow td, .streamingGrid .planFromRow th { padding-block: 0; }
 .streamingGrid .greyedDay { opacity: .4; }
@@ -191,7 +193,10 @@
 .metrics article:nth-child(3), .metrics article:nth-child(5) { --position-color: #{v.$color-gold-400}; }
 .metrics article:nth-child(6) { --position-color: #{v.$color-coral-500}; }
 .metrics article:nth-child(7) { --position-color: #{v.$color-teal-500}; }
-.workspace .primaryAction { background: v.$primary-color; border-color: v.$primary-color; color: s.$on-accent; font-weight: s.$weight-bold; }
+.workspace .primaryAction { @include s.house-button; font-weight: s.$weight-bold; }
+// Every other action button too (TJ 2026-11-23): toggles, tabs, week arrows, menu items, the range bar and cell/name
+// buttons keep their own looks.
+.workspace button:not([aria-pressed], [aria-current], [class], .mobileTabs button, .weekNav button, .navMenuPanel button, .navWeek button, .commandActions button, .navStepper button) { @include s.house-button; }
 .workspace :is(input, select, textarea) { color-scheme: dark; }
 .workspace input[type="checkbox"] { accent-color: v.$primary-color; }
 .workspace * { scrollbar-width: thin; scrollbar-color: v.$color-neutral-400 v.$draft-surface; }
@@ -201,7 +206,7 @@
 .dataHealth summary span { margin-left: v.$space-sm; color: s.$ink-muted; }
 .dataHealth ul { margin: 0; padding: v.$space-sm v.$space-lg; max-height: 112px; overflow: auto; color: s.$ink-muted; line-height: 1.5; border-top: 1px solid v.$draft-border; }
 .viewSwitch { display: flex; flex-shrink: 0; gap: v.$space-xs; padding: v.$space-sm; border-bottom: 1px solid v.$draft-border; font-size: s.$text-md; }
-.viewSwitch button[aria-pressed="true"] { background: v.$primary-color; border-color: v.$primary-color; color: s.$on-accent; font-weight: s.$weight-bold; }
+.viewSwitch button[aria-pressed="true"] { @include s.toggle-on; border-color: v.$primary-color; }
 .mobileTabs { display: none; }
 .mobileSetupToggle { display: none; }
 // Native borders use the shared width/radius so the content-facing edge stays straight.
@@ -289,7 +294,6 @@
   .viewSwitch button { min-height: 28px; padding: 2px 6px; }
   .itineraryPanel .panelHead > span { display: none; }
   .itineraryPanel .viewSwitch { border: 0; padding: 0; margin-left: auto; }
-  .panels { grid-template-columns: minmax(300px, 26%) minmax(0, 1fr) minmax(300px, 24%); }
   .panelHead h2 { letter-spacing: .035em; }
   .rosterRow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto 26px; padding-block: 5px; }
   .rosterRow .playerButton, .rosterRow .playerEvidence { grid-column: 1 / -1; }
@@ -442,14 +446,13 @@ details.alternative .candidateRow button { width: auto; }
   .topbar { min-height: 54px; gap: v.$space-sm; }
   .topbar > .actions { gap: v.$space-xs; }
   .itineraryPanel { border-color: v.$primary-color; }
-  .panels { grid-template-columns: minmax(320px, 28.5%) minmax(0, 1fr) minmax(320px, 28.5%); }
   .weekSummary .metrics article { grid-template-columns: minmax(0, 1fr) auto; padding: v.$space-xs v.$space-sm; }
   .weekSummary .metrics article:nth-child(n + 4) { padding: 2px v.$space-xs; }
   .weekSummary .metrics article:nth-child(n + 4) .metricLabel { min-height: 24px; }
   .weekSummary .metrics article:nth-child(n + 4) .metricLabel button { width: 24px; height: 24px; min-height: 24px; }
   .weekSummary .metrics article:nth-child(n + 4) .metricLabel button { position: relative; }
   .weekSummary .metrics article:nth-child(n + 4) .metricLabel button::after { content: ""; position: absolute; inset: -8px; }
-  .rosterColumns, .rosterRow[data-dense-roster] { grid-template-columns: minmax(0, 1.4fr) minmax(128px, 1fr) 40px 40px; }
+  .rosterColumns, .rosterRow[data-dense-roster] { grid-template-columns: minmax(0, 1.4fr) minmax(128px, 1fr) 46px 28px; }
   .rosterRow[data-dense-roster] .playerButton, .rosterRow[data-dense-roster] .rosterContribution summary, .rosterProtection, .rosterManagement > summary { min-height: 32px; }
   .itineraryPanel .panelHead { flex-wrap: wrap; }
   .itineraryPanel .panelHead h2 { white-space: nowrap; }
@@ -484,7 +487,12 @@ details.alternative .candidateRow button { width: auto; }
 .updatedAt { color: s.$ink-muted; font-size: s.$text-sm; white-space: nowrap; }
 .panelHead .panelSub { flex: 1; min-width: 0; color: s.$ink-muted; font-size: s.$text-sm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .panelHead .viewSwitch { padding: 0; border-bottom: 0; }
-.optimizeButton { background: linear-gradient(to right, v.$primary-color, v.$secondary-color); border-color: v.$primary-color; color: s.$on-accent; font-weight: s.$weight-bold; white-space: nowrap; }
+// The page's main action is the house button (fhfh-styles §9.4): blue text on the 12% tint, 2px ring, no gradient. The old
+// gradient never painted: `.workspace button` outranked it.
+// On the lighter panel head the 12% tint gave 4.45:1; an opaque 12% mix over the darker surface keeps it above 4.5:1.
+.workspace .optimizeButton { border: 2px solid v.$primary-color; background: color-mix(in srgb, #{v.$primary-color} 12%, #{v.$draft-surface}); color: v.$primary-color; font-weight: s.$weight-bold; white-space: nowrap; }
+.workspace .optimizeButton:hover:not(:disabled) { border-color: v.$primary-color; background: v.$button-tint-hover; }
+.workspace .optimizeButton[aria-pressed="true"] { @include s.toggle-on; }
 .goalieChip { padding: 2px 8px; border: 1px solid v.$success-color; border-radius: s.$radius-round; background: transparent; color: s.$good; font: s.$weight-bold s.$text-sm v.$font-family-numbers; white-space: nowrap; }
 .timingPrompt { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-xs; margin: 0; padding: v.$space-xs v.$space-sm; border-bottom: 1px solid v.$draft-border; color: s.$ink; font-size: s.$text-sm; }
 .weekSummary .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.25fr); gap: v.$space-xs; }
@@ -517,14 +525,15 @@ details.alternative .candidateRow button { width: auto; }
 .moreTools[open] { display: flex; flex-direction: column; gap: v.$space-xs; }
 @media (max-width: 900px) { .weekSummary .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 // Give the week grid room for seven days: a narrower roster column, the grid in the middle.
-@media (min-width: 1101px) { .panels { grid-template-columns: minmax(250px, 21%) minmax(0, 1fr) minmax(300px, 25%); } }
+// The one desktop split: the roster takes the week grid's spare width so player names read in full at 1440 (TJ 2026-11-23).
+@media (min-width: 1101px) { .panels { grid-template-columns: minmax(340px, 27%) minmax(0, 1fr) minmax(300px, 24%); } }
 
 // One command bar (2026-10-19): title, provider, week, search, status, actions and a settings menu in a single row,
 // so the panels below get the height. Notices sit on one line and open as an overlay on hover or keyboard focus.
-.navBar { position: relative; z-index: 20; flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm; min-height: 44px; padding: 4px v.$space-sm 4px 14px; border: 1px solid v.$draft-border; border-radius: s.$radius-card; background: v.$draft-surface; }
-.navBar::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; border-radius: s.$radius-card 0 0 s.$radius-card; background: v.$primary-color; pointer-events: none; }
+// A true 4px left rule (TJ 2026-11-23), not a ::before rail; its left radius equals the rule (fhfh-styles §2.7 variant).
+.navBar { position: relative; z-index: 20; flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm; min-height: 44px; padding: 4px v.$space-sm 4px 14px; border: 1px solid v.$draft-border; border-left: 4px solid v.$primary-color; border-radius: 4px s.$radius-card s.$radius-card 4px; background: v.$draft-surface; }
 .navTitle { margin: 0; flex-shrink: 0; color: s.$ink-strong; font: 400 #{s.$text-lg}/1 v.$font-family-accent; /* Train One has one weight */ letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
-.navBar .providerControl { flex-shrink: 0; gap: 6px; min-height: 32px; padding: 2px 8px 2px 3px; border: 1px solid v.$draft-border; border-radius: s.$radius-small; background: v.$draft-input; text-align: left; }
+.navBar .providerControl { flex-shrink: 0; gap: 6px; min-height: 32px; padding: 2px 8px; /* even sides (TJ 2026-11-23) */ border: 1px solid v.$draft-border; border-radius: s.$radius-small; background: v.$draft-input; text-align: left; }
 .navBar .providerMark { width: 26px; height: 26px; font-size: s.$text-sm; }
 .navBar .providerControl strong { font-size: s.$text-sm; line-height: 1.15; }
 .navBar .providerControl small { margin-top: 0; font-size: s.$text-micro; line-height: 1.15; white-space: nowrap; }
@@ -598,8 +607,8 @@ details.alternative .candidateRow button { width: auto; }
 .planView[hidden] { display: none; }
 // Lineup goal: most starts vs best projected points (drives the grid, summary, Optimize and Best Fit ranking).
 .objectiveSwitch { display: flex; flex-shrink: 0; gap: 2px; padding: 2px; border: 1px solid v.$draft-border; border-radius: s.$radius-small; }
-.objectiveSwitch button { min-height: 26px; padding: 2px 8px; border: 0; background: transparent; color: s.$ink-muted; font-size: s.$text-xs; white-space: nowrap; }
-.objectiveSwitch button[aria-pressed="true"] { background: v.$primary-color; color: s.$on-accent; font-weight: s.$weight-bold; }
+.objectiveSwitch button { min-height: 26px; padding: 2px 8px; border: 0; border-radius: calc(#{s.$radius-small} - 3px); /* nested corner: the pill radius minus its 2px padding and 1px border */ background: transparent; color: s.$ink-muted; font-size: s.$text-xs; white-space: nowrap; }
+.objectiveSwitch button[aria-pressed="true"] { @include s.toggle-on; }
 .objectiveSwitch button:disabled { opacity: .45; cursor: not-allowed; }
 /* First visit with no manual roster: one clear next step instead of an empty grid. */
 .emptyRoster { display: grid; justify-items: start; gap: 6px; margin-bottom: v.$space-sm; padding: 12px 14px; border: 1px solid rgba(v.$primary-color, 0.45); border-radius: s.$radius-card; background: rgba(v.$primary-color, 0.06); color: s.$ink; font-size: s.$text-sm; line-height: 1.4; }
@@ -675,8 +684,8 @@ details.alternative .candidateRow button { width: auto; }
 .candidatePanel .confirmGate button { flex: none; min-height: 26px; padding: 2px 10px; font-size: s.$text-sm; }
 .candidateToolbar { align-items: flex-start; margin-bottom: 4px; }
 .candidateToolbar .candidateViews { display: inline-flex; flex-wrap: nowrap; gap: 2px; margin: 0; padding: 2px; border: 1px solid v.$draft-border; border-radius: s.$radius-small; }
-.candidateToolbar .candidateViews button { min-height: 28px; padding: 2px 10px; border: 0; background: transparent; color: s.$ink-muted; font-size: s.$text-sm; white-space: nowrap; }
-.candidateToolbar .candidateViews button[aria-pressed="true"] { background: v.$primary-color; color: s.$on-accent; font-weight: s.$weight-bold; }
+.candidateToolbar .candidateViews button { min-height: 28px; padding: 2px 10px; border: 0; border-radius: calc(#{s.$radius-small} - 3px); background: transparent; color: s.$ink-muted; font-size: s.$text-sm; white-space: nowrap; }
+.candidateToolbar .candidateViews button[aria-pressed="true"] { @include s.toggle-on; }
 .candidateToolbar > .candidateFilterDetails { margin: 0 0 0 auto; }
 .candidateToolbar > .candidateFilterDetails > summary { min-height: 34px; padding: 0 10px; border: 1px solid v.$draft-border; border-radius: s.$radius-small; font-size: s.$text-sm; }
 .candidateToolbar > .candidateFilterDetails[open] { flex-basis: 100%; margin-left: 0; }
@@ -686,4 +695,130 @@ details.alternative .candidateRow button { width: auto; }
 .candidateStatus > p { margin: 0; }
 @media (max-width: 640px) {
   .candidateToolbar .candidateViews button, .candidateToolbar > .candidateFilterDetails > summary, .candidatePanel .confirmGate button { min-height: 44px; }
+  // The sort pill and Filters share the Week header's 44px (TJ 2026-11-23): 38px buttons + 2px padding + 1px border, each side.
+  .candidateToolbar .candidateViews button { min-height: 38px; }
+  .candidateToolbar > .candidateFilterDetails > summary { min-height: 44px; }
+}
+
+.panelHead :is(.headLong, .headShort) { color: inherit; font-size: inherit; }
+.panelHead .viewTiny { color: inherit; } // the phone view label takes its button's ink (white when pressed), not the caption grey // part of its button's label, not a panel-head caption
+.headShort { display: none; }
+// One-row week header on desktop (TJ 2026-11-23): each button shows a short word (aria-hidden) while its full label stays
+// as visually hidden text, so the accessible name is always the full sentence-case label and the row fits beside the title.
+@media (min-width: 1101px) {
+  .itineraryPanel .panelHead { gap: v.$space-xs; }
+  .itineraryPanel .panelHead h2 { flex-shrink: 0; }
+  .itineraryPanel .panelHead .headLong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .itineraryPanel .panelHead .headShort { display: inline; }
+  .itineraryPanel .panelHead .optimizeButton { flex-shrink: 0; min-height: 28px; padding: 2px 8px; font-size: s.$text-xs; }
+  .itineraryPanel .panelHead .objectiveSwitch { margin-left: auto; }
+  .itineraryPanel .panelHead .viewSwitch { margin-left: 0; }
+}
+@media (min-width: 1280px) { .itineraryPanel .panelHead { flex-wrap: nowrap; } }
+// Best Fit's input gate stacks (TJ 2026-11-23): the reason on top, then one line per open input with its buttons, so
+// several open inputs never squeeze into side-by-side slivers or wrap a button label onto three lines.
+.candidatePanel .confirmGate { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 6px; }
+.candidatePanel .confirmGate > div { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.candidatePanel .confirmGate > div > span { flex: 1 1 160px; } // its button sits beside the text when it fits (TJ 2026-11-23)
+// One open input whose reason is the gate's own text: that input's lone button sits beside the reason.
+.candidatePanel .confirmGate:has(> div:only-of-type > button:only-child) { flex-direction: row; align-items: center; }
+.candidatePanel .confirmGate:has(> div:only-of-type > button:only-child) > span { flex: 1 1 0; }
+.candidatePanel .confirmGate button { white-space: nowrap; }
+// Drop safety (TJ 2026-11-23): a drop-eligible player's fresh ownership beside his team and positions.
+.ownershipNote { margin-left: 4px; color: s.$ink-muted; font-size: s.$text-micro; white-space: nowrap; }
+@media (max-width: 640px) { .ownedWord { display: none; } } // phones show "96%"; the tooltip keeps the full facts
+// The roster's destructive action keeps the house button shape in coral (TJ 2026-11-23).
+.workspace .removeButton { border: 2px solid s.$bad; background: color-mix(in srgb, #{s.$bad} 12%, transparent); color: s.$bad; }
+.workspace .removeButton:hover:not(:disabled) { border-color: s.$bad; background: color-mix(in srgb, #{s.$bad} 20%, transparent); }
+// Phone touch targets (WCAG 2.5.8 and RSO's 44px phone rule): disclosure rows were 15-16px tall; the goal toggles, the
+// bar's Undo/Matchup, the source control and search were 26-32px.
+@media (max-width: 640px) {
+  .workspace details > summary:not(.rosterRow *, .mobileTabs *, .candidateToolbar *, .navBar *) { box-sizing: border-box; min-height: 32px; padding-block: 6px; } // not the in-row toggles; 32px (TJ) is above AA 24px
+  .workspace .objectiveSwitch button, .workspace .navBar .commandActions button, .workspace .navBar .providerControl, .workspace .navBar input { min-height: 44px; }
+}
+@media (max-width: 640px) { .itineraryPanel .panelHead .panelSub { display: none; } } // 'Best lineup for each day' only truncated beside the goal switch
+// Phone command bar (TJ 2026-11-23): title, Undo and the menu share the first row; league and week follow. The header
+// search (Best Fit's Find covers it) and the Matchup button (the Matchup tab covers it) leave phones.
+@media (max-width: 640px) {
+  .navBar { row-gap: 6px; }
+  .navBar .navTitle { order: 0; flex: 1 1 0; min-width: 0; font-size: s.$text-sm; letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; padding-left: 9px; } // the title starts over the provider mark: box border 1px + padding 8px (TJ)
+  .navBar .commandActions { order: 1; flex: 0 0 auto; }
+  .navBar .navMenu { order: 2; }
+  .navBar .navContext { order: 3; }
+  .navBar .commandSearch, .navBar .matchupToggle { display: none; }
+}
+// Phone Best Fit toolbar (TJ 2026-11-23): [Points | Starts] and [Filters n] on one row; the filter form drops down over the
+// list as a two-column panel holding search, team, position, the alternatives count and grouping.
+.phoneOnly { display: none; }
+.filterCount { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-left: 6px; padding: 0 5px; border-radius: s.$radius-round; background: v.$primary-color-opaque; color: v.$color-white; font-size: s.$text-micro; }
+@media (max-width: 640px) {
+  .headerShowCount { display: none; }
+  .phoneOnly { display: flex; }
+  .candidateToolbar { position: relative; flex-wrap: nowrap; }
+  .candidateToolbar .candidateViews .headLong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .candidateToolbar .headShort { display: inline; }
+  .candidateToolbar > .candidateFilterDetails > summary .headLong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .candidateToolbar > .candidateFilterDetails[open] { flex-basis: auto; margin-left: auto; }
+  .candidateToolbar > .candidateFilterDetails[open] > summary { margin-bottom: 0; }
+  .candidateToolbar > .candidateFilterDetails[open] > :not(summary) { position: absolute; left: 0; right: 0; z-index: 6; }
+  .candidateToolbar > .candidateFilterDetails[open] > .candidateFilters { top: calc(100% + 6px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: v.$space-sm; padding: v.$space-sm; border: 1px solid v.$draft-border; border-radius: s.$radius-card; background: v.$draft-surface-raised; box-shadow: v.$shadow-panel; }
+  .candidateToolbar > .candidateFilterDetails[open] > .candidateFilters .field:first-child { grid-column: 1 / -1; }
+  .candidateToolbar > .candidateFilterDetails[open] > .candidateFilters > .candidateViews { align-self: end; justify-self: start; } // beside Plans to compare
+}
+// Phone Week controls (TJ 2026-11-23): title, goal switch and Optimize on one row with the short words, the view switch
+// on the next; the day strip shows compact "Mon 23" chips and scrolls sideways.
+@media (max-width: 640px) {
+  .itineraryPanel .panelHead { flex-wrap: wrap; row-gap: 6px; }
+  .itineraryPanel .panelHead .objectiveSwitch { margin-left: auto; }
+  .itineraryPanel .panelHead .viewSwitch { flex: 1 1 100%; justify-content: space-between; }
+  .itineraryPanel .panelHead .viewSwitch button { flex: 1 1 auto; }
+  :is(.itineraryPanel .panelHead, .dateStrip) .headLong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  :is(.itineraryPanel .panelHead, .dateStrip) .headShort { display: inline; }
+  .dateStrip { scroll-snap-type: x proximity; }
+  .dateStrip button { flex: 0 0 auto; scroll-snap-align: start; }
+}
+// Phone view switch (TJ 2026-11-23): an icon over a tiny word in each segment; desktop keeps its words.
+.viewTiny { display: none; }
+@media (max-width: 640px) {
+  .itineraryPanel .panelHead .viewSwitch .headShort { display: none; }
+  .itineraryPanel .panelHead .viewSwitch .viewTiny { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; font-size: s.$text-micro; line-height: 1; }
+  .itineraryPanel .panelHead .viewSwitch button { min-height: 44px; padding: 4px 6px; }
+}
+// Phone Roster tab (TJ 2026-11-23): the week totals sit at the top, under the panel title.
+@media (max-width: 640px) {
+  .rosterPanel .panelHead { order: -2; }
+  .rosterPanel .rosterSummary { order: -1; border-top: 0; border-bottom: 1px solid v.$draft-border; }
+}
+// Phone Best Fit toolbar stays pinned under the view tabs while the cards scroll (TJ 2026-11-23).
+@media (max-width: 640px) {
+  .candidateToolbar { position: sticky; top: calc(56px + 52px); z-index: 4; padding-block: 6px; background: v.$draft-surface; } // site header 56 + view tabs 52
+}
+// Phone command bar, round 2 (TJ 2026-11-23): no inner box; provider and a week stepper share a row, the date range takes
+// its own; Current week gives way to the stepper. The menu glyph is centred and brand blue.
+.navStepper { display: none; }
+.navMenu > summary { color: s.$accent; line-height: 1; }
+@media (max-width: 640px) {
+  .navBar .navContext { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; border: 0; background: transparent; }
+  .navBar .navContext > * + * { border-left: 0; }
+  .navBar .navContext .providerControl { grid-column: 1; grid-row: 1; min-height: 44px; border: 1px solid v.$draft-border; border-radius: s.$radius-small; background: v.$draft-input; }
+  .navBar .navContext .navStepper { grid-column: 2; grid-row: 1; display: grid; grid-template-columns: 32px minmax(0, 1fr) 32px; align-items: stretch; border: 1px solid v.$draft-border; border-radius: s.$radius-small; background: v.$draft-input; overflow: hidden; }
+  .navStepper button { min-height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent; color: s.$accent; font-size: s.$text-lg; }
+  .navStepper button:disabled { color: s.$ink-muted; }
+  .navStepper .stepperWeek { position: relative; display: grid; min-width: 0; border-inline: 1px solid v.$draft-border; }
+  .navStepper select { width: 100%; min-height: 44px; padding: 0 6px; border: 0; border-radius: 0; background: transparent; text-align: center; text-align-last: center; }
+  // The current week carries a calendar-style dot under its label (TJ 2026-11-23) instead of '· now' text.
+  .navStepper .nowDot { position: absolute; bottom: 5px; left: 50%; width: 5px; height: 5px; border-radius: 50%; background: s.$accent; transform: translateX(-50%); pointer-events: none; }
+  .navBar .navContext .navWeek { grid-column: 1 / -1; grid-row: 2; border: 1px solid v.$draft-border; border-radius: s.$radius-small; background: v.$draft-input; }
+  .navBar .navContext .refreshButton { grid-column: 1 / -1; }
+  .navBar .navContext .navWeek .rangeButton { flex: 1 1 auto; min-height: 44px; }
+  .navBar .navContext .navWeek .currentWeekButton { display: none; }
+  .navMenu > summary { width: 44px; height: 44px; padding: 0; }
+  .navBar .commandActions button { padding-inline: 6px; } // the full title fits beside Undo and the 44px menu
+}
+// The goal pill and Optimize share one height (TJ 2026-11-23): 32px on wider screens, 44px on phones (38px buttons in
+// the pill's 2px padding and 1px border).
+.workspace .itineraryPanel .panelHead .optimizeButton { box-sizing: border-box; min-height: 32px; }
+@media (max-width: 640px) {
+  .workspace .itineraryPanel .objectiveSwitch button { min-height: 38px; }
+  .workspace .itineraryPanel .panelHead .optimizeButton { min-height: 44px; }
 }

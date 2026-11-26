@@ -4,7 +4,10 @@
 // Same look as the By player day slider. The padding puts each thumb stop over a day column's centre;
 // the track left of the thumb is greyed like the days it leaves out.
 .planFrom { box-sizing: border-box; width: 100%; padding-inline: calc(100% / (var(--slider-day-count) * 2) - 8px); }
-.planFrom input { --track: linear-gradient(to right, rgba(v.$color-neutral-400, .25) calc(var(--greyed) * 100%), #{v.$primary-color} calc(var(--greyed) * 100%));
+// Sass is not evaluated inside a custom property, so the greyed colour is computed here and interpolated (it reached the
+// browser as the literal `rgba(v.$color-neutral-400, .25)`, an invalid gradient that hid the whole track).
+$greyed-track: rgba(v.$color-neutral-400, .25);
+.planFrom input { --track: linear-gradient(to right, #{$greyed-track} calc(var(--greyed) * 100%), #{v.$primary-color} calc(var(--greyed) * 100%));
   appearance: none; display: block; width: 100%; height: 24px; min-width: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; accent-color: v.$primary-color; cursor: pointer; }
 .planFrom input:disabled { cursor: not-allowed; opacity: .55; }
 .planFrom input:focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }
@@ -13,3 +16,18 @@
 .planFrom input::-moz-range-track { height: 4px; border: 0; border-radius: s.$radius-round; background: var(--track); }
 .planFrom input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: v.$primary-color; }
 .caption { display: block; margin-bottom: 2px; color: s.$ink-muted; font-size: s.$text-xs; line-height: 1.2; text-align: right; }
+// One line (TJ 2026-11-23): a grey strip holds the track and the caption sits on it at the right, over the track's tail;
+// for a start on the last three days it moves to the left (data-late) so it never covers the handle.
+.planFrom { position: relative; border-radius: s.$radius-small; background: v.$draft-surface-raised; }
+.caption { position: absolute; top: 50%; right: 6px; margin: 0; padding: 0 6px; transform: translateY(-50%); border-radius: s.$radius-small; background: v.$draft-surface-raised; pointer-events: none; z-index: 1; }
+.planFrom[data-late] .caption { right: auto; left: 6px; }
+// The handle (TJ 2026-11-23): a gap in the track the width of the chosen day's column, bracketed and naming the day.
+// The native thumb stays the draggable, focusable control but is transparent and column-wide.
+.window { position: absolute; top: 3px; bottom: 3px; left: calc(var(--slider-value) * 100% / var(--slider-day-count)); width: calc(100% / var(--slider-day-count));
+  display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-inline: 2px solid v.$primary-color;
+  background: v.$draft-surface-raised; color: v.$primary-color; font: s.$weight-bold #{s.$text-micro}/1 v.$font-family-primary; text-transform: uppercase; letter-spacing: .04em; pointer-events: none; z-index: 1; }
+.planFrom input::-webkit-slider-thumb { width: 32px; height: 24px; margin-top: -10px; border-radius: 0; background: transparent; }
+.planFrom input::-moz-range-thumb { width: 32px; height: 24px; border-radius: 0; background: transparent; }
+// Keyboard focus rings the whole strip, not the input's inset track.
+.planFrom:has(input:focus-visible) { outline: 2px solid v.$focus-color; outline-offset: 2px; }
+.planFrom input:focus-visible { outline: none; }

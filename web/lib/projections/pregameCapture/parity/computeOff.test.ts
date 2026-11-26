@@ -7,6 +7,9 @@
  * Never re-record it from a changed writer. One TJ-approved re-record (2026-11-15, trend-band reader integration)
  * changed only the trend read and the renamed counter: tasks/artifacts/forge-pregame-capture-2026-11-14/trend-band-reader/
  * ORACLE-DIFF-20261115.md.
+ * A second re-record (2026-11-25, FORGE projection math H4/L1/M3) changed only the previous-game PBP completeness
+ * reads, forge_runs metrics and, where team 10 projects 17 skaters, its capped pool. Every difference and its approval
+ * status: tasks/artifacts/forge-projection-audit-2026-11-16/projection-math/ORACLE-DIFF-20261125.md.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

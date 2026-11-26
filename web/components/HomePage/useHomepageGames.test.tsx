@@ -47,6 +47,84 @@ describe("useHomepageGames", () => {
     expect(result.current.gamesHeaderText).toBe("Tomorrow's");
   });
 
+  it("keeps the server-rendered slate visible during same-date refresh but blocks a different date", async () => {
+    const today = moment().format("YYYY-MM-DD");
+    const tomorrow = moment(today).add(1, "day").format("YYYY-MM-DD");
+    let finishRefresh!: (response: Response) => void;
+    const refresh = new Promise<Response>((resolve) => { finishRefresh = resolve; });
+    const fetchMock = vi.fn()
+      .mockReturnValueOnce(refresh)
+      .mockImplementationOnce(() => new Promise(() => {}));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.mocked(Fetch).mockResolvedValue({
+      json: async () => ({ standings: [] }),
+    } as Response);
+
+    const { result } = renderHook(() =>
+      useHomepageGames({ initialGames: [{ id: 1 }], nextGameDate: today }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(`/api/v1/games?date=${today}`);
+    expect(result.current.games.map(({ id }) => id)).toEqual([1]);
+    expect(result.current.loading).toBe(false);
+
+    await act(async () => {
+      finishRefresh({ ok: true, json: async () => [{ id: 2 }] } as Response);
+    });
+    expect(result.current.games.map(({ id }) => id)).toEqual([2]);
+
+    act(() => result.current.changeDate(1));
+    expect(fetchMock).toHaveBeenCalledWith(`/api/v1/games?date=${tomorrow}`);
+    expect(result.current.loading).toBe(true);
+  });
+
+  it("does not render a server slate for a different selected date", () => {
+    const today = moment().format("YYYY-MM-DD");
+    const yesterday = moment(today).subtract(1, "day").format("YYYY-MM-DD");
+    const fetchMock = vi.fn(() => new Promise(() => {}));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(() =>
+      useHomepageGames({ initialGames: [{ id: 1 }], nextGameDate: yesterday }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(`/api/v1/games?date=${today}`);
+    expect(result.current.games).toEqual([]);
+    expect(result.current.loading).toBe(true);
+  });
+
+  it("keeps a late error for the original date from overwriting the newly selected date", async () => {
+    const today = moment().format("YYYY-MM-DD");
+    const tomorrow = moment(today).add(1, "day").format("YYYY-MM-DD");
+    let finishOriginal!: (response: Response) => void;
+    const original = new Promise<Response>((resolve) => { finishOriginal = resolve; });
+    const fetchMock = vi.fn()
+      .mockReturnValueOnce(original)
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: 2 }] });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.mocked(Fetch).mockResolvedValue({
+      json: async () => ({ standings: [] }),
+    } as Response);
+
+    const { result } = renderHook(() =>
+      useHomepageGames({ initialGames: [{ id: 1 }], nextGameDate: today }),
+    );
+    act(() => result.current.changeDate(1));
+    await waitFor(() => expect(result.current.games.map(({ id }) => id)).toEqual([2]));
+    expect(fetchMock).toHaveBeenCalledWith(`/api/v1/games?date=${tomorrow}`);
+
+    await act(async () => {
+      finishOriginal({
+        ok: false,
+        status: 503,
+        json: async () => ({ error: "Original date failed." }),
+      } as Response);
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.loading).toBe(false);
+    expect(result.current.games.map(({ id }) => id)).toEqual([2]);
+  });
+
   // W3-3 D5 / rule 23: official live SOG replaces the stored pair only as a
   // pair; one official side never sits beside one stored side.
   it.each([

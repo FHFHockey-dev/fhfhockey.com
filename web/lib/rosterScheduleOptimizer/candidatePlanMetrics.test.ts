@@ -423,6 +423,21 @@ describe("complete timed candidate metrics", () => {
     expect(plans).toEqual([]);
   });
 
+  it.each(["unbound", "production catalog"])("keeps a safe schedule-only swap when present native values are %s", denial => {
+    const snapshot = fixture(), intent = { ...defaultIntent(), protectedPlayerIds: ["a"] };
+    // The complete schedule proves b has no remaining game, so his drop value is known even under forecast denial.
+    snapshot.games = snapshot.games.filter(game => game.id !== "b");
+    snapshot.forecasts = snapshot.forecasts.filter(row => row.playerId !== "b");
+    const preferred = () => candidatePlanForSort(candidateMetrics(snapshot, intent).candidates
+      .find(candidate => candidate.playerId === "c")?.plans ?? [], "schedule");
+    expect(preferred()).toMatchObject({ netAGP: 1, netPoints: 2 });
+    if (denial === "unbound") snapshot.forecasts = snapshot.forecasts.map(({ rsoTargetBindings: _binding, ...row }) => row);
+    else vi.mocked(rsoPolicy.currentRsoUsePolicy).mockReturnValue(rsoPolicy.RSO_USE_POLICY);
+    const plan = preferred();
+    expect(plan).toMatchObject({ netAGP: 1, netPoints: null, steps: [{ dropPlayerId: "b" }] });
+    expect(evaluatePlan(snapshot, intent, "agp", plan!.steps, false)).toMatchObject({ legal: true, budgetVerified: true });
+  });
+
   it.each(["availability", "eligibility", "excluded", "no game"])("reports filtered input for %s without pretending it was evaluated", problem => {
     const snapshot = fixture(), intent = defaultIntent();
     if (problem === "availability") snapshot.players[2].availability = "unknown";

@@ -1,0 +1,182 @@
+{
+  "version": "forge-h10-first-night-rehearsal-v1",
+  "dispatches": [
+    {
+      "tick": "queued",
+      "httpStatus": 200,
+      "status": "continued",
+      "reason": null,
+      "runKey": "nightly:2026-11-24",
+      "scopes": 7320,
+      "jobs": {
+        "published": 4821
+      },
+      "gaps": {},
+      "ms": 200487,
+      "intervals": null
+    },
+    {
+      "tick": "queued",
+      "httpStatus": 200,
+      "status": "complete",
+      "reason": null,
+      "runKey": "nightly:2026-11-24",
+      "scopes": 7320,
+      "jobs": {
+        "published": 7320
+      },
+      "gaps": {},
+      "ms": 108826,
+      "intervals": {
+        "complete": true,
+        "pending": 0,
+        "written": 0,
+        "editionsWithGap": 0,
+        "gaps": {},
+        "ms": 0,
+        "skipped": "interval_table_not_migrated"
+      }
+    },
+    {
+      "tick": "queued",
+      "httpStatus": 200,
+      "status": "complete",
+      "reason": null,
+      "runKey": "nightly:2026-11-24",
+      "scopes": null,
+      "jobs": {
+        "published": 7320
+      },
+      "gaps": null,
+      "ms": 0,
+      "intervals": {
+        "calibrationId": null,
+        "skipped": "interval_table_not_migrated"
+      }
+    }
+  ],
+  "options": {
+    "intervals": false,
+    "frozen": "2026-11-24T17:15:00.000Z",
+    "budgetMs": 200000
+  },
+  "runDate": "2026-11-24",
+  "midRun": {
+    "ms": 1380,
+    "stdout": "Pager usage is off.\nNull display is \"(null)\".\nBEGIN\nSET\nSET\nOutput format is csv.\nOutput format is aligned.\nROLLBACK\nFORGE H10 first-night verification written to first-night-verify-2026-11-24",
+    "stderr": "",
+    "files": [
+      "00-parameters.txt",
+      "01-dispatches.txt",
+      "02-dispatch-list.txt",
+      "03-ticks.txt",
+      "04-freeze.txt",
+      "05-reconcile.txt",
+      "06-route-gaps.txt",
+      "07-missing.csv",
+      "08-extra.csv",
+      "09-duplicate.csv",
+      "10-lineage.txt",
+      "11-lineage-values.txt",
+      "12-uncertainty.txt",
+      "13-load.txt"
+    ],
+    "reconcile": " class  | horizon | expected | stored | missing | extra | duplicate_keys | numeric_complete | reported_gap | unpublished_vintages \n--------+---------+----------+--------+---------+-------+----------------+------------------+--------------+----------------------\n skater | 1       |      732 |    501 |     231 |     0 |              0 |              501 |            0 |                    0\n skater | 2       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 3       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 4       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 5       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 6       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 7       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 8       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 9       |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | 10      |      732 |    480 |     252 |     0 |              0 |              480 |            0 |                    0\n skater | all     |     7320 |   4821 |    2499 |     0 |              0 |             4821 |            0 |                    0\n goalie | 1       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 2       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 3       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 4       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 5       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 6       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 7       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 8       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 9       |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | 10      |       72 |      0 |      72 |     0 |              0 |                0 |            0 |                    0\n goalie | all     |      720 |      0 |     720 |     0 |              0 |                0 |            0 |                    0\n(22 rows)\n\n"
+  },
+  "complete": {
+    "ms": 2002,
+    "stdout": "Pager usage is off.\nNull display is \"(null)\".\nBEGIN\nSET\nSET\nOutput format is csv.\nOutput format is aligned.\nROLLBACK\nFORGE H10 first-night verification written to first-night-verify-2026-11-24",
+    "stderr": "",
+    "files": [
+      "00-parameters.txt",
+      "01-dispatches.txt",
+      "02-dispatch-list.txt",
+      "03-ticks.txt",
+      "04-freeze.txt",
+      "05-reconcile.txt",
+      "06-route-gaps.txt",
+      "07-missing.csv",
+      "08-extra.csv",
+      "09-duplicate.csv",
+      "10-lineage.txt",
+      "11-lineage-values.txt",
+      "12-uncertainty.txt",
+      "13-load.txt"
+    ],
+    "reconcile": " class  | horizon | expected | stored | missing | extra | duplicate_keys | numeric_complete | reported_gap | unpublished_vintages \n--------+---------+----------+--------+---------+-------+----------------+------------------+--------------+----------------------\n skater | 1       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 2       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 3       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 4       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 5       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 6       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 7       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 8       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 9       |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | 10      |      732 |    732 |       0 |     0 |              0 |              732 |            0 |                    0\n skater | all     |     7320 |   7320 |       0 |     0 |              0 |             7320 |            0 |                    0\n goalie | 1       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 2       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 3       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 4       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 5       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 6       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 7       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 8       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 9       |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | 10      |       72 |     72 |       0 |     0 |              0 |               72 |            0 |                    0\n goalie | all     |      720 |    720 |       0 |     0 |              0 |              720 |            0 |                    0\n(22 rows)\n\n"
+  },
+  "forecasts": {
+    "denominatorSha256": "ecf45beb182b23aa1584ce6fb08dbd21d7378f0f3f7670defac3c09274dd672a",
+    "frozenKeys": 8040,
+    "published": 8040,
+    "sha256": "6495509c7b88a9c21f513f5aa73706defb61c7d7371e54bab95a4b3d1f084890"
+  },
+  "storage": [
+    {
+      "table_name": "forge_v2_vintages",
+      "rows_estimate": "7320",
+      "bytes_with_indexes": "21651456",
+      "index_bytes": "3727360"
+    },
+    {
+      "table_name": "forge_v2_records",
+      "rows_estimate": "14808",
+      "bytes_with_indexes": "19243008",
+      "index_bytes": "6094848"
+    },
+    {
+      "table_name": "forge_v2_work_queue",
+      "rows_estimate": "320",
+      "bytes_with_indexes": "6184960",
+      "index_bytes": "32768"
+    },
+    {
+      "table_name": "forge_v2_publication_receipts",
+      "rows_estimate": "7320",
+      "bytes_with_indexes": "3874816",
+      "index_bytes": "2138112"
+    },
+    {
+      "table_name": "forge_v2_goalie_vintages",
+      "rows_estimate": "720",
+      "bytes_with_indexes": "2203648",
+      "index_bytes": "622592"
+    },
+    {
+      "table_name": "forge_v2_goalie_publication_receipts",
+      "rows_estimate": "720",
+      "bytes_with_indexes": "483328",
+      "index_bytes": "204800"
+    },
+    {
+      "table_name": "forge_h10_evidence",
+      "rows_estimate": "46",
+      "bytes_with_indexes": "131072",
+      "index_bytes": "49152"
+    },
+    {
+      "table_name": "forge_h10_dispatches",
+      "rows_estimate": "3",
+      "bytes_with_indexes": "65536",
+      "index_bytes": "49152"
+    },
+    {
+      "table_name": "forge_v2_archives",
+      "rows_estimate": "0",
+      "bytes_with_indexes": "24576",
+      "index_bytes": "16384"
+    },
+    {
+      "table_name": "forge_v2_archive_index",
+      "rows_estimate": "0",
+      "bytes_with_indexes": "24576",
+      "index_bytes": "16384"
+    },
+    {
+      "table_name": "forge_v2_artifacts",
+      "rows_estimate": "0",
+      "bytes_with_indexes": "16384",
+      "index_bytes": "8192"
+    }
+  ]
+}

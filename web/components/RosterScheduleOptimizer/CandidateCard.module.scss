@@ -5,7 +5,7 @@
 .card {
   @include panel.panel-shell($radius: v.$radius-card, $padding: 0, $variant: flat, $overflow: hidden);
   display: flex;
-  margin-block: 2px;
+  margin-block: 0 8px; // 8px between cards (TJ 2026-11-23)
   min-width: 0;
   font-size: s.$text-sm;
   font-variant-numeric: tabular-nums;
@@ -32,12 +32,10 @@
 .add, .drop { padding: 1px v.$space-xs; border-radius: s.$radius-small; font-size: s.$text-micro; font-weight: s.$weight-bold; letter-spacing: .04em; }
 .add { color: s.$on-accent; background: v.$success-color; }
 .drop { color: s.$on-accent; background: v.$danger-color; }
-.badge, .form, .chip { padding: 0 4px; border: v.$border-subtle; border-radius: s.$radius-small; color: s.$ink-muted; font-size: s.$text-micro; text-transform: uppercase; }
+.badge, .form { padding: 0 4px; border: v.$border-subtle; border-radius: s.$radius-small; color: s.$ink-muted; font-size: s.$text-micro; text-transform: uppercase; }
 .form[data-form="hot"] { color: s.$good; }
 .form[data-form="cold"] { color: s.$bad; }
-// Deployment chips (L1/D2, PP1): a stale lineup stays visible but muted and dashed, with its date in the title.
-.chip { color: s.$accent; font-weight: s.$weight-bold; }
-.chip[data-stale="true"] { border-style: dashed; color: s.$ink-muted; font-weight: s.$weight-regular; }
+.form[data-form] { border-color: currentColor; } // HOT/COLD keep their outline, in their own colour (TJ 2026-11-23)
 .metrics { display: flex; gap: v.$space-xs; flex: 0 0 auto; }
 .metrics > span { display: flex; flex-direction: column; align-items: flex-end; min-width: 44px; }
 .metrics strong { font-size: s.$text-md; font-weight: s.$weight-bold; line-height: 1.1; white-space: nowrap; color: s.$ink; }
@@ -86,3 +84,34 @@
 .otherDrop > summary { display: inline-flex; align-items: center; min-height: 24px; cursor: pointer; }
 .otherDrop > p { margin: 0; }
 @media (max-width: 1100px) { .otherDrop > summary { min-height: 44px; } }
+// Drop safety (TJ 2026-11-23): the dropped player's ownership and what the swap gives up.
+.dropFacts { flex-basis: 100%; line-height: 1.3; }
+.partial { font-style: normal; color: s.$warn; }
+// Text actions beside the name (TJ 2026-11-23); the card body keeps 10px from its sides.
+.topActions { display: flex; flex: 0 0 auto; flex-direction: column; align-items: flex-end; }
+// Drawn at the name row's 20px; on touch layouts the ::after (below) keeps a 44px hit area without growing the row.
+.topActions .textButton.textButton { position: relative; min-height: 20px !important; }
+@media (max-width: 1100px) {
+  .topActions .textButton::after, .move .name::after { content: ""; position: absolute; inset: -12px 0; }
+  .move .name.name { position: relative; min-height: 20px !important; }
+}
+.body.body { display: grid; gap: 4px; padding: 8px 10px; } // even rhythm: 8px border to name, 4px between rows (TJ 2026-11-23)
+.body > * { margin: 0; }
+// The notes stack tight: the panel's 8px paragraph margin left a gap above the box score and the reason.
+.notes.notes { display: grid; gap: 2px; }
+.notes.notes > p { margin: 0; }
+// Shared line/PP chip (TJ 2026-11-23): square corners, one tinted segment each, tier colour on text and tint. Each segment
+// is outlined in its own tier colour, so the line between them is coloured too, never grey (TJ 2026-11-23). A stale
+// lineup stays visible but dimmed, with its date in the title.
+.deployChip { display: inline-flex; overflow: hidden; border-radius: 0; font-size: s.$text-micro; line-height: 16px; }
+.deployChip > b { --tier: #{s.$bad}; padding: 0 3px; background: color-mix(in srgb, var(--tier) 14%, transparent); box-shadow: inset 0 0 0 1px var(--tier); color: var(--tier); font-weight: s.$weight-bold; }
+.deployChip > b { display: inline-flex; align-items: center; height: 16px; line-height: 1; } // text centred in its segment (TJ 2026-11-23)
+.deployChip > b[data-tier="1"] { --tier: #{s.$good}; }
+.deployChip > b[data-tier="2"] { --tier: #{v.$player-tier-good}; }
+.deployChip > b[data-tier="3"] { --tier: #{s.$warn}; }
+.deployChip > b[data-tier="4"] { --tier: #{v.$color-orange-400}; }
+.deployChip[data-stale="true"] { opacity: .6; }
+// A hot or cold player's whole card carries the form colour on its outline and a 6% wash (TJ 2026-11-23); injury
+// styling wins.
+.card[data-form="hot"]:not([data-injured="true"]) { border-color: s.$good; background: color-mix(in srgb, #{s.$good} 6%, #{v.$background-medium}); }
+.card[data-form="cold"]:not([data-injured="true"]) { border-color: s.$bad; background: color-mix(in srgb, #{s.$bad} 6%, #{v.$background-medium}); }

@@ -106,6 +106,55 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   const calendarPolicy = forecastCalendarPolicy(Number(process.env.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14));
   // VORP S3: the later-impact scenario's inputs, only with RSO_LATER_IMPACT_SCENARIO=on; off, nothing below changes.
   const scenarioOn = laterImpactScenarioEnabled();
+  // Ownership needs nothing read below, so its read starts now and overlaps the bridge instead of following it.
+  // Its own failure is handled where it is awaited (ownership then stays unknown); the bound stays a few seconds.
+  const ownershipRead = options.skipOwnership ? null : (() => {
+    const read = readYahooOwnership(db, query.seasonId, now, Math.min(deadline, Date.now() + 4000));
+    read.catch(() => undefined);
+    return read;
+  })();
+  // Line and PP deployment: one season- and date-bounded read of charted lineups, then one read of the PP units in each
+  // team's newest charted game. Like ownership it needs nothing read below, so it starts here beside the other reads and
+  // settles to null on any failure (never unhandled).
+  const deploymentRead = options.skipRecentForm ? null : (async () => {
+    const deploymentDeadline = Math.min(deadline, Date.now() + 4000);
+    const since = new Date(now.getTime() - DEPLOYMENT_DAYS * 86400000).toISOString().slice(0, 10);
+    const lineups = await pages(() => db.from("lineCombinations").select("gameId,teamId,forwards,defensemen,game:games!inner(date,seasonId)", { count: "exact" })
+      .eq("game.seasonId", query.seasonId).gte("game.date", since).lte("game.date", now.toISOString().slice(0, 10))
+      .order("gameId", { ascending: false }).order("teamId"), deploymentDeadline, DEPLOYMENT_LINE_ROWS, row => [row.gameId, row.teamId]);
+    const newest = new Map<number, Row>();
+    for (const row of lineups) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(row.game?.date))) continue;
+      const current = newest.get(Number(row.teamId));
+      if (!current || row.game.date > current.game.date) newest.set(Number(row.teamId), row);
+    }
+    const gameIds = [...new Set([...newest.values()].map(row => Number(row.gameId)))].sort((a, b) => a - b);
+    const units = gameIds.length ? await pages(() => db.from("powerPlayCombinations").select("gameId,playerId,unit", { count: "exact" })
+      .in("gameId", gameIds).order("gameId").order("playerId"), deploymentDeadline, gameIds.length * DEPLOYMENT_PP_ROWS_PER_GAME,
+    row => [row.gameId, row.playerId]) : [];
+    return { newest, units };
+  })().catch(() => null);
+  // Recent box scores: also independent of everything below, so their reads start here too; failures are handled where
+  // they are awaited, exactly as before.
+  const formRead = options.skipRecentForm ? null : (() => {
+    const formDeadline = Math.min(deadline, Date.now() + RECENT_FORM_BUDGET_MS);
+    const start = new Date(now.getTime() - RECENT_FORM_DAYS * 86400000).toISOString().slice(0, 10);
+    const cutoff = new Date(now.getTime() - 24 * 3600000).toISOString().slice(0, 10);
+    // One newest-first date-window read per table for every player (date and games_played indexes), each capped;
+    // every player keeps his last 10 played games (recentTotals). League weights are applied client-side.
+    // Skater rows are keyed by `id` (player and date are not unique there); goalie rows by their unique goalie and date.
+    // Pages are read concurrently, each re-checking the exact count; a write inside the window retries once (concurrentPages).
+    const window = (table: string, id: string, key: string[], columns: Readonly<Record<string, string>>, maximum: number) => concurrentPages(() => db.from(table)
+      .select([...new Set([...key, id, "date", "games_played", ...Object.values(columns)])].join(","), { count: "exact" })
+      .eq("season_id", query.seasonId).eq("games_played", 1).gte("date", start).lte("date", cutoff)
+      .order("date", { ascending: false }).order(key[0]), formDeadline, maximum, row => key.map(column => row[column]),
+    { concurrency: RECENT_FORM_CONCURRENCY });
+    const read = Promise.all([
+      window("wgo_skater_stats", "player_id", ["id"], SKATER_RECENT_COLUMNS, RECENT_SKATER_ROWS),
+      window("wgo_goalie_stats", "goalie_id", ["goalie_id", "date"], GOALIE_RECENT_COLUMNS, RECENT_GOALIE_ROWS)]);
+    read.catch(() => undefined);
+    return read;
+  })();
   const [{ players, games, scheduleRows, scheduleProblems, evidence: sources }, weeks, baseline, skaterParticipation, goalieParticipation,
     frozenSkaterParticipation, frozenGoalieParticipation, frozenGoalieStarts,
     observedSkaterParticipation, observedGoalieParticipation, observedGoalieStarts,
@@ -330,11 +379,10 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   sources.forecasts = evidence(bridged ? "Interim FORGE daily projections" : "selected FORGE game revisions", forecasts.map((row) => row.issuedAt).sort()[0] ?? null, query.seasonId, [...new Set(forecastProblems)]);
 
   // Ownership is platform-wide context, never league availability. This season-scoped view may be absent/stale.
-  if (options.skipOwnership) {
+  if (!ownershipRead) {
     sources.ownership = evidence("not_requested", null, query.seasonId, ["Ownership context was not requested by this consumer."]);
   } else try {
-    const ownershipDeadline = Math.min(deadline, Date.now() + 2000);
-    const { latest, observedOn: ownershipObservedOn } = await readYahooOwnership(db, query.seasonId, now, ownershipDeadline);
+    const { latest, observedOn: ownershipObservedOn } = await ownershipRead;
     // A reported 0 is a real 0%; missing, empty, invalid or future rows stay unknown. Only a fresh (≤3-day) reading sets
     // `ownership`; an older one is kept as labelled last-known evidence, never as a fresh value or ranking input.
     for (const player of players) {
@@ -348,46 +396,12 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     }
     sources.ownership = evidence("Yahoo daily ownership", ownershipObservedOn, query.seasonId, ["Ownership is not league availability; missing or older than three days is unknown."]);
   } catch { sources.ownership = evidence("Yahoo daily ownership", null, query.seasonId, ["Ownership could not be verified."]); }
-  // Line and PP deployment: one season- and date-bounded read of charted lineups, then one read of the PP units in each
-  // team's newest charted game. It runs beside the box-score reads and settles to null on any failure (never unhandled).
-  const deploymentRead = options.skipRecentForm ? null : (async () => {
-    const deploymentDeadline = Math.min(deadline, Date.now() + 2000);
-    const since = new Date(now.getTime() - DEPLOYMENT_DAYS * 86400000).toISOString().slice(0, 10);
-    const lineups = await pages(() => db.from("lineCombinations").select("gameId,teamId,forwards,defensemen,game:games!inner(date,seasonId)", { count: "exact" })
-      .eq("game.seasonId", query.seasonId).gte("game.date", since).lte("game.date", now.toISOString().slice(0, 10))
-      .order("gameId", { ascending: false }).order("teamId"), deploymentDeadline, DEPLOYMENT_LINE_ROWS, row => [row.gameId, row.teamId]);
-    const newest = new Map<number, Row>();
-    for (const row of lineups) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(row.game?.date))) continue;
-      const current = newest.get(Number(row.teamId));
-      if (!current || row.game.date > current.game.date) newest.set(Number(row.teamId), row);
-    }
-    const gameIds = [...new Set([...newest.values()].map(row => Number(row.gameId)))].sort((a, b) => a - b);
-    const units = gameIds.length ? await pages(() => db.from("powerPlayCombinations").select("gameId,playerId,unit", { count: "exact" })
-      .in("gameId", gameIds).order("gameId").order("playerId"), deploymentDeadline, gameIds.length * DEPLOYMENT_PP_ROWS_PER_GAME,
-    row => [row.gameId, row.playerId]) : [];
-    return { newest, units };
-  })().catch(() => null);
   const lastPlayed = new Map<string, string>();
   let recentFormStage: "stats" | "processing" = "stats";
   if (options.skipRecentForm) {
     sources.form = evidence("not_requested", null, query.seasonId, ["Recent scoring context was not requested by this consumer."]);
   } else try {
-    const formDeadline = Math.min(deadline, Date.now() + RECENT_FORM_BUDGET_MS);
-    const start = new Date(now.getTime() - RECENT_FORM_DAYS * 86400000).toISOString().slice(0, 10);
-    const cutoff = new Date(now.getTime() - 24 * 3600000).toISOString().slice(0, 10);
-    // One newest-first date-window read per table for every player (date and games_played indexes), each capped;
-    // every player keeps his last 10 played games (recentTotals). League weights are applied client-side.
-    // Skater rows are keyed by `id` (player and date are not unique there); goalie rows by their unique goalie and date.
-    // Pages are read concurrently, each re-checking the exact count; a write inside the window retries once (concurrentPages).
-    const window = (table: string, id: string, key: string[], columns: Readonly<Record<string, string>>, maximum: number) => concurrentPages(() => db.from(table)
-      .select([...new Set([...key, id, "date", "games_played", ...Object.values(columns)])].join(","), { count: "exact" })
-      .eq("season_id", query.seasonId).eq("games_played", 1).gte("date", start).lte("date", cutoff)
-      .order("date", { ascending: false }).order(key[0]), formDeadline, maximum, row => key.map(column => row[column]),
-    { concurrency: RECENT_FORM_CONCURRENCY });
-    const [skaterRows, goalieRows] = await Promise.all([
-      window("wgo_skater_stats", "player_id", ["id"], SKATER_RECENT_COLUMNS, RECENT_SKATER_ROWS),
-      window("wgo_goalie_stats", "goalie_id", ["goalie_id", "date"], GOALIE_RECENT_COLUMNS, RECENT_GOALIE_ROWS)]);
+    const [skaterRows, goalieRows] = await formRead!;
     recentFormStage = "processing";
     const byPlayer = (rows: Row[], id: string) => {
       const grouped = new Map<number, Row[]>();

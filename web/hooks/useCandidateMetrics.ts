@@ -6,6 +6,6 @@ import { useRosterPlanning } from "./useRosterPlanning";
  * bounded calculation and never reuse a saved forecast graph. */
 export function useCandidateMetrics(snapshot: PlanningSnapshot | null, intent: PlanIntent, requestedPlayerIds: string[] = [],
   options: CurrentPlanningOptions = {}) {
-  const { metrics, error, loading } = useRosterPlanning(snapshot, intent, options, requestedPlayerIds);
-  return { metrics, error: error ?? undefined, loading };
+  const { metrics, error, loading, retained } = useRosterPlanning(snapshot, intent, options, requestedPlayerIds);
+  return { metrics, error: error ?? undefined, loading, retained };
 }

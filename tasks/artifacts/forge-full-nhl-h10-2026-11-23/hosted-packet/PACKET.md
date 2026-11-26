@@ -146,7 +146,13 @@ approval to schedule or enable, after one watched nightly run. Known gap, not bl
   comes from `rosters` plus stored moves only, and a trade report stays pending.
 - **Signing secret (new, both sides, ≥32 printable characters, used nowhere else):** Vault `forge_h10_dispatch_secret`
   and Vercel `FORGE_H10_DISPATCH_SECRET`, the same value. Not `CRON_SECRET`, not the pregame secret.
-- **Existing:** `SUPABASE_DB_URL`, `VERCEL_GIT_COMMIT_SHA`. `CRON_SECRET` is no longer accepted by this route.
+- **Database URL:** `SUPABASE_DB_POOLER_URL`, else `SUPABASE_DB_URL`, else `POSTGRES_URL` (the transaction-pooler URL
+  the Supabase integration syncs). Correction 11-24: this line used to call `SUPABASE_DB_URL` "existing", but it was in no
+  Vercel project, so every 11-24 dispatch answered 503 `database_url_missing` before any database work. TJ is adding
+  `SUPABASE_DB_POOLER_URL` (host `*.pooler.supabase.com`, port 6543, user `postgres.<project-ref>`) to `fhfhockey`. The
+  direct `db.<ref>.supabase.co:5432` host is IPv6-only unless the IPv4 add-on is on, so Vercel cannot use it. An env var
+  reaches only deployments made after it is saved.
+- **Existing:** `VERCEL_GIT_COMMIT_SHA`. `CRON_SECRET` is no longer accepted by this route.
 - **Fail-closed behaviour.** Without the signing secret the route answers 503 before any database connection; with an
   invalid, expired, altered or wrong-route signature it answers 400/401 before any database connection; with the
   approval variables missing it returns `skipped` without a database connection.
@@ -380,3 +386,25 @@ Still to approve:
 4. **Each monthly archive** (upload, verify, detach, drop).
 5. **Open, not needed for H10:** the extra 07:45Z `update-players` run; G2b; the duplicate `UTA` row in `teams`; author
    provenance on the 28% of accepted cards that have none (Codex lanes).
+
+## 11. After release (2026-11-24): uncertainty, first-night verifier, completion rule (local candidates, not released)
+
+H10 went to production on master `7db94da1d` (Chef, TJ's per-step pop-ups). Everything below is a **local candidate**.
+Each item needs TJ's separate approval to release. None is a migration applied, a deploy, a cron change or a route run.
+
+- **First-night verifier.** `first-night-verify.sql` (`f3695ee76`): read-only and key-by-key. TJ: a night is judged only by this check, never by the route's marker. Unchanged since.
+- **Uncertainty.** 50% and 90% predictive bands per issued key (`93ee303b2` … `f6bd031ca`; receipt `INTERVALS.md`).
+  - Additive migration `20261124000000`, not applied.
+  - Bands are conditional (if appearing / if starting) and not summable.
+  - Goalie band policy v1 (TJ), with a predeclared revisit threshold.
+  - Same-cutoff parity: 8,040 of 8,040 forecasts byte-identical with and without bands.
+  - Worst call 200.3 s against 200.8 s without bands.
+- **Completion rule** (`3853901512`, `08a4c0efa`, and the goalie accounting commit after them). Deployed `829258397` can mark a night "complete" with skater jobs failed or expired, or goalie keys not issued. The candidate marks a night complete **only if every frozen key was issued**. Otherwise it writes `forge-h10-nightly-incomplete:<date>` with a `shortfall` by cause:
+  - `skaterJobsFailed`, `skaterJobsExpired`, `skaterGaps`;
+  - `goalieGaps`, including `publish_failed:*` after retries and `issuance_lock_closed`;
+  - `goalieKeysUnaccounted`: expected goalie keys neither published nor declared.
+- **Ambiguous publication** (TJ, before release approval): the receipt write commits, then the response is lost. Regression test `h10 nightly after a lost publication response`, in `h10Route.test.ts`, on disposable Postgres. It passed on `e6c947ab5` with **no production change**:
+  - Skaters retry through the queue on a later tick. Attempt 2 finds the stored draft, and its receipt predates the attempt, so it is acknowledged as a recovered publication (`pipeline.server.ts:378`, `refresh.ts:348–350`).
+  - Goalies retry in the call on the same vintage.
+  - Per affected key: one vintage, one receipt, the original id and output hash. Overall: one vintage, one receipt and one issuance sequence per key (1,380 skater, 120 goalie). The night is `complete` with 1,380 published and no failed job or gap.
+- **Retries.** Bounded, same-draft (never a second edition): skaters get 3 attempts at least 60 s apart; goalies get 3 in-call attempts, 1 s and then 4 s apart. Regression tests are in `h10Route.test.ts`.

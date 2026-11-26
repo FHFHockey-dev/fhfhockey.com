@@ -824,6 +824,70 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
     expect(acquireProjectionPipelineLeaseMock).not.toHaveBeenCalled();
   });
 
+  it("records corroborated shift exclusions in the receipt and names a refused corroboration", async () => {
+    const excluded = [{
+      id: 900, playerId: 9001, teamId: 1, period: 1, shiftNumber: 2,
+      startTime: "00:00", endTime: "17:06", duration: "15:59",
+      reason: "CLOCK_DURATION_MISMATCH_COVERED_UNDER_EVERY_READING_AND_ABSENT_FROM_OFFICIAL_RECORD",
+      coveredByIds: [899],
+    }];
+    const rule = "shift-clock-mismatch-covered-and-officially-corroborated/v1";
+    fetchShiftRowsMock.mockImplementation(async (gameId: number) => {
+      const rows = sourceShiftRows(gameId);
+      return {
+        rows,
+        rawPayload: gameId === 103
+          ? {
+              total: rows.length, data: rows, source: "htmlreports",
+              upstream: { json: { total: 0, data: [] } },
+              htmlReports: { visitorUrl: "v", homeUrl: "h" },
+              corroboration: { rule, excluded, duplicates: [], boxscore: { url: "b", players: [] } },
+            }
+          : { total: rows.length, data: rows, source: "json-api" },
+        ...(gameId === 104 ? { corroborationError: "BOXSCORE_TOI_DISAGREES_WITH_HTML" } : {}),
+      };
+    });
+    buildShiftStrengthUpsertsMock.mockImplementation(
+      (gameId: number, _pbp: any, rows: any[]) => {
+        if (gameId === 104) {
+          throw new Error(`Shift clock/duration mismatch for game ${gameId}, player 9001`);
+        }
+        return Array.from(new Set(rows.map((row) => row.playerId))).map(
+          (playerId) => ({ game_id: gameId, player_id: playerId }),
+        );
+      },
+    );
+    const req: any = {
+      method: "POST",
+      query: { startDate: "2026-03-20", endDate: "2026-03-20" },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body.shiftCorroborations).toEqual([{ gameId: 103, rule, excluded, duplicates: [] }]);
+    // The durable cron audit row keeps the receipt inside its response preview.
+    const auditDetails = auditInsertMock.mock.calls.at(-1)?.[0]?.details;
+    expect(auditDetails.responseTruncated).toBe(false);
+    expect(JSON.parse(auditDetails.response).shiftCorroborations).toEqual([{ gameId: 103, rule, excluded, duplicates: [] }]);
+    expect(Object.keys(res.body).indexOf("shiftCorroborations")).toBeLessThan(Object.keys(res.body).indexOf("errors"));
+    expect(res.body.errors).toEqual([
+      {
+        gameId: 104,
+        date: "2026-03-20",
+        stage: "precheck_shifts",
+        message:
+          "Shift clock/duration mismatch for game 104, player 9001 (shift corroboration refused: BOXSCORE_TOI_DISAGREES_WITH_HTML)",
+        isolated: true,
+      },
+    ]);
+    // The shared final PBP is passed through, so corroboration fetches no second PBP.
+    expect(fetchShiftRowsMock).toHaveBeenCalledWith(101, {
+      pbp: expect.objectContaining({ id: 101 }),
+    });
+  });
+
   it("does not isolate database failures during the shift precheck", async () => {
     const classify = await import(
       "lib/projections/shiftChartCompletenessServer"

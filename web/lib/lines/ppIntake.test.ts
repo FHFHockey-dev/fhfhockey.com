@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { lineTestDatabase } from "./testDatabase";
-import { curtisFive, game0356, game0397, html0356, pbp0356, url0356 } from "./testPpFixtures";
+import { curtisFive, game0356, game0392, game0397, game0406, html0356, html0392, pbp0356, pbp0392, silberFive, silberPostedAt, silberText, silberUrl, url0356, url0392, wshFiveRosterRows, wshPublicationRoster } from "./testPpFixtures";
+import { interpretTweetUnits } from "lib/sources/tweetInterpretation";
 import type { LineGame } from "./types";
 
 // Local evidence only: fixtures stand in for the intake source and NHL reports. Not raw-text or live acceptance.
@@ -12,7 +13,9 @@ vi.mock("./gameState", async (load) => ({ ...await load<object>(),
 vi.mock("./officialPowerPlay", async (load) => {
   const actual = await load<typeof import("./officialPowerPlay")>();
   return { ...actual, readOfficialPowerPlay: async () => null,
-    readOfficialPowerPlayEvidence: async (game: LineGame) => { state.reads.push(game.id); return state.evidence && game.id === 2026020356 ? actual.officialPowerPlayEvidence(game, pbp0356, html0356, url0356) : null; } };
+    readOfficialPowerPlayEvidence: async (game: LineGame) => { state.reads.push(game.id);
+      if (!state.evidence) return null;
+      return game.id === 2026020356 ? actual.officialPowerPlayEvidence(game, pbp0356, html0356, url0356) : game.id === 2026020392 ? actual.officialPowerPlayEvidence(game, pbp0392, html0392, url0392) : null; } };
 });
 import { processLineSnapshotEvidence } from "./processor";
 import { activeLineClaims, eligibleClaim } from "./reconcile";
@@ -123,15 +126,23 @@ describe("PPCF intake binding (local evidence, not raw-text or live acceptance)"
     const active = activeLineClaims(await fetchLineClaims(db, [COL], "2026-11-20T03:00:00Z")).filter((claim) => claim.text === curtisText);
     expect(active.map((claim) => claim.id)).toEqual([bound.id]);
   });
-  it("makes no NHL read for a qualifying claim without a penalty cue", async () => {
+  it("binds a qualifying claim without a penalty cue by period time (TJ 2026-11-25)", async () => {
     const db = database(), source = curtisSource();
     const text = "RT @baileyycurtis: Avs PP will get another look.\n\nPP1: Hughes, Kadri, Lehkonen, Necas, Toews";
     source.metadata.testReport.text = text;
     source.metadata.testReport.interpretation.units = [unit(text, 1, "PP1:", ["Hughes", "Kadri", "Lehkonen", "Necas", "Toews"])];
     source.metadata.lineEvidence.decisionEvidence.phase = span(text, "Avs PP will get another look");
     await processLineSnapshotEvidence(db, [source], [COL], curtisNow);
+    expect(state.reads).toEqual([2026020356]);
+    const claim = db.tables.line_claim_revisions![0]!.payload;
+    expect(claim).toMatchObject({ gameId: 2026020356, reviewReasons: [] });
+    expect(claim.binding.evidence).toEqual(expect.arrayContaining(["binding_basis:period_time", "personnel_verified_no_penalty_clue"]));
+  });
+  it("makes no NHL read when the post cannot fall inside an observed game", async () => {
+    const db = database(), source = curtisSource();
+    source.metadata.lineEvidence.publication.originalPublishedAt = "2026-11-20T12:00:00.000Z";
+    await processLineSnapshotEvidence(db, [source], [COL], "2026-11-20T12:05:00.000Z");
     expect(state.reads).toEqual([]);
-    expect(db.tables.line_claim_revisions![0]!.payload.gameId).toBeNull();
   });
 
   it("intake-stored Curtis carries to 0397 with PP2 blank and Rawal's practice note (local evidence)", async () => {
@@ -150,5 +161,92 @@ describe("PPCF intake binding (local evidence, not raw-text or live acceptance)"
       [1, ["Cale Makar", "Martin Necas", "Nazem Kadri", "Nicolas Roy", "Gabriel Landeskog"]],
       [2, ["Devon Toews", "Brock Nelson", "Jaden Schwartz", "T.J. Hughes", "Artturi Lehkonen"]]]);
     expect(pp2!.practiceDiffers ?? null).toBeNull();
+  });
+
+  describe("Silber WSH PP1 (in-game, no penalty clue) → FLA@WSH 0406 (local evidence)", () => {
+    const WSH = 15;
+    const silberNow = "2026-11-26T00:28:07.950Z";
+    const wshFive = wshPublicationRoster.filter((player) => silberFive.includes(player.playerId));
+    function wshDatabase() {
+      return lineTestDatabase({
+        games: [game0392, game0406].map((game) => ({ id: game.id, date: game.date, startTime: game.scheduledStart, homeTeamId: game.homeTeamId, awayTeamId: game.awayTeamId,
+          home: { abbreviation: game.homeAbbreviation }, away: { abbreviation: game.awayAbbreviation } })),
+        line_game_state_observations: [], lineup_player_name_aliases: [],
+        rosters: wshFiveRosterRows,
+        players: wshFive.map((player) => ({ id: player.playerId, fullName: player.fullName, lastName: player.lastName, position: player.position })),
+      });
+    }
+    /** The production snapshot's shape (FxTwitter repost relayed by GameDayLines), with no line evidence supplied: the producer decides. */
+    function silberSource(text = silberText) {
+      const interpretation = { ...interpretTweetUnits(text, wshPublicationRoster), identityContext: { basis: "publication_roster", sourcePublishedAt: silberPostedAt, eventRosterRevision: "" } };
+      return { team: { id: WSH }, observedAt: silberNow, tweetId: "2125747628642336776", tweetPostedAt: silberPostedAt,
+        metadata: { publicationTimeBasis: "provider_timestamp", sourceProvenance: { provider: "fxtwitter", postKind: "repost", originalAuthor: "sammisilber", relayAccount: "GameDayLines",
+          originalTweetId: "2125747628642336776", relayTweetId: null, timestampIsOriginal: true, ingestedAt: silberNow, ingestedAtBasis: "first_seen_at" },
+        testReport: { key: "silber", teamId: WSH, teamAbbreviation: "WSH", gameId: null, date: "2026-11-25", receivedAt: silberNow, interpretedAt: silberNow,
+          publishedAt: silberPostedAt, originalPublishedAt: silberPostedAt, originalUrl: silberUrl, text, interpretation,
+          provenance: { relayTweetId: "2125747628642336776", originalTweetId: "2125747628642336776", attributionStatus: "resolved" } } } } as any;
+    }
+    const silberRows = (db: ReturnType<typeof wshDatabase>) => db.tables.line_claim_revisions!.map((row) => row.payload).filter((claim: any) => claim.text === silberText);
+    beforeEach(() => { state.games = new Map([[game0392.id, { phase: "live", actualStart: "2026-11-26T00:17:00Z" }]]); });
+
+    it("binds through intake by period time, in-game by timing, with the evidence stored", async () => {
+      const db = wshDatabase();
+      await processLineSnapshotEvidence(db, [silberSource()], [WSH], silberNow);
+      const [claim] = silberRows(db);
+      expect(claim).toMatchObject({ gameId: 2026020392, explicit: true, phase: "in_game", context: "game", kind: "pp", identityStatus: "resolved_at_event",
+        sourceUrl: silberUrl, time: { originalPublishedAt: silberPostedAt }, binding: { status: "bound", scheduleIdentity: "2026020392:2026-11-26T00:00:00Z:OK" } });
+      expect(claim.reviewReasons).toEqual([]);
+      expect(claim.unit.players.map((player: any) => player.playerId)).toEqual(silberFive);
+      expect(claim.binding.evidence).toEqual(["live_game:2026020392", "binding_basis:period_time", "nhl_period:1:2026-11-26T00:17:00Z",
+        "nhl_pp_on_ice:124", "nhl_pp_on_ice:201", "nhl_pp_on_ice:158", "nhl_pp_on_ice:10", `nhl_report:${url0392}`,
+        "personnel_verified_no_penalty_clue", "faceoff_before_publication:unverified",
+        "nhl_period_window:1:2026-11-26T00:17:00Z/2026-11-26T00:52:00Z", "session_context:in_game_by_time", `nhl_verified_at:${silberNow}`]);
+      expect(eligibleClaim(claim)).toBe(true);
+      expect(state.reads).toEqual([2026020392]);
+    });
+    it("stays pending when the NHL feed is late, then a reprocess binds it and retires the pending reading", async () => {
+      const db = wshDatabase();
+      state.evidence = false;
+      await processLineSnapshotEvidence(db, [silberSource()], [WSH], silberNow);
+      const [pending] = silberRows(db);
+      expect(pending).toMatchObject({ gameId: null, phase: "unknown" });
+      expect(pending.reviewReasons).toContain("nhl_corroboration_pending");
+      state.evidence = true;
+      // A later pass over the same stored source while 0392 is still live (the trimmed report has no game-end row).
+      await processLineSnapshotEvidence(db, [silberSource()], [WSH], "2026-11-26T00:40:00.000Z");
+      const bound = silberRows(db).find((claim: any) => claim.gameId === 2026020392);
+      expect(bound.supersedes).toEqual([pending.id]);
+      const active = activeLineClaims(await fetchLineClaims(db, [WSH], "2026-11-26T01:00:00Z")).filter((claim) => claim.text === silberText);
+      expect(active.map((claim) => claim.id)).toEqual([bound.id]);
+    });
+    it("keeps one revision when a later pass sees the period closed (window is metadata, not identity)", async () => {
+      const db = wshDatabase();
+      // First pass mid-P1: the report has no P1 end yet, so the window is open.
+      state.games = new Map([[game0392.id, { phase: "live", actualStart: "2026-11-26T00:17:00Z" }]]);
+      const early = vi.spyOn(await import("./officialPowerPlay"), "readOfficialPowerPlayEvidence");
+      const full = (await import("./officialPowerPlay")).officialPowerPlayEvidence(game0392, pbp0392, html0392, url0392)!;
+      early.mockResolvedValueOnce({ ...full, periods: [{ ...full.periods[0]!, endedAt: null }], observations: full.observations.filter((item) => item.period === 1 && item.elapsed <= "09:00") });
+      await processLineSnapshotEvidence(db, [silberSource()], [WSH], silberNow);
+      expect(silberRows(db)[0].binding.evidence).toContain("nhl_period_window:1:2026-11-26T00:17:00Z/open");
+      early.mockRestore();
+      await processLineSnapshotEvidence(db, [silberSource()], [WSH], "2026-11-26T00:58:00.000Z");
+      expect(silberRows(db)).toHaveLength(1);
+    });
+    it("makes no claim for an ambiguous surname on the publication roster", async () => {
+      const db = wshDatabase();
+      await processLineSnapshotEvidence(db, [silberSource(silberText.replace("Wilson", "Protas"))], [WSH], silberNow);
+      expect((db.tables.line_claim_revisions ?? []).filter((row: any) => row.payload.kind === "pp" && row.payload.unit)).toEqual([]);
+    });
+    it("carries to 0406 as PP1 Strome, Wilson, Sourdif, Chychrun, Ovechkin with Silber's URL and time; PP2 blank", async () => {
+      const db = wshDatabase();
+      await processLineSnapshotEvidence(db, [silberSource()], [WSH], silberNow);
+      const response = await readGameLines(db, { gameId: game0406.id, teamId: WSH, now: "2026-11-27T19:00:00Z" });
+      const [pp1, pp2] = response.teams[0]!.ppDefaults;
+      expect(pp1!.selection).toMatchObject({ designation: "carried", originGameId: 2026020392 });
+      expect(pp1!.reason).toBe("Carried forward from accepted in-game PP evidence");
+      expect(pp1!.selection!.unit.players.map((player) => player.name)).toEqual(["Dylan Strome", "Tom Wilson", "Justin Sourdif", "Jakob Chychrun", "Alex Ovechkin"]);
+      expect(pp1!.selection!.claims[0]).toMatchObject({ sourceUrl: silberUrl, time: { originalPublishedAt: silberPostedAt } });
+      expect(pp2!.selection).toBeNull();
+    });
   });
 });

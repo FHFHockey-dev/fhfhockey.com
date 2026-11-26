@@ -10,14 +10,17 @@ import { HorizonEpisode, Instant, LockEpoch, Opportunity, ScheduleGame, SourceRe
 import { DenominatorKey, FrozenDenominator, ForecastRow, measureCoverage } from "./denominator";
 import { FileArtifactStore } from "./artifacts.server";
 import { contentHash } from "./hash.server";
-import { SqlConnection } from "./history.server";
+import { PostgresHistoryStore, SqlConnection } from "./history.server";
 import { DEFAULT_SCORING, targetKey } from "./identity";
-import { capturePreparedLedger, PreparedHistoryStore, PreparedIssuance, runPreparedQueueBatch } from "./pipeline.server";
+import { capturePreparedLedger, PreparedHistoryStore, PreparedIssuance, preparedLedgerRecords, runPreparedQueueBatch } from "./pipeline.server";
+import { H10Ledger, runH10QueueBatch } from "./h10Batch.server";
 import { createRefreshState, easternDate, enqueueMaterialEvent, enqueueRefresh, MaterialEvent, planScheduledRefresh, RefreshBounds, RefreshState, restoreRefreshState } from "./refresh";
 import { advanceLock, observeHorizonEpisodes } from "./schedule";
 import { buildH10Model, buildH10Training, H10GameLog, H10PrepareConfig, H10RateState, prepareH10Issuance } from "./h10Features";
 
-export const H10_BOUNDS: RefreshBounds = { maximumJobs: 5000, maximumEvents: 1000, concurrency: 25, batchSize: 25, maximumAttempts: 2, retryDelayMs: 60000, leaseMs: 10 * 60000 };
+/** Three attempts per job: a thrown publish error is retryable (pipeline.server.ts) and is retried at least 60 s later,
+ * i.e. at the next nightly tick, on the same issuance key, so the stored draft is republished, never re-issued. */
+export const H10_BOUNDS: RefreshBounds = { maximumJobs: 5000, maximumEvents: 1000, concurrency: 25, batchSize: 25, maximumAttempts: 3, retryDelayMs: 60000, leaseMs: 10 * 60000 };
 export const h10QueueId = (teamId: number, horizon: number) => `forge-h10:${teamId}:H${horizon}`;
 export interface H10Gap { playerId: number; gameId: number; teamId: number; horizon: Horizon; playerClass: DenominatorKey["playerClass"]; reason: string }
 
@@ -38,16 +41,17 @@ export function h10Scopes(denominator: FrozenDenominator, games: ReadonlyMap<num
   return { scopes, gaps, goalieKeys };
 }
 
-type Head<T> = { id: string; scopeKey: string; value: T; predecessor: T | null };
+type Head<T> = { id: string; scopeKey: string; value: T; predecessor: T | null; stored: { id: string; kind: string; scope_key: string; predecessor_id: string | null; content_hash: string } };
 /** Chain heads (records with no successor) for the given scopes; served by the (scope_key, kind, ordinal) index. */
 async function heads<T>(db: SqlConnection, kind: string, scopeKeys: string[]): Promise<Head<T>[]> {
   if (!scopeKeys.length) return [];
-  const { rows } = await db.query<{ id: string; scope_key: string; payload: string; predecessor_payload: string | null }>(
-    `select r.id, r.scope_key, r.payload, p.payload as predecessor_payload from forge_v2_private.forge_v2_records r
+  const { rows } = await db.query<{ id: string; scope_key: string; payload: string; predecessor_payload: string | null; predecessor_id: string | null; content_hash: string }>(
+    `select r.id, r.scope_key, r.payload, p.payload as predecessor_payload, r.predecessor_id, r.content_hash from forge_v2_private.forge_v2_records r
      left join forge_v2_private.forge_v2_records p on p.id = r.predecessor_id
      where r.kind = $1 and r.scope_key = any($2::text[])
        and not exists (select 1 from forge_v2_private.forge_v2_records s where s.scope_key = r.scope_key and s.kind = r.kind and s.predecessor_id = r.id)`, [kind, scopeKeys]);
-  return rows.map(row => ({ id: row.id, scopeKey: row.scope_key, value: JSON.parse(row.payload) as T, predecessor: row.predecessor_payload ? JSON.parse(row.predecessor_payload) as T : null }));
+  return rows.map(row => ({ id: row.id, scopeKey: row.scope_key, value: JSON.parse(row.payload) as T, predecessor: row.predecessor_payload ? JSON.parse(row.predecessor_payload) as T : null,
+    stored: { id: row.id, kind, scope_key: row.scope_key, predecessor_id: row.predecessor_id, content_hash: row.content_hash } }));
 }
 
 async function latestVintages(db: SqlConnection, scopes: readonly Opportunity[]): Promise<Map<string, string>> {
@@ -78,14 +82,20 @@ export interface H10RunInput {
   stopAfterMs?: number;
   /** Process at most this many queues in this invocation. */
   maximumQueues?: number;
+  /** Parity tests only: run a nightly issuance through the scalar ledger and queue runners (the material path's). */
+  scalarQueue?: boolean;
 }
 
 export interface H10RunReport {
   denominatorSha256: string; asOf: Instant; trigger: string; scopes: number; goalieKeys: number; gaps: H10Gap[];
   training: { examples: number; available: number; skipped: Record<string, number>; modelVersion: string | null };
   ledger: { episodeRecords: number; lockRecords: number };
-  queues: { total: number; processed: number; complete: number; rotated: number };
+  /** `finished`: every job terminal; `complete`: every job published (no failed or expired job). */
+  queues: { total: number; processed: number; finished: number; complete: number; rotated: number };
   jobs: Record<string, number>;
+  /** Every processed queue is terminal and nothing stopped early (a later call has nothing left to do). */
+  finished: boolean;
+  /** Finished, and every job published. A failed or expired job never counts as complete. */
   complete: boolean;
   /** Set when the run wrote nothing because its inputs cannot support an issuance. */
   refused?: string;
@@ -108,7 +118,7 @@ export async function runH10Issuance(input: H10RunInput): Promise<H10RunReport> 
   if (!model) return { denominatorSha256: denominator.denominatorSha256, asOf, trigger: input.trigger === "daily" ? "daily" : "material", scopes: scopes.length, goalieKeys,
     gaps: scopes.map(s => ({ playerId: s.playerId, gameId: s.gameId, teamId: s.teamId, horizon: s.horizon, playerClass: "skater" as const, reason: "training_below_minimum_support" })),
     training: { examples: training.training.length, available: training.available, skipped: training.skipped, modelVersion: null }, ledger: { episodeRecords: 0, lockRecords: 0 },
-    queues: { total: 0, processed: 0, complete: 0, rotated: 0 }, jobs: {}, complete: false, refused: "training_below_minimum_support" };
+    queues: { total: 0, processed: 0, finished: 0, complete: 0, rotated: 0 }, jobs: {}, finished: false, complete: false, refused: "training_below_minimum_support" };
 
   // 1. Ledger: one observation over the full denominator, captured before any queue work (idempotent).
   const keys = scopes.map(targetKey);
@@ -122,7 +132,8 @@ export async function runH10Issuance(input: H10RunInput): Promise<H10RunReport> 
     predecessor: history.find(row => row.id === value.id && row.exitedAt === null)
       ?? (value.episode > 1 ? history.filter(row => targetKey(row) === targetKey(value) && row.horizon === value.horizon && row.episode === value.episode - 1 && row.exitedAt !== null).at(-1) ?? null : null),
   }));
-  const lockHeads = new Map((await heads<LockEpoch>(db, "lock_epoch", [...new Set(scopes.map(s => String(s.gameId)))])).map(row => [row.value.gameId, row.value]));
+  const lockHeadRows = await heads<LockEpoch>(db, "lock_epoch", [...new Set(scopes.map(s => String(s.gameId)))]);
+  const lockHeads = new Map(lockHeadRows.map(row => [row.value.gameId, row.value]));
   const locks = new Map<number, LockEpoch>(), lockObservations: Array<{ value: LockEpoch; predecessor: LockEpoch | null }> = [];
   for (const gameId of new Set(scopes.map(s => s.gameId))) {
     const previous = lockHeads.get(gameId) ?? null, transition = advanceLock(previous, games.get(gameId)!, asOf);
@@ -130,8 +141,23 @@ export async function runH10Issuance(input: H10RunInput): Promise<H10RunReport> 
     locks.set(gameId, transition.epoch);
     if (transition.epoch.id !== previous?.id) lockObservations.push({ value: transition.epoch, predecessor: previous });
   }
-  for (let i = 0; i < lockObservations.length; i += 200) await capturePreparedLedger({ store, opportunities: [], episodes: [], locks: lockObservations.slice(i, i + 200), events: [] });
-  for (let i = 0; i < episodeObservations.length; i += 200) await capturePreparedLedger({ store, opportunities: [], episodes: episodeObservations.slice(i, i + 200), locks: [], events: [] });
+  // Nightly: the same observations, validated in full first, then written and read back 25 at a time (h10Batch.server.ts).
+  // Material keeps the scalar capture.
+  const daily = input.trigger === "daily" && !input.scalarQueue, ledger = new H10Ledger(db);
+  let ledgerStopped = false;
+  if (daily) {
+    const records = [];
+    for (let i = 0; i < lockObservations.length; i += 200) records.push(...preparedLedgerRecords({ opportunities: [], episodes: [], locks: lockObservations.slice(i, i + 200), events: [] }));
+    for (let i = 0; i < episodeObservations.length; i += 200) records.push(...preparedLedgerRecords({ opportunities: [], episodes: episodeObservations.slice(i, i + 200), locks: [], events: [] }));
+    ledger.seed([...episodeHeads, ...lockHeadRows].map(row => row.stored));
+    const captured = await ledger.capture(records, input.stopAfterMs);
+    const failed = [...captured.errors.values()][0];
+    if (failed) throw new Error(failed);
+    ledgerStopped = captured.stopped;
+  } else {
+    for (let i = 0; i < lockObservations.length; i += 200) await capturePreparedLedger({ store, opportunities: [], episodes: [], locks: lockObservations.slice(i, i + 200), events: [] });
+    for (let i = 0; i < episodeObservations.length; i += 200) await capturePreparedLedger({ store, opportunities: [], episodes: episodeObservations.slice(i, i + 200), locks: [], events: [] });
+  }
   const openEpisodes = new Map(observed.filter(row => row.exitedAt === null).map(row => [targetKey(row), row]));
 
   // 2. Queues, one per team × horizon; each is enqueued, claimed and published through the v2 batch runner.
@@ -140,13 +166,16 @@ export async function runH10Issuance(input: H10RunInput): Promise<H10RunReport> 
     if (!locks.has(scope.gameId)) { gaps.push({ playerId: scope.playerId, gameId: scope.gameId, teamId: scope.teamId, horizon: scope.horizon, playerClass: "skater", reason: "issuance_lock_closed" }); continue; }
     const id = h10QueueId(scope.teamId, scope.horizon); groups.set(id, [...(groups.get(id) ?? []), scope]);
   }
-  const opportunityHeads = new Map((await heads<Opportunity>(db, "opportunity", keys)).map(row => [row.scopeKey, row]));
+  const opportunityHeadRows = ledgerStopped ? [] : await heads<Opportunity>(db, "opportunity", keys);
+  ledger.seed(opportunityHeadRows.map(row => row.stored));
+  const opportunityHeads = new Map(opportunityHeadRows.map(row => [row.scopeKey, row]));
   const report: H10RunReport = { denominatorSha256: denominator.denominatorSha256, asOf, trigger: input.trigger === "daily" ? "daily" : `material:${input.trigger.material.map(event => event.id).join(",")}`,
     scopes: scopes.length, goalieKeys, gaps: [], training: { examples: training.training.length, available: training.available, skipped: training.skipped, modelVersion: model?.version ?? null },
-    ledger: { episodeRecords: episodeObservations.length, lockRecords: lockObservations.length }, queues: { total: groups.size, processed: 0, complete: 0, rotated: 0 }, jobs: {}, complete: false };
+    ledger: { episodeRecords: episodeObservations.length, lockRecords: lockObservations.length }, queues: { total: groups.size, processed: 0, finished: 0, complete: 0, rotated: 0 }, jobs: {}, finished: false, complete: false };
   const today = easternDate(asOf);
-  let stoppedEarly = false;
-  for (const [queueId, queueScopes] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
+  // A ledger pass interrupted by the budget starts no job; the next call resumes it against the durable heads.
+  let stoppedEarly = ledgerStopped;
+  for (const [queueId, queueScopes] of ledgerStopped ? [] : [...groups].sort(([a], [b]) => a.localeCompare(b))) {
     // Every invocation makes progress on at least one queue before the time budget applies.
     if (input.maximumQueues !== undefined && report.queues.processed >= input.maximumQueues
       || input.stopAfterMs !== undefined && report.queues.processed > 0 && Date.now() > input.stopAfterMs) { stoppedEarly = true; break; }
@@ -163,10 +192,21 @@ export async function runH10Issuance(input: H10RunInput): Promise<H10RunReport> 
     let next = input.trigger === "daily"
       ? enqueueRefresh(state, planScheduledRefresh(queueScopes, asOf, lockMap).filter(plan => plan.trigger === "daily"), now, H10_BOUNDS)
       : events.reduce((acc, event) => enqueueMaterialEvent(acc, event, queueScopes, now, H10_BOUNDS, lockMap), state);
-    if (contentHash(next) !== contentHash(current?.state ?? null)) await store.saveQueue(queueId, current?.revision ?? 0, next);
+    const changed = contentHash(next) !== contentHash(current?.state ?? null);
+    const savedRevision = changed ? await store.saveQueue(queueId, current?.revision ?? 0, next) : current!.revision;
     // Prepared inputs for every open job whose scope is in this denominator.
     const byKey = new Map(queueScopes.map(scope => [targetKey(scope), scope]));
-    const predecessors = await latestVintages(db, queueScopes);
+    // Nightly: a queue whose every job published has nothing to claim, prepare, record or acknowledge. A failed or
+    // expired job (including one enqueued after its lock) still goes through the claim, which records its
+    // missing_refresh event exactly as the scalar runner does.
+    if (daily && next.jobs.every(job => job.status === "published")) {
+      for (const job of next.jobs) report.jobs[job.status] = (report.jobs[job.status] ?? 0) + 1;
+      report.queues.finished += 1;
+      report.queues.complete += 1;
+      continue;
+    }
+    const open = !daily || next.jobs.some(job => !terminal(job.status));
+    const predecessors = open ? await latestVintages(db, queueScopes) : new Map<string, string>();
     const prepared = new Map<string, PreparedIssuance>();
     for (const job of next.jobs) {
       if (terminal(job.status) || !byKey.has(targetKey(job.scope))) continue;
@@ -178,17 +218,37 @@ export async function runH10Issuance(input: H10RunInput): Promise<H10RunReport> 
         predecessorId: predecessors.get(`${job.scope.playerId}:${job.scope.gameId}`) ?? null, opportunityPredecessor,
         evidence: job.trigger === "material" ? input.evidence?.get(job.scope.playerId) ?? [] : [] }));
     }
-    for (let round = 0; round < Math.ceil(next.jobs.length / H10_BOUNDS.batchSize) + 4; round++) {
-      const result = await runPreparedQueueBatch({ store, artifacts: input.artifacts, queueId, prepared, bounds: H10_BOUNDS, clock: input.clock });
-      if (result.state !== "completed" || !result.jobs.length) break;
+    let final: RefreshState | null = null;
+    if (daily) {
+      for (let round = 0; round < Math.ceil(next.jobs.length / H10_BOUNDS.batchSize) + 4; round++) {
+        // Budget: a later batch of a long queue waits for the next call.
+        if (round > 0 && input.stopAfterMs !== undefined && Date.now() > input.stopAfterMs) { stoppedEarly = true; break; }
+        const result = await runH10QueueBatch({ db, store: store as PostgresHistoryStore, ledger, queueId, prepared, bounds: H10_BOUNDS, clock: input.clock,
+          snapshot: round === 0 ? { revision: savedRevision, state: next } : undefined });
+        final = result.final?.state ?? null;
+        if (result.state !== "completed" || !result.jobs.length) { final = null; break; }
+        // Nothing left to claim now (a retry waits for its readiness time): skip the empty claim read.
+        if (final && !final.jobs.some(job => job.status === "running" || job.status === "pending" && instant(job.readyAt) <= instant(input.clock()))) break;
+        final = null;
+      }
+    } else {
+      for (let round = 0; round < Math.ceil(next.jobs.length / H10_BOUNDS.batchSize) + 4; round++) {
+        const result = await runPreparedQueueBatch({ store, artifacts: input.artifacts, queueId, prepared, bounds: H10_BOUNDS, clock: input.clock });
+        if (result.state !== "completed" || !result.jobs.length) break;
+      }
     }
-    current = await store.loadQueue(queueId);
-    next = restoreRefreshState(current!.state, H10_BOUNDS);
+    if (final) next = final;
+    else {
+      current = await store.loadQueue(queueId);
+      next = restoreRefreshState(current!.state, H10_BOUNDS);
+    }
     for (const job of next.jobs) report.jobs[job.status] = (report.jobs[job.status] ?? 0) + 1;
-    if (next.jobs.every(job => terminal(job.status))) report.queues.complete += 1;
+    if (next.jobs.every(job => terminal(job.status))) report.queues.finished += 1;
+    if (next.jobs.every(job => job.status === "published")) report.queues.complete += 1;
   }
   report.gaps = gaps.sort((a, b) => a.teamId - b.teamId || a.horizon - b.horizon || a.playerId - b.playerId);
-  report.complete = !stoppedEarly && report.queues.complete === report.queues.processed;
+  report.finished = !stoppedEarly && report.queues.finished === report.queues.processed;
+  report.complete = report.finished && report.queues.complete === report.queues.processed;
   return report;
 }
 

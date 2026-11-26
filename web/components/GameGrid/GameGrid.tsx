@@ -171,6 +171,30 @@ function MobileModeSwitch({ mode, onChange }: { mode: GameGridMode; onChange: (m
   );
 }
 
+// Update the selected control in the urgent lane; schedule the large grid update separately.
+function ForecastSpanButtons({ mode, setMode }: { mode: GameGridMode; setMode: (mode: GameGridMode) => void }) {
+  const [picked, setPicked] = useState(mode);
+  useEffect(() => setPicked(mode), [mode]);
+  return (
+    <div className={styles.modeToggle} role="group" aria-label="Forecast span">
+      {(["7-Day-Forecast", "10-Day-Forecast"] as const).map((option) => (
+        <button
+          key={option}
+          type="button"
+          aria-pressed={picked === option}
+          className={picked === option ? styles.modeButtonActive : styles.modeButton}
+          onClick={() => {
+            setPicked(option);
+            startTransition(() => setMode(option));
+          }}
+        >
+          {option === "7-Day-Forecast" ? "7-Day" : "10-Day"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -1401,36 +1425,7 @@ function GameGridInternal({
           <div className={styles.rightControls}>
             <div className={styles.forecastControls}>
               {viewControl}
-              <div
-                className={styles.modeToggle}
-                role="group"
-                aria-label="Forecast span"
-              >
-                <button
-                  type="button"
-                  aria-pressed={mode === "7-Day-Forecast"}
-                  className={
-                    mode === "7-Day-Forecast"
-                      ? styles.modeButtonActive
-                      : styles.modeButton
-                  }
-                  onClick={() => setMode("7-Day-Forecast")}
-                >
-                  7-Day
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={mode === "10-Day-Forecast"}
-                  className={
-                    mode === "10-Day-Forecast"
-                      ? styles.modeButtonActive
-                      : styles.modeButton
-                  }
-                  onClick={() => setMode("10-Day-Forecast")}
-                >
-                  10-Day
-                </button>
-              </div>
+              <ForecastSpanButtons mode={mode} setMode={setMode} />
               {weekScoreHelp}
             </div>
             {legendBar}
