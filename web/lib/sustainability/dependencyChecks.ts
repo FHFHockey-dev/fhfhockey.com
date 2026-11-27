@@ -134,10 +134,14 @@ export async function assertScorePrerequisites(
 ) {
   await assertWindowZPrerequisites(seasonId, snapshotDate);
 
-  const windowCount = await countRows("sustainability_window_z", (query) =>
-    query.eq("season_id", seasonId).eq("snapshot_date", snapshotDate)
-  );
-  if (windowCount === 0) {
+  const { data, error } = await supabase
+    .from("sustainability_window_z")
+    .select("player_id")
+    .eq("season_id", seasonId)
+    .eq("snapshot_date", snapshotDate)
+    .limit(1);
+  if (error) throw error;
+  if (!data?.length) {
     throwMissing({
       code: "missing_sustainability_window_z",
       message:
