@@ -52,6 +52,51 @@ async function getPlayerKeys(
   return Array.from(new Set(rows.map((row) => row.player_key).filter(Boolean)));
 }
 
+const OWNERSHIP_METADATA_FIELDS = new Set(["coverage_type", "week", "delta"]);
+const OWNERSHIP_SHAPE_OUTCOMES = {
+  missing_field: "absent",
+  metadata_only: "absent",
+  null_field: "invalid",
+  scalar: "invalid",
+  object_value: "invalid",
+  array_value: "invalid",
+  wrapped_value: "unrecognized",
+  unrecognized_object: "unrecognized",
+  unrecognized_array: "unrecognized",
+} as const;
+type OwnershipInputShape = keyof typeof OWNERSHIP_SHAPE_OUTCOMES;
+type OwnershipShapeOutcome = (typeof OWNERSHIP_SHAPE_OUTCOMES)[OwnershipInputShape];
+type OwnershipShapeSample = {
+  playerKey: string;
+  batchNumber: number;
+  shapeFlags: { outcome: OwnershipShapeOutcome; shape: OwnershipInputShape };
+};
+const MAX_OWNERSHIP_SAMPLES = 5;
+
+// Inspect the source layout before normalization. The outcome classification
+// is used only when the existing parser did not accept a percentage.
+function inspectOwnershipShape(raw: unknown): OwnershipInputShape {
+  if (raw === undefined) return "missing_field";
+  if (raw === null) return "null_field";
+  if (typeof raw !== "object") return "scalar";
+
+  const array = Array.isArray(raw);
+  const parts: unknown[] = array ? raw : [raw];
+  const records = parts.filter((part): part is Record<string, unknown> =>
+    part !== null && typeof part === "object" && !Array.isArray(part),
+  );
+  const values = records.flatMap(record =>
+    ["value", "Value"].filter(key => Object.hasOwn(record, key)).map(key => record[key]),
+  );
+  if (values.some(value => value !== null && typeof value === "object")) return "wrapped_value";
+  if (values.length > 0) return array ? "array_value" : "object_value";
+  if (
+    records.length === parts.length &&
+    records.every(record => Object.keys(record).every(key => OWNERSHIP_METADATA_FIELDS.has(key)))
+  ) return "metadata_only";
+  return array ? "unrecognized_array" : "unrecognized_object";
+}
+
 function yahooErrorCategory(error: unknown) {
   const status = getYahooErrorStatus(error);
   return status === 401 || status === 403 ? "token_failure" as const : classifyYahooLifecycleError(error);
@@ -266,7 +311,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     const allRpcPayloads: YahooPlayerAtomicPayload[] = [];
-    const ownershipInputs = new Map<string, YahooOwnershipObservation>();
+    const ownershipInputs = new Map<string, {
+      observation: YahooOwnershipObservation;
+      batchNumber: number;
+      shape: OwnershipInputShape;
+    }>();
 
     const BATCH_SIZE = 25;
     const currentDate = format(new Date(), "yyyy-MM-dd");
@@ -318,7 +367,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           omitted += batchKeys.filter((key) => !returnedKeys.has(key)).length;
           players.forEach((playerData: any) => {
             if (!playerData?.player_key) return;
-            ownershipInputs.set(String(playerData.player_key), assessYahooPercentOwned(playerData.percent_owned));
+            const raw = playerData.percent_owned;
+            const shape = inspectOwnershipShape(raw);
+            ownershipInputs.set(String(playerData.player_key), {
+              observation: assessYahooPercentOwned(raw),
+              batchNumber: i / BATCH_SIZE + 1,
+              shape,
+            });
             allRpcPayloads.push(
               prepareYahooPlayerAtomicPayload(
                 playerData,
@@ -327,11 +382,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                 season,
               ),
             ); // Pass current date + season context
-            console.log(
-              `Player payload queued: ${
-                playerData.name?.full || playerData.player_key
-              }`,
-            );
           });
         } else {
           omitted += batchKeys.length;
@@ -369,21 +419,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const ownershipDiagnostics = {
       observed: 0, explicitZero: 0, unavailable: 0,
       omissionReasons: { missing_percentage: 0, missing_value: 0, null_value: 0, invalid_value: 0 },
-      samples: [] as Array<{ playerKey: string; reason: string }>,
+      shapeCounts: { absent: 0, invalid: 0, unrecognized: 0 },
+      samples: [] as OwnershipShapeSample[],
     };
+    const firstSamples: OwnershipShapeSample[] = [];
+    const repeatSamples: OwnershipShapeSample[] = [];
     for (const payload of dedupedRpcPayloads) {
-      const observation = ownershipInputs.get(payload.player_key)!;
+      const { observation, batchNumber, shape } = ownershipInputs.get(payload.player_key)!;
       if (observation.reason === "observed") {
         ownershipDiagnostics.observed += 1;
         if (observation.value === 0) ownershipDiagnostics.explicitZero += 1;
       } else {
         ownershipDiagnostics.unavailable += 1;
         ownershipDiagnostics.omissionReasons[observation.reason] += 1;
-        if (ownershipDiagnostics.samples.length < 5) ownershipDiagnostics.samples.push({
-          playerKey: payload.player_key, reason: observation.reason,
-        });
+        const outcome = OWNERSHIP_SHAPE_OUTCOMES[shape];
+        ownershipDiagnostics.shapeCounts[outcome] += 1;
+        const sample = { playerKey: payload.player_key, batchNumber, shapeFlags: { outcome, shape } };
+        // Reserve a slot for the first occurrence of each outcome, even in a later batch.
+        if (ownershipDiagnostics.shapeCounts[outcome] === 1) firstSamples.push(sample);
+        else if (repeatSamples.length < MAX_OWNERSHIP_SAMPLES - 1) repeatSamples.push(sample);
       }
     }
+    ownershipDiagnostics.samples = [...firstSamples, ...repeatSamples].slice(0, MAX_OWNERSHIP_SAMPLES);
 
     if (dedupedRpcPayloads.length) {
       console.log(

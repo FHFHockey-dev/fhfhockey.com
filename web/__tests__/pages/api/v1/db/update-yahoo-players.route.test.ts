@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({
   players: [] as Array<Record<string, any>>,
   payloads: [] as any[][],
+  audits: [] as Array<{ job_name: string; status: string; rows_affected: number | null; details: Record<string, any> }>,
   receiptOverride: null as Record<string, unknown> | null,
   failAtBatch: 0,
   rateLimitAtBatch: 0,
@@ -43,7 +44,15 @@ vi.mock("@supabase/supabase-js", () => ({
     },
   }),
 }));
-vi.mock("lib/cron/withCronJobAudit", () => ({ withCronJobAudit: (handler: any) => handler }));
+vi.mock("lib/supabase/server", () => ({ default: {
+  from: (table: string) => ({
+    insert: async (row: typeof state.audits[number]) => {
+      if (table !== "cron_job_audit") throw new Error("Unexpected audit table");
+      state.audits.push(row);
+      return { error: null };
+    },
+  }),
+} }));
 vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: any) => handler }));
 vi.mock("lib/integrations/yahoo/ingestionLifecycle", async importOriginal => ({
   ...await importOriginal<typeof import("lib/integrations/yahoo/ingestionLifecycle")>(),
@@ -59,15 +68,17 @@ vi.mock("lib/integrations/yahoo/ingestionLifecycle", async importOriginal => ({
 import handler from "../../../../../pages/api/v1/db/update-yahoo-players";
 
 const player = (key: string, ownership: unknown) => ({ player_key: key, name: { full: "Fixture" }, percent_owned: ownership });
+const route = "/api/v1/db/update-yahoo-players";
 async function run() {
   const res: any = { statusCode: 200, body: null, status(code: number) { this.statusCode = code; return this; },
     json(body: unknown) { this.body = body; return this; } };
-  const work = handler({ method: "GET", query: {} } as any, res);
+  const work = handler({ method: "GET", url: route, query: {} } as any, res);
   await vi.runAllTimersAsync(); await work; return res;
 }
 
 beforeEach(() => {
   vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-29T08:40:00Z"));
+  state.audits = [];
   state.players = []; state.payloads = []; state.receiptOverride = null; state.failAtBatch = 0; state.rateLimitAtBatch = 0; state.providerBatches = 0; state.providerErrorStatus = 429; state.providerFailureAt = 0;
   state.provider.mockReset().mockImplementation(async (path: string) => {
     if (path.startsWith("game/")) return {};
@@ -110,8 +121,56 @@ describe("Yahoo ownership source-to-receipt health", () => {
     const res = await run();
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ success: true, completeSnapshot: true, ownershipHistoryUpserted: 2, ownershipOmitted: 0,
-      ownershipDiagnostics: { observed: 2, explicitZero: 1, unavailable: 0 } });
+      ownershipDiagnostics: { observed: 2, explicitZero: 1, unavailable: 0,
+        shapeCounts: { absent: 0, invalid: 0, unrecognized: 0 }, samples: [] } });
+    expect(state.payloads.flat().map(p => p.percent_ownership)).toEqual([0, 37.5]);
+    expect(state.audits).toMatchObject([{ job_name: route, status: "success", rows_affected: 2,
+      details: { statusCode: 200, responseTruncated: false } }]);
     expect(state.sheet).toHaveBeenCalledTimes(1);
+  });
+
+  it("audits raw ownership shape counts with five safe samples across batches", async () => {
+    const providerText = "untrusted-provider-fixture";
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    state.players = [
+      { player_key: "477.p.10000", name: { full: providerText } },
+      ...Array.from({ length: 24 }, (_, index) =>
+        player(`477.p.${10001 + index}`, [{ coverage_type: "week", week: 5 }, { delta: "0" }])),
+      player("477.p.10025", { value: providerText }),
+      player("477.p.10026", { [providerText]: { value: 17 } }),
+      player("477.p.10027", [17]),
+      player("477.p.10028", { value: { value: 17 } }),
+      player("477.p.10029", null),
+      player("477.p.10030", { value: 101 }),
+      player("477.p.10031", { value: 33, Value: 34 }),
+    ];
+    const res = await run();
+    expect(res.statusCode).toBe(207);
+    expect(res.body).toMatchObject({ sourceRows: 32, succeeded: 32, failedRows: 0, providerOmitted: 0, deferredRows: 0,
+      ownershipHistoryUpserted: 0, ownershipOmitted: 32, completeSnapshot: false,
+      ownershipDiagnostics: {
+        shapeCounts: { absent: 25, invalid: 4, unrecognized: 3 },
+        samples: [
+          { playerKey: "477.p.10000", batchNumber: 1, shapeFlags: { outcome: "absent", shape: "missing_field" } },
+          { playerKey: "477.p.10025", batchNumber: 2, shapeFlags: { outcome: "invalid", shape: "object_value" } },
+          { playerKey: "477.p.10026", batchNumber: 2, shapeFlags: { outcome: "unrecognized", shape: "unrecognized_object" } },
+          { playerKey: "477.p.10001", batchNumber: 1, shapeFlags: { outcome: "absent", shape: "metadata_only" } },
+          { playerKey: "477.p.10002", batchNumber: 1, shapeFlags: { outcome: "absent", shape: "metadata_only" } },
+        ],
+      } });
+    for (const sample of res.body.ownershipDiagnostics.samples) {
+      expect(Object.keys(sample).sort()).toEqual(["batchNumber", "playerKey", "shapeFlags"]);
+      expect(Object.keys(sample.shapeFlags).sort()).toEqual(["outcome", "shape"]);
+    }
+    expect(state.payloads).toHaveLength(1);
+    expect(state.payloads.flat().map(p => [p.percent_ownership, p.snapshot_status]))
+      .toEqual(state.players.map(() => [null, "omitted"]));
+    expect(state.audits).toMatchObject([{ job_name: route, status: "failure", rows_affected: 32,
+      details: { statusCode: 207, failedRows: 0, responseTruncated: false, error: null } }]);
+    expect(JSON.parse(state.audits[0].details.response)).toEqual(res.body);
+    expect(JSON.stringify([state.audits, res.body, log.mock.calls])).not.toContain(providerText);
+    expect(state.provider).toHaveBeenCalledTimes(3); // game metadata + two planned player batches
+    expect(state.sheet).not.toHaveBeenCalled();
   });
 
   it("does not turn malformed or explicit-null ownership into zero", async () => {
@@ -140,8 +199,11 @@ describe("Yahoo ownership source-to-receipt health", () => {
     expect(res.statusCode).toBe(207);
     expect(res.body).toMatchObject({ success: false, status: "partial", sourceRows: 1606, succeeded: 1606,
       ownershipHistoryUpserted: 579, ownershipOmitted: 1027, completeSnapshot: false,
-      ownershipDiagnostics: { observed: 579, explicitZero: 1, unavailable: 1027, omissionReasons: { missing_value: 1027 } } });
+      ownershipDiagnostics: { observed: 579, explicitZero: 1, unavailable: 1027, omissionReasons: { missing_value: 1027 },
+        shapeCounts: { absent: 1027, invalid: 0, unrecognized: 0 } } });
     expect(res.body.ownershipDiagnostics.samples).toHaveLength(5);
+    expect(state.audits[0].details.responseTruncated).toBe(false);
+    expect(JSON.parse(state.audits[0].details.response).ownershipDiagnostics).toEqual(res.body.ownershipDiagnostics);
     expect(state.payloads).toHaveLength(4);
     expect(state.provider).toHaveBeenCalledTimes(66); // one metadata +65planned batches, no recovery sweep
     expect(state.sheet).not.toHaveBeenCalled();
@@ -164,6 +226,7 @@ describe("Yahoo ownership source-to-receipt health", () => {
     state.rateLimitAtBatch = atBatch;
     const res = await run();
     const known = (atBatch - 1) * 25;
+    expect(res.statusCode).toBe(atBatch === 1 ? 502 : 207);
     expect(state.provider).toHaveBeenCalledTimes(1 + atBatch);
     expect(res.body).toMatchObject({ success: false, completeSnapshot: false, sourceRows: 51,
       processed: atBatch * 25, succeeded: known, failedRows: 25, deferredRows: 51 - atBatch * 25,
