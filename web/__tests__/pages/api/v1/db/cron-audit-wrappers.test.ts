@@ -83,20 +83,21 @@ describe("scheduled cron audit coverage", () => {
     // 2026-11-08: job 403 (update-team-unit-toi-nightly, cron-only) was scheduled by TJ after #379.
     // 2026-11-19: BLSH jobs 404/405 (blsh-native-capture primary and backup, cron-only, one route)
     // and SQL jobs 406/407 entered the inventory with the L7 NST registration.
-    expect(authFindings).toHaveLength(47);
+    // The Nov. 12 pause removed job 327 from the active cron-only routes.
+    expect(authFindings).toHaveLength(46);
     expect(
       authFindings.reduce(
         (jobCount, finding) => jobCount + finding.jobNames.length,
         0,
       ),
-    ).toBe(52);
+    ).toBe(51);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 47,
+      "admin-or-cron": 46,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
       "browser-admin-and-internal": 4,
-      "cron-only": 29,
+      "cron-only": 28,
       "internal-server": 9,
     });
     expect(authFindings.some((finding) => finding.routePath === "/api/v1/db/cron-report")).toBe(false);

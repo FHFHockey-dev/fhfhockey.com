@@ -594,7 +594,7 @@
     "jobname": "update-predictions-sko",
     "schedule": "45 10 * * *",
     "run_time_utc": "10:45 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/v1/ml/update-predictions-sko"
   },

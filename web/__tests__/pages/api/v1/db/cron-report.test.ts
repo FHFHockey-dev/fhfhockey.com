@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -1248,6 +1249,25 @@ ${JSON.stringify([{ jobid: 106, jobname: "update-yahoo-players", schedule: "40 8
     }
   });
 
+  it("excludes paused sKO predictions while still reporting a missing active sKO stats receipt", async () => {
+    vi.setSystemTime(new Date("2026-11-27T13:00:48Z"));
+    const markdown = readFileSync("../tasks/TASKS/cron-operations/cron-schedule.md", "utf8");
+    const entries = JSON.parse(markdown.match(/```json\s*([\s\S]*?)```/)![1]);
+    const skoJobs = entries.filter(({ jobid }: { jobid: number }) => jobid === 321 || jobid === 327);
+    expect(skoJobs).toHaveLength(2);
+    readFileMock.mockResolvedValue("```json\n" + JSON.stringify(skoJobs) + "\n```");
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [], error: null });
+
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+
+    expect(res.body).toMatchObject({
+      counts: { scheduledJobs: 1, jobsMissingLast: 1 },
+      warnings: { missingObservationJobs: [expect.objectContaining({ displayName: "update-sko-stats-full-season" })] },
+    });
+  });
+
   it("prefers the active JSON schedule inventory over legacy SQL snippets", async () => {
     vi.setSystemTime(new Date("2026-03-20T14:00:00.000Z"));
 
@@ -1809,6 +1829,79 @@ ${JSON.stringify(jobs)}
     expect(res.body.counts).toMatchObject({ jobsOkLast: 1, jobsFailingLast: 1, jobsMissingLast: 0 });
     const briefings = cronAuditEmailMock.mock.calls.at(-1)?.[0] as any;
     expect(briefings.audits.find((job: any) => job.jobName === "late")).toMatchObject({ status: "failure" });
+  });
+
+  describe("BLSH native capture scheduler receipts", () => {
+    const route = "/api/v1/db/blsh-native-capture";
+    const jobs = [
+      { jobid: 404, jobname: "blsh-native-capture", schedule: "5 12 * * *" },
+      { jobid: 405, jobname: "blsh-native-capture-backup", schedule: "20 12 * * *" },
+    ].map((job) => ({ ...job, method: "POST", route, active: true }));
+    // Scheduler and shared audit timestamps from the November 27 reconciliation.
+    const runs = [
+      { runid: 283792, scheduled_time: "2026-11-27T12:05:00.262531Z", end_time: "2026-11-27T12:05:00.349886Z" },
+      { runid: 283825, scheduled_time: "2026-11-27T12:20:00.192398Z", end_time: "2026-11-27T12:20:00.224958Z" },
+    ].map((run, index) => ({
+      ...run, jobid: jobs[index].jobid, jobname: jobs[index].jobname,
+      status: "succeeded", sql_text: `select fhfh_internal.invoke_blsh_endpoint('${route}')`,
+    }));
+    const sharedAudits = ["12:05:02.005883", "12:20:02.405771"].map((time) => ({
+      job_name: "blsh-native-capture", run_time: `2026-11-27T${time}Z`, status: "success",
+      details: {
+        method: "POST", url: route, statusCode: 200,
+        response: JSON.stringify({ success: true, skipped: "disabled", sourceDate: "2026-11-26" }),
+      },
+    }));
+
+    beforeEach(() => {
+      vi.setSystemTime(new Date("2026-11-27T13:00:48.000Z"));
+      readFileMock.mockResolvedValue(`\`\`\`json\n${JSON.stringify(jobs)}\n\`\`\``);
+      cronJobReportSelectMock.mockResolvedValue({ data: runs, error: null });
+      cronJobAuditSelectMock.mockResolvedValue({ data: sharedAudits, error: null });
+    });
+
+    it("reports both November 27 dispatches without assigning an application or backup result", async () => {
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.counts).toMatchObject({
+        scheduledJobs: 2, scheduledJobsWithActivity: 2,
+        jobsUnknownLast: 2, jobsMissingLast: 0, jobsOkLast: 0, jobsSkippedLast: 0,
+        unscheduledRuns: 2,
+      });
+      const props = cronAuditEmailMock.mock.calls.at(-1)![0];
+      expect(props.audits).toHaveLength(2);
+      for (const job of jobs) {
+        expect(props.audits.find((row: any) => row.jobName === job.jobname)).toMatchObject({
+          observationKind: "scheduled", method: "POST", status: "unknown", observedExecutionStatus: "unknown",
+          statusCode: null, rowsUpserted: null, rowsAffected: null, lastKnownSuccessDisplay: null,
+          reason: "Scheduler succeeded; application outcome unverified.",
+        });
+      }
+      const { CronAuditEmail } = await vi.importActual<typeof import("components/CronReportEmail/CronAuditEmail")>("components/CronReportEmail/CronAuditEmail");
+      const html = renderToStaticMarkup(createElement(CronAuditEmail, props));
+      expect(html).toContain("0 missing · 2 unknown");
+      expect(html).toContain("Scheduler succeeded; application outcome unverified.");
+    });
+
+    it.each([
+      ["absent", []],
+      ["from a different job ID", [{ ...runs[1], jobid: 404 }]],
+      ["from the wrong UTC slot", [{ ...runs[1], scheduled_time: runs[0].scheduled_time }]],
+      ["for a different wrapper target", [{ ...runs[1], sql_text: `select fhfh_internal.invoke_blsh_endpoint('${route}?other=1')` }]],
+    ])("reports a missing backup scheduler slot when its receipt is %s", async (_label, otherRuns) => {
+      cronJobReportSelectMock.mockResolvedValue({ data: [runs[0], ...otherRuns], error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+
+      expect(res.body.counts).toMatchObject({ scheduledJobsWithActivity: 1, jobsMissingLast: 1, jobsUnknownLast: 1, jobsOkLast: 0 });
+      const props = cronAuditEmailMock.mock.calls.at(-1)![0];
+      expect(props.audits.find((row: any) => row.jobName === "blsh-native-capture-backup")).toMatchObject({
+        observedExecutionStatus: "missing", statusCode: null, lastKnownSuccessDisplay: null,
+        reason: "No scheduler record matched this slot.",
+      });
+    });
   });
 
   it("preserves partial failure evidence and marks query timeouts as incomplete", async () => {

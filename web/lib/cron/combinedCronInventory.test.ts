@@ -265,11 +265,11 @@ SELECT cron.schedule(
 
     expect(
       inventory.jobs.filter((job) => job.provider === "pg_cron"),
-    ).toHaveLength(62);
+    ).toHaveLength(61);
     expect(
       inventory.jobs.filter((job) => job.provider === "vercel"),
     ).toHaveLength(32);
-    expect(inventory.jobs).toHaveLength(94);
+    expect(inventory.jobs).toHaveLength(93);
     // BLSH jobs 404-407 joined the inventory 2026-11-19 with the L7 NST registration.
     // pg_cron job 234 was intentionally disabled; the Vercel 13:00 UTC cron
     // is the sole daily report. Live SQL jobs 394/396/397 were added 2026-10-18.

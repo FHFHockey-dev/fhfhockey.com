@@ -58,6 +58,7 @@ const REPORT_REQUEST_TIMEOUT_MS = 15_000;
 const SELF_AUDIT_WRITE_GRACE_MS = 5 * 60 * 1000;
 const MATCH_WINDOW_MS = 30 * 60 * 1000;
 const RECURRING_SLOT_GRACE_MS = 5 * 60 * 1000;
+const BLSH_NATIVE_CAPTURE_ROUTE = "/api/v1/db/blsh-native-capture";
 const MAX_UNSCHEDULED_ALERTS = 8;
 const ROUTE_AUDIT_MISSING_WARNING =
   "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified.";
@@ -1043,6 +1044,11 @@ function parseCronInvocation(sqlText: string | null, scheduledAt?: string | null
     return { method: "UNKNOWN", url: null, route: null, routePath: null };
   }
 
+  const blshRoute = sqlText.trim().match(/^select\s+fhfh_internal\.invoke_blsh_endpoint\(\s*'([^']+)'\s*\)\s*;?$/i)?.[1];
+  if (blshRoute === BLSH_NATIVE_CAPTURE_ROUTE) {
+    return { method: "POST", url: blshRoute, ...parseUrlPieces(blshRoute) };
+  }
+
   const methodMatch = sqlText.match(/net\.http_(get|post)\s*\(/i);
   const method = methodMatch
     ? methodMatch[1].toUpperCase() === "POST"
@@ -1276,6 +1282,10 @@ async function loadScheduledCronJobs(
   });
 }
 
+function isBlshNativeCaptureSlot(job: ScheduledCronJob): boolean {
+  return (job.jobid === 404 || job.jobid === 405) && job.method === "POST" && job.route === BLSH_NATIVE_CAPTURE_ROUTE;
+}
+
 function candidateMatchesSchedule(
   job: ScheduledCronJob,
   candidate: {
@@ -1287,6 +1297,15 @@ function candidateMatchesSchedule(
     routePath: string | null;
   }
 ): boolean {
+  if (isBlshNativeCaptureSlot(job)) {
+    // The shared route audit carries neither scheduler job ID. Match only a
+    // scheduler receipt from the configured UTC minute for this job ID.
+    if (candidate.jobid !== job.jobid || candidate.method !== "POST" ||
+      candidate.route !== BLSH_NATIVE_CAPTURE_ROUTE || !job.expectedRunAt) return false;
+    const delayMs = Date.parse(candidate.time) - Date.parse(job.expectedRunAt);
+    return delayMs >= 0 && delayMs < 60_000;
+  }
+
   const aliases = new Set(
     [candidate.jobName, candidate.route, candidate.routePath].filter(
       (value): value is string => Boolean(value)
@@ -1614,6 +1633,7 @@ function compactUnscheduledRuns(runs: RunDigest[]): RunDigest[] {
 
 function collectMissingObservationWarnings(job: {
   jobName: string;
+  blshSchedulerOnly: boolean;
   lastStatus: ReportJobStatus;
   runsCount: number;
   auditRunsCount: number;
@@ -1626,6 +1646,10 @@ function collectMissingObservationWarnings(job: {
   auditGapGraceStartedAt: string | null;
   observationTime: string;
 }): string[] {
+  if (job.blshSchedulerOnly) {
+    return job.lastStatus === "missing" ? ["No cron or audit observation matched this scheduled slot."] : [];
+  }
+
   const warnings: string[] = [];
   const latestRunMs = job.latestRunTime ? Date.parse(job.latestRunTime) : null;
   const auditGapGraceMs = job.auditGapGraceStartedAt
@@ -1937,6 +1961,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const today = now.toISOString().slice(0, 10);
   const jobSummaries: JobSummary[] = scheduledJobs
     .map((job) => {
+      const blshSchedulerOnly = isBlshNativeCaptureSlot(job);
       const assignedAudits = auditRows.filter((row) => auditAssignments.get(row.id) === job.key);
       // A planned continuation is resumed by extra calls to the same route; keep
       // those calls, including the one that completes the run, with this job.
@@ -1963,8 +1988,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const lastAuditTs = lastAudit ? Date.parse(lastAudit.time) : -Infinity;
       const lastRunTs = lastRun ? Date.parse(lastRun.time) : -Infinity;
       const preferAudit = lastAuditTs >= lastRunTs;
+      const blshSchedulerSucceeded = blshSchedulerOnly && lastRun?.status === "success";
       const hasFullCoverageForMissing =
-        job.method === "SQL"
+        job.method === "SQL" || blshSchedulerOnly
           ? runDataAvailable
           : runDataAvailable && auditDataAvailable;
 
@@ -1977,7 +2003,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             ? (lastAudit?.status ?? "unknown")
             : (lastRun?.status ?? "unknown");
       const observedStatus: ObservedJobStatus =
-        lastAudit && preferAudit ? classifyAuditStatus(lastAudit)
+        blshSchedulerSucceeded ? "unknown"
+          : lastAudit && preferAudit ? classifyAuditStatus(lastAudit)
           : lastRun ? classifyCronStatus(lastRun) : rawLastStatus;
       // A SQL HTTP receipt proves submission only; partial reads cannot prove
       // the latest success. Keep known failures/disabled receipts visible.
@@ -2022,7 +2049,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             : null;
 
       const okCount24h =
-        matchingAudits.length > 0
+        blshSchedulerOnly || matchingAudits.length > 0
           ? matchingAudits.filter((row) => classifyAuditStatus(row) === "success").length
           : matchingRuns.filter((row) => row.status === "success").length;
       const skippedCount24h = matchingAudits.filter((row) => classifyAuditStatus(row) === "skipped").length;
@@ -2045,7 +2072,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const failedRowSamples = lastAudit?.parsed.failedRowSamples ?? [];
       const route = job.route ?? job.sqlText;
       const routePath = job.routePath;
-      const lastKnownSuccessDisplay = findLastKnownSuccessDisplay(
+      const lastKnownSuccessDisplay = blshSchedulerOnly ? null : findLastKnownSuccessDisplay(
         lastKnownSuccessMap,
         {
           jobName: job.name,
@@ -2080,6 +2107,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const benchmarkAnnotations = getBenchmarkAnnotations(job.name);
       const missingObservationWarnings = collectMissingObservationWarnings({
         jobName: job.name,
+        blshSchedulerOnly,
         lastStatus,
         runsCount: currentRuns.length,
         auditRunsCount: currentAudits.length,
@@ -2094,6 +2122,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       });
 
       const notes: string[] = [];
+      if (blshSchedulerSucceeded) {
+        notes.push("Scheduler succeeded; application outcome unverified.");
+      }
       if (lastAudit && classifyAuditStatus(lastAudit) === "skipped") {
         notes.push(`Intentional skip${message ? `: ${message}` : ""}. No data refresh established.`);
       }
@@ -2127,8 +2158,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         missingObservationWarnings.push(warning);
       }
       if (lastStatus === "missing") {
-        notes.push("No cron or audit entry matched this scheduled slot.");
-        if (job.method !== "SQL") notes.push(KILLED_AT_LIMIT_WARNING);
+        notes.push(blshSchedulerOnly ? "No scheduler record matched this slot." : "No cron or audit entry matched this scheduled slot.");
+        if (!blshSchedulerOnly && job.method !== "SQL") notes.push(KILLED_AT_LIMIT_WARNING);
       }
       if (lastStatus === "disabled") {
         notes.push(
