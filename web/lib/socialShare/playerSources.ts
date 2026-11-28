@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "lib/supabase/database-generated.types";
 import publicSupabase from "lib/supabase/public-client";
 import { DEFAULT_SUPABASE_PAGE_SIZE, fetchAllSupabasePages } from "lib/supabase/pagination";
 import { calculateLeagueSavePct } from "lib/rankings/goalieMethodology";
@@ -19,10 +21,16 @@ export const PLAYER_SOURCE_LIMITS = { yahoo: 2000, mapChunk: 150, skaters: 1500,
  */
 const RECENT_LOOKBACK_DAYS = 21;
 export const RECENT_LIMITS = { lookbackDays: RECENT_LOOKBACK_DAYS, skaterRowsPerPlayer: RECENT_LOOKBACK_DAYS + 1, goalieRowsPerPlayer: RECENT_LOOKBACK_DAYS + 1 } as const;
-const YAHOO_COLUMNS = "player_key,player_id,editorial_team_abbreviation,display_position,eligible_positions,percent_ownership,status,season,last_updated";
+const YAHOO_COLUMNS = "player_key,player_id,editorial_team_abbreviation,display_position,eligible_positions,percent_ownership,ownership_timeline:normalized_ownership_timeline,status,season";
 const SKATER_COLUMNS = "player_id,player_name,season,games_played,points_per_game,goals,shots,hits,blocked_shots,current_team_abbreviation,updated_at";
 const GOALIE_COLUMNS = "goalie_id,goalie_name,season_id,games_played,games_started,quality_starts_pct,save_pct,current_team_abbreviation,updated_at";
 const NHL_TO_YAHOO = Object.fromEntries(Object.entries(PICKUP_YAHOO_TEAM_ALIASES).map(([yahoo, nhl]) => [nhl, yahoo]));
+
+// The bounded view has the same row shape as the generated normalized-history view.
+type PickupHistoryDatabase = Database & {
+  public: { Views: { yahoo_players_with_trend_history: Database["public"]["Views"]["yahoo_players_with_normalized_history"] } };
+};
+const pickupHistoryClient = publicSupabase as SupabaseClient<PickupHistoryDatabase>;
 
 type CountedPage<T> = PromiseLike<{ data: T[] | null; error: unknown; count: number | null }>;
 /** Exact-count, single-page read: a source larger than `limit` rows fails instead of paging on. */
@@ -46,8 +54,8 @@ async function bounded<T>(what: string, limit: number, page: (from: number, to: 
 
 /**
  * Read-only anon reads for the pickup and specialist cards, filtered server-side to the edition's
- * teams with games. yahoo_players reads only current-season rows under 50% rostered and no
- * ownership timelines; the existing yahoo_nhl_player_map_read view maps Yahoo ids to NHL ids.
+ * teams with games. The trend-history view returns bounded dated history for current-season
+ * rows under 50% rostered; yahoo_nhl_player_map_read maps Yahoo ids to NHL ids.
  */
 /**
  * Recent reads go out in chunks of player ids (SS1-24): the single pool-wide `IN` statement hit the anon role's
@@ -167,7 +175,7 @@ export async function loadSharePlayerSources(season: number, teams: string[]): P
   const yahooSeason = Math.floor(season / 10000);
   const yahooTeams = [...new Set(teams.flatMap(team => [team, NHL_TO_YAHOO[team]].filter((item): item is string => !!item)))];
   const [yahoo, skaters, goalies] = await Promise.all([
-    bounded<PickupOwnershipRow>("Yahoo ownership", PLAYER_SOURCE_LIMITS.yahoo, (from, to) => publicSupabase.from("yahoo_players")
+    bounded<PickupOwnershipRow>("Yahoo ownership", PLAYER_SOURCE_LIMITS.yahoo, (from, to) => pickupHistoryClient.from("yahoo_players_with_trend_history")
       .select(YAHOO_COLUMNS, { count: "exact" }).eq("season", yahooSeason).lt("percent_ownership", 50).in("editorial_team_abbreviation", yahooTeams)
       .order("player_key", { ascending: true }).range(from, to) as unknown as CountedPage<PickupOwnershipRow>),
     bounded<ShareSkaterRow>("Skater season totals", PLAYER_SOURCE_LIMITS.skaters, (from, to) => publicSupabase.from("wgo_skater_stats_totals")

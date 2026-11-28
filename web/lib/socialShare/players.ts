@@ -31,17 +31,18 @@ const ownershipPct = (value: unknown): number | null => {
   const parsed = typeof value === "string" && /^\d+(\.\d+)?$/.test(value) ? Number(value) : typeof value === "number" ? value : NaN;
   return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100 ? parsed : null;
 };
-const isDate = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+const isDate = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+  && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
 const count = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
 
-/** Latest valid ownership_timeline point, else percent_ownership dated by last_updated (resolveOwnership rule). */
+/** Latest valid ownership observation, or an undated percentage from the profile. */
 export function resolveOwnership(row: PickupOwnershipRow): { ownership: number; asOf: string | null } | null {
   const timeline = Array.isArray(row.ownership_timeline) ? (row.ownership_timeline as { date?: unknown; value?: unknown }[])
     .filter(point => isDate(point?.date) && ownershipPct(point?.value) !== null).sort((a, b) => String(a.date).localeCompare(String(b.date))) : [];
   const latest = timeline[timeline.length - 1];
   if (latest) return { ownership: ownershipPct(latest.value)!, asOf: latest.date as string };
-  const fallback = ownershipPct(row.percent_ownership), updated = row.last_updated?.slice(0, 10);
-  return fallback === null ? null : { ownership: fallback, asOf: isDate(updated) ? updated : null };
+  const fallback = ownershipPct(row.percent_ownership);
+  return fallback === null ? null : { ownership: fallback, asOf: null };
 }
 
 const PLAYING_POSITIONS = ["C", "LW", "RW", "D", "G"];
@@ -82,7 +83,7 @@ export function buildPlayerLayer(sources: SharePlayerSources | null, input: { se
     if (row.season !== yahooSeason || !PLAYABLE_STATUSES.has(row.status ?? "")) continue;
     const owned = resolveOwnership(row), position = positionGroup(row);
     const nhlId = nhlIdByYahoo.get(row.player_key) ?? (row.player_id ? nhlIdByYahoo.get(row.player_id) : undefined);
-    if (!owned || !position || nhlId === undefined || seen.has(nhlId)) continue;
+    if (!owned?.asOf || !position || nhlId === undefined || seen.has(nhlId)) continue;
     const yahooTeam = PICKUP_YAHOO_TEAM_ALIASES[row.editorial_team_abbreviation ?? ""] ?? row.editorial_team_abbreviation;
     let player: SharePlayer | null = null, updated: string | null = null;
     if (position.group === "G") {
@@ -104,8 +105,8 @@ export function buildPlayerLayer(sources: SharePlayerSources | null, input: { se
     if (!player || !input.teams.includes(player.team) || (yahooTeam && yahooTeam !== player.team)) continue;
     // Freshness is gated per player: one fresh row never vouches for another player's old data.
     const totalsAt = updated && Number.isFinite(Date.parse(updated)) ? Date.parse(updated) : NaN;
-    if ((owned.asOf && owned.asOf > today) || totalsAt > generated) { droppedFuture++; continue; }
-    if (!owned.asOf || owned.asOf < yesterday || !Number.isFinite(totalsAt) || generated - totalsAt > PLAYER_STATS_MAX_AGE_MS) { droppedStale++; continue; }
+    if (owned.asOf > today || totalsAt > generated) { droppedFuture++; continue; }
+    if (owned.asOf < yesterday || !Number.isFinite(totalsAt) || generated - totalsAt > PLAYER_STATS_MAX_AGE_MS) { droppedStale++; continue; }
     seen.add(nhlId); players.push(player);
     // The card shows the oldest included observation, so every as-of it prints covers every tile.
     if (!ownershipAsOf || owned.asOf < ownershipAsOf) ownershipAsOf = owned.asOf;

@@ -45,7 +45,7 @@ const yahoo = (id: number, team: string) => ({ player_key: `465.p.${id}`, player
 beforeEach(() => {
   source.calls = []; source.count = {}; source.errors = {}; source.inflight = 0; source.maxInflight = 0;
   source.rows = {
-    yahoo_players: [yahoo(1, "NJ"), yahoo(2, "TOR")],
+    yahoo_players_with_trend_history: [yahoo(1, "NJ"), yahoo(2, "TOR")],
     yahoo_nhl_player_map_read: [{ yahoo_player_id: "465.p.1", nhl_player_id: "8470001" }, { yahoo_player_id: "2", nhl_player_id: "8470002" }],
     wgo_skater_stats_totals: [{ player_id: 8470001 }], wgo_goalie_stats_totals: [{ goalie_id: 8470002 }],
   };
@@ -56,8 +56,10 @@ describe("live player source loader (mocked client)", () => {
     const result = await loadSharePlayerSources(20262027, ["NJD", "TOR"]);
     const call = (table: string) => source.calls.find(item => item.table === table)!;
     // Pages never exceed the API's 1,000-row cap (ticket 15); the explicit limit still bounds the total.
-    expect(call("yahoo_players")).toMatchObject({ range: [0, Math.min(PLAYER_SOURCE_LIMITS.yahoo, 1000) - 1], filters: [["eq", "season", 2026], ["lt", "percent_ownership", 50], ["in", "editorial_team_abbreviation", ["NJD", "NJ", "TOR"]]] });
-    expect(call("yahoo_players").columns).not.toMatch(/ownership_timeline|player_name|injury_note|headshot/);
+    const ownershipRead = call("yahoo_players_with_trend_history");
+    expect(ownershipRead).toMatchObject({ range: [0, Math.min(PLAYER_SOURCE_LIMITS.yahoo, 1000) - 1], filters: [["eq", "season", 2026], ["lt", "percent_ownership", 50], ["in", "editorial_team_abbreviation", ["NJD", "NJ", "TOR"]]] });
+    expect(ownershipRead.columns.split(",")).toContain("ownership_timeline:normalized_ownership_timeline");
+    expect(ownershipRead.columns).not.toMatch(/last_updated|player_name|injury_note|headshot/);
     expect(call("wgo_skater_stats_totals")).toMatchObject({ range: [0, Math.min(PLAYER_SOURCE_LIMITS.skaters, 1000) - 1], filters: [["eq", "season", "20262027"], ["in", "current_team_abbreviation", ["NJD", "TOR"]]] });
     expect(call("wgo_goalie_stats_totals")).toMatchObject({ range: [0, PLAYER_SOURCE_LIMITS.goalies - 1], filters: [["eq", "season_id", 20262027], ["in", "current_team_abbreviation", ["NJD", "TOR"]]] });
     expect(call("yahoo_nhl_player_map_read")).toMatchObject({ columns: "yahoo_player_id,nhl_player_id", filters: [["in", "yahoo_player_id", ["465.p.1", "1", "465.p.2", "2"]]], range: [0, 7] });
@@ -66,11 +68,11 @@ describe("live player source loader (mocked client)", () => {
   });
 
   it("chunks the id map and fails closed when a source exceeds its limit", async () => {
-    source.rows.yahoo_players = Array.from({ length: 100 }, (_, i) => yahoo(i + 10, "TOR"));
+    source.rows.yahoo_players_with_trend_history = Array.from({ length: 100 }, (_, i) => yahoo(i + 10, "TOR"));
     await loadSharePlayerSources(20262027, ["TOR"]);
     const chunks = source.calls.filter(item => item.table === "yahoo_nhl_player_map_read");
     expect(chunks.map(item => (item.filters[0][2] as string[]).length)).toEqual([150, 50]);
-    source.count.yahoo_players = PLAYER_SOURCE_LIMITS.yahoo + 1;
+    source.count.yahoo_players_with_trend_history = PLAYER_SOURCE_LIMITS.yahoo + 1;
     await expect(loadSharePlayerSources(20262027, ["TOR"])).rejects.toThrow("over its 2000-row limit");
     source.count = { wgo_goalie_stats_totals: null };
     await expect(loadSharePlayerSources(20262027, ["TOR"])).rejects.toThrow("completeness");

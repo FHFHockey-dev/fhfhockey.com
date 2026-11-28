@@ -1,9 +1,11 @@
 import { StrictMode } from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SocialShare, { deploymentBadges, moverDigits, moverSparkPoints, NEON, OUTLINE_FALLBACK_TEAMS, ppChip, goldGlow, roleChipList, roleHero, rosteredText, Sparkline, tileRoleChips, toneOf } from "./SocialShare";
 import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
 import { fictionalLeagueWeek } from "lib/socialShare/fixtures";
+import { loadSharePlayerSources } from "lib/socialShare/playerSources";
+import { buildPlayerLayer } from "lib/socialShare/players";
 import { buildTrendLayer, trendDefinitions, trendExportToken } from "lib/socialShare/trends";
 import { assertToken } from "lib/socialShare/export";
 import { fictionalTrendSources } from "lib/socialShare/trendsFixture";
@@ -12,6 +14,8 @@ import type { ShareDeploymentRow, SocialShareSnapshot } from "lib/socialShare/ty
 vi.mock("lib/supabase/client", () => ({ default: { auth: {
   getSession: vi.fn(async () => ({ data: { session: { user: { id: "social-editor" }, access_token: "synthetic-token" } }, error: null })),
 } } }));
+const pickupSource = vi.hoisted(() => ({ from: vi.fn() }));
+vi.mock("lib/supabase/public-client", () => ({ default: pickupSource }));
 // Ticket 15: the studio keeps its selection in the URL and remembers the edition for the signed-in user.
 const router = vi.hoisted(() => ({ query: {} as Record<string, string>, pathname: "/social-share/[format]", isReady: true, replace: (() => Promise.resolve(true)) as (...args: unknown[]) => Promise<boolean> }));
 vi.mock("next/router", () => ({ useRouter: () => router }));
@@ -40,6 +44,62 @@ describe("SocialShare edition loading", () => {
     await waitFor(() => expect(screen.getByText(/Rolling game metrics and ownership are not connected/)).toBeTruthy());
     const apiCalls = fetchMock.mock.calls.filter(([url]) => String(url).startsWith("/api/v1/social-share/"));
     expect(apiCalls).toEqual([["/api/v1/social-share/tuesday-trends?weekStart=2026-10-19", { cache: "no-store", credentials: "omit", headers: { Authorization: "Bearer synthetic-token" } }]]);
+  });
+
+  it("renders only dated fresh pickup ownership when every player profile was refreshed today", async () => {
+    const generatedAt = new Date().toISOString(), week = calendarWeekStart(new Date(Date.now() + 14 * 86400000).toISOString());
+    const snapshot = buildScheduleSnapshot({ format: "game-grid", weekStart: week, generatedAt, schedule: fictionalLeagueWeek(week, generatedAt) });
+    const today = localDate(generatedAt, "America/New_York"), todayStart = Date.parse(`${today}T00:00:00Z`);
+    const yesterday = new Date(todayStart - 86400000).toISOString().slice(0, 10);
+    const old = new Date(todayStart - 3 * 86400000).toISOString().slice(0, 10);
+    const season = snapshot.games[0].season, team = snapshot.rows.find(row => row.remainingGames > 0)!.team.abbreviation;
+    const controls = [
+      { name: "Fresh Skater", value: 12, date: yesterday, position: "C" },
+      { name: "Stale Skater", value: 9, date: old, position: "C" },
+      { name: "Undated Skater", value: 7, date: null, position: "C" },
+      { name: "Zero Skater", value: 0, date: today, position: "D" },
+    ];
+    const rows: Record<string, Record<string, unknown>[]> = {
+      yahoo_players_with_trend_history: controls.map(({ value, date, position }, index) => ({
+        player_key: `477.p.${index + 1}`, player_id: String(index + 1), editorial_team_abbreviation: team,
+        display_position: position, eligible_positions: [{ position }], status: null, season: Math.floor(season / 10000),
+        last_updated: generatedAt, percent_ownership: value, normalized_ownership_timeline: date ? [{ date, value }] : [],
+      })),
+      yahoo_nhl_player_map_read: controls.map((_, index) => ({ yahoo_player_id: `477.p.${index + 1}`, nhl_player_id: String(8470001 + index) })),
+      wgo_skater_stats_totals: controls.map(({ name }, index) => ({
+        player_id: 8470001 + index, player_name: name, season: String(season), games_played: 10,
+        points_per_game: 0.5, goals: 1, hits: 5, shots: 10, blocked_shots: 4, current_team_abbreviation: team, updated_at: generatedAt,
+      })),
+    };
+    pickupSource.from.mockImplementation((table: string) => ({
+      select: (columns: string) => {
+        const page = (rows[table] ?? []).map(row => Object.fromEntries(columns.split(",").map(selection => {
+          const [alias, column = alias] = selection.split(":");
+          return [alias, row[column]];
+        })));
+        const query = {
+          eq: () => query, lt: () => query, in: () => query, order: () => query,
+          range: async (from: number, to: number) => ({ data: page.slice(from, to + 1), count: page.length, error: null }),
+        };
+        return query;
+      },
+    }));
+    const sources = await loadSharePlayerSources(season, [team]);
+    snapshot.players = buildPlayerLayer(sources, { season, teams: [team], fetchedAt: generatedAt, generatedAt });
+    router.query = { format: "game-grid", week, card: "pickups-20" };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => snapshot });
+    Object.defineProperty(document, "fonts", { configurable: true, value: { load: async () => [{}], check: () => true } });
+
+    render(<SocialShare format="game-grid" asOf={generatedAt} />);
+    const square = await screen.findByTestId("share-square");
+    const yesterdayLabel = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(yesterday));
+    expect(square.textContent).toContain("Fresh Skater");
+    expect(square.textContent).toContain("Zero Skater");
+    expect(within(square).getByText("12%", { exact: true })).toBeTruthy();
+    expect(within(square).getByText("0%", { exact: true })).toBeTruthy();
+    expect(square.getAttribute("aria-label")).toMatch(/Zero Skater[^;]+, 0% rostered/);
+    expect(square.textContent?.match(/Stale Skater|Undated Skater/g) ?? []).toEqual([]);
+    expect(square.textContent).toContain(`Yahoo rostered % as of ${yesterdayLabel}`);
   });
 
   it("restores the URL's week, days and card, and a remount (gate re-check on tab return) reuses the edition without a refetch", async () => {

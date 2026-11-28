@@ -83,10 +83,10 @@ describe("player layer", () => {
     expect(positionGroup(row("Util", ["Util", "BN"]))).toBeNull();
   });
 
-  it("resolves ownership from the latest valid timeline point, else percent_ownership", () => {
+  it("uses the latest valid timeline point and leaves a fallback percentage undated", () => {
     const [row] = fictionalPlayerSources(season, "2026-10-26", now).yahoo;
-    expect(resolveOwnership({ ...row, ownership_timeline: [{ date: "2026-10-25", value: 40 }, { date: "2026-10-26", value: 12.5 }, { date: "2026-10-27x", value: 9 }] })).toEqual({ ownership: 12.5, asOf: "2026-10-26" });
-    expect(resolveOwnership({ ...row, ownership_timeline: null, percent_ownership: 33, last_updated: "2026-10-24T09:00:00Z" })).toEqual({ ownership: 33, asOf: "2026-10-24" });
+    expect(resolveOwnership({ ...row, ownership_timeline: [{ date: "2026-10-25", value: 40 }, { date: "2026-10-26", value: 12.5 }, { date: "2026-13-01", value: 9 }] })).toEqual({ ownership: 12.5, asOf: "2026-10-26" });
+    expect(resolveOwnership({ ...row, ownership_timeline: null, percent_ownership: 33, last_updated: "2026-10-26T09:00:00Z" })).toEqual({ ownership: 33, asOf: null });
     expect(resolveOwnership({ ...row, ownership_timeline: [], percent_ownership: 120 })).toBeNull();
   });
 });
